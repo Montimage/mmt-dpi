@@ -178,7 +178,7 @@ separate deployment-time renderer; `docs/_config.yml` declares the Pages
 No application `.env` file is required: this is a Make-built SDK, configured
 through make variables (`sdk/Makefile:8-12`, `rules/common.mk:3-8`), and the
 test runner takes shell variables such as `SANITIZE`
-(`tests/run_all_tests.sh:8-101`). No application service setup is needed for
+(`tests/run_all_tests.sh:8-104`). No application service setup is needed for
 the build/test commands below.
 
 ## 2. Building
@@ -239,7 +239,7 @@ that build+install the SDK internally (`rule_engine`, `installer`,
 `installed_consumer`, …), not by the assertions. Exit code `0` on
 success, `1` on any failure. The runner has no `-j` option: the 30 suites run
 sequentially. The suite list lives in `DEFAULT_SUITES`
-(`tests/run_all_tests.sh:190-221`)
+(`tests/run_all_tests.sh:198-229`)
 (`tests/run_all_tests.sh`):
 `hashmap`, `memory`, `fault_injection`, `core_engine`, `hexdump`, `mmt_utils`,
 `mmt_inet_ntop`,
@@ -305,7 +305,7 @@ skipped — the runner exits non-zero (issue #186).
 
 ### Suite modes: sanitizers and coverage
 
-`tests/run_all_tests.sh` has two opt-in modes (`tests/run_all_tests.sh:8-101`):
+`tests/run_all_tests.sh` has two opt-in modes (`tests/run_all_tests.sh:8-104`):
 
 - `SANITIZE=asan bash tests/run_all_tests.sh` — compiles every suite with
   ASan + UBSan (same flag set as the SDK's `BUILD=asan`,
@@ -316,35 +316,42 @@ skipped — the runner exits non-zero (issue #186).
 - `SANITIZE=tsan bash tests/run_all_tests.sh` — same with TSan
   (`rules/common.mk:150-157`). On kernels with high-entropy ASLR the runner
   re-execs itself once under `setarch -R`
-  (`tests/run_all_tests.sh:89-92`).
+  (`tests/run_all_tests.sh:92-95`).
 - `bash tests/run_all_tests.sh --coverage` — instruments the suites with gcov,
   aggregates all `.gcda`, and writes an lcov-format tracefile of **library
   (`src/`) sources only** to `tests/coverage/coverage.info` plus the library
   line percentage, instrumented-file count/list and
   `tests/coverage/summary.json` in stdout
-  (`tests/run_all_tests.sh:234-357`). Requires `gcov` (shipped with
+  (`tests/run_all_tests.sh:274-400`). Requires `gcov` (shipped with
   gcc) and `jq`; no lcov install needed. The coverage CI job enforces the
   committed floor `tests/coverage/floor.json` — both counters plus the
   required sources it names — via `tools/ci/check-coverage-floor.sh`.
   The mode also exports `SDK_BUILD_PROFILE=coverage`
-  (`tests/run_all_tests.sh:103-112`), so every SDK-building suite builds the
+  (`tests/run_all_tests.sh:106-115`), so every SDK-building suite builds the
   `BUILD=coverage` profile (§5). Their consumers write counters next to the
   in-tree objects under `src/`, which survive the throwaway prefix's
   deletion; the runner harvests them with `tools/ci/sdk-coverage.sh`
   after each suite, before the next suite's SDK rebuild would delete them
-  (`tests/run_all_tests.sh:167-178`). `summary.json` then gains a `cohorts`
+  (`tests/run_all_tests.sh:175-186`). `summary.json` then gains a `cohorts`
   object and `tests/coverage/coverage-combined.info` is written; the
   top-level keys and `coverage.info` stay unit-only. The harvest also reads
   the `.gcno` of every object that wrote no `.gcda` (compiled, never loaded)
   at count 0, so zero-hit sources stay in the denominator (issue #388), and a
   run that built a `BUILD=coverage` SDK ends with `make -C sdk clean` so no
-  coverage objects are left for a later plain build. `--coverage` cannot be
+  coverage objects are left for a later plain build. A full `--coverage`
+  run (no suite named) then replays the phase0 harnesses against one
+  `BUILD=coverage` SDK — `tools/phase0/run_all_harnesses.sh --profile
+  coverage`, which skips the four harnesses of its `COVERAGE_SKIP` list
+  (reasons in `tools/phase0/README.md`) — and harvests that build once into
+  the `harness` cohort (`tests/run_all_tests.sh:242-272`, issue #524). The
+  arm counts as one extra entry in the result table (31 under `--coverage`)
+  and its failure fails the run. `--coverage` cannot be
   combined with `SANITIZE` (exit 2): both select the SDK profile.
 - `bash tests/run_all_tests.sh --with-harnesses` — after the suites, runs
   every phase0 harness (`tools/phase0/tests/run_*.sh`) via the aggregate
   runner `tools/phase0/run_all_harnesses.sh`, which builds the SDK once per
   required profile (asan / tsan / default) into a shared prefix and replays
-  all harnesses against it (`tests/run_all_tests.sh:359-375`). The arm counts
+  all harnesses against it (`tests/run_all_tests.sh:402-418`). The arm counts
   as one extra entry in the result table; any harness failure fails the
   invocation. Runtime is minutes, not seconds — the suites build nothing for
   it, the runner's shared builds dominate.
@@ -355,23 +362,25 @@ The 2026-09-22 audit at commit `2ab7b73516113009622cb3d32194d20121457010`
 reported 82.9% (5,660/6,831 lines) over those 30 files; this is historical
 evidence, not a new measurement (provenance recorded in [DECISIONS.md](https://github.com/montimage-projects/mmt-dpi/blob/main/docs/DECISIONS.md)).
 Coverage includes only the `src/` files represented in emitted gcov data
-(`tests/run_all_tests.sh:258-262`); its percentage uses the lines in that
+(`tests/run_all_tests.sh:298-302`); its percentage uses the lines in that
 subset, so it must not be reported as whole-library coverage. The current
 run's exact scope is `instrumented_sources` and `instrumented_files` in
-`summary.json` (`tests/run_all_tests.sh:319-333`). The committed minimum is
-**29 instrumented files**, alongside an **80.0%** line floor and required
-source names (`tests/coverage/floor.json:2-10`); a 30-file measurement does
-not change that floor. Consult a fresh summary for the current count.
+`summary.json` (`tests/run_all_tests.sh:359-373`). The committed minimum is
+**42 instrumented files**, alongside a **73.7%** line floor and required
+source names (`tests/coverage/floor.json:2-10`); the 30-file audit cohort
+does not change that floor. Consult a fresh summary for the current count.
 
-The `cohorts` object (issue #387) names four denominators, each stated in
-its `denominator` field; whole-SDK coverage is reported separately below:
+The `cohorts` object (issue #387) names five denominators, each stated in
+its `denominator` field (`harness` only in a full run, issue #524);
+whole-SDK coverage is reported separately below:
 
 | Cohort | Denominator |
 |--------|-------------|
 | `unit` | `src/` lines recorded by the unit-suite binaries — the records the top-level keys and the floor measure |
 | `sdk_integration` | `src/` lines of the `BUILD=coverage` SDK builds the SDK-building suites made — lines their consumers ran plus zero-hit objects at count 0 — with a per-suite breakdown in `suites` |
-| `combined` | the union of both, one record per repo-relative path and line (logical and physical checkout paths are merged), counts summed |
-| `generated_asn1c` | lines under `src/mmt_mobile/asn1c/` from any cohort, excluded from the three above |
+| `harness` | `src/` lines of the one `BUILD=coverage` SDK build the phase0 harnesses ran against (`run_all_harnesses.sh --profile coverage`), harvested once after the arm — lines they ran plus zero-hit objects at count 0 |
+| `combined` | the union of the three above, one record per repo-relative path and line (logical and physical checkout paths are merged), counts summed |
+| `generated_asn1c` | lines under `src/mmt_mobile/asn1c/` from any cohort, excluded from the four above |
 
 **Whole-SDK accounting (issue #388).** `bash tools/ci/check-sdk-coverage.sh`
 (after a full `--coverage` run) reconciles `coverage-combined.info` with the
@@ -385,9 +394,13 @@ of the audit, and the recorded exclusions: generated asn1c, vendored llhttp
 `tests/coverage/floor.json` (`sdk.excluded_sources`). Branch coverage is Not
 Assessed. The coverage CI job fails when a built handwritten source is
 missing from the records, a tracked one is neither built nor justified, a
-family measures nothing, the original cohort drops below 82.9% or the whole
-SDK drops below `sdk.whole_sdk_line_pct` (first measurement 46.03%, floor
-45.0%).
+family measures nothing or drops below its `sdk.family_floors` entry
+(issue #524: core 85.3, tcpip 60.3, mobile 63.7, business_app 88.8, dicom
+88.1, security_fuzz 70.4), the original cohort drops below 82.9% or the
+whole SDK drops below `sdk.whole_sdk_line_pct` (measured 65.53% at issue
+#524 with the harness cohort, floor 64.5%). The same job runs
+`tools/ci/report-uncovered-runs.sh` as a gate: a contiguous run of more than
+10 uncovered lines in `coverage.info` fails it (issue #524).
 
 CI runs both modes on every push/PR to main (`.github/workflows/c-cpp.yml`,
 jobs `sanitizer-tests` and `coverage`); the coverage job uploads

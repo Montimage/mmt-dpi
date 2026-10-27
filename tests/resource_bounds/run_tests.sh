@@ -82,7 +82,11 @@
 #
 # No SDK build is needed: every TU compiles straight from src/ — the same
 # standalone property the other unit suites keep (issue #367 contract).
-# Objects stay in a throwaway work dir; only the selected fixtures build.
+# Only the selected fixtures build. Objects go to the suite directory (as in
+# tests/core_engine), not the throwaway work dir: under
+# `tests/run_all_tests.sh --coverage` each object's .gcda is written beside
+# it and must outlive this script for the runner to aggregate it (issue
+# #524). The work dir keeps the logs and intermediate results.
 #
 # Usage: tests/resource_bounds/run_tests.sh [all | fixture ...]
 #   no arguments (or "all") runs every fixture; "ipv6-hash" / "tcp-memory" /
@@ -163,18 +167,18 @@ build_ipv6_hash_bounds() {
     # unlike the hashmap suite's -std=c11, gnu11/gnu++11 keep _DEFAULT_SOURCE /
     # _GNU_SOURCE so <sys/types.h> already provides the type.
     "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 \
-        "${INCS[@]}" -c "${SCRIPT_DIR}/ipv6_addr_fns.c" -o "${WORK}/ipv6_addr_fns.o"
+        "${INCS[@]}" -c "${SCRIPT_DIR}/ipv6_addr_fns.c" -o "${SCRIPT_DIR}/ipv6_addr_fns.o"
 
     # The C++ harness includes hash_utils.cpp (stats counters armed: no NDEBUG).
     "${CXX}" "${extra_cflags[@]}" -Wall -Wextra -std=c++11 \
-        "${INCS[@]}" -c "${SCRIPT_DIR}/test_ipv6_hash_bounds.cpp" -o "${WORK}/test_ipv6_hash_bounds.o"
+        "${INCS[@]}" -c "${SCRIPT_DIR}/test_ipv6_hash_bounds.cpp" -o "${SCRIPT_DIR}/test_ipv6_hash_bounds.o"
 
     # mmt_malloc/mmt_free come from the real allocator.
     "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 \
-        "${INCS[@]}" -c "${REPO_ROOT}/src/mmt_core/src/memory.c" -o "${WORK}/memory.o"
+        "${INCS[@]}" -c "${REPO_ROOT}/src/mmt_core/src/memory.c" -o "${SCRIPT_DIR}/memory.o"
 
     "${CXX}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_ipv6_hash_bounds" \
-        "${WORK}/test_ipv6_hash_bounds.o" "${WORK}/ipv6_addr_fns.o" "${WORK}/memory.o"
+        "${SCRIPT_DIR}/test_ipv6_hash_bounds.o" "${SCRIPT_DIR}/ipv6_addr_fns.o" "${SCRIPT_DIR}/memory.o"
 }
 
 build_tcp_memory() {
@@ -185,14 +189,14 @@ build_tcp_memory() {
     # proto_tcp.c's attribute extractors ignore their proto_index argument.
     "${CC}" "${extra_cflags[@]}" -Wall -Wextra -Wno-unused-parameter -std=gnu11 \
         "${count[@]}" "${INCS[@]}" \
-        -c "${SCRIPT_DIR}/test_tcp_memory.c" -o "${WORK}/test_tcp_memory.o"
+        -c "${SCRIPT_DIR}/test_tcp_memory.c" -o "${SCRIPT_DIR}/test_tcp_memory.o"
     "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 \
         "${count[@]}" "${INCS[@]}" \
-        -c "${REPO_ROOT}/src/mmt_core/src/memory.c" -o "${WORK}/memory_counted.o"
+        -c "${REPO_ROOT}/src/mmt_core/src/memory.c" -o "${SCRIPT_DIR}/memory_counted.o"
     "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 \
-        -c "${SCRIPT_DIR}/tcp_alloc_count.c" -o "${WORK}/tcp_alloc_count.o"
+        -c "${SCRIPT_DIR}/tcp_alloc_count.c" -o "${SCRIPT_DIR}/tcp_alloc_count.o"
     "${CC}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_tcp_memory" \
-        "${WORK}/test_tcp_memory.o" "${WORK}/memory_counted.o" "${WORK}/tcp_alloc_count.o"
+        "${SCRIPT_DIR}/test_tcp_memory.o" "${SCRIPT_DIR}/memory_counted.o" "${SCRIPT_DIR}/tcp_alloc_count.o"
 }
 
 build_tcp_order() {
@@ -202,15 +206,15 @@ build_tcp_order() {
                  -Drealloc=tcm_realloc -Dfree=tcm_free)
     "${CC}" "${extra_cflags[@]}" -Wall -Wextra -Wno-unused-parameter -std=gnu11 \
         "${count[@]}" "${INCS[@]}" \
-        -c "${SCRIPT_DIR}/test_tcp_order.c" -o "${WORK}/test_tcp_order.o"
+        -c "${SCRIPT_DIR}/test_tcp_order.c" -o "${SCRIPT_DIR}/test_tcp_order.o"
     "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 \
         "${count[@]}" "${INCS[@]}" \
-        -c "${REPO_ROOT}/src/mmt_core/src/memory.c" -o "${WORK}/memory_counted_order.o"
+        -c "${REPO_ROOT}/src/mmt_core/src/memory.c" -o "${SCRIPT_DIR}/memory_counted_order.o"
     "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 \
-        -c "${SCRIPT_DIR}/tcp_alloc_count.c" -o "${WORK}/tcp_alloc_count_order.o"
+        -c "${SCRIPT_DIR}/tcp_alloc_count.c" -o "${SCRIPT_DIR}/tcp_alloc_count_order.o"
     "${CC}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_tcp_order" \
-        "${WORK}/test_tcp_order.o" "${WORK}/memory_counted_order.o" \
-        "${WORK}/tcp_alloc_count_order.o" -lm
+        "${SCRIPT_DIR}/test_tcp_order.o" "${SCRIPT_DIR}/memory_counted_order.o" \
+        "${SCRIPT_DIR}/tcp_alloc_count_order.o" -lm
 }
 
 build_frag_eviction() {
@@ -221,35 +225,35 @@ build_frag_eviction() {
     "${CC}" "${extra_cflags[@]}" -Wall -Wextra -Wno-unused-parameter -Wno-sign-compare -std=gnu11 \
         -DMMT_IP_FRAG_INDEX_STATS "${count[@]}" "${INCS[@]}" \
         -I"${REPO_ROOT}/src/mmt_tcpip/lib/protocols" \
-        -c "${SCRIPT_DIR}/test_frag_eviction.c" -o "${WORK}/test_frag_eviction.o"
+        -c "${SCRIPT_DIR}/test_frag_eviction.c" -o "${SCRIPT_DIR}/test_frag_eviction.o"
     "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 \
         "${count[@]}" "${INCS[@]}" \
-        -c "${REPO_ROOT}/src/mmt_core/src/memory.c" -o "${WORK}/memory_counted_frag.o"
+        -c "${REPO_ROOT}/src/mmt_core/src/memory.c" -o "${SCRIPT_DIR}/memory_counted_frag.o"
     "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 \
-        -c "${SCRIPT_DIR}/tcp_alloc_count.c" -o "${WORK}/tcp_alloc_count_frag.o"
+        -c "${SCRIPT_DIR}/tcp_alloc_count.c" -o "${SCRIPT_DIR}/tcp_alloc_count_frag.o"
     "${CC}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_frag_eviction" \
-        "${WORK}/test_frag_eviction.o" "${WORK}/memory_counted_frag.o" \
-        "${WORK}/tcp_alloc_count_frag.o"
+        "${SCRIPT_DIR}/test_frag_eviction.o" "${SCRIPT_DIR}/memory_counted_frag.o" \
+        "${SCRIPT_DIR}/tcp_alloc_count_frag.o"
 }
 
 build_timeout_sweep() {
     # The session-expiry code under test plus the core objects it links
-    # against (same source set as tests/core_engine), compiled into WORK.
+    # against (same source set as tests/core_engine), compiled beside it.
     local core="${REPO_ROOT}/src/mmt_core/src" objs=() src
     for src in packet_processing.c packet_registry.c packet_pipeline.c \
                packet_session.c packet_stats.c memory.c hashmap.c mmt_data.c \
                mmt_inet_ntop.c proto_meta.c plugins_engine.c extraction_lib.c \
                mmt_init.c dpi_profiles.c; do
         "${CC}" "${extra_cflags[@]}" -std=gnu11 "${INCS[@]}" \
-            -c "${core}/${src}" -o "${WORK}/ts_${src%.c}.o"
-        objs+=("${WORK}/ts_${src%.c}.o")
+            -c "${core}/${src}" -o "${SCRIPT_DIR}/ts_${src%.c}.o"
+        objs+=("${SCRIPT_DIR}/ts_${src%.c}.o")
     done
     "${CXX}" "${extra_cflags[@]}" -std=c++11 "${INCS[@]}" \
-        -c "${core}/hash_utils.cpp" -o "${WORK}/ts_hash_utils.o"
+        -c "${core}/hash_utils.cpp" -o "${SCRIPT_DIR}/ts_hash_utils.o"
     "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${INCS[@]}" \
-        -c "${SCRIPT_DIR}/test_timeout_sweep.c" -o "${WORK}/test_timeout_sweep.o"
+        -c "${SCRIPT_DIR}/test_timeout_sweep.c" -o "${SCRIPT_DIR}/test_timeout_sweep.o"
     "${CXX}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_timeout_sweep" \
-        "${WORK}/test_timeout_sweep.o" "${objs[@]}" "${WORK}/ts_hash_utils.o" -lm -lpthread -ldl
+        "${SCRIPT_DIR}/test_timeout_sweep.o" "${objs[@]}" "${SCRIPT_DIR}/ts_hash_utils.o" -lm -lpthread -ldl
 }
 
 echo "  [1/3] compiling ..."

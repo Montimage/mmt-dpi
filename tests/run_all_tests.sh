@@ -16,7 +16,10 @@
 #                   (shipped with gcc) and jq. Suites that build the SDK
 #                   build it with BUILD=coverage (SDK_BUILD_PROFILE); its
 #                   counters are harvested after each suite and reported as
-#                   separate cohorts in summary.json (issue #387).
+#                   separate cohorts in summary.json (issue #387). A full
+#                   run (no suite named) then replays the phase0 harnesses
+#                   against one BUILD=coverage SDK and reports them as the
+#                   `harness` cohort (issue #524).
 #   SANITIZE=asan   Compile the suites with AddressSanitizer + UBSan, mirroring
 #                   the SDK's BUILD=asan profile (rules/common.mk). Suites that
 #                   build the SDK internally inherit BUILD=asan via
@@ -140,8 +143,13 @@ if [ "$COVERAGE" -eq 1 ]; then
     REPO_ROOT_PHYS="$(cd "$REPO_ROOT" && pwd -P)"
     find "$REPO_ROOT_PHYS/src" \( -name '*.gcda' -o -name '*.gcno' \) -delete
     SDK_COV_BUILT=0
+    # One scratch root: suites/<suite>/ per-suite harvests (every subdir is
+    # an sdk_integration suite to `sdk-coverage.sh report`), harness/ the
+    # harness arm's harvest, unit.tsv the unit rows.
     SDK_COV_DIR="$(mktemp -d)"
     trap 'rm -rf "$SDK_COV_DIR"' EXIT
+    mkdir -p "$SDK_COV_DIR/suites"
+    HARNESS_COV_DIR=""
     echo "Mode: coverage report -> ${COVERAGE_DIR#"$REPO_ROOT"/}/coverage.info"
 fi
 echo ""
@@ -172,7 +180,7 @@ run_test_suite() {
     fi
     if [ "$COVERAGE" -eq 1 ] && ! bash "$REPO_ROOT/tools/ci/sdk-coverage.sh" harvest \
             --gcda-root "$REPO_ROOT_PHYS" --gcno-root "$REPO_ROOT_PHYS" \
-            --repo-root "$REPO_ROOT" --out "$SDK_COV_DIR/$suite_name" --consume --unexecuted; then
+            --repo-root "$REPO_ROOT" --out "$SDK_COV_DIR/suites/$suite_name" --consume --unexecuted; then
         echo "  ✗ $suite_name: SDK coverage harvest failed"
         ok=0
     fi
@@ -230,6 +238,38 @@ fi
 for suite in "${SUITES_LIST[@]}"; do
     run_test_suite "$suite"
 done
+
+# --- coverage harness arm -----------------------------------------------------
+# Issue #524 (F-TEST-006): a full --coverage run also replays the phase0
+# harnesses against ONE BUILD=coverage SDK (run_all_harnesses.sh --profile
+# coverage; its COVERAGE_SKIP list is not run) and harvests that build once
+# into the `harness` cohort. One extra result-table entry; a harness or
+# harvest failure fails the run. A suite subset skips it.
+if [ "$COVERAGE" -eq 1 ] && [ "${#SUITES[@]}" -eq 0 ]; then
+    echo "--- Running: coverage harnesses (tools/phase0/run_all_harnesses.sh --profile coverage) ---"
+    TOTAL=$((TOTAL + 1))
+    SDK_COV_BUILT=1
+    HARNESS_COV_DIR="$SDK_COV_DIR/harness"
+    mkdir -p "$HARNESS_COV_DIR"
+    harness_ok=1
+    bash "$REPO_ROOT/tools/phase0/run_all_harnesses.sh" --profile coverage 2>&1 || harness_ok=0
+    # The runner's exit `make -C sdk clean` leaves the src/ counters behind.
+    if ! bash "$REPO_ROOT/tools/ci/sdk-coverage.sh" harvest \
+            --gcda-root "$REPO_ROOT_PHYS" --gcno-root "$REPO_ROOT_PHYS" \
+            --repo-root "$REPO_ROOT" --out "$HARNESS_COV_DIR" --consume --unexecuted \
+            || [ ! -s "$HARNESS_COV_DIR/lines.tsv" ]; then
+        echo "  ✗ coverage-harnesses: SDK coverage harvest failed or empty"
+        harness_ok=0
+    fi
+    if [ "$harness_ok" -eq 1 ]; then
+        echo "  ✓ coverage-harnesses: PASSED"
+        PASS=$((PASS + 1))
+    else
+        echo "  ✗ coverage-harnesses: FAILED"
+        FAIL=$((FAIL + 1))
+    fi
+    echo ""
+fi
 
 # --- coverage report ----------------------------------------------------------
 # Aggregates every .gcda produced by this run into an lcov-format tracefile:
@@ -334,11 +374,14 @@ write_coverage_report() {
     echo "Library line coverage: ${pct}% (${lines_hit}/${lines_total} executable lines, ${instrumented} instrumented files under src/)"
     echo "Coverage report: ${trace#"$REPO_ROOT"/} (lcov tracefile format)"
     echo "Coverage summary: ${COVERAGE_DIR#"$REPO_ROOT"/}/summary.json"
-    # Cohorts (issue #387): unit, SDK integration, combined and generated
-    # ASN.1, each with its own denominator; the top-level keys above stay the
-    # unit-only numbers the floor checks.
+    # Cohorts (issue #387): unit, SDK integration, harness (issue #524, full
+    # runs), combined and generated ASN.1, each with its own denominator; the
+    # top-level keys above stay the unit-only numbers the floor checks.
+    local harness_arg=()
+    [ -z "$HARNESS_COV_DIR" ] || harness_arg=(--harness-dir "$HARNESS_COV_DIR")
     bash "$REPO_ROOT/tools/ci/sdk-coverage.sh" report \
-        --unit-tsv "$SDK_COV_DIR/unit.tsv" --harvest-dir "$SDK_COV_DIR" \
+        --unit-tsv "$SDK_COV_DIR/unit.tsv" --harvest-dir "$SDK_COV_DIR/suites" \
+        "${harness_arg[@]}" \
         --repo-root "$REPO_ROOT" --summary "$COVERAGE_DIR/summary.json" \
         --combined-info "$COVERAGE_DIR/coverage-combined.info"
 }

@@ -31,6 +31,11 @@
  *   H. teardown         — clean_session_payload() returns every allocation
  *                         with pending segments, images or both, and is a
  *                         no-op when nothing was reassembled.
+ *   I. direct helpers   — issue #524: tcp_seg_new() / tcp_seg_new_in_arena()
+ *                         (fields, ownership tag, payload copy, every NULL
+ *                         return) and tcp_option_extraction()'s not-found
+ *                         reset of each option attribute, which the store
+ *                         cases above never reach.
  *
  * proto_tcp.c and tcp_segment.c are included directly (the tests/
  * resource_bounds tcp-memory convention) and allocations are counted by
@@ -446,6 +451,144 @@ static void test_teardown(void) {
 	       " every allocation\n");
 }
 
+/* ------------------------------------------------------------------ */
+/* I — direct segment constructors and the option not-found reset      */
+/* ------------------------------------------------------------------ */
+
+static void test_seg_constructors(void) {
+	int64_t out0 = tcm_outstanding;
+	uint64_t failed0 = tcm_failed;
+
+	/* malloc-backed node: every field set, links and index cleared; the
+	 * node owns its payload, so tcp_seg_free() returns both blocks. */
+	uint8_t *data = (uint8_t *) malloc(8);
+	CHECK(data != NULL, "seg_new: payload allocation failed");
+	if (data == NULL) return;
+	memset(data, 0x5a, 8);
+	tcp_seg_t *seg = tcp_seg_new(41, 1000, 1008, 77, 8, data);
+	CHECK(seg != NULL, "seg_new: NULL on a healthy allocator");
+	if (seg != NULL) {
+		CHECK(seg->packet_id == 41 && seg->seq == 1000 && seg->next_seq == 1008
+		      && seg->ack == 77 && seg->len == 8 && seg->data == data,
+		      "seg_new: fields not stored");
+		CHECK(seg->in_arena == 0 && seg->blk == NULL && seg->blk_size == 0,
+		      "seg_new: node not tagged malloc-owned");
+		CHECK(seg->next == NULL && seg->prev == NULL && seg->idx_height == 0
+		      && seg->idx_left == NULL && seg->idx_right == NULL,
+		      "seg_new: links or index not cleared");
+		tcp_seg_free(seg);
+	} else {
+		free(data);
+	}
+	CHECK(tcm_outstanding == out0, "seg_new: %lld allocation(s) outstanding",
+	      (long long) (tcm_outstanding - out0));
+
+	/* The node allocation fails: NULL, and the caller keeps the payload. */
+	tcm_fail_at = tcm_calls + 1;
+	seg = tcp_seg_new(1, 1, 2, 0, 1, NULL);
+	tcm_fail_at = 0;
+	CHECK(seg == NULL, "seg_new: OOM must return NULL");
+	CHECK(tcm_outstanding == out0, "seg_new OOM: allocation leaked");
+
+	/* Arena-backed node: the payload is copied into the arena and the node
+	 * is tagged so tcp_seg_free() never hands arena memory to free(). */
+	static const uint8_t payload[16] = "arena-payload-16";
+	CHECK(tcp_seg_new_in_arena(NULL, 1, 1, 2, 0, 1, payload) == NULL,
+	      "seg_new_in_arena: NULL arena must return NULL");
+	mmt_arena_t *arena = mmt_arena_create(16);
+	CHECK(arena != NULL, "seg_new_in_arena: arena creation failed");
+	if (arena == NULL) return;
+	seg = tcp_seg_new_in_arena((struct mmt_arena_s *) arena, 42, 2000, 2016, 88,
+	                           sizeof(payload), payload);
+	CHECK(seg != NULL, "seg_new_in_arena: NULL on a healthy arena");
+	if (seg != NULL) {
+		CHECK(seg->packet_id == 42 && seg->seq == 2000 && seg->next_seq == 2016
+		      && seg->ack == 88 && seg->len == sizeof(payload),
+		      "seg_new_in_arena: fields not stored");
+		CHECK(seg->data != NULL && seg->data != payload
+		      && memcmp(seg->data, payload, sizeof(payload)) == 0,
+		      "seg_new_in_arena: payload not copied into the arena");
+		CHECK(seg->in_arena == 1 && seg->blk == NULL && seg->blk_size == 0,
+		      "seg_new_in_arena: node not tagged arena-owned");
+		CHECK(seg->next == NULL && seg->prev == NULL && seg->idx_height == 0
+		      && seg->idx_left == NULL && seg->idx_right == NULL,
+		      "seg_new_in_arena: links or index not cleared");
+		int64_t before_free = tcm_outstanding;
+		tcp_seg_free(seg);
+		CHECK(tcm_outstanding == before_free, "seg_free: arena node reached free()");
+	}
+
+	/* The payload block cannot be grown: NULL before any copy. */
+	tcm_fail_at = tcm_calls + 1;
+	seg = tcp_seg_new_in_arena((struct mmt_arena_s *) arena, 1, 1, 17, 0,
+	                           sizeof(payload), payload);
+	tcm_fail_at = 0;
+	CHECK(seg == NULL, "seg_new_in_arena: payload OOM must return NULL");
+
+	/* The payload fills a fresh 16-byte block, so the node needs a second
+	 * block; failing that grow returns NULL. */
+	tcm_fail_at = tcm_calls + 2;
+	seg = tcp_seg_new_in_arena((struct mmt_arena_s *) arena, 1, 1, 17, 0,
+	                           sizeof(payload), payload);
+	tcm_fail_at = 0;
+	CHECK(seg == NULL, "seg_new_in_arena: node OOM must return NULL");
+	CHECK(tcm_failed - failed0 == 3, "seg constructors: %llu forced failure(s), expected 3",
+	      (unsigned long long) (tcm_failed - failed0));
+
+	mmt_arena_destroy(arena);
+	CHECK(tcm_outstanding == out0, "seg constructors: %lld allocation(s) outstanding",
+	      (long long) (tcm_outstanding - out0));
+	printf("  direct constructors: malloc and arena nodes, ownership tags and"
+	       " every NULL return\n");
+}
+
+/* Option block with no MSS/window-scale/SACK-permitted/timestamp option
+ * (doff 6: four NOPs): every option attribute takes the not-found path. */
+static void test_option_not_found(void) {
+	enum { TCP_OFF = 14 };
+	uint8_t buf[TCP_OFF + 24];
+	memset(buf, 0, sizeof(buf));
+	buf[TCP_OFF + 12] = 0x60;                    /* doff 6, no flags */
+	memset(buf + TCP_OFF + 20, 0x01, 4);         /* NOP x4 */
+	pkthdr_t hdr;
+	memset(&hdr, 0, sizeof(hdr));
+	hdr.caplen = hdr.len = sizeof(buf);
+	ipacket_t pkt;
+	memset(&pkt, 0, sizeof(pkt));
+	pkt.p_hdr = &hdr;
+	pkt.data = buf;
+	g_stub_packet_offset = TCP_OFF;
+
+	static const struct { const char *name; uint32_t field; size_t width; } attrs[] = {
+		{ "tsval",          TCP_TSVAL,              4 },
+		{ "tsecr",          TCP_TSECR,              4 },
+		{ "mss",            TCP_OPT_MSS,            2 },
+		{ "wscale",         TCP_OPT_WSCALE,         1 },
+		{ "sack_permitted", TCP_OPT_SACK_PERMITTED, 1 },
+		{ "src_port",       TCP_SRC_PORT,           0 },   /* not an option */
+	};
+	for (size_t i = 0; i < sizeof(attrs) / sizeof(attrs[0]); i++) {
+		uint8_t scratch[8];
+		memset(scratch, 0xa5, sizeof(scratch));
+		attribute_t attr;
+		memset(&attr, 0, sizeof(attr));
+		attr.field_id = attrs[i].field;
+		attr.data = scratch;
+		CHECK(tcp_option_extraction(&pkt, 0, &attr) == 0,
+		      "option %s: absent option must not extract", attrs[i].name);
+		size_t z = 0, t = attrs[i].width;
+		while (z < t && scratch[z] == 0) z++;
+		CHECK(z == t, "option %s: result not reset to 0 (%zu of %zu bytes)",
+		      attrs[i].name, z, t);
+		while (t < sizeof(scratch) && scratch[t] == 0xa5) t++;
+		CHECK(t == sizeof(scratch), "option %s: wrote past its %zu-byte width",
+		      attrs[i].name, attrs[i].width);
+	}
+	g_stub_packet_offset = -1;
+	printf("  option extractor: each absent option attribute reads 0, others"
+	       " untouched\n");
+}
+
 int main(void) {
 	printf("tcp-pending-order (issue #381): characterization of the post-#380 store\n");
 	test_in_order();
@@ -456,6 +599,8 @@ int main(void) {
 	test_wrap();
 	test_partially_consumed();
 	test_teardown();
+	test_seg_constructors();
+	test_option_not_found();
 	printf("  checks: %d, failures: %d\n", checks, failures);
 	return failures ? 1 : 0;
 }

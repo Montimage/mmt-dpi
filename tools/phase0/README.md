@@ -17,7 +17,7 @@ Phase 0 changes **no production code** — it adds tooling and captured baseline
 | `golden_pcaps.txt` | The fixed golden pcap set (paths relative to the mmt-test `data-sets/` root). |
 | `throughput_pcaps.txt` | The bigFlows/smallFlows perf-benchmark set (issue #251) — deliberately separate from `golden_pcaps.txt` so the classification fingerprint's input set is unchanged. |
 | `capture_baseline.sh` | Orchestrator: build+install at `-O3`, compile the drivers, capture all baselines into `baseline/`. |
-| `run_all_harnesses.sh` | Aggregate runner (issue #183): enumerates `tests/run_*.sh`, builds the SDK once per required profile into a shared prefix, and replays every harness against it. Reachable from the suite runner via `bash tests/run_all_tests.sh --with-harnesses`. |
+| `run_all_harnesses.sh` | Aggregate runner (issue #183): enumerates `tests/run_*.sh`, builds the SDK once per required profile into a shared prefix, and replays every harness against it. Reachable from the suite runner via `bash tests/run_all_tests.sh --with-harnesses`. `--profile coverage` (issue #524) instead builds one `BUILD=coverage` SDK and replays every harness against it except its `COVERAGE_SKIP` list; `bash tests/run_all_tests.sh --coverage` runs it as its harness arm (see *Coverage profile* below). |
 | `baseline/classification.txt` | **The golden classification baseline.** The asserted regression oracle. |
 | `baseline/classification/` | Per-pcap fingerprints (one file each), for granular diffs. |
 | `baseline/throughput.txt` | Throughput reference snapshot (environment-dependent — compare relative deltas). |
@@ -172,6 +172,31 @@ What each gate asserts:
   a non-zero exit. Locally the same enumeration is driven by
   `run_all_harnesses.sh` (or `tests/run_all_tests.sh --with-harnesses`),
   sharing one SDK build per profile instead of one per harness.
+
+### Coverage profile (`run_all_harnesses.sh --profile coverage`)
+
+The harness arm of `bash tests/run_all_tests.sh --coverage` (issue #524,
+F-TEST-006). One `make -C sdk clean`, one `make -C sdk BUILD=coverage` and
+install into a shared prefix; every harness runs against it with
+`MMT_SDK_PREBUILT=1`, whatever profile its own build step names, so the
+phase0 harnesses count in the coverage report as the `harness` cohort of
+`tests/coverage/summary.json` (the caller harvests the `src/` counters once
+afterwards — the runner's exit `make -C sdk clean` leaves them). Four
+harnesses are skipped, each with its reason in the script's
+`COVERAGE_SKIP` list, and the skipped count is printed:
+
+- `run_classified_flow_fastpath_test.sh`, `run_position_unknown_guard_test.sh`,
+  `run_session_lookup_perf_test.sh` — they assert debug counters armed only
+  in assert-enabled or sanitizer builds (`#if !defined(NDEBUG) ||
+  defined(MMT_BUILD_ASAN)`); `BUILD=coverage` keeps the release `-DNDEBUG`,
+  so the counters are compiled out.
+- `run_mt_tsan_test.sh` — refuses an SDK that is not `BUILD=tsan`.
+
+Every other harness failure is fatal, and a `COVERAGE_SKIP` entry that
+names no harness is a setup error (exit 2). The option is explicit — the
+runner never reads `SDK_BUILD_PROFILE` — so `--with-harnesses` keeps its
+per-profile builds. The golden fingerprint and the accuracy corpus are not
+replayed under coverage (issue #554).
 
 ### Not enforced by CI
 

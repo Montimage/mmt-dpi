@@ -32,15 +32,18 @@
 #       Nothing to harvest = exit 0 and OUT is not created.
 #
 #   report --unit-tsv FILE --harvest-dir DIR --repo-root DIR --summary FILE
-#          [--combined-info FILE]
+#          [--harness-dir DIR] [--combined-info FILE]
 #       Adds a `cohorts` object to an existing summary.json, leaving its
 #       top-level (unit-only, floor-checked) keys untouched:
 #         unit             — the unit-suite rows (FILE: path <TAB> line <TAB> count)
 #         sdk_integration  — every DIR/<suite>/lines.tsv, with a per-suite list
-#         combined         — unit + sdk_integration, one record per
-#                            repo-relative path and line
+#         harness          — only with --harness-dir (issue #524): the phase0
+#                            harnesses' BUILD=coverage SDK rows (DIR/lines.tsv,
+#                            one harvest; absent = an empty cohort)
+#         combined         — unit + sdk_integration (+ harness), one record
+#                            per repo-relative path and line
 #         generated_asn1c  — rows under src/mmt_mobile/asn1c/ from any cohort,
-#                            excluded from the three cohorts above
+#                            excluded from every cohort above
 #       Each cohort states its denominator. --combined-info also writes the
 #       combined cohort as an lcov tracefile.
 #
@@ -238,11 +241,12 @@ lcov() {
 }
 
 report() {
-    local unit_tsv="" harvest_dir="" repo_root="" summary="" combined_info=""
+    local unit_tsv="" harvest_dir="" harness_dir="" repo_root="" summary="" combined_info=""
     while [ $# -gt 0 ]; do
         case "$1" in
             --unit-tsv)      unit_tsv="${2:-}"; shift 2 ;;
             --harvest-dir)   harvest_dir="${2:-}"; shift 2 ;;
+            --harness-dir)   harness_dir="${2:-}"; [ -n "$harness_dir" ] || usage; shift 2 ;;
             --repo-root)     repo_root="${2:-}"; shift 2 ;;
             --summary)       summary="${2:-}"; shift 2 ;;
             --combined-info) combined_info="${2:-}"; shift 2 ;;
@@ -253,6 +257,10 @@ report() {
     need jq
     [ -f "$unit_tsv" ] || { echo "✗ sdk-coverage.sh: missing unit TSV $unit_tsv" >&2; exit 2; }
     [ -d "$harvest_dir" ] || { echo "✗ sdk-coverage.sh: missing harvest dir $harvest_dir" >&2; exit 2; }
+    if [ -n "$harness_dir" ] && [ ! -d "$harness_dir" ]; then
+        echo "✗ sdk-coverage.sh: missing harness dir $harness_dir" >&2
+        exit 2
+    fi
     [ -s "$summary" ] || { echo "✗ sdk-coverage.sh: missing summary $summary" >&2; exit 2; }
     jq -e 'type == "object"' "$summary" >/dev/null 2>&1 \
         || { echo "✗ sdk-coverage.sh: $summary is not a JSON object" >&2; exit 2; }
@@ -280,11 +288,18 @@ report() {
         cat "$harvest_dir/$suite/lines.tsv" >>"$tmp/sdk.all"
     done
 
+    : >"$tmp/harness.all"
+    if [ -n "$harness_dir" ] && [ -f "$harness_dir/lines.tsv" ]; then
+        cat "$harness_dir/lines.tsv" >"$tmp/harness.all"
+    fi
+
     local gen="$GENERATED_PREFIX"
     awk -F'\t' -v g="$gen" 'index($1, g) != 1' "$tmp/unit.all" >"$tmp/unit.tsv"
     awk -F'\t' -v g="$gen" 'index($1, g) != 1' "$tmp/sdk.all" >"$tmp/sdk.tsv"
-    cat "$tmp/unit.tsv" "$tmp/sdk.tsv" >"$tmp/combined.tsv"
-    cat "$tmp/unit.all" "$tmp/sdk.all" | awk -F'\t' -v g="$gen" 'index($1, g) == 1' >"$tmp/generated.tsv"
+    awk -F'\t' -v g="$gen" 'index($1, g) != 1' "$tmp/harness.all" >"$tmp/harness.tsv"
+    cat "$tmp/unit.tsv" "$tmp/sdk.tsv" "$tmp/harness.tsv" >"$tmp/combined.tsv"
+    cat "$tmp/unit.all" "$tmp/sdk.all" "$tmp/harness.all" \
+        | awk -F'\t' -v g="$gen" 'index($1, g) == 1' >"$tmp/generated.tsv"
 
     stats "$tmp/unit.tsv" \
         "executable src/ lines recorded by the unit-suite binaries (tests/**/*.gcda), ${GENERATED_PREFIX} excluded; the top-level library_* keys and floor.json measure these same unit records" \
@@ -292,8 +307,17 @@ report() {
     stats "$tmp/sdk.tsv" \
         "executable src/ lines of the BUILD=coverage SDK builds made by the SDK-building suites (harvested after each suite): lines their integration consumers ran (src/**/*.gcda) plus, from the .gcno of objects that wrote no .gcda, the zero-hit sources at count 0 (issue #388); ${GENERATED_PREFIX} excluded" \
         >"$tmp/sdk.json"
+    local union="the unit and sdk_integration records"
+    if [ -n "$harness_dir" ]; then
+        union="the unit, sdk_integration and harness records"
+        stats "$tmp/harness.tsv" \
+            "executable src/ lines of the one BUILD=coverage SDK build the phase0 harnesses ran against (tools/phase0/run_all_harnesses.sh --profile coverage, COVERAGE_SKIP harnesses not run), harvested once after the arm: lines they ran plus the zero-hit objects at count 0; ${GENERATED_PREFIX} excluded" \
+            >"$tmp/harness.json"
+    else
+        echo 'null' >"$tmp/harness.json"
+    fi
     stats "$tmp/combined.tsv" \
-        "union of the unit and sdk_integration records, ${GENERATED_PREFIX} excluded" \
+        "union of ${union}, ${GENERATED_PREFIX} excluded" \
         >"$tmp/combined.json"
     stats "$tmp/generated.tsv" \
         "executable lines of the generated ASN.1 sources under ${GENERATED_PREFIX}, from any cohort" \
@@ -318,19 +342,24 @@ report() {
        --slurpfile sdk "$tmp/sdk.json" \
        --slurpfile combined "$tmp/combined.json" \
        --slurpfile generated "$tmp/generated.json" \
+       --slurpfile harness "$tmp/harness.json" \
        --argjson suites "$per_suite" \
        --arg gen "$GENERATED_PREFIX" \
        --arg info "$combined_rel" '
-        . + {cohorts: {
+        . + {cohorts: ({
             unit: $unit[0],
-            sdk_integration: ($sdk[0] + {suites: $suites}),
+            sdk_integration: ($sdk[0] + {suites: $suites})}
+            + (if $harness[0] == null then {} else {harness: $harness[0]} end)
+            + {
             combined: ($combined[0] + {
                 dedup: "source paths normalized to repo-relative form (logical and physical repo roots both stripped); records with the same (path, line) are summed across cohorts, so each source and line is counted once",
                 tracefile: (if $info == "" then null else $info end)}),
             generated_asn1c: ($generated[0] + {
                 prefix: $gen,
-                excluded_from: ["unit", "sdk_integration", "combined"]})
-        }}' "$summary" >"$tmp/summary.json"
+                excluded_from: (["unit", "sdk_integration"]
+                    + (if $harness[0] == null then [] else ["harness"] end)
+                    + ["combined"])})
+        })}' "$summary" >"$tmp/summary.json"
     mv "$tmp/summary.json" "$summary"
 
     jq -r '.cohorts | to_entries[]

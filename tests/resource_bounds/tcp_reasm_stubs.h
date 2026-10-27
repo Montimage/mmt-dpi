@@ -23,9 +23,13 @@ void mmt_tcp_reasm_stat_live(int64_t delta) { g_live += delta; }
 /* ---- link stubs: proto_tcp.c's classification/registration paths are
  * never driven here, only its reassembly helpers ---- */
 
+/* Header offset get_packet_offset_at_index() reports: -1 (no header) unless
+ * a test drives an attribute extractor over a crafted capture (issue #524,
+ * tests/tcp_pending_order case I). */
+static int g_stub_packet_offset = -1;
 int get_packet_offset_at_index(const ipacket_t *ipacket, unsigned index) {
 	(void) ipacket; (void) index;
-	return -1;
+	return g_stub_packet_offset;
 }
 int set_classified_proto(ipacket_t *ipacket, unsigned index, classified_proto_t p) {
 	(void) ipacket; (void) index; (void) p;

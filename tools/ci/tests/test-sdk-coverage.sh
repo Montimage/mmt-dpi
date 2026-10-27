@@ -33,11 +33,18 @@
 #   every cohort                          -> non-empty denominator
 #   report on an existing summary.json    -> top-level keys unchanged; the
 #                                            floor gate still reads them
+#   report --harness-dir (issue #524)     -> a fifth cohort, `harness`, joined
+#                                            into combined; asn1c rows still
+#                                            only in generated_asn1c
 #   check-sdk-coverage.sh, synthetic      -> exit 0 with per-family numbers;
 #                                            exit 1 on a vanished zero-hit
 #                                            source, a missing family, an
-#                                            unclassified record, either floor,
-#                                            an unjustified or stale source
+#                                            unclassified record, a family
+#                                            below its floor (issue #524), the
+#                                            cohort or whole-SDK floor, an
+#                                            unjustified or stale source;
+#                                            exit 2 on missing or non-numeric
+#                                            family floors
 #
 # SDK_BUILD_PROFILE / EXTRA_CFLAGS from the runner (SANITIZE=asan|tsan,
 # --coverage) are ignored: the self-test always builds its own coverage
@@ -301,6 +308,41 @@ check "combined tracefile has one SF per source" "2 SF records" \
              && grep -qx 'SF:${FAKE}/link/src/a.c' '${WORK}/combined.info' \
              && grep -qx 'DA:1,4' '${WORK}/combined.info'"
 
+# --- report --harness-dir: the phase0 harness cohort (issue #524) -------------
+mkdir -p "${WORK}/syn-harness"
+printf 'src/c.c\t1\t1\nsrc/a.c\t2\t1\nsrc/mmt_mobile/asn1c/ngap/z.c\t3\t1\n' \
+    >"${WORK}/syn-harness/lines.tsv"
+cp "${WORK}/syn-before.json" "${WORK}/syn-h-summary.json"
+check "report with --harness-dir" "exit 0" \
+    bash "${HELPER}" report --unit-tsv "${WORK}/syn-unit.tsv" \
+        --harvest-dir "${WORK}/syn-harvest" --harness-dir "${WORK}/syn-harness" \
+        --repo-root "${FAKE}/link" --summary "${WORK}/syn-h-summary.json" \
+        --combined-info "${WORK}/combined-h.info"
+SH="${WORK}/syn-h-summary.json"
+check "harness: a fifth cohort with its own denominator" "5 cohorts" \
+    jq_true "${SH}" '.cohorts | (keys == ["combined", "generated_asn1c", "harness", "sdk_integration", "unit"])
+        and all(.[]; (.denominator | type == "string" and length > 0))
+        and (.harness | .sources == ["src/a.c", "src/c.c"] and .lines_total == 2 and .lines_hit == 2)'
+check "harness: sdk_integration still the suites only" "2 suites, 2/3 lines" \
+    jq_true "${SH}" '.cohorts.sdk_integration
+        | .sources == ["src/a.c", "src/b.c"] and .lines_total == 3 and .lines_hit == 2'
+check "harness: rows joined into combined" "3 files, 3/4 lines" \
+    jq_true "${SH}" '.cohorts.combined
+        | .sources == ["src/a.c", "src/b.c", "src/c.c"] and .lines_total == 4 and .lines_hit == 3'
+check "harness: asn1c rows only in generated_asn1c" "3 files, 2/3 lines" \
+    jq_true "${SH}" '.cohorts.generated_asn1c
+        | .files == 3 and .lines_total == 3 and .lines_hit == 2
+          and .excluded_from == ["unit", "sdk_integration", "harness", "combined"]'
+check "harness: combined tracefile carries the harness source" "3 SF records" \
+    bash -c "[ \"\$(grep -c '^SF:' '${WORK}/combined-h.info')\" -eq 3 ] \
+             && grep -qx 'SF:${FAKE}/link/src/c.c' '${WORK}/combined-h.info'"
+check "harness: a missing --harness-dir is a usage error" "exit 2" \
+    bash -c "cp '${WORK}/syn-before.json' '${WORK}/syn-x.json'; rc=0
+             bash '${HELPER}' report --unit-tsv '${WORK}/syn-unit.tsv' \
+                 --harvest-dir '${WORK}/syn-harvest' --harness-dir '${WORK}/no-such-dir' \
+                 --repo-root '${FAKE}/link' --summary '${WORK}/syn-x.json' 2>/dev/null || rc=\$?
+             [ \"\$rc\" -eq 2 ]"
+
 # --- whole-SDK accounting gate over synthetic inputs (issue #388) ---------------
 SDK_GATE="${REPO_ROOT}/tools/ci/check-sdk-coverage.sh"
 G="${WORK}/gate"
@@ -324,6 +366,8 @@ echo src/examples/e.c >>"${G}/tracked.base"
 echo src/mmt_tcpip/lib/llhttp.c >"${G}/vendor.txt"
 jq -n '{library_line_pct: 0, instrumented_files: 0, sdk: {
     whole_sdk_line_pct: 48.0,
+    family_floors: {core: 90.0, tcpip: 50.0, mobile: 0.0, business_app: 50.0,
+                    dicom: 50.0, security_fuzz: 10.0},
     original_cohort: {commit: "c0ffee", line_pct: 70.0,
                       sources: ["src/mmt_core/a.c", "src/mmt_tcpip/b.c"]},
     excluded_sources: {"src/examples/e.c": "example program",
@@ -380,6 +424,9 @@ check "gate: zero-hit, generated, vendored and justified recorded" "m.c, g.c, ll
         and .excluded.vendored.sources == ["src/mmt_tcpip/lib/llhttp.c"]
         and (.excluded.justified | length) == 2
         and .branch_coverage == "Not Assessed"'
+check "gate: each family reports its floor" "tcpip floor 50" \
+    jq_true "${R}" 'all(.families[]; .floor | type == "number")
+        and .families.tcpip.floor == 50 and .families.security_fuzz.floor == 10'
 check "gate: original cohort tracked by identity" "2 files, 70%" \
     jq_true "${R}" '.original_cohort | .files == 2 and .line_pct == 70 and .commit == "c0ffee"'
 check "gate: disappearing zero-hit source fails" "exit 1" \
@@ -399,6 +446,18 @@ check "gate: stale justification fails" "exit 1" \
     expect_gate 1 'stale justification: src/gone.c' stale '^$' '.sdk.excluded_sources["src/gone.c"] = "removed"'
 check "gate: floor without an sdk object is a helper error" "exit 2" \
     expect_gate 2 'no valid "sdk" object' nofloor '^$' 'del(.sdk)'
+check "gate: family below its floor fails" "exit 1" \
+    expect_gate 1 'family tcpip line coverage 50% is below its floor 50.1%' famlow '^$' \
+        '.sdk.family_floors.tcpip = 50.1'
+check "gate: optional family below its floor fails" "exit 1" \
+    expect_gate 1 'family security_fuzz line coverage 10% is below its floor 10.1%' optlow '^$' \
+        '.sdk.family_floors.security_fuzz = 10.1'
+check "gate: floor without family_floors is a helper error" "exit 2" \
+    expect_gate 2 'no valid sdk.family_floors' nofamfloors '^$' 'del(.sdk.family_floors)'
+check "gate: a family without a floor is a helper error" "exit 2" \
+    expect_gate 2 'no valid sdk.family_floors' famfloormissing '^$' 'del(.sdk.family_floors.mobile)'
+check "gate: a non-numeric family floor is a helper error" "exit 2" \
+    expect_gate 2 'no valid sdk.family_floors' famfloornan '^$' '.sdk.family_floors.dicom = "50"'
 
 echo ""
 echo "SDK coverage self-test: ${PASS} passed, ${FAIL} failed (${TESTED} checks)"

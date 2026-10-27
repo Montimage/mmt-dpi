@@ -180,14 +180,15 @@ sdk/Makefile:88-94	ln -sf .*libmmt_core\.so	ln -sf .*LIBDICOM	make install creat
 sdk/Makefile:89-90	ln -sf .*libmmt_fuzz\.so	ln -sf .*libmmt_security\.so	install symlinks both ENABLESEC engines	libmmt_fuzz\.so\.\$\(VERSION\) +\$\(MMT_LIB\)/libmmt_fuzz\.so$
 sdk/Makefile:324-325	ln -s .*libmmt_fuzz\.so	ln -s .*libmmt_security\.so	the dist tree symlinks both ENABLESEC engines	libmmt_security\.so\.\$\(VERSION\) +\$\(BUILD_DIR\)\$\(MMT_LIB\)/libmmt_security\.so$
 sdk/Makefile:597-602	^test:	\./proto_attributes_iterator	the make test target builds from the installed prefix	\$\(MMT_EXAMS\)/proto_attributes_iterator\.c
-tests/run_all_tests.sh:8-101	^# Modes:	^esac	the runner has two opt-in sanitizer modes	\-fsanitize=thread
-tests/run_all_tests.sh:89-92	command -v setarch	^ *fi$	TSan re-execs once with ASLR disabled	exec setarch .*\-R
-tests/run_all_tests.sh:190-221	^DEFAULT_SUITES=\(	^\)$	the default suite list lives in DEFAULT_SUITES	docs_onboarding
-tests/run_all_tests.sh:234-357	^# --- coverage report	^fi$	--coverage writes an lcov tracefile and a line rate	coverage\.info
-tests/run_all_tests.sh:103-112	^if \[ "\$COVERAGE" -eq 1 \]	^fi$	--coverage selects the BUILD=coverage SDK profile	SDK_BUILD_PROFILE=coverage
-tests/run_all_tests.sh:167-178	^ *# Harvest this suite	^    fi$	SDK counters are harvested after each suite	sdk-coverage\.sh" harvest
+tests/run_all_tests.sh:8-104	^# Modes:	^esac	the runner has two opt-in sanitizer modes	\-fsanitize=thread
+tests/run_all_tests.sh:92-95	command -v setarch	^ *fi$	TSan re-execs once with ASLR disabled	exec setarch .*\-R
+tests/run_all_tests.sh:198-229	^DEFAULT_SUITES=\(	^\)$	the default suite list lives in DEFAULT_SUITES	docs_onboarding
+tests/run_all_tests.sh:274-400	^# --- coverage report	^fi$	--coverage writes an lcov tracefile and a line rate	coverage\.info
+tests/run_all_tests.sh:106-115	^if \[ "\$COVERAGE" -eq 1 \]	^fi$	--coverage selects the BUILD=coverage SDK profile	SDK_BUILD_PROFILE=coverage
+tests/run_all_tests.sh:175-186	^ *# Harvest this suite	^    fi$	SDK counters are harvested after each suite	sdk-coverage\.sh" harvest
+tests/run_all_tests.sh:242-272	^# --- coverage harness arm	^fi$	--coverage runs the coverage harness arm	run_all_harnesses\.sh" --profile coverage
 rules/common.mk:548-566	^# BUILD=coverage to compile the SDK	^endif	the BUILD=coverage profile is defined here	\-\-coverage
-tests/run_all_tests.sh:359-375	^# --- phase0 harnesses	^fi$	--with-harnesses delegates to the aggregate runner	run_all_harnesses\.sh
+tests/run_all_tests.sh:402-418	^# --- phase0 harnesses	^fi$	--with-harnesses delegates to the aggregate runner	run_all_harnesses\.sh
 sdk/Makefile:1	^ARCH +\?= linux	-	default architecture is Linux
 rules/arch-linux.mk:2-3	^CXX := g\+\+	^CC  := gcc	Linux uses GCC and G++
 rules/arch-linux.mk:20-21	^CFLAGS \+= -std=gnu17$	^CFLAGS \+= \$\(MMT_EXTRA_CFLAGS\)$	the GCC toolchain pins gnu17, MMT_EXTRA_CFLAGS comes after
@@ -197,9 +198,9 @@ docs/Gemfile:12-17	^source	^gem "jekyll-seo-tag"	documentation gems	jekyll
 rules/common.mk:3-8	^MMT_BASE	^MMT_EXAMS	Make install configuration
 tests/fault_injection/run_tests.sh:110-112	^make .* clean	^make .* install	fault injection builds and installs SDK
 tests/fault_injection/run_tests.sh:97-102	^if .*SDK_BUILD_PROFILE	^fi	sanitizers skip fault injection engine leg	exit 0
-tests/run_all_tests.sh:258-262	json_file=	select\(	coverage restricts emitted records to src	/src/
-tests/run_all_tests.sh:319-333	Instrumented files	scope:	coverage summary exposes measured scope	instrumented_sources
-tests/coverage/floor.json:2-10	"library_line_pct": 80.0	  ]	coverage floor and required sources	"instrumented_files": 29
+tests/run_all_tests.sh:298-302	json_file=	select\(	coverage restricts emitted records to src	/src/
+tests/run_all_tests.sh:359-373	Instrumented files	scope:	coverage summary exposes measured scope	instrumented_sources
+tests/coverage/floor.json:2-10	"library_line_pct": 73.7	  ]	coverage floor and required sources	"instrumented_files": 42
 rules/common.mk:187-206	^SRCDIR	^SDKXAM	artifacts remain in checkout	SDKLIB
 CITATIONS
 

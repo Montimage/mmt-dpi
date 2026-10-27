@@ -15,7 +15,10 @@
 # reassembly gauges (tcp_reasm_stubs.h).
 #
 # No SDK build is needed: every TU compiles straight from src/ (issue #367
-# standalone contract). Objects stay in a throwaway work dir.
+# standalone contract). Objects go to the suite directory (as in
+# tests/core_engine): under `tests/run_all_tests.sh --coverage` each
+# object's .gcda is written beside it and must outlive this script for the
+# runner to aggregate it (issue #524).
 #
 # Usage: tests/tcp_pending_order/run_tests.sh
 #   SANITIZE=asan|tsan is honored for direct invocations.
@@ -50,23 +53,20 @@ INCS=(
     -I"${REPO_ROOT}/src/mmt_fuzz_engine"
 )
 
-WORK="$(mktemp -d)"
-trap 'rm -rf "${WORK}"' EXIT
-
 count=(-Dmalloc=tcm_malloc -Dcalloc=tcm_calloc -Drealloc=tcm_realloc -Dfree=tcm_free)
 
 echo "  [1/2] compiling ..."
 # proto_tcp.c's attribute extractors ignore their proto_index argument.
 "${CC}" "${extra_cflags[@]}" -Wall -Wextra -Wno-unused-parameter -std=gnu11 \
     "${count[@]}" "${INCS[@]}" \
-    -c "${SCRIPT_DIR}/test_tcp_pending_order.c" -o "${WORK}/test_tcp_pending_order.o"
+    -c "${SCRIPT_DIR}/test_tcp_pending_order.c" -o "${SCRIPT_DIR}/test_tcp_pending_order.o"
 "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 \
     "${count[@]}" "${INCS[@]}" \
-    -c "${REPO_ROOT}/src/mmt_core/src/memory.c" -o "${WORK}/memory_counted.o"
+    -c "${REPO_ROOT}/src/mmt_core/src/memory.c" -o "${SCRIPT_DIR}/memory_counted.o"
 "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 \
-    -c "${SHARED}/tcp_alloc_count.c" -o "${WORK}/tcp_alloc_count.o"
+    -c "${SHARED}/tcp_alloc_count.c" -o "${SCRIPT_DIR}/tcp_alloc_count.o"
 "${CC}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_tcp_pending_order" \
-    "${WORK}/test_tcp_pending_order.o" "${WORK}/memory_counted.o" "${WORK}/tcp_alloc_count.o"
+    "${SCRIPT_DIR}/test_tcp_pending_order.o" "${SCRIPT_DIR}/memory_counted.o" "${SCRIPT_DIR}/tcp_alloc_count.o"
 
 echo "  [2/2] running ..."
 if "${SCRIPT_DIR}/test_tcp_pending_order"; then

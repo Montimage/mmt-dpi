@@ -28,10 +28,47 @@
 # BUILD=tsan instrumentation — and run_oom_no_abort_test must run against a
 # non-sanitized allocator, so "default" is its own group.
 #
-# Usage: tools/phase0/run_all_harnesses.sh
-# Exit: 0 when every harness passes; 1 on any harness failure; 2 on setup
-#       failure (no harnesses found, SDK build failed).
+# --profile coverage (issue #524, F-TEST-006): the harness arm of
+# `tests/run_all_tests.sh --coverage`. Instead of one build per profile
+# group, ONE `make -C sdk clean` + `make -C sdk BUILD=coverage` + install
+# into a shared prefix, and every harness — whatever its own profile — runs
+# against it, except the COVERAGE_SKIP list below (each with its reason).
+# The skipped count is printed; every other harness failure is fatal. The
+# counters stay next to the in-tree objects under src/ (the EXIT trap's
+# `make -C sdk clean` does not delete .gcda/.gcno), so the caller harvests
+# them afterwards. The option is explicit, never read from
+# SDK_BUILD_PROFILE: the --with-harnesses arm must keep its own profiles.
+#
+# Usage: tools/phase0/run_all_harnesses.sh [--profile coverage]
+# Exit: 0 when every (non-skipped) harness passes; 1 on any harness failure;
+#       2 on setup failure (bad argument, no harnesses found, a
+#       COVERAGE_SKIP entry naming no harness, SDK build failed).
 set -euo pipefail
+
+MODE=default
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --profile)
+            [ "${2:-}" = coverage ] || { echo "✗ --profile takes 'coverage' (got '${2:-}')" >&2; exit 2; }
+            MODE=coverage
+            shift 2 ;;
+        *) echo "✗ unknown argument: $1 (usage: run_all_harnesses.sh [--profile coverage])" >&2
+           exit 2 ;;
+    esac
+done
+
+# Harnesses --profile coverage does not run, with the reason. The first three
+# assert debug counters that only assert-enabled or sanitizer builds arm
+# (`#if !defined(NDEBUG) || defined(MMT_BUILD_ASAN)`, e.g.
+# src/mmt_core/src/packet_pipeline.c); BUILD=coverage keeps the release
+# -DNDEBUG (rules/common.mk), so they are compiled out. mt_tsan refuses an
+# SDK that is not BUILD=tsan.
+COVERAGE_SKIP=(
+    "run_classified_flow_fastpath_test.sh|asserts fast-path debug counters, compiled out of BUILD=coverage (-DNDEBUG)"
+    "run_position_unknown_guard_test.sh|asserts guard debug counters, compiled out of BUILD=coverage (-DNDEBUG)"
+    "run_session_lookup_perf_test.sh|asserts lookup debug counters, compiled out of BUILD=coverage (-DNDEBUG)"
+    "run_mt_tsan_test.sh|refuses an SDK that is not BUILD=tsan (race detection needs TSan instrumentation)"
+)
 
 PHASE0_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEST_DIR="${PHASE0_DIR}/tests"
@@ -128,15 +165,43 @@ run_group() {
     done
 }
 
-# Fixed group order keeps the log deterministic. "none" first: it needs no
-# build, so it runs even when the tree starts dirty.
-for profile in none default asan tsan; do
+SKIPPED=0
+if [ "${MODE}" = coverage ]; then
+    # Every skip entry must name an enumerated harness: a renamed one would
+    # otherwise silently start running (or a typo silently skip nothing).
+    declare -A skip_reason=()
+    for entry in "${COVERAGE_SKIP[@]}"; do
+        name="${entry%%|*}"
+        found=0
+        for h in "${HARNESSES[@]}"; do [ "${h}" = "${name}" ] && found=1; done
+        if [ "${found}" -eq 0 ]; then
+            echo "✗ COVERAGE_SKIP names ${name}, which is not under ${TEST_DIR}" >&2
+            exit 2
+        fi
+        skip_reason["${name}"]="${entry#*|}"
+    done
     members=()
     for h in "${HARNESSES[@]}"; do
-        [ "$(profile_of "${TEST_DIR}/${h}")" = "${profile}" ] && members+=("${h}")
+        if [ -n "${skip_reason[${h}]:-}" ]; then
+            echo "  skip ${h}: ${skip_reason[${h}]}"
+            SKIPPED=$((SKIPPED + 1))
+        else
+            members+=("${h}")
+        fi
     done
-    run_group "${profile}" "${members[@]}"
-done
+    echo ""
+    run_group coverage "${members[@]}"
+else
+    # Fixed group order keeps the log deterministic. "none" first: it needs
+    # no build, so it runs even when the tree starts dirty.
+    for profile in none default asan tsan; do
+        members=()
+        for h in "${HARNESSES[@]}"; do
+            [ "$(profile_of "${TEST_DIR}/${h}")" = "${profile}" ] && members+=("${h}")
+        done
+        run_group "${profile}" "${members[@]}"
+    done
+fi
 
 echo "============================================"
 echo "  Phase0 harness results"
@@ -145,6 +210,7 @@ echo "  harnesses:  ${#HARNESSES[@]}"
 echo "  passed:     ${PASS}"
 echo "  failed:     ${FAIL}"
 echo "  sdk_builds: ${BUILDS}"
+[ "${MODE}" = coverage ] && echo "  skipped:    ${SKIPPED} (COVERAGE_SKIP, profile coverage)"
 if [ "${#FAILED[@]}" -gt 0 ]; then
     for h in "${FAILED[@]}"; do
         echo "    ✗ ${h}"

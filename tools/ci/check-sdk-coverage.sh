@@ -13,7 +13,8 @@
 #   families        numeric line coverage per SDK family — core, tcpip,
 #                   mobile (handwritten), business_app, dicom and the optional
 #                   ENABLESEC=1 cohort security_fuzz — by path prefix, headers
-#                   included (their inline code is executable)
+#                   included (their inline code is executable), each gated by
+#                   its floor in sdk.family_floors (issue #524)
 #   whole_sdk       the non-optional families together: its own denominator,
 #                   gated by the floor's whole_sdk_line_pct
 #   original_cohort the fixed 30 sources of the 82.9% audit measurement
@@ -27,9 +28,10 @@
 # It fails (exit 1) when a handwritten build source is missing from the
 # measured records (a zero-hit source disappearing from the denominator), a
 # tracked handwritten source is neither built nor justified, a justification
-# is stale, a family measures nothing, a record falls outside every family,
-# an original-cohort source is missing or the cohort drops below its floor,
-# or the whole-SDK line rate drops below its floor. The report is written to
+# is stale, a family measures nothing or drops below its family floor, a
+# record falls outside every family, an original-cohort source is missing or
+# the cohort drops below its floor, or the whole-SDK line rate drops below
+# its floor. The report is written to
 # tests/coverage/sdk-coverage.json (uploaded with the coverage artifact).
 #
 # Usage: bash tools/ci/check-sdk-coverage.sh [options]
@@ -105,6 +107,13 @@ jq -e '.sdk | (.whole_sdk_line_pct | type == "number")
         and (.original_cohort.sources | type == "array" and length > 0)
         and (.excluded_sources | type == "object")' "$floor" >/dev/null 2>&1 \
     || die "$floor has no valid \"sdk\" object (whole_sdk_line_pct, original_cohort{line_pct,sources}, excluded_sources)"
+# Issue #524: one numeric floor per family, the optional one included.
+family_names="$(printf '%s\n' "$FAMILIES" | cut -f1 | tr '\n' ' ')"
+jq -e --arg names "$family_names" '.sdk.family_floors as $f
+        | ($f | type == "object")
+          and all($names | split(" ")[] | select(length > 0); ($f[.] | type == "number"))' \
+        "$floor" >/dev/null 2>&1 \
+    || die "$floor has no valid sdk.family_floors (a number for each family: ${family_names% })"
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
@@ -235,18 +244,26 @@ stats_json() {
                zero_hit_files: .[3]}'
 }
 
+below() {  # below <hit> <total> <floor_pct>: true when 100*hit/total < floor
+    awk -v h="$1" -v t="$2" -v f="$3" 'BEGIN { exit !(t == 0 || 100 * h < f * t) }'
+}
+
 fam_json="{}"
 : >"$WORK/whole.tsv"
 while IFS=$'\t' read -r name optional prefixes; do
     awk -F'\t' -v OFS='\t' -v f="$name" '$1 == f { print $2, $3, $4 }' \
         "$WORK/classified.tsv" >"$WORK/fam.tsv"
     s="$(stats_json "$WORK/fam.tsv")"
+    fam_floor="$(jq -r --arg n "$name" '.sdk.family_floors[$n]' "$floor")"
     if [ "$(jq -r '.lines_total' <<<"$s")" -eq 0 ]; then
         fail "family $name measured nothing (no records under ${prefixes}) — a family went missing"
+    elif below "$(jq -r .lines_hit <<<"$s")" "$(jq -r .lines_total <<<"$s")" "$fam_floor"; then
+        fail "family $name line coverage $(jq -r .line_pct <<<"$s")% is below its floor ${fam_floor}%"
     fi
     [ "$optional" -eq 1 ] || cat "$WORK/fam.tsv" >>"$WORK/whole.tsv"
     fam_json="$(jq --arg n "$name" --argjson s "$s" --arg p "$prefixes" \
-        --argjson opt "$optional" '. + {($n): ($s + {
+        --argjson opt "$optional" --argjson fl "$fam_floor" '. + {($n): ($s + {
+            floor: $fl,
             prefixes: ($p | split(" ")),
             optional: ($opt == 1),
             cohort: (if $opt == 1 then "optional ENABLESEC=1 engines (libmmt_security, libmmt_fuzz), excluded from whole_sdk" else "default SDK build" end)})}' \
@@ -268,9 +285,6 @@ orig="$(stats_json "$WORK/orig.tsv")"
 orig_unit="$(stats_json "$WORK/orig-unit.tsv")"
 orig_floor="$(jq -r '.sdk.original_cohort.line_pct' "$floor")"
 
-below() {  # below <hit> <total> <floor_pct>: true when 100*hit/total < floor
-    awk -v h="$1" -v t="$2" -v f="$3" 'BEGIN { exit !(t == 0 || 100 * h < f * t) }'
-}
 if below "$(jq -r .lines_hit <<<"$whole")" "$(jq -r .lines_total <<<"$whole")" "$whole_floor"; then
     fail "whole-SDK line coverage $(jq -r .line_pct <<<"$whole")% is below its floor ${whole_floor}%"
 fi
@@ -334,7 +348,7 @@ jq -n \
 jq -r '
     def pct: if . == null then "n/a" else "\(.)%" end;
     (.families | to_entries[]
-        | "  \(.key)\(if .value.optional then " (optional, ENABLESEC=1)" else "" end): \(.value.line_pct | pct) (\(.value.lines_hit)/\(.value.lines_total) lines, \(.value.files) files, \(.value.zero_hit_files) zero-hit)"),
+        | "  \(.key)\(if .value.optional then " (optional, ENABLESEC=1)" else "" end): \(.value.line_pct | pct) (\(.value.lines_hit)/\(.value.lines_total) lines, \(.value.files) files, \(.value.zero_hit_files) zero-hit) vs floor \(.value.floor)%"),
     "  whole SDK: \(.whole_sdk.line_pct | pct) (\(.whole_sdk.lines_hit)/\(.whole_sdk.lines_total) lines, \(.whole_sdk.files) files) vs floor \(.whole_sdk.floor)%",
     "  original 30-file cohort: \(.original_cohort.line_pct | pct) (\(.original_cohort.lines_hit)/\(.original_cohort.lines_total) lines, \(.original_cohort.files) files; unit-only \(.original_cohort.unit_only.line_pct | pct)) vs floor \(.original_cohort.floor)%",
     "  excluded: generated \(.excluded.generated.files) files (\(.excluded.generated.line_pct | pct)), vendored \(.excluded.vendored.files) files (\(.excluded.vendored.line_pct | pct)), justified \(.excluded.justified | length) sources",
