@@ -264,7 +264,9 @@ issue #483, the release-tag pin self-test `test-release-tag-pin.sh`, issue
 issue #496, the release-hardening self-test
 `test-hardening-identity.sh`, issue #508, which evaluates the makefiles
 without compiling, and the docs-only CI filter self-test
-`test-classify-changes.sh`, issues #528/#552) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
+`test-classify-changes.sh`, issues #528/#552, the public-API contract
+checker self-test `test-api-contracts.sh` and the ABI-diff self-test
+`test-abi-diff.sh`, issue #525) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
 #387); the first three build nothing, `sdk_coverage` builds its own
 `BUILD=coverage` SDK whatever the mode and cleans `sdk/` afterwards. `installed_consumer` (issue #374) drives the
 other
@@ -302,6 +304,22 @@ bash tests/run_all_tests.sh hashmap memory   # subset
 
 A listed suite whose `run_tests.sh` is absent counts as **failed**, not
 skipped — the runner exits non-zero (issue #186).
+
+**Public-API contracts and the ABI diff (issue #525).** `core_engine` also
+builds `test_api_contracts`, one compiled `CONTRACT()` entry per `MMTAPI`
+function (`tests/core_engine/test_api_contracts.c`), then runs
+`tools/ci/check-api-contracts.sh`, which fails when a name printed by
+`tools/ci/check-public-decls.sh --list` (which itself exits 2 on an `MMTAPI`
+declaration without the `MMTCALL` marker) has no entry, an entry names no
+`MMTAPI` function, or the error-path waivers differ from
+`tests/core_engine/api-contract-waivers.txt`: a new export fails the suite
+until it has a contract. `tools/ci/abi-diff.sh` builds the v1.9.1 tag and
+`HEAD` in temporary git worktrees (release profile plus `-g`; the checkout's
+`sdk/` is untouched) and runs libabigail's `abidiff` per library; the
+`abi-diff` job in `c-cpp.yml` runs it, plus a symbol-level leg against the
+shipped v1.9.1 `.deb`, as a report-only check that is not a required
+context. Locally it needs `abigail-tools` (or `ABIDIFF=/path/to/abidiff`)
+and a fetched `v1.9.1` tag: `bash tools/ci/abi-diff.sh --report abi.txt`.
 
 ### Suite modes: sanitizers and coverage
 

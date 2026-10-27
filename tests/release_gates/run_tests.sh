@@ -53,6 +53,13 @@
 # It also runs the commented-out code ratchet self-test beside
 # tools/ci/lint-commented-code.sh (issue #529), which drives the real lint on
 # a fixture git repository with fixture baselines and vendored-source lists.
+# It also runs the public-API contract checker self-test beside
+# tools/ci/check-api-contracts.sh (issue #525), which drives the real checker
+# on fixture name lists (missing, stale, duplicate and waiver-ratchet cases)
+# and proves CONTRACT() rejects an undeclared name at compile time, and the
+# ABI-diff self-test beside tools/ci/abi-diff.sh (issue #525), which maps stub
+# abidiff exit codes to verdicts on dummy libraries (no SDK build, no
+# network).
 set -e
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/ci/tests"
 python3 "${TESTS_DIR}/test-release-gates.py" "$@"
@@ -70,3 +77,5 @@ bash "${TESTS_DIR}/test-release-bootstrap.sh"
 bash "${TESTS_DIR}/test-shlib-deps.sh"
 bash "${TESTS_DIR}/test-classify-changes.sh"
 bash "${TESTS_DIR}/test-commented-code-ratchet.sh"
+bash "${TESTS_DIR}/test-api-contracts.sh"
+bash "${TESTS_DIR}/test-abi-diff.sh"

@@ -917,3 +917,76 @@ jobs:
       run: make -C sdk ENABLESEC=1 -j"$(nproc)"
     - name: Run unit test suites
       run: bash tests/run_all_tests.sh
+
+  abi-diff:
+    # Report-only ABI comparison against the last release (issue #525;
+    # issue #536 turns the verdict into a gate, issue #533 trims the exported
+    # symbol set it reports), both legs run by tools/ci/abi-diff.sh:
+    #   - types and symbols: the ABI_BASELINE tag and this commit, each
+    #     rebuilt in the release profile plus -g in a throwaway worktree
+    #     (hence the full-history checkout), compared within their public
+    #     headers;
+    #   - shipped symbols: the published ABI_BASELINE ubuntu-24.04 .deb for
+    #     this runner's architecture, checked against the release's
+    #     SHA256SUMS, against this commit's libraries, both sides stripped to
+    #     their ELF symbols.
+    # The compared HEAD build is held to the release hardening set, so the
+    # comparison is of the shipped profile. An ABI finding never fails the
+    # job (--fail-on none); a broken tool, build or download does. Not a
+    # required check (.github/required-checks.txt).
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      ABI_BASELINE: v1.9.1
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - uses: ./.github/actions/bootstrap-deps
+      with:
+        extra-packages: abigail-tools
+    - name: ABI diff against the baseline tag (types and symbols, report-only)
+      run: |
+        out="$RUNNER_TEMP/abi-diff"
+        mkdir -p "$out"
+        abidiff --version
+        bash tools/ci/abi-diff.sh --baseline-ref "$ABI_BASELINE" \
+          --keep-libs "$out/libs" \
+          --report "$out/tag-report.txt" --summary "$out/tag-summary.md"
+        cat "$out/tag-summary.md" >> "$GITHUB_STEP_SUMMARY"
+    - name: The compared HEAD build kept the release hardening
+      run: bash tools/ci/check-hardening-flags.sh --built "$RUNNER_TEMP/abi-diff/libs/head/lib"
+    - name: ABI diff against the shipped baseline package (symbols, report-only)
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        out="$RUNNER_TEMP/abi-diff"
+        ver="${ABI_BASELINE#v}"
+        arch="$(uname -m)"
+        mkdir -p "$out/release"
+        gh release download "$ABI_BASELINE" --repo "$GITHUB_REPOSITORY" \
+          --dir "$out/release" --pattern SHA256SUMS \
+          --pattern "mmt-dpi_${ver}_*_ubuntu-24.04_${arch}.deb"
+        debs=("$out/release/mmt-dpi_${ver}"_*"_ubuntu-24.04_${arch}.deb")
+        test "${#debs[@]}" -eq 1 && test -f "${debs[0]}"
+        deb="$(basename "${debs[0]}")"
+        (cd "$out/release" && awk -v f="$deb" '$2 == f' SHA256SUMS | sha256sum -c -)
+        bash tools/ci/abi-diff.sh --release-deb "${debs[0]}" \
+          --head-dir "$out/libs/head/lib" \
+          --report "$out/release-report.txt" --summary "$out/release-summary.md"
+        cat "$out/release-summary.md" >> "$GITHUB_STEP_SUMMARY"
+    - name: Upload the ABI reports
+      if: success() || failure()
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: abi-diff-reports
+        path: |
+          ${{ runner.temp }}/abi-diff/*.txt
+          ${{ runner.temp }}/abi-diff/*.md
+        if-no-files-found: warn
+        retention-days: 14

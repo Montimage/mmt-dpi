@@ -1,0 +1,106 @@
+# api-contract-waivers.txt — public MMTAPI functions whose contract entry in
+# test_api_contracts.c is NO_ERROR_PATH: a behaviour assertion only, because
+# the function has no invalid input it reports on (a pure accessor of a
+# caller-owned record, a function with no parameters, a total function, an
+# unconditional setter). The reason for each lives on its table entry.
+#
+# Ratchet (tools/ci/check-api-contracts.sh, issue #525): the NO_ERROR_PATH
+# entries must be exactly the names below. A new waiver is added here, in
+# review; when an entry gains an error-path assertion its name must be
+# removed. The list only shrinks.
+#
+# One name per line; blank lines and `#` comments are ignored.
+close_extraction
+debug_extracted_attributes_printout_handler
+get_attr_data
+get_attr_data_len
+get_attr_data_type
+get_attr_id
+get_attr_offset
+get_attr_protocol_id
+get_attr_protocol_index
+get_attr_scope
+get_attr_status
+get_children_stats
+get_classification_threshold
+get_last_activity_time
+get_session_byte_count
+get_session_content_class_id
+get_session_content_flags
+get_session_content_type_id
+get_session_data_byte_count
+get_session_data_cap_volume
+get_session_data_packet_count
+get_session_dl_byte_count
+get_session_dl_cap_byte_count
+get_session_dl_cap_packet_count
+get_session_dl_data_byte_count
+get_session_dl_data_packet_count
+get_session_dl_packet_count
+get_session_handler
+get_session_id
+get_session_init_time
+get_session_last_activity_time
+get_session_last_packet_direction
+get_session_outoforder_count
+get_session_packet_cap_count
+get_session_packet_count
+get_session_proto_path_direction
+get_session_protocol_hierarchy
+get_session_protocol_index
+get_session_retransmission_count
+get_session_rtt
+get_session_setup_direction
+get_session_total_byte_count
+get_session_total_data_byte_count
+get_session_total_data_cap_volume
+get_session_total_data_packet_count
+get_session_total_dl_byte_count
+get_session_total_dl_cap_byte_count
+get_session_total_dl_cap_packet_count
+get_session_total_dl_data_byte_count
+get_session_total_dl_data_packet_count
+get_session_total_dl_packet_count
+get_session_total_packet_cap_count
+get_session_total_packet_count
+get_session_total_ul_byte_count
+get_session_total_ul_cap_byte_count
+get_session_total_ul_cap_packet_count
+get_session_total_ul_data_byte_count
+get_session_total_ul_data_packet_count
+get_session_total_ul_packet_count
+get_session_ul_byte_count
+get_session_ul_cap_byte_count
+get_session_ul_cap_packet_count
+get_session_ul_data_byte_count
+get_session_ul_data_packet_count
+get_session_ul_packet_count
+get_user_session_context
+init_extraction
+iterate_through_mmt_handlers
+iterate_through_protocols
+mmt_close_handler
+mmt_drop_packet
+mmt_print_all_protocols
+mmt_strcasecmp
+mmt_strcmp
+mmt_strncasecmp
+mmt_strncmp
+mmt_tolower
+mmt_toupper
+mmt_version
+process_session_timer_handler
+register_pre_post_analysis_functions
+register_pre_post_classification_functions
+register_proto_context_init_cleanup_function
+register_session_data_cleanup_function
+register_session_data_initialization_function
+register_session_equal_function
+register_session_hash_function
+register_session_timeout_handler
+register_session_timer_handler
+register_sessionizer_function
+reset_statistics
+set_session_timeout_delay
+set_user_session_context
+short_time_diff

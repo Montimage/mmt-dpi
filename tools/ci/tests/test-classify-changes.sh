@@ -132,7 +132,7 @@ WORKFLOWS = {
         "single": ["unit-tests-arm", "unit-tests-unsigned-char",
                    "toolchain-floor", "toolchain-ceiling", "coverage", "lint",
                    "codeql", "root-install", "assertions-live", "enablesec",
-                   "fuzz"],
+                   "fuzz", "abi-diff"],
         "matrix": ["unit-tests", "sanitizer-tests", "resource-budgets"],
         "docs": ["build", "verify-helpers", "pre-commit", "doc-validators",
                  "version-agreement", "secret-scan", "site-onboarding"],
