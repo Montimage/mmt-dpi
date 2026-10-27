@@ -14,10 +14,11 @@
 # is detected by .github/workflows/base-image-refresh.yml: once a day it runs
 # tools/ci/refresh-base-images.sh --check, which resolves every tag below to
 # its current upstream digest and fails on a moved tag or on a pinned digest
-# the registry no longer serves (quay.io drops the previous
-# centos:stream9 manifest on every retag, issues #587/#590); it then proposes
-# the --write repin as one pull request (or, without a dedicated token, one
-# issue carrying the diff).
+# the registry no longer serves; it then proposes the --write repin as one
+# pull request (or, without a dedicated token, one issue carrying the diff).
+# The quay.io pins are also checked hourly (--registry quay.io): quay.io
+# drops the previous centos:stream9/stream10 manifest the moment it retags
+# (issues #587/#590/#641), so every pull of the old pin fails at once.
 #
 # Pins are name:tag@sha256:<index-digest>; the index digest must cover both
 # linux/amd64 and linux/arm64 (the arm64 matrix leg runs natively on the
@@ -45,7 +46,7 @@ buildpack-deps:trixie@sha256:4a40a9b7f5b25cced5d5367108754eeb825a3e64c05c94e1ab7
 ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944
 debian:13@sha256:4c25275446ca371766b8b093c696782eabce06263fccacb8d5d813b3dc44b308
 rockylinux/rockylinux:10@sha256:827d37bc128288ccf160ee318bb3cb92d591164cb217e92f8bc61e3982ae1834
-quay.io/centos/centos:stream10@sha256:6f8d618844ed5af4365bad24bea19fb0435fd5ec808201af9aeb19d7a28eb515
+quay.io/centos/centos:stream10@sha256:99b8fe27dd4958b5dc2630ce35f5f6a7ff7bf9b2b1a72078102fde50d3277550
 # Install smoke matrix only (issue #493): the advertised distributions outside
 # the release matrix. registry.opensuse.org where upstream publishes there, to
 # stay clear of Docker Hub pull limits. Fedora comes from the Docker Hub official

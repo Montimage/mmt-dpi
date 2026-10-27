@@ -10,6 +10,16 @@ name: Base image refresh
 # 404s the previous manifest at once (issues #587/#590), so a weekly diff
 # would leave the release build broken for up to a week.
 #
+# Hourly for the quay.io pins (issue #641): quay.io retags stream9 and
+# stream10 at any hour and the old pin fails to pull at once, so the daily
+# run (which GitHub has started 4-6 h late) left PR CI broken for up to a
+# day. The hourly run checks only `--registry quay.io` — two pins, no Docker
+# Hub requests, and no hourly failure for a Docker Hub tag that moved while
+# its old digest still pulls — and any violation it finds triggers the same
+# full --write repin. Scheduled runs are best-effort (GitHub delays them
+# under load), so the bound is "about an hour after the retag", not a
+# guarantee; the residual window is the retag-to-repin time.
+#
 # On drift or a missing digest the `drift` job fails (the visible signal) and
 # the `repin` job rewrites every drifted pin with --write. Those pins are
 # quoted in workflow files, and the built-in GITHUB_TOKEN can never push a
@@ -28,13 +38,21 @@ name: Base image refresh
 
 on:
   schedule:
-    - cron: '41 5 * * *'
+    - cron: '41 5 * * *'   # every pin
+    - cron: '17 * * * *'   # quay.io pins only (QUAY_HOURLY below)
   workflow_dispatch:
 
-# One refresh at a time; a dispatched run never races the scheduled one on
-# the shared repin branch or issue.
+env:
+  # Must equal the hourly cron string above: github.event.schedule carries
+  # the string of the schedule that fired, and only that one narrows the check.
+  QUAY_HOURLY: '17 * * * *'
+
+# One run per scope at a time. A newer pending run replaces an older pending
+# one in its group, so the hourly runs get a group of their own and can never
+# displace a pending daily or dispatched full check; the repin job has a
+# shared group below, so two scopes never race on the repin branch or issue.
 concurrency:
-  group: ${{ github.workflow }}
+  group: ${{ github.workflow }}-${{ github.event.schedule == '17 * * * *' && 'quay' || 'full' }}
   cancel-in-progress: false
 
 # Least-privilege default (F-SEC-005): only the repin job gets a write scope.
@@ -56,9 +74,13 @@ jobs:
       - name: Every recorded pin matches its upstream tag
         id: check
         continue-on-error: true
+        env:
+          SCHEDULE: ${{ github.event.schedule }}
         run: |
           set +e
-          bash tools/ci/refresh-base-images.sh --check
+          scope=()
+          if [ "$SCHEDULE" = "$QUAY_HOURLY" ]; then scope=(--registry quay.io); fi
+          bash tools/ci/refresh-base-images.sh --check "${scope[@]}"
           rc=$?
           echo "rc=$rc" >> "$GITHUB_OUTPUT"
           exit "$rc"
@@ -81,6 +103,9 @@ jobs:
     if: always() && needs.drift.outputs.rc == '1'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    concurrency:
+      group: ${{ github.workflow }}-repin
+      cancel-in-progress: false
     permissions:
       contents: read   # actions/checkout; the push uses the dedicated token
       issues: write    # open or update the repin issue when there is none
@@ -118,7 +143,15 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B "$BRANCH"
           git commit -qam "ci(images): repin drifted base images (#491)"
-          git push --force origin "$BRANCH"
+          # Re-push only a changed tree: while a pin stays missing the hourly
+          # run proposes the same repin every hour, and a new commit each time
+          # would restart the PR's CI before it can finish (issue #641).
+          if git fetch -q origin "$BRANCH" 2>/dev/null \
+             && [ "$(git rev-parse 'HEAD^{tree}')" = "$(git rev-parse 'FETCH_HEAD^{tree}')" ]; then
+            echo "$BRANCH already carries this repin — not re-pushed"
+          else
+            git push --force origin "$BRANCH"
+          fi
           {
             echo "Automated repin from \`tools/ci/refresh-base-images.sh --write\` (issue #491)."
             echo
@@ -161,10 +194,14 @@ jobs:
           } > "$RUNNER_TEMP/body.md"
           # Only an issue this job opened: anyone can file an issue with the
           # same title, and its author could later rewrite the body the job
-          # put there (a forged "apply this diff").
-          issue="$(gh issue list --state open --limit 200 --author app/github-actions \
+          # put there (a forged "apply this diff"). Searched by title and
+          # filtered on the bot login: `--author app/github-actions` matches
+          # nothing, so every run used to open a new duplicate (issue #641).
+          # The oldest open one is the one kept up to date.
+          issue="$(gh issue list --state open --limit 100 --search "in:title \"$title\"" \
                     --json number,title,author \
-                    --jq ".[] | select(.title == \"$title\" and .author.is_bot) | .number" | head -n1)"
+                    --jq ".[] | select(.title == \"$title\" and .author.is_bot and .author.login == \"app/github-actions\") | .number" \
+                    | sort -n | head -n1)"
           if [ -n "$issue" ]; then
             gh issue edit "$issue" --body-file "$RUNNER_TEMP/body.md"
           else

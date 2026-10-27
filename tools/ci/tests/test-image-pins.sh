@@ -38,6 +38,13 @@
 #   registry error on the pinned digest (not "not found")      -> 2, not missing
 #   --write repins baseline + workflow, then both gates pass   -> 0
 #   --write keeps a trailing retire-by comment                 -> 0
+#   --registry quay.io ignores a drifted Docker Hub pin        -> 0, not resolved
+#   --registry quay.io reports a missing quay.io pin           -> 1
+#   --write --registry quay.io leaves the Docker Hub pin       -> 0
+#   --registry with a host no entry uses / no / a bad host     -> 2
+# this checkout's base-image-refresh.yml (issue #641): the hourly cron, the
+# QUAY_HOURLY scope selector and the concurrency key name one string, and the
+# repin issue lookup does not rely on `--author app/github-actions`
 #
 # Usage: bash tools/ci/tests/test-image-pins.sh
 # Exit: 0 = all checks passed, 1 = at least one failed, 2 = self-test broke.
@@ -350,6 +357,48 @@ expect 0 "the repinned entry keeps its retire-by comment" \
     "${FX}/tools/ci/base-images.txt"
 
 expect 2 "unknown argument" refresh --bogus
+
+# --- --registry: the hourly quay.io-only scope (issue #641) ------------------
+reset_fixture
+reset_registry
+serve "ubuntu:24.04" "${C}"          # Docker Hub drift, old digest still served
+expect 0 "--registry quay.io ignores a drifted Docker Hub pin" \
+    refresh --check --registry quay.io
+expect_out "reports the scope" "pin(s) hosted on quay.io match"
+if grep -q "ubuntu" "${WORK}/out"; then
+    echo "  ✗ --registry quay.io resolved a Docker Hub entry"
+    sed 's/^/      /' "${WORK}/out"
+    failures=$((failures + 1))
+else
+    echo "  ✓ --registry quay.io resolves no Docker Hub entry"
+fi
+expect 1 "without --registry the same drift fails" refresh --check
+
+rm "$(regfile "quay.io/centos/centos@${B}")"
+serve "quay.io/centos/centos:stream9" "${C}"
+expect 1 "--registry quay.io reports a garbage-collected quay.io pin" \
+    refresh --check --registry quay.io
+expect_out "names it missing" "missing  quay.io/centos/centos:stream9"
+expect 0 "--write --registry quay.io repins it" refresh --write --registry quay.io
+expect 0 "the quay.io pin is rewritten" \
+    grep -qx "quay.io/centos/centos:stream9@${C}" "${FX}/tools/ci/base-images.txt"
+expect 0 "the drifted Docker Hub pin is left as it was" \
+    grep -qx "ubuntu:24.04@${A}" "${FX}/tools/ci/base-images.txt"
+expect 2 "--registry with a host no entry uses" refresh --check --registry ghcr.io
+expect 2 "--registry without a host" refresh --check --registry
+expect 2 "--registry with a path, not a host" refresh --check --registry quay.io/centos
+
+echo "base-image-refresh.yml:"
+WF="${REPO_ROOT}/.github/workflows/base-image-refresh.yml"
+hourly="$(sed -n "s/^    - cron: '\([^']*\)'.*quay\.io.*/\1/p" "${WF}")"
+expect 0 "an hourly quay.io cron exists" test -n "${hourly}"
+expect 0 "QUAY_HOURLY names that cron" grep -qF "QUAY_HOURLY: '${hourly}'" "${WF}"
+expect 0 "the concurrency key names that cron" \
+    grep -qF "github.event.schedule == '${hourly}'" "${WF}"
+expect 0 "the hourly scope runs --registry quay.io" \
+    grep -qF 'scope=(--registry quay.io)' "${WF}"
+expect 1 "the repin issue lookup does not filter on --author app/github-actions" \
+    grep -qE -- 'gh issue list .*--author' "${WF}"
 
 if [ "${failures}" -ne 0 ]; then
     echo "✗ ${failures} image-pin self-test check(s) failed"

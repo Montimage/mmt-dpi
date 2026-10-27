@@ -153,7 +153,7 @@ jobs:
           - { name: ubuntu-26.04,    image: "ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944",                    pkg: deb }
           - { name: debian-13,       image: "debian:13@sha256:4c25275446ca371766b8b093c696782eabce06263fccacb8d5d813b3dc44b308",                       pkg: deb }
           - { name: rocky-10,        image: "rockylinux/rockylinux:10@sha256:827d37bc128288ccf160ee318bb3cb92d591164cb217e92f8bc61e3982ae1834",        pkg: rpm }
-          - { name: centos-stream10, image: "quay.io/centos/centos:stream10@sha256:6f8d618844ed5af4365bad24bea19fb0435fd5ec808201af9aeb19d7a28eb515",  pkg: rpm }
+          - { name: centos-stream10, image: "quay.io/centos/centos:stream10@sha256:99b8fe27dd4958b5dc2630ce35f5f6a7ff7bf9b2b1a72078102fde50d3277550",  pkg: rpm }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
