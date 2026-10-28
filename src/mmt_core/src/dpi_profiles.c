@@ -45,7 +45,7 @@
 #define MMT_DPI_CUSTOM_PROFILES_MAX 32
 
 /* Predefined profiles. MMT_DPI_PROFILE_DEFAULT mirrors the initialiser in
- * packet_registry.c (mmt_init_handler): keep the two in sync — the test
+ * packet_registry_handler.c (mmt_init_handler): keep the two in sync — the test
  * suite pins the equivalence. */
 const mmt_dpi_profile_t MMT_DPI_PROFILE_DEFAULT = {
     /* .classification_max_depth = */ PROTO_PATH_SIZE - 1,

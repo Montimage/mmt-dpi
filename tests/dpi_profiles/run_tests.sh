@@ -6,7 +6,7 @@
 # set_classified_proto().
 #
 # The suite source-compiles the mmt_core objects the engine needs
-# (packet_registry, packet_pipeline, packet_session, packet_stats, memory,
+# (packet_registry*, packet_pipeline, packet_session, packet_stats, memory,
 # hashmap, mmt_data, mmt_inet_ntop, proto_meta, plugins_engine,
 # extraction_lib, mmt_init) plus dpi_profiles.c and hash_utils.c — the
 # same recipe as tests/core_engine — so gcov records them under --coverage
@@ -27,7 +27,8 @@ INCS=(-I"$CORE_PRIVATE_INC" -I"$CORE_PUBLIC_INC" -I"$PROJECT_DIR/src/mmt_tcpip/l
 
 echo "Compiling dpi-profiles tests..."
 
-C_SOURCES="packet_processing.c packet_registry.c packet_pipeline.c \
+C_SOURCES="packet_processing.c packet_registry.c packet_registry_classify.c \
+packet_registry_handler.c packet_registry_attr.c packet_pipeline.c \
 packet_session.c packet_stats.c memory.c \
 hashmap.c mmt_data.c mmt_inet_ntop.c \
 proto_meta.c plugins_engine.c extraction_lib.c mmt_init.c \

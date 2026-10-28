@@ -45,16 +45,17 @@
  *       single-threaded per the contract).
  *
  *       This mode also exercises the COLD concurrent-create path (#69):
- *       mmt_init_handler() enables analysis/classification on the SHARED global
- *       protocol descriptors (enable_protocol_analysis /
- *       enable_protocol_classification write protocol->data_analyser.status /
- *       protocol->classify_next.status — fields read lock-free on the per-packet
- *       hot path, so they cannot be mutex-guarded without defeating the lock-free
- *       read design). The workers are the FIRST callers after init_extraction()
- *       (no main-thread warmup), so they run those writes concurrently from cold.
- *       PR #68 dodged this with a warmup handler that finalised the flags single-
- *       threaded; #69 makes the flag accesses atomic (relaxed) instead, so the
- *       warmup is removed and this mode proves the cold path is race-free.
+ *       mmt_init_handler() enables analysis/classification for every protocol
+ *       (enable_protocol_analysis / enable_protocol_classification write the
+ *       analysis_enabled / classify_enabled switches — fields read lock-free on
+ *       the per-packet hot path, so they cannot be mutex-guarded without
+ *       defeating the lock-free read design). The workers are the FIRST callers
+ *       after init_extraction() (no main-thread warmup), so they run those
+ *       writes concurrently from cold. PR #68 dodged this with a warmup handler
+ *       that finalised the flags single-threaded; #69 made the flag accesses
+ *       atomic (relaxed) instead, and #549 moved the switches from the SHARED
+ *       global protocol descriptors into each handler's own snapshot, so this
+ *       mode proves the cold path is race-free.
  *
  *   registry-stress [num_threads] [iterations]
  *       Spawns N threads that concurrently HAMMER the global-registry mutation
@@ -540,20 +541,18 @@ static int run_handler_churn(int num_threads, int iterations) {
     init_extraction();
     printf("[handler-churn] %d threads x %d iterations concurrently "
            "create/destroy handlers from COLD, hammering configured_handlers_map_mutex (#67) "
-           "and the shared protocol-descriptor status flags (#69)\n",
+           "and the per-handler protocol switches (#69/#549)\n",
            num_threads, iterations);
 
     /* Issue #69: NO main-thread warmup handler. The workers below are the very
      * first callers of mmt_init_handler() after init_extraction(), so they run
      * enable_protocol_analysis()/enable_protocol_classification() concurrently
-     * from cold — the first writes to the SHARED global protocol-descriptor
-     * status flags (protocol->data_analyser.status / classify_next.status),
-     * which are read lock-free on the per-packet hot path. PR #68 papered over
-     * this with a warmup handler that finalised those flags single-threaded
-     * before the concurrent phase; that workaround is intentionally removed here
-     * so this mode actually exercises the cold concurrent-create path. With the
-     * #69 fix (atomic accesses to those flags) TSan is clean; without it TSan
-     * flags the read/write race in enable_protocol_analysis. */
+     * from cold. Before #549 those wrote status flags on the SHARED global
+     * protocol descriptors (read lock-free on the per-packet hot path); PR #68
+     * papered over that race with a warmup handler, #69 made the accesses
+     * atomic, and #549 moved the switches into each handler's own
+     * configured_protocols[] snapshot. The warmup stays removed so this mode
+     * keeps exercising the cold concurrent-create path under TSan. */
 
     for (t = 0; t < num_threads; t++) {
         workers[t].tid = t;

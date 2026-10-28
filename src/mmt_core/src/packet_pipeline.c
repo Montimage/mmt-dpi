@@ -22,7 +22,7 @@
  * (NDEBUG undefined) or sanitizer-instrumented builds, so production hot paths
  * pay nothing; the accessors below are always exported so test harnesses link
  * regardless of the profile the library was built with. The increments use
- * relaxed atomics, matching proto_status_load/proto_status_store above, so the
+ * relaxed atomics, matching proto_status_load/proto_status_store (packet_processing.h), so the
  * counters stay race-free on the multi-threaded packet path. */
 #if !defined(NDEBUG) || defined(MMT_BUILD_ASAN) || defined(MMT_BUILD_TSAN)
 #define MMT_CAPLEN_GUARD_STATS 1
@@ -705,8 +705,8 @@ int proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * config
      * for is enforced below — classification_max_depth (issue #87) bounds
      * the whole deeper-layer detection round. */
     //Verify that classification is not disabled for this protocol
-    // Issue #69: lock-free atomic read (relaxed); compiles to a plain load.
-    if (proto_status_load(&configured_protocol->protocol->classify_next.status)) {
+    // Issues #69/#549: lock-free relaxed atomic read of this handler's switch.
+    if (proto_status_load(&configured_protocol->classify_enabled)) {
         mmt_classify_verdict_t classif_status = MMT_CLASSIFY_CONTINUE;
         //Pre-classification
         if (configured_protocol->protocol->classify_next.pre_classify) {
@@ -1001,8 +1001,8 @@ int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_p
      * MMT_DROP/MMT_SKIP. */
     int retval = MMT_CONTINUE;
     //Verify that analysis is not disabled for this protocol
-    // Issue #69: lock-free atomic read (relaxed); compiles to a plain load.
-    if (!proto_status_load(&configured_protocol->protocol->data_analyser.status)) {
+    // Issues #69/#549: lock-free relaxed atomic read of this handler's switch.
+    if (!proto_status_load(&configured_protocol->analysis_enabled)) {
         return retval;
     }
     //Pre-analysis

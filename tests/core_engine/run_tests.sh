@@ -6,7 +6,7 @@
 # memoized packet-offset cache.
 #
 # The suite source-compiles packet_processing.c and the objects it needs from
-# src/mmt_core (packet_registry, packet_pipeline, packet_session,
+# src/mmt_core (packet_registry*, packet_pipeline, packet_session,
 # packet_stats, memory, hashmap, mmt_data, mmt_inet_ntop, proto_meta,
 # plugins_engine, extraction_lib, mmt_init, dpi_profiles) plus
 # hash_utils.c, so gcov records them under --coverage and ASan/UBSan
@@ -49,7 +49,8 @@ echo "Compiling the classifier-typedef probe (C and C++)..."
 
 echo "Compiling core-engine tests..."
 
-C_SOURCES="packet_processing.c packet_registry.c packet_pipeline.c \
+C_SOURCES="packet_processing.c packet_registry.c packet_registry_classify.c \
+packet_registry_handler.c packet_registry_attr.c packet_pipeline.c \
 packet_session.c packet_stats.c memory.c \
 hashmap.c mmt_data.c mmt_inet_ntop.c \
 proto_meta.c plugins_engine.c extraction_lib.c mmt_init.c \

@@ -7,7 +7,7 @@
  *     predefined constants, mmt_apply_dpi_profile(), the by-name lookup,
  *     the profiles-file loader, the env hook (MMT_DPI_PROFILE(S)_FILE) and
  *     the depth setter/getter;
- *   src/mmt_core/src/packet_registry.c — handler defaults stay equivalent
+ *   src/mmt_core/src/packet_registry_handler.c — handler defaults stay equivalent
  *     to MMT_DPI_PROFILE_DEFAULT, and the env hook applies at init;
  *   src/mmt_core/src/packet_pipeline.c — classification_max_depth gating in
  *     proto_packet_classify_next() (checker walk skipped) and

@@ -24,6 +24,7 @@
       "commit": "2ab7b73516113009622cb3d32194d20121457010",
       "audit": "MODERNIZATION_REPORT.md: 82.9% = 5,660/6,831 executable lines over 30 instrumented library files; branch coverage Not Assessed",
       "line_pct": 82.9,
+      "split_sources": "Issue #549 split packet_registry.c into packet_registry.c, packet_registry_classify.c, packet_registry_handler.c and packet_registry_attr.c; all four are listed, so the cohort still measures the 30 audited sources' lines (33 paths).",
       "sources": [
         "src/mmt_business_app/mmt_business_app.c",
         "src/mmt_business_app/proto_ips_data.c",
@@ -43,6 +44,9 @@
         "src/mmt_core/src/packet_pipeline.c",
         "src/mmt_core/src/packet_processing.c",
         "src/mmt_core/src/packet_registry.c",
+        "src/mmt_core/src/packet_registry_attr.c",
+        "src/mmt_core/src/packet_registry_classify.c",
+        "src/mmt_core/src/packet_registry_handler.c",
         "src/mmt_core/src/packet_session.c",
         "src/mmt_core/src/packet_stats.c",
         "src/mmt_core/src/plugins_engine.c",

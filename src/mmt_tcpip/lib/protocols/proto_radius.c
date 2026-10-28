@@ -62,7 +62,7 @@ read_be32( const uint8_t *x )
  * — and copies it in one of a few shapes. radius_tlv_desc[] names the TLV
  * and the shape of each such attribute; radius_tlv_extraction() finds the
  * entry through extracted_data->field_id, which the core sets on every
- * registered attribute (packet_registry.c, register_extraction_attribute).
+ * registered attribute (packet_registry_attr.c, register_extraction_attribute).
  * The length guards are those of the per-attribute functions this table
  * replaced (#128, #205, #331): the copy never reads past the TLV, which the
  * parser stored only when it lay inside the capture.

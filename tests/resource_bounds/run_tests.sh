@@ -238,7 +238,8 @@ build_timeout_sweep() {
     # The session-expiry code under test plus the core objects it links
     # against (same source set as tests/core_engine), compiled beside it.
     local core="${REPO_ROOT}/src/mmt_core/src" objs=() src
-    for src in packet_processing.c packet_registry.c packet_pipeline.c \
+    for src in packet_processing.c packet_registry.c packet_registry_classify.c \
+               packet_registry_handler.c packet_registry_attr.c packet_pipeline.c \
                packet_session.c packet_stats.c memory.c hashmap.c mmt_data.c \
                mmt_inet_ntop.c proto_meta.c plugins_engine.c extraction_lib.c \
                mmt_init.c dpi_profiles.c hash_utils.c; do

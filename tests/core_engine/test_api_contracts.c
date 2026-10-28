@@ -2150,31 +2150,31 @@ static void e_disable_protocol_statistics(void) {
     CHECK(g_cfg->stats_reporting_status == 1, "NULL handler: no effect");
 }
 
-/* The analysis/classification status lives on the shared protocol_t; each
- * contract restores what it flips. */
+/* The analysis/classification switch lives on the handler's own protocol
+ * snapshot (issue #549); each contract restores what it flips. */
 #define AC_STATUS(enable, disable, member) \
 static void b_##enable(void) { \
-    int *st = &g_pc->member.status; \
+    int *st = &g_cfg->configured_protocols[AC_PROTO_C].member; \
     *st = 0; enable(g_cfg, AC_PROTO_C); \
     CHECK(*st == 1, #enable " sets the status"); \
 } \
 static void e_##enable(void) { \
-    int *st = &g_pc->member.status; \
+    int *st = &g_cfg->configured_protocols[AC_PROTO_C].member; \
     *st = 0; enable(g_cfg, PROTO_MAX_IDENTIFIER); enable(NULL, AC_PROTO_C); \
     CHECK(*st == 0, #enable ": invalid id or NULL handler, no effect"); \
 } \
 static void b_##disable(void) { \
-    int *st = &g_pc->member.status; \
+    int *st = &g_cfg->configured_protocols[AC_PROTO_C].member; \
     *st = 1; disable(g_cfg, AC_PROTO_C); \
     CHECK(*st == 0, #disable " clears the status"); \
 } \
 static void e_##disable(void) { \
-    int *st = &g_pc->member.status; \
+    int *st = &g_cfg->configured_protocols[AC_PROTO_C].member; \
     *st = 1; disable(g_cfg, PROTO_MAX_IDENTIFIER); disable(NULL, AC_PROTO_C); \
     CHECK(*st == 1, #disable ": invalid id or NULL handler, no effect"); \
 }
-AC_STATUS(enable_protocol_analysis, disable_protocol_analysis, data_analyser)
-AC_STATUS(enable_protocol_classification, disable_protocol_classification, classify_next)
+AC_STATUS(enable_protocol_analysis, disable_protocol_analysis, analysis_enabled)
+AC_STATUS(enable_protocol_classification, disable_protocol_classification, classify_enabled)
 
 static void b_is_valid_protocol_id(void) {
     CHECK(is_valid_protocol_id(0) && is_valid_protocol_id(PROTO_MAX_IDENTIFIER - 1), "range bounds");

@@ -37,17 +37,19 @@ CITING_DOCS=(docs/USER_GUIDE.md docs/THREADING.md docs/Global-Handler.md docs/MM
 # <path>:<start>[-<end>] <TAB> <regex the start line must match>
 #   [<TAB> <regex the end line must match>]
 CITATIONS="$(cat <<'TABLE'
-src/mmt_core/src/packet_registry.c:1260	^bool init_extraction\(\)
-src/mmt_core/src/packet_registry.c:1308-1309	^ *init_plugins\(\);	mmt_configured_handlers_map = init_map_space
-src/mmt_core/src/packet_registry.c:955	^mmt_handler_t \*mmt_init_handler\(
-src/mmt_core/src/packet_registry.c:1102	insert_key_value\(mmt_configured_handlers_map
+src/mmt_core/src/packet_registry.c:608	^bool init_extraction\(\)
+src/mmt_core/src/packet_registry.c:650-651	^ *init_plugins\(\);	if \(!init_handlers_map\(\)\)
+src/mmt_core/src/packet_registry_handler.c:408	mmt_configured_handlers_map = init_map_space
+src/mmt_core/src/packet_registry_handler.c:116	^mmt_handler_t \*mmt_init_handler\(
+src/mmt_core/src/packet_registry_handler.c:263	insert_key_value\(mmt_configured_handlers_map
 src/mmt_core/src/packet_pipeline.c:1502	^bool packet_process\(
-src/mmt_core/src/packet_registry.c:1135	^void mmt_close_handler\(mmt_handler_t
-src/mmt_core/src/packet_registry.c:1185	delete_key_value\(mmt_configured_handlers_map
-src/mmt_core/src/packet_registry.c:1338	^void close_extraction\(\)
-src/mmt_core/src/packet_registry.c:1338-1356	^void close_extraction\(\)	^\}$
-src/mmt_core/src/packet_registry.c:1341	iterate_through_mmt_handlers\(mmt_close_handler_internal
-src/mmt_core/src/packet_registry.c:1355	^ *close_plugins\(\);
+src/mmt_core/src/packet_registry_handler.c:296	^void mmt_close_handler\(mmt_handler_t
+src/mmt_core/src/packet_registry_handler.c:346	delete_key_value\(mmt_configured_handlers_map
+src/mmt_core/src/packet_registry.c:659	^void close_extraction\(\)
+src/mmt_core/src/packet_registry.c:659-671	^void close_extraction\(\)	^\}$
+src/mmt_core/src/packet_registry.c:662	^ *close_handlers_map\(\);
+src/mmt_core/src/packet_registry_handler.c:414	iterate_through_mmt_handlers\(mmt_close_handler_internal
+src/mmt_core/src/packet_registry.c:670	^ *close_plugins\(\);
 src/examples/packet_handler.c:63	if *\(!init_extraction\(\)\)
 src/examples/packet_handler.c:69	mmt_handler = mmt_init_handler\(
 src/examples/packet_handler.c:100	if *\(!packet_process\(mmt_handler

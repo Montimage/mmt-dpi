@@ -4,7 +4,7 @@
  * Drives the two largest central files directly, source-compiled so gcov
  * records them:
  *
- *   src/mmt_core/src/packet_registry.c — handler lifecycle
+ *   src/mmt_core/src/packet_registry*.c — handler lifecycle
  *     (init_extraction/mmt_init_handler/mmt_close_handler/close_extraction),
  *     attribute registration and the handler registries;
  *   src/mmt_core/src/packet_pipeline.c — the packet dispatch path
@@ -687,16 +687,16 @@ static void test_session_lifecycle(void) {
     CHECK(enable_port_classify_payload_confirm(h) == 1 &&
           disable_port_classify_payload_confirm(h) == 1, "payload-confirm toggles");
     disable_protocol_analysis(h, TEST_PROTO_A);
-    CHECK(h->configured_protocols[TEST_PROTO_A].protocol->data_analyser.status == 0,
+    CHECK(h->configured_protocols[TEST_PROTO_A].analysis_enabled == 0,
           "disable analysis flips the status");
     enable_protocol_analysis(h, TEST_PROTO_A);
-    CHECK(h->configured_protocols[TEST_PROTO_A].protocol->data_analyser.status == 1,
+    CHECK(h->configured_protocols[TEST_PROTO_A].analysis_enabled == 1,
           "enable analysis restores the status");
     disable_protocol_classification(h, TEST_PROTO_B);
-    CHECK(h->configured_protocols[TEST_PROTO_B].protocol->classify_next.status == 0,
+    CHECK(h->configured_protocols[TEST_PROTO_B].classify_enabled == 0,
           "disable classification flips the status");
     enable_protocol_classification(h, TEST_PROTO_B);
-    CHECK(h->configured_protocols[TEST_PROTO_B].protocol->classify_next.status == 1,
+    CHECK(h->configured_protocols[TEST_PROTO_B].classify_enabled == 1,
           "enable classification restores the status");
     disable_protocol_statistics(h);
     CHECK(h->stats_reporting_status == 0, "statistics disabled");
@@ -1120,7 +1120,7 @@ static void test_analyse_verdict(void) {
     CHECK(h != NULL, "handler init for verdict test");
     if (h == NULL) return;
     enable_protocol_analysis(h, TEST_PROTO_V);
-    CHECK(h->configured_protocols[TEST_PROTO_V].protocol->data_analyser.status == 1,
+    CHECK(h->configured_protocols[TEST_PROTO_V].analysis_enabled == 1,
           "analysis enabled on V");
 
     /* The dropping analyser sits at weight 10 — the head of the chain, ahead
@@ -1149,6 +1149,72 @@ static void test_analyse_verdict(void) {
     CHECK(ret == MMT_CONTINUE, "disabled analysis returns MMT_CONTINUE");
 
     mmt_close_handler(h);
+}
+
+/* ============ issue #549: protocol switches are per handler ============= */
+
+/* Issue #549 (F-BUG-012): enable_/disable_protocol_analysis() and
+ * _classification() take a handler but used to write the shared global
+ * protocol_t, so disabling a protocol on one handler disabled it on every
+ * handler — and the next mmt_init_handler() silently re-enabled it for all.
+ * Two handlers on the same stack: switching A off on h1 must leave h2
+ * classifying and analysing A, and a handler created afterwards must not
+ * switch h1 back on. */
+static void test_per_handler_protocol_switches(void) {
+    fprintf(stderr, "  test: protocol analysis/classification switches are per handler\n");
+    char errbuf[256];
+    u_char pkt[64];
+    pkthdr_t hdr;
+
+    mmt_handler_t *h1 = mmt_init_handler(TEST_STACK_ID, 0, errbuf);
+    mmt_handler_t *h2 = mmt_init_handler(TEST_STACK_ID, 0, errbuf);
+    CHECK(h1 != NULL && h2 != NULL, "two handlers on the test stack");
+    if (h1 == NULL || h2 == NULL) {
+        if (h1 != NULL) mmt_close_handler(h1);
+        if (h2 != NULL) mmt_close_handler(h2);
+        return;
+    }
+
+    disable_protocol_classification(h1, TEST_PROTO_A);
+    disable_protocol_analysis(h1, TEST_PROTO_A);
+    CHECK(h1->configured_protocols[TEST_PROTO_A].classify_enabled == 0 &&
+          h1->configured_protocols[TEST_PROTO_A].analysis_enabled == 0,
+          "A switched off on h1");
+    CHECK(h2->configured_protocols[TEST_PROTO_A].classify_enabled == 1 &&
+          h2->configured_protocols[TEST_PROTO_A].analysis_enabled == 1,
+          "A still on for h2");
+
+    mmt_handler_t *h3 = mmt_init_handler(TEST_STACK_ID, 0, errbuf);
+    CHECK(h3 != NULL, "third handler created after the disable");
+    CHECK(h1->configured_protocols[TEST_PROTO_A].classify_enabled == 0 &&
+          h1->configured_protocols[TEST_PROTO_A].analysis_enabled == 0,
+          "a later mmt_init_handler() does not switch A back on for h1");
+    if (h3 != NULL) mmt_close_handler(h3);
+
+    /* h2 still classifies and analyses A. */
+    int cls = g_classify_calls, ana = g_analyse_calls;
+    make_packet(&hdr, pkt, sizeof(pkt), 0x549A0001u, 2000, 0);
+    CHECK(packet_process(h2, &hdr, pkt) == 1, "packet processed on h2");
+    CHECK(g_classify_calls > cls, "h2 still runs A's classification chain");
+    CHECK(g_analyse_calls > ana, "h2 still runs A's analysis chain");
+
+    /* h1 skips both chains for A. */
+    cls = g_classify_calls;
+    ana = g_analyse_calls;
+    make_packet(&hdr, pkt, sizeof(pkt), 0x549A0002u, 2000, 0);
+    CHECK(packet_process(h1, &hdr, pkt) == 1, "packet processed on h1");
+    CHECK(g_classify_calls == cls, "h1 skips A's classification chain");
+    CHECK(g_analyse_calls == ana, "h1 skips A's analysis chain");
+
+    /* Switching A back on for h1 restores both chains there. */
+    enable_protocol_classification(h1, TEST_PROTO_A);
+    enable_protocol_analysis(h1, TEST_PROTO_A);
+    make_packet(&hdr, pkt, sizeof(pkt), 0x549A0003u, 2000, 0);
+    CHECK(packet_process(h1, &hdr, pkt) == 1, "packet processed on re-enabled h1");
+    CHECK(g_classify_calls > cls && g_analyse_calls > ana, "h1 runs A's chains again");
+
+    mmt_close_handler(h1);
+    mmt_close_handler(h2);
 }
 
 /* ============ issue #255: tunnel-parent extension + prefix-free alloc ===== */
@@ -2425,6 +2491,7 @@ int main(void) {
     test_session_lifecycle();
     test_session_create_oom();
     test_analyse_verdict();
+    test_per_handler_protocol_switches();
     test_children_stats_extension();
     test_timeout_span_overflow();
     test_tunnel_parent_lifetime();
