@@ -49,6 +49,12 @@
 #   --shard K/N       of what is left, keep every N-th harness starting at
 #                     the K-th (1 <= K <= N): the N shards of one selection
 #                     are disjoint and together cover it, whatever is added.
+#   --only H[,H...]   before both: keep only the named harnesses, each the
+#                     <stem> of its run_<stem>.sh; repeatable. An empty list keeps
+#                     none (the run builds nothing and exits 0); an unknown
+#                     name is exit 2. The `changes` job of
+#                     phase0-baseline.yml names a pull request's harnesses
+#                     this way (issue #656, tools/ci/classify-changes.sh).
 # --list prints the harnesses the selection would run, one "<group> <harness>"
 # line each (group "coverage" under --profile coverage, COVERAGE_SKIP
 # applied), and exits without building. An empty selection runs nothing and
@@ -60,14 +66,17 @@
 # verdict table is appended to $GITHUB_STEP_SUMMARY.
 #
 # Usage: tools/phase0/run_all_harnesses.sh [--profile coverage]
-#            [--group G[,G...]]... [--shard K/N] [--list] [--log-dir DIR]
+#            [--only H[,H...]]... [--group G[,G...]]... [--shard K/N] [--list]
+#            [--log-dir DIR]
 # Exit: 0 when every (non-skipped) selected harness passes; 1 on any harness
-#       failure; 2 on setup failure (bad argument, no harnesses found, a
-#       COVERAGE_SKIP entry naming no harness, SDK build failed).
+#       failure; 2 on setup failure (bad argument, no harnesses found, an
+#       --only or COVERAGE_SKIP entry naming no harness, SDK build failed).
 set -euo pipefail
 
-USAGE="usage: run_all_harnesses.sh [--profile coverage] [--group G[,G...]] [--shard K/N] [--list] [--log-dir DIR]"
+USAGE="usage: run_all_harnesses.sh [--profile coverage] [--only H[,H...]] [--group G[,G...]] [--shard K/N] [--list] [--log-dir DIR]"
 MODE=default
+ONLY_SET=0
+ONLY_SEL=()
 GROUPS_SEL=()
 SHARD_K=1
 SHARD_N=1
@@ -78,6 +87,15 @@ while [ "$#" -gt 0 ]; do
         --profile)
             [ "${2:-}" = coverage ] || { echo "✗ --profile takes 'coverage' (got '${2:-}')" >&2; exit 2; }
             MODE=coverage
+            shift 2 ;;
+        --only)
+            [ "$#" -ge 2 ] || { echo "✗ --only takes a harness list (${USAGE})" >&2; exit 2; }
+            ONLY_SET=1
+            IFS=, read -r -a _only <<< "$2"
+            for o in "${_only[@]}"; do
+                [[ "${o}" =~ ^[a-z0-9_]+$ ]] || { echo "✗ --only: bad harness name '${o}'" >&2; exit 2; }
+                ONLY_SEL+=("${o}")
+            done
             shift 2 ;;
         --group)
             [ -n "${2:-}" ] || { echo "✗ --group takes a group list (${USAGE})" >&2; exit 2; }
@@ -160,11 +178,22 @@ prefix_var_of() {
     grep -o 'MMT_[A-Z_]*_PREFIX' "$1" | head -n 1 || true
 }
 
-# --- selection (--group, then --shard) -----------------------------------------
+# --- selection (--only, --group, then --shard) ---------------------------------
+declare -A ONLY=()
+if [ "${#ONLY_SEL[@]}" -gt 0 ]; then
+    for o in "${ONLY_SEL[@]}"; do
+        if [ ! -f "${TEST_DIR}/run_${o}.sh" ]; then
+            echo "✗ --only: no harness ${o} (no ${TEST_DIR}/run_${o}.sh)" >&2
+            exit 2
+        fi
+        ONLY["run_${o}.sh"]=1
+    done
+fi
 declare -A PROFILE=()
 SELECTED=()
 for h in "${HARNESSES[@]}"; do
     PROFILE["${h}"]="$(profile_of "${TEST_DIR}/${h}")"
+    [ "${ONLY_SET}" -eq 0 ] || [ -n "${ONLY[${h}]:-}" ] || continue
     if [ "${#GROUPS_SEL[@]}" -gt 0 ]; then
         keep=0
         for g in "${GROUPS_SEL[@]}"; do [ "${PROFILE[${h}]}" = "${g}" ] && keep=1; done
@@ -242,7 +271,8 @@ GHA=0
 [ "${GITHUB_ACTIONS:-}" = true ] && GHA=1
 
 selection="all"
-[ "${#GROUPS_SEL[@]}" -gt 0 ] && selection="group $(IFS=,; echo "${GROUPS_SEL[*]}")"
+[ "${ONLY_SET}" -eq 1 ] && selection="only ${#ONLY[@]} named"
+[ "${#GROUPS_SEL[@]}" -gt 0 ] && selection="${selection}, group $(IFS=,; echo "${GROUPS_SEL[*]}")"
 [ "${SHARD_N}" -gt 1 ] && selection="${selection}, shard ${SHARD_K}/${SHARD_N}"
 
 echo "============================================"

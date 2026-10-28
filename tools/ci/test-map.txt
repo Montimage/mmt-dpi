@@ -1,0 +1,223 @@
+# test-map.txt — which tests a pull request's changed paths select
+# (issue #656, docs/ci-audit-2026-10.md §5.4 and §6).
+#
+# Read by tools/ci/classify-changes.sh (the `changes` jobs of c-cpp.yml and
+# phase0-baseline.yml) and checked by tools/ci/check-test-map.sh: every suite
+# of DEFAULT_SUITES in tests/run_all_tests.sh and every
+# tools/phase0/tests/run_*.sh must have an entry here, every entry must name
+# one that exists, and every entry must carry the family tags its own files
+# show it depends on. A malformed map makes the classifier answer `full`.
+#
+# Records, one per line, whitespace-separated; `#` starts a comment line:
+#
+#   path <glob> <token>
+#       A changed path takes the token of the FIRST matching glob, so the
+#       specific `full` entries come before the family globs. Globs are bash
+#       patterns in which `*` also matches `/`; a glob without a `/` matches
+#       root-level paths only. A path no glob matches is `full`.
+#       Tokens:
+#         docs      documentation only (the docs tier, `code=false`)
+#         tooling   CI and helper tooling; the classifier follows who
+#                   references the file (tools/ci, scripts): a reference from
+#                   a workflow, an action, tools/phase0, sdk, rules, the
+#                   runner or anything else outside a suite makes it `full`
+#         suite     a file of tests/<suite>/ (the tests tier)
+#         harness   a file of tools/phase0/tests/ (the tests tier)
+#         tcpip, mobile, dicom, business_app
+#                   one family's own sources (the family tier)
+#         full      everything runs
+#
+#   suite <name> <tag>[,<tag>...]      one per DEFAULT_SUITES entry
+#   harness <stem> <tag>[,<tag>...]    one per tools/phase0/tests/run_<stem>.sh
+#       Tags:
+#         smoke     runs on every tests and family tier (the core smoke set,
+#                   and every entry that exercises the whole SDK rather than
+#                   one dissector)
+#         core, tcpip, mobile, dicom, business_app, security
+#                   runs on a change to that family (core and security
+#                   sources are `full`, so those two tags only document)
+#         tooling   runs on the tooling tier (the tools/ci self-test delegates)
+#         docs      runs when a docs path is part of a non-docs change
+#         build     install/packaging suites (documents the role; selected by
+#                   their family tags)
+#       An entry without `smoke` must name a source file of each of its
+#       tcpip, mobile, dicom and business_app tags (so a whole-SDK test that
+#       carries tcpip only because it loads the SDK is `smoke`), and an entry whose files load a family's library or
+#       sources must carry that family's tag (or `smoke`) — its files
+#       include the tools/ci and tools/phase0 files they name, followed
+#       through tools/ci, so a suite carries what its delegate loads: see
+#       tools/ci/check-test-map.sh.
+
+# --- shared sources: headers, generated tables, the core -------------------
+path src/*.h full
+path src/*.inc full
+path src/*.def full
+path src/mmt_core/* full
+
+# --- transport and tunnel dissectors every family rides on ------------------
+path src/mmt_tcpip/lib/protocols/proto_8021ad.c full
+path src/mmt_tcpip/lib/protocols/proto_8021q.c full
+path src/mmt_tcpip/lib/protocols/proto_arp.c full
+path src/mmt_tcpip/lib/protocols/proto_batman.c full
+path src/mmt_tcpip/lib/protocols/proto_etherip.c full
+path src/mmt_tcpip/lib/protocols/proto_ethernet.c full
+path src/mmt_tcpip/lib/protocols/proto_gre.c full
+path src/mmt_tcpip/lib/protocols/proto_gtp.c full
+path src/mmt_tcpip/lib/protocols/proto_icmp.c full
+path src/mmt_tcpip/lib/protocols/proto_icmpv6.c full
+path src/mmt_tcpip/lib/protocols/proto_ip.c full
+path src/mmt_tcpip/lib/protocols/proto_ip_dgram.c full
+path src/mmt_tcpip/lib/protocols/proto_ip_frag.c full
+path src/mmt_tcpip/lib/protocols/proto_ip_in_ip.c full
+path src/mmt_tcpip/lib/protocols/proto_ipv6.c full
+path src/mmt_tcpip/lib/protocols/proto_ipv6_dgram.c full
+path src/mmt_tcpip/lib/protocols/proto_ipx_in_ip.c full
+path src/mmt_tcpip/lib/protocols/proto_l2tp.c full
+path src/mmt_tcpip/lib/protocols/proto_llc.c full
+path src/mmt_tcpip/lib/protocols/proto_loopback.c full
+path src/mmt_tcpip/lib/protocols/proto_mpls_in_ip.c full
+path src/mmt_tcpip/lib/protocols/proto_ppp.c full
+path src/mmt_tcpip/lib/protocols/proto_pppoe.c full
+path src/mmt_tcpip/lib/protocols/proto_sctp.c full
+path src/mmt_tcpip/lib/protocols/proto_sll.c full
+path src/mmt_tcpip/lib/protocols/proto_tcp.c full
+path src/mmt_tcpip/lib/protocols/proto_udp.c full
+path src/mmt_tcpip/lib/protocols/proto_udplite.c full
+
+# --- helpers shared by several dissectors ------------------------------------
+path src/mmt_tcpip/lib/protocols/http.c full
+path src/mmt_tcpip/lib/protocols/http2.c full
+path src/mmt_tcpip/lib/protocols/ip_session_id_management.c full
+path src/mmt_tcpip/lib/protocols/ndn.c full
+path src/mmt_tcpip/lib/protocols/rfc2822utils.c full
+path src/mmt_tcpip/lib/protocols/tcp_segment.c full
+
+# --- family sources ----------------------------------------------------------
+path src/mmt_tcpip/lib/protocols/proto_*.c tcpip
+path src/mmt_tcpip/* full
+path src/mmt_mobile/include/* full
+path src/mmt_mobile/* mobile
+path src/mmt_dicom/include/* full
+path src/mmt_dicom/* dicom
+path src/mmt_business_app/include/* full
+path src/mmt_business_app/* business_app
+path src/* full
+
+# --- build system, workflows, runners, the selection itself ------------------
+path rules/* full
+path sdk/* full
+path .github/workflows/* full
+path .github/actions/* full
+path tests/run_all_tests.sh full
+path tools/phase0/run_all_harnesses.sh full
+path tools/ci/classify-changes.sh full
+path tools/ci/test-map.txt full
+path tools/ci/check-test-map.sh full
+# fuzz corpora and regressions are read by directory, not by name
+path tools/ci/fuzz/* full
+
+# --- tests -------------------------------------------------------------------
+path tests/* suite
+path tools/phase0/tests/* harness
+path tools/phase0/* full
+
+# --- tooling -----------------------------------------------------------------
+path tools/ci/* tooling
+path scripts/* tooling
+path .github/* tooling
+path .gitignore tooling
+path .gitleaks.toml tooling
+path .gitleaksignore tooling
+path .pre-commit-config.yaml tooling
+path .shellcheckrc tooling
+
+# --- documentation -----------------------------------------------------------
+path docs/* docs
+path *.md docs
+
+# --- unit suites (tests/run_all_tests.sh DEFAULT_SUITES) ---------------------
+suite hashmap core,smoke
+suite memory core,smoke
+suite fault_injection core,smoke
+suite core_engine core,smoke
+suite hexdump core
+suite mmt_utils core,smoke
+suite mmt_inet_ntop core
+suite avltree core,tcpip
+suite citrix_ica_detection tcpip
+suite http_header_case tcpip
+suite s1ap_ngap_decode mobile,tcpip,smoke
+suite rule_engine security,tcpip,mobile,smoke
+suite radius_hardening tcpip
+suite nas_ies_tail mobile,tcpip,smoke
+suite installer build,tcpip,mobile,dicom,business_app
+suite dicom_dissector dicom
+suite ndn_dissector tcpip
+suite business_app business_app,tcpip,smoke
+suite proto_classifiers tcpip,mobile,smoke
+suite dpi_profiles tcpip,smoke
+suite fuzz_verdicts tooling,tcpip,mobile
+suite precision_metrics tooling,tcpip
+suite installed_consumer build,tcpip,mobile,dicom,business_app
+suite release_gates tooling,tcpip,mobile,dicom,business_app
+suite parser_boundaries tcpip,mobile,smoke
+suite resource_bounds core,tcpip
+suite tcp_pending_order core,tcpip
+suite sdk_coverage build,tcpip,mobile,dicom,business_app
+suite docs_lifecycle docs,tcpip
+suite docs_onboarding docs,tcpip
+
+# --- phase0 harnesses (tools/phase0/tests/run_<stem>.sh) ---------------------
+# Whole-SDK harnesses (sessions, memory, L3/L4, the pcap and thread
+# harnesses) and those that name no source of each of their families are
+# smoke.
+harness arena_alloc_test smoke
+harness bitmask_oob_test smoke
+harness caplen_clamp_test smoke
+harness classified_flow_fastpath_test smoke
+harness classifier_init_test smoke
+harness dicom_test dicom,tcpip,smoke
+harness dns_parser_test smoke
+harness dtls_classify_guard_test tcpip
+harness dtls_registration_test smoke
+harness ext_attribution_test smoke
+harness extraction_caplen_prologue_test smoke
+harness ftp_data_session_uaf_test smoke
+harness ftp_lprt_eprt_test tcpip
+harness hostname_trie_mem_test smoke
+harness http2_bounds_test tcpip
+harness http2_parser_test tcpip
+harness http_method_classification_test tcpip
+harness http_scanner_test tcpip
+harness http_session_test smoke
+harness ip_frag_bounds_test smoke
+harness ip_session_frag_key_test smoke
+harness ip_unaligned_header_test smoke
+harness leak_regression_test smoke
+harness memory_ceiling_test smoke
+harness mobile_pcap_harness_test mobile,tcpip,smoke
+harness mt_tsan_test smoke
+harness ndn_test tcpip
+harness ndn_tlv_bounds_test tcpip
+harness oom_no_abort_test smoke
+harness port_confirm_test smoke
+harness position_unknown_guard_test smoke
+harness proto_http_method_classification_test tcpip
+harness quic_dtls_extractor_test tcpip
+harness quic_min_len_test tcpip
+harness redis_resp_test tcpip
+harness rtp_bounds_test smoke
+harness session_lookup_perf_test smoke
+harness session_scale_test smoke
+harness session_timeout_jump_test smoke
+harness sip_methods_test smoke
+harness skype_removal_test tcpip
+harness smb_bounds_test tcpip
+harness sni_tlv_parse_test tcpip
+harness ssl_record_test tcpip
+harness ssl_tls12_version_test tcpip
+harness tcp_doff_min_test smoke
+harness tcpip_pcap_harness_test tcpip,smoke
+harness tcp_reassembly_perf_test smoke
+harness tls_ext_walk_test tcpip
+harness tunnel_parent_lifetime_test smoke

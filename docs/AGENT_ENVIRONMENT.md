@@ -157,7 +157,7 @@ Notes:
 ### Documentation-site toolchain
 
 The C SDK does not require Ruby. For the documentation site, use Ruby **3.4**
-as in CI (`.github/workflows/c-cpp.yml:393-398`), with Bundler to install
+as in CI (`.github/workflows/c-cpp.yml:431-436`), with Bundler to install
 the gems and run Jekyll; every workflow's `ruby-version:` is that same
 release (issue #517). CI enables `bundler-cache` through `ruby/setup-ruby`
 and verifies the committed `docs/Gemfile.lock` under `BUNDLE_FROZEN=true`
@@ -173,7 +173,7 @@ gem install bundler
 ```
 
 `docs/Gemfile:12-17` defines Jekyll and its plugins. CI builds the site with
-`tools/ci/build-docs-site.sh` (`.github/workflows/c-cpp.yml:411`): source and
+`tools/ci/build-docs-site.sh` (`.github/workflows/c-cpp.yml:449`): source and
 built-site link checks around a frozen Jekyll 4 build, the lock-unchanged
 check, and a `docs/_site/build-manifest.json` recording the renderer versions,
 the lock digest and a site digest. GitHub Pages publishes the artifact that
@@ -269,8 +269,9 @@ issue #483, the release-tag pin self-test `test-release-tag-pin.sh`, issue
 #489, the vendored-inventory self-test `test-vendored-components.py`,
 issue #496, the release-hardening self-test
 `test-hardening-identity.sh`, issue #508, which evaluates the makefiles
-without compiling, and the docs-only CI filter self-test
-`test-classify-changes.sh`, issues #528/#552, the public-API contract
+without compiling, and the path-to-test selection self-test
+`test-classify-changes.sh`, issues #528/#552/#656, which also runs the
+test-map checker `tools/ci/check-test-map.sh`, the public-API contract
 checker self-test `test-api-contracts.sh` and the ABI-diff self-test
 `test-abi-diff.sh`, issue #525, and the plugin export-gate self-test
 `test-exported-symbols.sh`, issue #534, and the phase0 harness-shard self-test `test-harness-shards.sh`, issue #655) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
@@ -693,6 +694,15 @@ Facts a later agent cannot infer from the build system alone (issue #480).
   suites plus every phase0 harness (§3). Run it before pushing a change to
   core sources, `rules/*.mk` or anything a harness exercises; it takes
   minutes.
+- **Pull-request test selection (issue #656).** On a pull request CI runs
+  only the tests the changed paths select: `tools/ci/classify-changes.sh`
+  reads `tools/ci/test-map.txt` (the five tiers are in `CONTRIBUTING.md`,
+  *Required checks and review*); pushes and the merge queue run everything.
+  A new suite in `DEFAULT_SUITES` or a new `tools/phase0/tests/run_<stem>.sh`
+  needs a map entry — `bash tools/ci/check-test-map.sh` exits 1 naming what
+  is missing or mis-tagged — and
+  `bash tools/phase0/run_all_harnesses.sh --only <stem>[,<stem>...]` runs
+  chosen harnesses locally.
 - **`gh` CLI with admin access.** The release and branch-protection tasks
   (plan phases 0.x/1.x) call `gh release …` and
   `gh api repos/montimage-projects/mmt-dpi/branches/main/protection`, which

@@ -8,7 +8,10 @@
 #       - --list with no selector prints every tools/phase0/tests/run_*.sh;
 #       - the K/N shards of a selection are disjoint, cover it and differ in
 #         size by at most one; the four --group selections cover everything;
-#       - --profile coverage --list leaves out the COVERAGE_SKIP harnesses.
+#       - --profile coverage --list leaves out the COVERAGE_SKIP harnesses;
+#       - --only (issue #656) keeps exactly the named harnesses before
+#         --group/--shard, an empty list keeps none, an unknown name is
+#         exit 2.
 # (2) Runs a copy of the runner on a fixture tests/ directory whose harnesses
 #     build no SDK (profile group "none"): a harness added to the directory
 #     is picked up by a shard with no other change; a failing harness exits
@@ -18,7 +21,9 @@
 #     the `harness` job has at most 5 legs, each running run_all_harnesses.sh
 #     with its matrix `select` and uploading its log directory; the union of
 #     the legs' --list output is every harness, each in exactly one leg; and
-#     harness-gate needs both `changes` and `harness`.
+#     harness-gate needs both `changes` and `harness`; the legs skip on the
+#     docs and tooling tiers (gates=false), which harness-gate accepts, and
+#     pass --only the `changes` harness list unless full (issue #656).
 #
 # Part (3) needs python3 with PyYAML: without it, it reports SKIP, unless
 # REQUIRE_PYYAML=1 (the verify-helpers job), under which that fails.
@@ -119,6 +124,35 @@ else
     ok "--profile coverage --list leaves out the COVERAGE_SKIP harnesses"
 fi
 
+# --only (issue #656): names are run_<stem>.sh stems, taken from the
+# enumeration so this file names no harness script.
+mapfile -t stems < <(sed 's/^run_//; s/\.sh$//' "${TMP}/all.txt")
+for args in "--only bogus_harness" "--only a,,b" "--only Bad" "--only"; do
+    # shellcheck disable=SC2086  # word-split on purpose: one option list
+    bash "${RUNNER}" ${args} --list >/dev/null 2>&1
+    expect "run_all_harnesses.sh ${args} --list exits 2" "$?" 2
+done
+expect "--only <one stem> --list prints that harness alone" \
+    "$(bash "${RUNNER}" --only "${stems[0]}" --list | awk '{print $2}')" "run_${stems[0]}.sh"
+out="$(bash "${RUNNER}" --only "" --list)"
+expect "--only '' --list exits 0" "$?" 0
+expect "--only '' --list selects nothing" "${out}" ""
+pick="${stems[1]},${stems[3]},${stems[5]},${stems[7]},${stems[9]}"
+want="$(printf 'run_%s.sh\n' "${stems[1]}" "${stems[3]}" "${stems[5]}" "${stems[7]}" "${stems[9]}" | sort)"
+expect "--only <five stems> --list prints those five" \
+    "$(bash "${RUNNER}" --only "${pick}" --list | awk '{print $2}' | sort)" "${want}"
+expect "--only is repeatable" \
+    "$(bash "${RUNNER}" --only "${stems[1]},${stems[3]}" --only "${stems[5]},${stems[7]},${stems[9]}" --list \
+       | awk '{print $2}' | sort)" "${want}"
+expect "the 2 shards of an --only selection partition it" \
+    "$( (bash "${RUNNER}" --only "${pick}" --shard 1/2 --list
+         bash "${RUNNER}" --only "${pick}" --shard 2/2 --list) | awk '{print $2}' | sort)" "${want}"
+: > "${TMP}/union.txt"
+for g in none default asan tsan; do
+    bash "${RUNNER}" --only "${pick}" --group "${g}" --list | awk '{print $2}' >> "${TMP}/union.txt"
+done
+expect "the four groups of an --only selection partition it" "$(sort "${TMP}/union.txt")" "${want}"
+
 echo "== (2) fixture run (group none: no SDK build)"
 FIX="${TMP}/fixture"
 mkdir -p "${FIX}/tools/phase0/tests"
@@ -176,6 +210,12 @@ else
 fi
 bash "${FRUN}" --group tsan --log-dir "${TMP}/logs3" > "${TMP}/run3.out" 2>&1
 expect "an empty selection runs nothing and exits 0" "$?" 0
+bash "${FRUN}" --only "" --log-dir "${TMP}/logs4" > "${TMP}/run4.out" 2>&1
+expect "an empty --only list runs nothing and exits 0" "$?" 0
+expect "an empty --only list runs no harness" "$(grep -c '^--- Running' "${TMP}/run4.out")" 0
+bash "${FRUN}" --only zz_fail --log-dir "${TMP}/logs5" > "${TMP}/run5.out" 2>&1
+expect "--only runs the named failing harness alone and exits 1" "$?" 1
+expect "--only ran exactly one harness" "$(grep -c '^--- Running' "${TMP}/run5.out")" 1
 
 echo "== (3) phase0-baseline.yml wiring"
 if ! python3 -c 'import yaml' 2>/dev/null; then
@@ -242,6 +282,28 @@ gate = jobs.get("harness-gate") or {}
 check("harness-gate needs changes and harness and always runs",
       {"changes", "harness"} <= set(needs(gate))
       and "always()" in str(gate.get("if", "")))
+
+# Issue #656: the legs skip on the docs and tooling tiers, and narrow to the
+# named harnesses on the tests and family tiers only.
+check("the harness legs skip on docs and tooling changes, fail-closed",
+      "needs.changes.outputs.gates != 'false'" in str(h.get("if", ""))
+      and "!cancelled()" in str(h.get("if", "")))
+env = (run_steps[0].get("env") or {}) if run_steps else {}
+check("the legs read full and harnesses from `changes`",
+      env.get("FULL") == "${{ needs.changes.outputs.full }}"
+      and env.get("HARNESSES") == "${{ needs.changes.outputs.harnesses }}")
+r = str(run_steps[0].get("run", "")) if run_steps else ""
+check("--only is passed only on an explicit full=false",
+      'if [ "$FULL" = false ]; then only=(--only "$HARNESSES"); fi' in r
+      and '$SELECT "${only[@]}"' in r)
+grun = " ".join(str(st.get("run", "")) for st in gate.get("steps") or [])
+genv = {}
+for st in gate.get("steps") or []:
+    genv.update(st.get("env") or {})
+check("harness-gate accepts skipped legs on code=false or gates=false only",
+      genv.get("GATES") == "${{ needs.changes.outputs.gates }}"
+      and '[ "${RESULT}" = "skipped" ] && [ "${CHANGES}" = "success" ]' in grun
+      and '{ [ "${CODE}" = "false" ] || [ "${GATES}" = "false" ]; }' in grun)
 PY
 )"
     rc=$?

@@ -17,7 +17,7 @@ Phase 0 changes **no production code** — it adds tooling and captured baseline
 | `golden_pcaps.txt` | The fixed golden pcap set (paths relative to the mmt-test `data-sets/` root). |
 | `throughput_pcaps.txt` | The bigFlows/smallFlows perf-benchmark set (issue #251) — deliberately separate from `golden_pcaps.txt` so the classification fingerprint's input set is unchanged. |
 | `capture_baseline.sh` | Orchestrator: build+install at `-O3`, compile the drivers, capture all baselines into `baseline/`. |
-| `run_all_harnesses.sh` | Aggregate runner (issue #183): enumerates `tests/run_*.sh`, builds the SDK once per required profile into a shared prefix, and replays every harness against it. `--group`/`--shard` select one slice of the enumeration (issue #655 — the CI `harness-*` legs), `--list` prints the selection without building, and `--log-dir` keeps one log per harness plus a `verdicts.tsv` table. Reachable from the suite runner via `bash tests/run_all_tests.sh --with-harnesses`. `--profile coverage` (issue #524) instead builds one `BUILD=coverage` SDK and replays every harness against it except its `COVERAGE_SKIP` list; `bash tests/run_all_tests.sh --coverage` runs it as its harness arm (see *Coverage profile* below). |
+| `run_all_harnesses.sh` | Aggregate runner (issue #183): enumerates `tests/run_*.sh`, builds the SDK once per required profile into a shared prefix, and replays every harness against it. `--group`/`--shard` select one slice of the enumeration (issue #655 — the CI `harness-*` legs), `--only` keeps the named harnesses (their `run_<stem>.sh` stems) before that (issue #656 — a pull request's selection), `--list` prints the selection without building, and `--log-dir` keeps one log per harness plus a `verdicts.tsv` table. Reachable from the suite runner via `bash tests/run_all_tests.sh --with-harnesses`. `--profile coverage` (issue #524) instead builds one `BUILD=coverage` SDK and replays every harness against it except its `COVERAGE_SKIP` list; `bash tests/run_all_tests.sh --coverage` runs it as its harness arm (see *Coverage profile* below). |
 | `baseline/classification.txt` | **The golden classification baseline.** The asserted regression oracle. |
 | `baseline/classification/` | Per-pcap fingerprints (one file each), for granular diffs. |
 | `baseline/throughput.txt` | Throughput reference snapshot (environment-dependent — compare relative deltas). |
@@ -95,7 +95,8 @@ git diff tools/phase0/baseline/classification.txt   # must be empty for phases 1
 
 `.github/workflows/phase0-baseline.yml` enforces these gates on every push
 and PR to `main`, except that the `changes` job skips them on a PR that
-changes only `docs/` and root-level Markdown (issue #552). The job list below is **generated from the workflow** —
+changes only `docs/` and root-level Markdown (issue #552) or only tooling
+(issue #656, `tools/ci/classify-changes.sh`). The job list below is **generated from the workflow** —
 run `bash tools/phase0/ci/check_readme_gates.sh --write` after editing the
 workflow (the check mode runs in the `verify-helpers` CI job, so a stale
 list fails the build):
@@ -174,7 +175,12 @@ What each gate asserts:
   table (also in the job summary), as an `::error` annotation, and by its
   own log in the `phase0-harness-logs-<leg>` artifact. `harness-gate` is the
   one required context: it fails unless every leg succeeds (or all are
-  skipped on a docs-only pull request). `tools/ci/tests/test-harness-shards.sh`
+  skipped on a docs-only or tooling pull request). On a pull request that
+  `changes` classifies below `full` (one suite, harness or family, issue
+  #656), each leg passes `--only` the harnesses it names — the changed
+  ones, the family's and the smoke set of `tools/ci/test-map.txt` — and a
+  leg left with none builds nothing and passes; every other run passes no
+  `--only` and runs them all. `tools/ci/tests/test-harness-shards.sh`
   pins that the legs cover every harness exactly once. Locally,
   `run_all_harnesses.sh` with no selector (or `tests/run_all_tests.sh
   --with-harnesses`) runs all of them.

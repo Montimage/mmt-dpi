@@ -26,26 +26,43 @@ permissions:
 
 jobs:
   changes:
-    # Docs-only filter (issue #552, F-CI-009): on a pull request, does the
-    # change touch anything but docs/ and root-level Markdown? The checkout
-    # is the PR merge commit, so HEAD^1..HEAD is exactly the PR's change;
-    # tools/ci/classify-changes.sh holds the path allowlist. Pushes, tags, the
-    # schedule and merge-queue runs (#657) always run everything.
+    # Path-to-test selection (issue #656, extending the #552 docs-only
+    # filter): on a pull request, which tier does the change reach — docs,
+    # tooling, tests, family or full — and which suites and harnesses does it
+    # need? The checkout is the PR merge commit, so HEAD^1..HEAD is exactly
+    # the PR's change; tools/ci/classify-changes.sh answers from the map in
+    # tools/ci/test-map.txt. Pushes, tags, the schedule and merge-queue runs
+    # (#657) feed it no path, which is `full`: they always run everything.
+    # The same step runs in phase0-baseline.yml.
     #
-    # A docs-only change skips the C jobs, and every required context still
-    # reports. A job skipped by its `if:` reports success, so the
-    # single-context jobs gate at job level — with !cancelled(), so a failed
-    # `changes` runs them instead of skipping them (fail-closed). A skipped
-    # matrix job would report one check run under its bare job name and
-    # leave each leg's context pending, so the matrix jobs (unit-tests,
-    # sanitizer-tests, resource-budgets) always start and skip their steps.
-    # tools/ci/check-required-checks.sh rejects a skippable `if:` on a matrix
-    # job a required context names, and tools/ci/tests/
-    # test-classify-changes.sh pins this wiring.
+    # Per tier: docs skips the C jobs (code=false); tooling runs the suites
+    # the classifier names in unit-tests, plus lint (gates=false skips the
+    # sanitizer, toolchain, assertions, CodeQL and fuzz jobs); tests and
+    # family also run those legs on the named suites (CodeQL and fuzz on
+    # family only); coverage, root-install, enablesec and abi-diff run on
+    # full only (full=false skips them). Every condition on these outputs
+    # is fail-closed: it reads `!= 'false'` (or `!= 'tests'`), so a failed
+    # `changes` — every output empty — runs everything, and an empty suite
+    # list runs every suite.
+    #
+    # Every required context still reports. A job skipped by its `if:`
+    # reports success, so the single-context jobs gate at job level — with
+    # !cancelled(), so a failed `changes` runs them instead of skipping them
+    # (fail-closed). A skipped matrix job would report one check run under
+    # its bare job name and leave each leg's context pending, so the matrix
+    # jobs (unit-tests, sanitizer-tests, resource-budgets) always start and
+    # skip their steps. tools/ci/check-required-checks.sh rejects a
+    # skippable `if:` on a matrix job a required context names, and
+    # tools/ci/tests/test-classify-changes.sh pins this wiring.
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       code: ${{ steps.filter.outputs.code }}
+      tier: ${{ steps.filter.outputs.tier }}
+      full: ${{ steps.filter.outputs.full }}
+      gates: ${{ steps.filter.outputs.gates }}
+      suites: ${{ steps.filter.outputs.suites }}
+      harnesses: ${{ steps.filter.outputs.harnesses }}
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
@@ -57,13 +74,17 @@ jobs:
         EVENT: ${{ github.event_name }}
       run: |
         set -euo pipefail
-        if [ "$EVENT" != pull_request ]; then
-          echo "code=true" | tee -a "$GITHUB_OUTPUT"
-          exit 0
+        # Not a pull request: no path list, which the classifier answers
+        # with full (every output key set).
+        changed=/dev/null
+        if [ "$EVENT" = pull_request ]; then
+          # A diff that cannot run fails the job, and the gated jobs then run.
+          changed="$RUNNER_TEMP/changed.txt"
+          git diff --no-renames --name-only HEAD^1 HEAD > "$changed"
         fi
-        # A diff that cannot run fails the job, and the gated jobs then run.
-        git diff --no-renames --name-only HEAD^1 HEAD > "$RUNNER_TEMP/changed.txt"
-        bash tools/ci/classify-changes.sh < "$RUNNER_TEMP/changed.txt" | tee -a "$GITHUB_OUTPUT"
+        # Complete answers only: a classifier that fails writes no output.
+        bash tools/ci/classify-changes.sh < "$changed" > "$RUNNER_TEMP/classified.txt"
+        tee -a "$GITHUB_OUTPUT" < "$RUNNER_TEMP/classified.txt"
 
   unit-tests:
     # Compile-and-run the standalone unit suites (tests/run_all_tests.sh).
@@ -71,7 +92,8 @@ jobs:
     # built with -fsigned-char (signed is already x86's default, so the
     # unsigned-char side is covered by unit-tests-arm and
     # unit-tests-unsigned-char below, issue #528).
-    # A matrix job: on a docs-only change its steps skip (see `changes`).
+    # A matrix job: on a docs-only change its steps skip (see `changes`);
+    # otherwise the first leg runs the suites `changes` names (all on full).
     needs: changes
     if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
@@ -93,16 +115,20 @@ jobs:
       if: needs.changes.outputs.code != 'false'
       env:
         EXTRA_CFLAGS: ${{ matrix.extra_cflags }}
-      run: bash tests/run_all_tests.sh ${{ matrix.suites }}
+        # The leg's fixed list, else the tier's (#656); empty runs every suite.
+        SUITES: ${{ matrix.suites || needs.changes.outputs.suites }}
+      # word-split on purpose: SUITES is a list of [a-z0-9_] suite names
+      run: bash tests/run_all_tests.sh $SUITES
 
   unit-tests-arm:
     # Native ARM run of the full suite set (issue #528, F-TEST-010). Plain
     # `char` is unsigned on AArch64, so every suite — and every SDK the
     # suites build — runs with ARM's char signedness, which the x86 legs
     # never see. The native ubuntu-24.04-arm runner is the one
-    # resource-budgets and the arm64 release packages already use.
+    # resource-budgets and the arm64 release packages already use. Runs on
+    # the tests, family and full tiers, on the tier's suites (#656).
     needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' }}
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 45
     steps:
@@ -115,7 +141,9 @@ jobs:
         uname -m
         echo | gcc -dM -E - | grep -q '__CHAR_UNSIGNED__'
     - name: Run unit test suites
-      run: bash tests/run_all_tests.sh
+      env:
+        SUITES: ${{ needs.changes.outputs.suites }}
+      run: bash tests/run_all_tests.sh $SUITES
 
   unit-tests-unsigned-char:
     # x86 mirror of unit-tests-arm (issue #528): the full suite set with
@@ -123,8 +151,9 @@ jobs:
     # the suites build (MMT_EXTRA_CFLAGS, appended after the dialect pin in
     # rules/arch-linux.mk), so an unsigned-char bug fails on both
     # architectures and an ARM-only failure points at something else.
+    # Runs on the tests, family and full tiers, on the tier's suites (#656).
     needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
@@ -136,7 +165,9 @@ jobs:
     - name: Assert -funsigned-char makes plain char unsigned
       run: echo | gcc $EXTRA_CFLAGS -dM -E - | grep -q '__CHAR_UNSIGNED__'
     - name: Run unit test suites
-      run: bash tests/run_all_tests.sh
+      env:
+        SUITES: ${{ needs.changes.outputs.suites }}
+      run: bash tests/run_all_tests.sh $SUITES
 
   toolchain-floor:
     # Toolchain-floor gate (issue #218, F-DEP-207): the declared floor is
@@ -149,8 +180,9 @@ jobs:
     # deprecated on 2026-09-17 and removes on 2027-04-17 (issue #516); the
     # job keeps its name, so the required context is unchanged. The image
     # retires on the date tools/ci/base-images.txt records (docs/DECISIONS.md).
+    # Runs on the tests, family and full tiers, on the tier's suites (#656).
     needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     container:
@@ -184,7 +216,9 @@ jobs:
     - name: Build the SDK on the floor toolchain
       run: runuser -u floor -- make -C sdk -j"$(nproc)"
     - name: Run unit test suites
-      run: runuser -u floor -- bash tests/run_all_tests.sh
+      env:
+        SUITES: ${{ needs.changes.outputs.suites }}
+      run: runuser -u floor -- bash tests/run_all_tests.sh $SUITES
 
   sanitizer-tests:
     # Run the unit suites (tests/run_all_tests.sh) under the sanitizer
@@ -192,7 +226,8 @@ jobs:
     # (BUILD=asan / BUILD=tsan in rules/common.mk); the runner translates
     # them into per-suite instrumentation via SANITIZE=asan|tsan, and suites
     # that build the SDK internally inherit the matching BUILD= profile.
-    # A matrix job: on a docs-only change its steps skip (see `changes`).
+    # A matrix job: on a docs-only or tooling change its steps skip (see
+    # `changes`); otherwise it runs the tier's suites (#656).
     needs: changes
     if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
@@ -207,14 +242,15 @@ jobs:
             sanitize: tsan
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      if: needs.changes.outputs.code != 'false'
+      if: needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false'
     - uses: ./.github/actions/bootstrap-deps
-      if: needs.changes.outputs.code != 'false'
+      if: needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false'
     - name: Run unit test suites under sanitizers (${{ matrix.profile }})
-      if: needs.changes.outputs.code != 'false'
+      if: needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false'
       env:
         SANITIZE: ${{ matrix.sanitize }}
-      run: bash tests/run_all_tests.sh
+        SUITES: ${{ needs.changes.outputs.suites }}
+      run: bash tests/run_all_tests.sh $SUITES
 
   coverage:
     # Measure unit-suite coverage (gcov): run every suite instrumented with
@@ -223,9 +259,10 @@ jobs:
     # library, issue #185) plus tests/coverage/summary.json, print the
     # library line percentage and instrumented-file count, enforce the
     # committed floor (tests/coverage/floor.json), and publish the report as
-    # a CI artifact.
+    # a CI artifact. Full tier only (#656): the floors measure every suite
+    # and harness, so a subset would fail them.
     needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.full != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -340,9 +377,10 @@ jobs:
     # uploads SARIF to code scanning, so findings land on the repository's
     # Security tab. The ENABLESEC=1 build is traced so the optional
     # security/fuzz engines — code that only exists to parse hostile input —
-    # are inside the analysis surface too.
+    # are inside the analysis surface too. Family and full tiers (#656): a
+    # tests or tooling change compiles no SDK source differently.
     needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' && needs.changes.outputs.tier != 'tests' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:
@@ -440,12 +478,15 @@ jobs:
       # tag/schedule-only job), would block every PR — fail here instead.
       # PyYAML is installed explicitly so the result never depends on the
       # runner image; REQUIRE_PYYAML=1 makes its absence fatal for the
-      # self-test (the run_all_tests.sh copy skips without it).
+      # self-test (the run_all_tests.sh copy skips without it). The test map
+      # must name every suite and harness, tagged as their files show
+      # (issue #656).
       run: |
         python3 -c 'import yaml' 2>/dev/null || {
           sudo apt-get update && sudo apt-get install -y python3-yaml
         }
         bash tools/ci/check-required-checks.sh
+        bash tools/ci/check-test-map.sh
         REQUIRE_PYYAML=1 bash tools/ci/tests/test-required-checks.sh
         REQUIRE_PYYAML=1 bash tools/ci/tests/test-classify-changes.sh
         REQUIRE_PYYAML=1 bash tools/ci/tests/test-harness-shards.sh
@@ -635,9 +676,10 @@ jobs:
     # installed consumer must run with LD_LIBRARY_PATH unset, `make uninstall`
     # must leave neither the prefix nor the drop-in, and `make -n install`
     # must not compile. It writes /etc, so it runs in a throwaway container
-    # (the ubuntu:24.04 pin recorded in tools/ci/base-images.txt).
+    # (the ubuntu:24.04 pin recorded in tools/ci/base-images.txt). Full tier
+    # only (#656).
     needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.full != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
 
@@ -657,9 +699,10 @@ jobs:
     # common.mk); the job builds with it, proves -DNDEBUG never reached a
     # compile line, then runs the full unit-suite set with the variable in
     # the environment so the SDK the suites build internally is the
-    # assertions-live one too.
+    # assertions-live one too. Runs on the tests, family and full tiers, on
+    # the tier's suites (#656).
     needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -678,7 +721,8 @@ jobs:
     - name: Run unit test suites with assertions live
       env:
         NDEBUG: "1"
-      run: bash tests/run_all_tests.sh
+        SUITES: ${{ needs.changes.outputs.suites }}
+      run: bash tests/run_all_tests.sh $SUITES
 
   enablesec:
     # Compile the optional security/fuzz engines, which are only built when
@@ -686,9 +730,9 @@ jobs:
     # that proves the engines compile in the shipped configuration. The
     # rule_engine suite that exercises them is in DEFAULT_SUITES, so the
     # unit-tests job runs it; this job no longer re-runs it (issue #552,
-    # F-CI-015).
+    # F-CI-015). Full tier only (#656): the engines' sources are full.
     needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.full != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -761,8 +805,10 @@ jobs:
     # fuzz-artifacts/ and the job fails. Every run first replays the
     # committed reproducers in tools/ci/fuzz/regressions (issue #486), so a
     # crash once found stays gated on every pull request whatever the seed.
+    # Family and full tiers (#656): a tests or tooling change compiles no
+    # SDK source differently, and the fuzz inputs are mapped full.
     needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' && needs.changes.outputs.tier != 'tests' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -827,7 +873,8 @@ jobs:
     # workload record or metric. The checker's --self-test proves each of
     # those failures is detected. Wall-clock is recorded as a labelled
     # observation only; no budget reads it.
-    # A matrix job: on a docs-only change its steps skip (see `changes`).
+    # A matrix job: on a docs-only change its steps skip (see `changes`), and
+    # below the full tier unless `changes` names resource_bounds (#656).
     needs: changes
     if: ${{ !cancelled() }}
     runs-on: ${{ matrix.runner }}
@@ -838,25 +885,25 @@ jobs:
         runner: [ubuntu-24.04, ubuntu-24.04-arm]
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      if: needs.changes.outputs.code != 'false'
+      if: needs.changes.outputs.code != 'false' && (needs.changes.outputs.full != 'false' || contains(format(' {0} ', needs.changes.outputs.suites), ' resource_bounds '))
     - name: Ensure jq and python3
-      if: needs.changes.outputs.code != 'false'
+      if: needs.changes.outputs.code != 'false' && (needs.changes.outputs.full != 'false' || contains(format(' {0} ', needs.changes.outputs.suites), ' resource_bounds '))
       run: command -v jq >/dev/null && command -v python3 >/dev/null || { sudo apt-get update -y && sudo apt-get install -y jq python3; }
     - name: Self-test the budget checker (breach and missing-record fixtures)
-      if: needs.changes.outputs.code != 'false'
+      if: needs.changes.outputs.code != 'false' && (needs.changes.outputs.full != 'false' || contains(format(' {0} ', needs.changes.outputs.suites), ' resource_bounds '))
       run: python3 tools/ci/check-resource-budgets.py --self-test
     - name: Run the resource_bounds fixtures and check every budget
-      if: needs.changes.outputs.code != 'false'
+      if: needs.changes.outputs.code != 'false' && (needs.changes.outputs.full != 'false' || contains(format(' {0} ', needs.changes.outputs.suites), ' resource_bounds '))
       env:
         RESOURCE_BOUNDS_RESULTS: ${{ runner.temp }}/resource-bounds/results.json
       run: bash tests/resource_bounds/run_tests.sh all
     - name: Re-check the published results (all dimensions required)
       # Explicit full-mode re-check of the uploaded file, independent of the
       # runner's own invocation.
-      if: needs.changes.outputs.code != 'false'
+      if: needs.changes.outputs.code != 'false' && (needs.changes.outputs.full != 'false' || contains(format(' {0} ', needs.changes.outputs.suites), ' resource_bounds '))
       run: python3 tools/ci/check-resource-budgets.py "${{ runner.temp }}/resource-bounds/results.json"
     - name: Upload resource-bound results
-      if: (success() || failure()) && needs.changes.outputs.code != 'false'
+      if: (success() || failure()) && needs.changes.outputs.code != 'false' && (needs.changes.outputs.full != 'false' || contains(format(' {0} ', needs.changes.outputs.suites), ' resource_bounds '))
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: resource-bounds-results-${{ runner.arch }}
@@ -902,9 +949,10 @@ jobs:
     # suites' own test programs keep the -std their run_tests.sh pins (GCC
     # 15's C23 default where none is pinned) and get the GCC >= 15
     # diagnostics. The floor job above is unchanged. ubuntu-26.04 is a
-    # GitHub preview runner label.
+    # GitHub preview runner label. Runs on the tests, family and full tiers,
+    # on the tier's suites (#656).
     needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' }}
     runs-on: ubuntu-26.04
     timeout-minutes: 45
     env:
@@ -921,7 +969,9 @@ jobs:
     - name: Build the SDK with the security engines as C23 (ENABLESEC=1)
       run: make -C sdk ENABLESEC=1 -j"$(nproc)"
     - name: Run unit test suites
-      run: bash tests/run_all_tests.sh
+      env:
+        SUITES: ${{ needs.changes.outputs.suites }}
+      run: bash tests/run_all_tests.sh $SUITES
 
   abi-diff:
     # Report-only ABI comparison against the last release (issue #525;
@@ -938,9 +988,9 @@ jobs:
     # The compared HEAD build is held to the release hardening set, so the
     # comparison is of the shipped profile. An ABI finding never fails the
     # job (--fail-on none); a broken tool, build or download does. Not a
-    # required check (.github/required-checks.txt).
+    # required check (.github/required-checks.txt). Full tier only (#656).
     needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.full != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:

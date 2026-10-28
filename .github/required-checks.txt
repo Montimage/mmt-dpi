@@ -17,8 +17,10 @@
 # context in branch protection when that PR merges (the old name is never
 # reported again, so every later PR would wait on it).
 #
-# A docs-only pull request skips the C jobs (issue #552) and every context
-# here still reports: see the `changes` job of c-cpp.yml.
+# A docs-only pull request skips the C jobs (issue #552), and a tooling, tests
+# or family pull request runs only the tests its paths select (issue #656,
+# tools/ci/classify-changes.sh with tools/ci/test-map.txt); every context
+# here still reports on each tier: see the `changes` job of c-cpp.yml.
 #
 # main is set up to merge through a merge queue (issue #657): every workflow
 # reporting a context here also triggers on `merge_group`, and the helper

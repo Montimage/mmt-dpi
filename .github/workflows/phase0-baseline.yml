@@ -34,16 +34,25 @@ permissions:
 
 jobs:
   changes:
-    # Docs-only filter (issue #552, F-CI-009) — the same classifier as the
-    # `changes` job of c-cpp.yml (see there): on a pull request that changes
-    # only docs/ and root-level Markdown, the phase0 gates skip, and each
+    # Path-to-test selection (issues #552, #656) — the same classify step as
+    # the `changes` job of c-cpp.yml (see there for the tiers). On a docs-only
+    # or tooling pull request (gates=false) the phase0 jobs skip, and each
     # still reports its required context (a skipped job reports success;
-    # harness-gate accepts skipped harness legs only then). !cancelled() runs
-    # the gates when this job fails (fail-closed).
+    # harness-gate accepts skipped harness legs only then). On the tests and
+    # family tiers the harness legs run only the harnesses named in
+    # `harnesses` (run_all_harnesses.sh --only); full runs them all. The
+    # gates run on every tier but docs and tooling. Conditions read
+    # `!= 'false'`, and !cancelled() runs the gates when this job fails, so a
+    # failed `changes` runs everything (fail-closed).
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       code: ${{ steps.filter.outputs.code }}
+      tier: ${{ steps.filter.outputs.tier }}
+      full: ${{ steps.filter.outputs.full }}
+      gates: ${{ steps.filter.outputs.gates }}
+      suites: ${{ steps.filter.outputs.suites }}
+      harnesses: ${{ steps.filter.outputs.harnesses }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -55,17 +64,22 @@ jobs:
           EVENT: ${{ github.event_name }}
         run: |
           set -euo pipefail
-          if [ "$EVENT" != pull_request ]; then
-            echo "code=true" | tee -a "$GITHUB_OUTPUT"
-            exit 0
+          # Not a pull request: no path list, which the classifier answers
+          # with full (every output key set).
+          changed=/dev/null
+          if [ "$EVENT" = pull_request ]; then
+            # A diff that cannot run fails the job, and the gated jobs then run.
+            changed="$RUNNER_TEMP/changed.txt"
+            git diff --no-renames --name-only HEAD^1 HEAD > "$changed"
           fi
-          git diff --no-renames --name-only HEAD^1 HEAD > "$RUNNER_TEMP/changed.txt"
-          bash tools/ci/classify-changes.sh < "$RUNNER_TEMP/changed.txt" | tee -a "$GITHUB_OUTPUT"
+          # Complete answers only: a classifier that fails writes no output.
+          bash tools/ci/classify-changes.sh < "$changed" > "$RUNNER_TEMP/classified.txt"
+          tee -a "$GITHUB_OUTPUT" < "$RUNNER_TEMP/classified.txt"
 
   asan-build:
     name: ASan/UBSan profile compiles
     needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -98,10 +112,13 @@ jobs:
     # named in the leg's verdict table (also in the job summary), as an
     # ::error annotation and by its own log in the uploaded artifact.
     # fail-fast: false keeps sibling legs running when one fails; no
-    # job-level `if:` beyond the docs-only skip, which harness-gate accepts.
+    # job-level `if:` beyond the docs-only and tooling skip, which
+    # harness-gate accepts. On the tests and family tiers (full=false) each
+    # leg keeps only the harnesses `changes` names (--only, issue #656); a
+    # leg left with none builds nothing and passes.
     name: harness-${{ matrix.shard }}
     needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
@@ -126,10 +143,15 @@ jobs:
       - name: Run the ${{ matrix.shard }} harnesses
         env:
           SELECT: ${{ matrix.select }}
+          FULL: ${{ needs.changes.outputs.full }}
+          HARNESSES: ${{ needs.changes.outputs.harnesses }}
         run: |
+          # Fail-closed: only an explicit full=false narrows the run.
+          only=()
+          if [ "$FULL" = false ]; then only=(--only "$HARNESSES"); fi
           # word-split on purpose: SELECT is the leg's option list
           # shellcheck disable=SC2086
-          bash tools/phase0/run_all_harnesses.sh $SELECT \
+          bash tools/phase0/run_all_harnesses.sh $SELECT "${only[@]}" \
             --log-dir "${RUNNER_TEMP}/harness-logs"
       - name: Upload the per-harness logs
         if: ${{ !cancelled() }}
@@ -147,8 +169,9 @@ jobs:
     # pinning them in branch protection would soft-lock merges on the first
     # change. This aggregate fails whenever any leg fails, is cancelled, or
     # is skipped, giving branch protection one stable context to require:
-    # `harness-gate`. The one accepted skip is a docs-only pull request
-    # (`changes` succeeded with code=false, #552).
+    # `harness-gate`. The one accepted skip is a docs-only or tooling pull
+    # request (`changes` succeeded with code=false, #552, or gates=false,
+    # #656).
     name: harness-gate
     needs: [changes, harness]
     if: always()
@@ -160,12 +183,13 @@ jobs:
           RESULT: ${{ needs.harness.result }}
           CHANGES: ${{ needs.changes.result }}
           CODE: ${{ needs.changes.outputs.code }}
+          GATES: ${{ needs.changes.outputs.gates }}
         run: |
-          echo "harness legs result: ${RESULT} (changes: ${CHANGES}, code=${CODE})"
+          echo "harness legs result: ${RESULT} (changes: ${CHANGES}, code=${CODE}, gates=${GATES})"
           [ "${RESULT}" = "success" ] && exit 0
           if [ "${RESULT}" = "skipped" ] && [ "${CHANGES}" = "success" ] \
-             && [ "${CODE}" = "false" ]; then
-            echo "docs-only change: the harness legs are skipped by design"
+             && { [ "${CODE}" = "false" ] || [ "${GATES}" = "false" ]; }; then
+            echo "docs-only or tooling change: the harness legs are skipped by design"
             exit 0
           fi
           exit 1
@@ -173,7 +197,7 @@ jobs:
   classification-gate:
     name: Golden classification fingerprint unchanged
     needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -198,7 +222,7 @@ jobs:
     # detect_leaks=1 check — but this job pins the Valgrind oracle.
     # It reports under its job id, a short stable required context (#490).
     needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -212,7 +236,7 @@ jobs:
   precision-gate:
     name: Labelled-pcap precision/recall holds or improves (M9, issue #74)
     needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
