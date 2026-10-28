@@ -167,7 +167,7 @@ Notes:
 ### Documentation-site toolchain
 
 The C SDK does not require Ruby. For the documentation site, use Ruby **3.4**
-as in CI (`.github/workflows/c-cpp.yml:456-461`), with Bundler to install
+as in CI (`.github/workflows/c-cpp.yml:507-512`), with Bundler to install
 the gems and run Jekyll; every workflow's `ruby-version:` is that same
 release (issue #517). CI enables `bundler-cache` through `ruby/setup-ruby`
 and verifies the committed `docs/Gemfile.lock` under `BUNDLE_FROZEN=true`
@@ -183,7 +183,7 @@ gem install bundler
 ```
 
 `docs/Gemfile:12-17` defines Jekyll and its plugins. CI builds the site with
-`tools/ci/build-docs-site.sh` (`.github/workflows/c-cpp.yml:474`): source and
+`tools/ci/build-docs-site.sh` (`.github/workflows/c-cpp.yml:525`): source and
 built-site link checks around a frozen Jekyll 4 build, the lock-unchanged
 check, and a `docs/_site/build-manifest.json` recording the renderer versions,
 the lock digest and a site digest. GitHub Pages publishes the artifact that
@@ -237,6 +237,7 @@ All flags are passed as make variables, e.g. `make -C sdk DEBUG=1`.
 | `TUNE=native` | Opt-in `-march=native` (unsafe for redistributed binaries — off by default) | `rules/common-linux.mk:177-185` |
 | `VERBOSE=1` | Print full compile commands | `rules/common.mk:21-24` |
 | `MMT_EXTRA_CFLAGS=...` | Extra C flags appended after the gnu17 dialect pin (the last `-std` wins, e.g. `-std=gnu2x`); default GCC toolchain only | `rules/arch-linux.mk:20-21` |
+| `MMT_CCACHE=ccache` | Opt-in compiler cache (issue #553): the launcher goes in front of `$(CC)`/`$(CXX)`; unset changes nothing. Make reads it from the environment, so `MMT_CCACHE=ccache bash tests/run_all_tests.sh` caches every SDK the suites build. `CCACHE_BASEDIR` defaults to the checkout; `BUILD=coverage` stays uncached; a missing launcher stops the build. Default GCC toolchain only | `rules/arch-linux.mk:73-85` |
 
 ## 3. Testing
 
@@ -569,9 +570,9 @@ and restores a clean default build on exit:
 )
 ```
 
-The plugin repository path is baked into compiled code as
+The plugin repository path is baked into `plugins_engine.o` as
 `PLUGINS_REPOSITORY_OPT` (`-DPLUGINS_REPOSITORY_OPT=\"$(MMT_PLUGINS)\"`,
-`rules/common.mk:30`). `plugins_engine.o` depends on a stamp file holding
+`rules/common.mk:630`; only that object carries it, issue #553). `plugins_engine.o` depends on a stamp file holding
 the plugin directory it was compiled with (`sdk/Makefile:25-29`): a build
 with a different `MMT_BASE` recompiles exactly that object, a rebuild with
 the same one compiles nothing, and `make install` — which never builds —
@@ -736,6 +737,14 @@ Facts a later agent cannot infer from the build system alone (issue #480).
   suites plus every phase0 harness (§3). Run it before pushing a change to
   core sources, `rules/*.mk` or anything a harness exercises; it takes
   minutes.
+- **Local gate runner (issue #553).** `bash tools/ci/local-gates.sh --fast`
+  runs the `run:` steps of the required `lint`, `verify-helpers` and
+  `doc-validators` jobs, read from `.github/workflows/c-cpp.yml` itself, so
+  it cannot drift from them; `--full` adds `bash tests/run_all_tests.sh` and
+  the two phase0 gates. By default it runs them in a container built once
+  from the `lint` job's digest-pinned `ubuntu:24.04` with the pinned cppcheck
+  (needs docker or podman, else exit 2); `--host` runs them on this machine,
+  `--list` prints them. The image's Ruby is Ubuntu 24.04's 3.2, not CI's 3.4.
 - **Pull-request test selection (issue #656).** On a pull request CI runs
   only the tests the changed paths select: `tools/ci/classify-changes.sh`
   reads `tools/ci/test-map.txt` (the five tiers are in `CONTRIBUTING.md`,

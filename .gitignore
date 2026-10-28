@@ -136,6 +136,8 @@ perf.data.*
 cppcheck*.xml
 cppcheck_output.xml
 cppcheck-report.xml
+# cppcheck per-file results (lint job, tools/ci/local-gates.sh)
+.cppcheck-build/
 PVS-Studio.log
 pvs.log
 pvs_*/

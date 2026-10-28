@@ -156,7 +156,7 @@ rules/common-linux.mk:271	\$\(CC\) .*-shared .*\$\(LIBCORE\)\.so	-	shared librar
 rules/common-linux.mk:297-313	^ifdef ENABLESEC	^endif	the engine link rules are ENABLESEC-gated	LIBSECURITY
 rules/common.mk:3	^MMT_BASE \?=/opt/mmt	-	MMT_BASE defaults to /opt/mmt
 rules/common.mk:21-24	^ifndef VERBOSE	^endif	VERBOSE=1 prints full compile commands	QUIET := @
-rules/common.mk:30	^CFLAGS .*-DPLUGINS_REPOSITORY_OPT=	-	the plugin repository path is baked into the objects
+rules/common.mk:630	plugins_engine\.o: CFLAGS \+= -DPLUGINS_REPOSITORY_OPT=	-	the plugin repository path is baked into plugins_engine.o
 rules/common.mk:38-43	^ifdef NDEBUG	^endif	NDEBUG=1 keeps assert()/debug() active	\+= \-DNDEBUG
 rules/common.mk:76-84	^# libxml2 \(only the ENABLESEC	^endif	libxml2 is resolved for the ENABLESEC engines	libxml-2\.0
 rules/common.mk:87-93	^ifdef DEBUG	^endif	DEBUG=1 swaps -O3 for -g	\+= \-g$
@@ -194,9 +194,10 @@ tests/run_all_tests.sh:174-186	^sdk_group_of\(\)	^}$	the suite-to-group map of t
 sdk/Makefile:1	^ARCH +\?= linux	-	default architecture is Linux
 rules/arch-linux.mk:2-3	^CXX := g\+\+	^CC  := gcc	Linux uses GCC and G++
 rules/arch-linux.mk:20-21	^CFLAGS \+= -std=gnu17$	^CFLAGS \+= \$\(MMT_EXTRA_CFLAGS\)$	the GCC toolchain pins gnu17, MMT_EXTRA_CFLAGS comes after
-.github/workflows/c-cpp.yml:456-461	Set up Ruby	bundler-cache: true	docs CI uses Ruby 3.4	ruby-version: "3.4"
+rules/arch-linux.mk:73-85	^ifneq \(\$\(strip \$\(MMT_CCACHE\)\),\)	^endif$	MMT_CCACHE is an opt-in launcher in front of CC/CXX	override CC  := \$\(MMT_CCACHE\) \$\(CC\)
+.github/workflows/c-cpp.yml:507-512	Set up Ruby	bundler-cache: true	docs CI uses Ruby 3.4	ruby-version: "3.4"
 docs/Gemfile:12-17	^source	^gem "jekyll-seo-tag"	documentation gems	jekyll
-.github/workflows/c-cpp.yml:474	bash tools/ci/build-docs-site.sh	-	CI builds Jekyll
+.github/workflows/c-cpp.yml:525	bash tools/ci/build-docs-site.sh	-	CI builds Jekyll
 rules/common.mk:3-8	^MMT_BASE	^MMT_EXAMS	Make install configuration
 tests/fault_injection/run_tests.sh:115-117	^ *make .* clean	^ *make .* install	fault injection builds and installs SDK
 tests/fault_injection/run_tests.sh:97-102	^if .*SDK_BUILD_PROFILE	^fi	sanitizers skip fault injection engine leg	exit 0

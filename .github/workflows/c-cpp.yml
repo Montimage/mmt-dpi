@@ -121,14 +121,41 @@ jobs:
       if: needs.changes.outputs.code != 'false' && (matrix.extra_cflags == '' || github.event_name != 'pull_request')
     - uses: ./.github/actions/bootstrap-deps
       if: needs.changes.outputs.code != 'false' && (matrix.extra_cflags == '' || github.event_name != 'pull_request')
+      with:
+        extra-packages: ccache
+    # Opt-in compiler cache (issue #553): MMT_CCACHE puts ccache in front of
+    # the compiler of every SDK the suites build (rules/arch-linux-gcc.mk).
+    # A pull request restores the newest cache main saved; only push and
+    # schedule runs save one (one entry per commit, issue #660's budget).
+    - name: Restore the compiler cache
+      if: needs.changes.outputs.code != 'false' && (matrix.extra_cflags == '' || github.event_name != 'pull_request')
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/ccache
+        key: ccache-unit-tests-${{ matrix.extra_cflags || 'default' }}-${{ github.sha }}
+        restore-keys: ccache-unit-tests-${{ matrix.extra_cflags || 'default' }}-
     - name: Run unit test suites
       if: needs.changes.outputs.code != 'false' && (matrix.extra_cflags == '' || github.event_name != 'pull_request')
       env:
+        MMT_CCACHE: ccache
+        CCACHE_DIR: ${{ runner.temp }}/ccache
+        CCACHE_MAXSIZE: 500M
         EXTRA_CFLAGS: ${{ matrix.extra_cflags }}
         # The leg's fixed list, else the tier's (#656); empty runs every suite.
         SUITES: ${{ matrix.suites || needs.changes.outputs.suites }}
       # word-split on purpose: SUITES is a list of [a-z0-9_] suite names
       run: bash tests/run_all_tests.sh $SUITES
+    - name: Compiler cache statistics
+      if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && (matrix.extra_cflags == '' || github.event_name != 'pull_request') }}
+      env:
+        CCACHE_DIR: ${{ runner.temp }}/ccache
+      run: ccache --show-stats
+    - name: Save the compiler cache (push and schedule only)
+      if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && (matrix.extra_cflags == '' || github.event_name != 'pull_request') && (github.event_name == 'push' || github.event_name == 'schedule') }}
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/ccache
+        key: ccache-unit-tests-${{ matrix.extra_cflags || 'default' }}-${{ github.sha }}
 
   unit-tests-arm:
     # Native ARM run of the full suite set (issue #528, F-TEST-010). Plain
@@ -258,6 +285,8 @@ jobs:
       if: needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false'
     - uses: ./.github/actions/bootstrap-deps
       if: needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false'
+      with:
+        extra-packages: ccache
     - name: The BUILD=asan SDK profile compiles and is ASan-instrumented
       # Folded in from the phase0 `ASan/UBSan profile compiles` job (issue
       # #659), now a retired stub: the asan leg proves the profile itself.
@@ -270,12 +299,34 @@ jobs:
         nm -D "${lib}" | grep -q '__asan_init' \
           || { echo "::error::no ASan symbols in ${lib}"; exit 1; }
         make -C sdk clean
+    # Opt-in compiler cache (issue #553), one per profile — see unit-tests.
+    - name: Restore the compiler cache
+      if: needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false'
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/ccache
+        key: ccache-sanitizer-tests-${{ matrix.sanitize }}-${{ github.sha }}
+        restore-keys: ccache-sanitizer-tests-${{ matrix.sanitize }}-
     - name: Run unit test suites under sanitizers (${{ matrix.profile }})
       if: needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false'
       env:
+        MMT_CCACHE: ccache
+        CCACHE_DIR: ${{ runner.temp }}/ccache
+        CCACHE_MAXSIZE: 500M
         SANITIZE: ${{ matrix.sanitize }}
         SUITES: ${{ needs.changes.outputs.suites }}
       run: bash tests/run_all_tests.sh $SUITES
+    - name: Compiler cache statistics
+      if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' }}
+      env:
+        CCACHE_DIR: ${{ runner.temp }}/ccache
+      run: ccache --show-stats
+    - name: Save the compiler cache (push and schedule only)
+      if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' && (github.event_name == 'push' || github.event_name == 'schedule') }}
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/ccache
+        key: ccache-sanitizer-tests-${{ matrix.sanitize }}-${{ github.sha }}
 
   coverage:
     # Measure unit-suite coverage (gcov): run every suite instrumented with
@@ -515,6 +566,7 @@ jobs:
         REQUIRE_PYYAML=1 bash tools/ci/tests/test-required-checks.sh
         REQUIRE_PYYAML=1 bash tools/ci/tests/test-classify-changes.sh
         REQUIRE_PYYAML=1 bash tools/ci/tests/test-harness-shards.sh
+        REQUIRE_PYYAML=1 bash tools/ci/tests/test-local-gates.sh
     - name: Package-declaration consistency (blocking — issue #219)
       # Was advisory until the .deb/.rpm declarations were reconciled with
       # the build; the contradictions it tracked are closed, so a regression

@@ -14,6 +14,8 @@ the toolchain line, the `MMT_BASE` prefix contract and the sanitizer rules.
 - Coverage: `bash tests/run_all_tests.sh --coverage` — line coverage of the instrumented `src/` subset, not the whole SDK; whole-SDK per-family numbers: `bash tools/ci/check-sdk-coverage.sh` after that run
 - Phase0 gates (golden fingerprint, precision/recall): `MMT_PREFIX=$(mktemp -d) bash tools/phase0/ci/check_classification.sh` and `MMT_PREFIX=$(mktemp -d) bash tools/phase0/ci/check_precision.sh`
 - Pre-push tier (minutes): `bash tests/run_all_tests.sh --with-harnesses`
+- PR gates locally: `bash tools/ci/local-gates.sh --fast` (the lint, verify-helpers and doc-validators steps, read from `c-cpp.yml`, in the pinned container; `--full` adds the suites and phase0 gates) — [docs/AGENT_ENVIRONMENT.md §8](docs/AGENT_ENVIRONMENT.md#8-working-tree-gate-and-access-notes)
+- Opt-in compiler cache: `MMT_CCACHE=ccache bash tests/run_all_tests.sh` (or `make -C sdk MMT_CCACHE=ccache`); unset changes nothing
 - Lint: `shellcheck $(git ls-files '*.sh')`; cppcheck via `bash tools/ci/run-cppcheck.sh` (pinned version, see [docs/AGENT_ENVIRONMENT.md §1](docs/AGENT_ENVIRONMENT.md#1-toolchain-requirements))
 - Doc validators: `for s in scripts/validate-*.sh; do bash "$s" || exit 1; done`
 - Optional security engines: `make -C sdk ENABLESEC=1 -j$(nproc)` (requires libxml2-dev)

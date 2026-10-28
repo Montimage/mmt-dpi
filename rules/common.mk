@@ -26,9 +26,9 @@ endif
 #  - - - - -
 # DEFINE FLAG FOR COMPILE COMMAND
 #  - - - - -
-
-CFLAGS   := -Wall -DVERSION=\"$(VERSION)\" -DGIT_VERSION=\"$(GIT_VERSION)\" -DPLUGINS_REPOSITORY_OPT=\"$(MMT_PLUGINS)\"
-CXXFLAGS := -Wall -DVERSION=\"$(VERSION)\" -DGIT_VERSION=\"$(GIT_VERSION)\" -DPLUGINS_REPOSITORY_OPT=\"$(MMT_PLUGINS)\"
+MMT_CFLAGS_GIT_VERSION := $(GIT_VERSION)
+CFLAGS   := -Wall -DVERSION=\"$(VERSION)\"
+CXXFLAGS := -Wall -DVERSION=\"$(VERSION)\"
 
 # NDEBUG = 1 to show all messages from debug(), ... (i.e. keep asserts/debug()
 # enabled by NOT defining the standard NDEBUG macro). The default build defines
@@ -613,3 +613,19 @@ $(CORE_OBJECTS): CXXFLAGS += -fvisibility=hidden
 $(LIBBAPP_OBJECTS) $(LIBDICOM_OBJECTS): CFLAGS += -D_MMT_BUILD_SDK
 $(TCPIP_OBJECTS) $(LIBMOBILE_OBJECTS) $(LIBBAPP_OBJECTS) $(LIBDICOM_OBJECTS): CFLAGS += -fvisibility=hidden
 $(TCPIP_OBJECTS) $(LIBMOBILE_OBJECTS) $(LIBBAPP_OBJECTS) $(LIBDICOM_OBJECTS): CXXFLAGS += -fvisibility=hidden
+
+# Issue #553 (appended so no cited line range moves): the two volatile
+# defines go on the one object that reads each, not on every compile line.
+# The plugin directory (-DPLUGINS_REPOSITORY_OPT, a different MMT_PLUGINS per
+# install prefix) is read only by plugins_engine.c, whose object already
+# depends on the plugin-directory stamp in sdk/Makefile; the commit hash
+# (GIT_VERSION, through MMT_VERSION in mmt_core.h) only by mmt_version() in
+# packet_processing.c. Every other object's compile line is then identical
+# across install prefixes and commits, so an opt-in compiler cache
+# (MMT_CCACHE, rules/arch-linux-gcc.mk) hits in direct mode for the suites'
+# throwaway prefixes and across commits. No other object reads either macro,
+# so the built libraries are byte-identical to the global-define build.
+# MMT_CFLAGS_GIT_VERSION holds GIT_VERSION as it stood where CFLAGS is set,
+# before the `nogit` package-revision fallback above, as the global define did.
+$(TOPDIR)/src/mmt_core/src/plugins_engine.o: CFLAGS += -DPLUGINS_REPOSITORY_OPT=\"$(MMT_PLUGINS)\"
+$(TOPDIR)/src/mmt_core/src/packet_processing.o: CFLAGS += -DGIT_VERSION=\"$(MMT_CFLAGS_GIT_VERSION)\"

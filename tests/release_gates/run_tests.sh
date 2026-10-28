@@ -79,6 +79,13 @@
 # tools/ci/count-weak-types.sh (issue #539), which drives the real counter on
 # fixture headers to prove its `opaque` metric fails on a non-allowlisted or
 # unnamed mmt_opaque_t parameter (no SDK build).
+# It also runs the compiler-cache self-test beside rules/arch-linux-gcc.mk
+# (issue #553), which evaluates the real makefiles (no compile) to pin that
+# MMT_CCACHE is opt-in and that only plugins_engine.o and packet_processing.o
+# carry the per-prefix and per-commit defines, and the local-gates self-test
+# beside tools/ci/local-gates.sh (issue #553), which drives it with a stub
+# container runtime and fixture workflows (no docker; the workflow-reading
+# checks skip without PyYAML, the verify-helpers job requires it).
 set -e
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/ci/tests"
 python3 "${TESTS_DIR}/test-release-gates.py" "$@"
@@ -102,3 +109,5 @@ bash "${TESTS_DIR}/test-exported-symbols.sh"
 bash "${TESTS_DIR}/test-harness-shards.sh"
 bash "${TESTS_DIR}/test-shared-sdk-build.sh"
 bash "${TESTS_DIR}/test-weak-types.sh"
+bash "${TESTS_DIR}/test-ccache-launcher.sh"
+bash "${TESTS_DIR}/test-local-gates.sh"
