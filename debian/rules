@@ -1,0 +1,49 @@
+#!/usr/bin/make -f
+# Debian build of the SDK through the FHS install mode (`make -C sdk
+# install-fhs`, issue #475). The same MMT_* variables must reach the build and
+# the install: the plugin directory is compiled into libmmt_core.
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+include /usr/share/dpkg/architecture.mk
+include /usr/share/dpkg/buildflags.mk
+include /usr/share/dpkg/pkg-info.mk
+
+LIBDIR := /usr/lib/$(DEB_HOST_MULTIARCH)
+DEVDOC := /usr/share/doc/libmmt-dpi-dev
+
+# SOVERSION (the ABI, rules/common.mk, issue #536) is upstream's: when it
+# moves, rename libmmt-dpi1 to match. GIT_VERSION would otherwise come from a
+# .git directory the source package does not have.
+MMT_VARS := MMT_LIB=$(LIBDIR) \
+    MMT_INC=/usr/include/mmt-dpi \
+    MMT_PLUGINS=$(LIBDIR)/mmt-dpi/plugins \
+    MMT_EXAMS=$(DEVDOC)/examples \
+    GIT_VERSION=$(DEB_VERSION) \
+    MMT_EXTRA_CFLAGS="$(CPPFLAGS) $(CFLAGS)"
+
+%:
+	dh $@
+
+override_dh_auto_clean:
+	$(MAKE) -C sdk clean
+
+override_dh_auto_build:
+	dh_auto_build --buildsystem=makefile --sourcedirectory=sdk -- $(MMT_VARS)
+
+# Only the suites that need nothing but the compiler: the others build and
+# install the whole SDK into a throwaway prefix and take minutes. The
+# packaged libraries are exercised end to end by debian/tests/.
+override_dh_auto_test:
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	bash tests/run_all_tests.sh hexdump mmt_utils mmt_inet_ntop avltree memory
+endif
+
+# The plugins leave the core's symbols undefined (they are dlopen()ed into a
+# process that already maps libmmt_core), so tell dpkg-shlibdeps where the
+# core lives in this package.
+override_dh_shlibdeps:
+	dh_shlibdeps -l$(CURDIR)/debian/libmmt-dpi1$(LIBDIR)
+
+override_dh_auto_install:
+	dh_auto_build --buildsystem=makefile --sourcedirectory=sdk -- $(MMT_VARS) DESTDIR=$(CURDIR)/debian/tmp install-fhs

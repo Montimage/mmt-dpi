@@ -1,0 +1,35 @@
+Source: mmt-dpi
+Section: libs
+Priority: optional
+Maintainer: Montimage <developer@montimage.eu>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Rules-Requires-Root: no
+Homepage: https://github.com/montimage-projects/mmt-dpi
+Vcs-Git: https://github.com/montimage-projects/mmt-dpi.git
+Vcs-Browser: https://github.com/montimage-projects/mmt-dpi
+
+Package: libmmt-dpi1
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: deep packet inspection library (runtime)
+ MMT-DPI extracts data attributes from network packets, server logs and
+ other structured events, and classifies the application protocol of each
+ flow, so that the results can be analysed or monitored in real time.
+ .
+ The core engine loads its protocol dissectors as plugins: TCP/IP, mobile
+ core (S1AP, NGAP, GTPv2, NAS, Diameter), DICOM and business applications.
+ .
+ This package contains the shared libraries and the protocol plugins.
+
+Package: libmmt-dpi-dev
+Section: libdevel
+Architecture: any
+Depends: libmmt-dpi1 (= ${binary:Version}), ${misc:Depends}
+Description: deep packet inspection library (development files)
+ MMT-DPI extracts data attributes from network packets, server logs and
+ other structured events, and classifies the application protocol of each
+ flow, so that the results can be analysed or monitored in real time.
+ .
+ This package contains the C headers, the unversioned library symlinks, the
+ pkg-config file (mmt-dpi.pc) and the example programs.

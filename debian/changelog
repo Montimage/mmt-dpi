@@ -1,0 +1,6 @@
+mmt-dpi (1.9.1+ds-1) UNRELEASED; urgency=medium
+
+  * Initial packaging for Debian.
+    (Closes: #ITP-BUG-NUMBER)
+
+ -- Montimage <developer@montimage.eu>  Mon, 28 Sep 2026 12:00:00 +0000

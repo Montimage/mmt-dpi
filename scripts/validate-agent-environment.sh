@@ -436,8 +436,8 @@ fi
 echo ""
 echo "-- working-tree, gate and access notes --"
 
-check "records that the #475 Debian work lives outside main" \
-      "grep -q '#475 Debian work' '$DOC' && grep -qF 'PR #476' '$DOC'"
+check "records where the #475 Debian work landed" \
+      "grep -q '#475 Debian source package is in the tree' '$DOC' && grep -qF 'install-fhs' '$DOC'"
 check "names the classification gate with a scratch MMT_PREFIX" \
       "grep -qE 'MMT_PREFIX=.*tools/phase0/ci/check_classification\.sh' '$DOC'"
 check "names the precision gate with a scratch MMT_PREFIX" \

@@ -1,0 +1,352 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: mmt-dpi
+Upstream-Contact: Montimage <developer@montimage.eu>
+Source: https://github.com/montimage-projects/mmt-dpi
+Files-Excluded:
+ docs/images/1765138158-dnsgenformat.png
+ docs/images/3103432425-dnsheaderformat.png
+ docs/images/4206171857-dnsquestionformat.png
+ docs/images/536635463-dnsrrformat.png
+ docs/images/772490498-dnsnameformat.png
+ src/mmt_mobile/asn1c/support
+ docs/_site
+ docs/.jekyll-cache
+Comment:
+ DRAFT generated from a read-only audit of the git tree at v1.9.0 (HEAD
+ f1dd240d). Statements are tagged [H] = verified from a header or notice in
+ the tree, [G] = verified from git history of this repository, [W] =
+ verified against the upstream project's published files, [A] = assumed.
+ See license-audit.md for path:line evidence and the open questions.
+ .
+ Files-Excluded rationale (all provisional, maintainer to confirm):
+ the five docs/images/*dns*format.png files carry the visible watermark
+ "The TCP/IP Guide" (tcpipguide.com, all rights reserved) [verified by
+ viewing the images; referenced from docs/DNS-protocol.md:18,23,70,85,116] and
+ are not redistributable under DFSG. src/mmt_mobile/asn1c/support holds
+ 3GPP TS 36.413 / 38.413 ASN.1 modules with no copyright or redistribution
+ notice; they are only inputs for regenerating the (committed) asn1c output
+ and are not needed to build. docs/_site and docs/.jekyll-cache are git-ignored
+ Jekyll build output (bundles cayman CSS + normalize.css) and appear only in
+ a working-tree snapshot.
+ .
+ Not excluded but still unresolved (see license-audit.md, sections 5 and 8):
+ pcaps of unknown provenance under tools/phase0/ci/pcaps/ and
+ src/examples/google-fr.pcap; the Montimage logo docs/assets/montimage-logo.svg
+ and docs/favicon.ico; the IP-range and hostname tables
+ src/mmt_tcpip/lib/mmt_tcpip_classif_proto_ip_address.inc and
+ src/mmt_tcpip/lib/mmt_tcpip_classif_doted_host_names.inc.
+ .
+ CRITICAL, NOT REFLECTED BELOW BECAUSE PER-FILE NOTICES WERE STRIPPED
+ UPSTREAM: about 120 protocol classifiers under src/mmt_tcpip/lib/protocols/
+ (listed in opendpi-idiom-files.txt) and src/mmt_tcpip/lib/*.h are structurally
+ derived from OpenDPI (ipoque GmbH) / nDPI (ntop.org), which are
+ LGPL-3+ [G: commit 38be508d contains OPENDPI_/IPOQUE_ identifiers and
+ ntop_* function names; commit 1e45e3a2 renamed them]. The Files: * stanza
+ below (Apache-2.0) is only correct for these files if Montimage can show
+ they are independent works or holds a licence that permits it.
+
+Files: *
+Copyright: 2011-2026 Montimage
+License: Apache-2.0
+Comment:
+ Holder from AUTHORS:1 ("Montimage") [H] and src/mmt_security/tips.c:2 [H].
+ Earliest year 2011 from "Created on ... 2011" file banners (28 files) [H];
+ latest year from git history [G]. Individual git authors (Luong Nguyen,
+ Huu Nghia Nguyen, Bachar Wehbi, Edmo, jeevan(pokhrel), vinh_hoa.la,
+ Francesco Caccavale, strongcourage/Manh Nguyen) are not named in any
+ licence header; no copyright-assignment/employment evidence is in the tree
+ [A: employees or contractors of Montimage]. Apache-2.0 for the project as a
+ whole: LICENSE (201 lines), README.md:376-378, CONTRIBUTING.md:126 [H].
+ Most source files carry no licence header at all (only ~100 of 3292 tracked
+ files mention "Copyright", 88 of those are asn1c runtime files).
+
+Files: src/mmt_security/tips.c
+ src/mmt_security/tips_eval.c
+ src/mmt_security/tips_extract.c
+ src/mmt_security/tips_report.c
+ src/mmt_security/tips_xml.c
+Copyright: 2013 Montimage
+License: GPL-3+
+Comment:
+ Explicit per-file GPL-3+ header, lines 2-25 of each file (GPL text at
+ lines 5-7 and 12) [H]. Conflicts with
+ the top-level Apache-2.0 claim. Built only with ENABLESEC=1, but the release
+ .deb is built with ENABLESEC=1 (tools/ci/build-package.sh) [H per
+ docs/AGENT_ENVIRONMENT.md sec. 1], so libmmt_security ships. Montimage holds the
+ copyright and can relicense to Apache-2.0 (remove the header) if all
+ later contributors agree [A]. Until then libmmt_security.so must be
+ described as GPL-3+.
+
+Files: src/mmt_tcpip/lib/llhttp.c
+ src/mmt_tcpip/lib/llhttp.h
+ src/mmt_tcpip/lib/llhttp_api.c
+ src/mmt_tcpip/lib/llhttp_http.c
+Copyright: 2018 Fedor Indutny
+License: MIT
+Comment:
+ Vendored nodejs/llhttp v9.4.3 (release/v9.4.3) [H: file banners lines 1-8,
+ tools/ci/vendor-paths.txt:13-20]. The banners say "MIT licence" but neither
+ name the holder nor include the permission notice, and the repository
+ contains no LICENSE-MIT copy; holder and year are from upstream
+ LICENSE-MIT at tag release/v9.4.3 [W]. MIT requires the notice to accompany
+ copies: this copyright file provides it, but upstream (this repo) should also
+ add the notice to the sources or a third-party notices file.
+
+Files: src/mmt_mobile/asn1c/common/*
+Copyright: 2003-2019 Lev Walkin <vlm@lionet.info>
+ 2003-2004 X/IO Labs, xiolabs.com
+License: BSD-2-clause
+Comment:
+ asn1c skeleton/runtime sources copied into common/ [H]. 88 of the 97 tracked
+ files carry "Copyright (c) 2003-2017 Lev Walkin <vlm@lionet.info>. All rights
+ reserved. Redistribution and modifications are permitted subject to BSD
+ license." (e.g. constr_TYPE.c:2-3); the full licence text is NOT in the tree.
+ Identification as the 2-clause BSD licence is from asn1c's own LICENSE [W:
+ mouse07410/asn1c vlm_master LICENSE, which is BSD-2-Clause]; the pinned
+ toolchain is mouse07410/asn1c@dbd0ed09 (src/mmt_mobile/asn1c/ASN1C_VERSION).
+ X/IO Labs (2003, 2004) appears in xer_support.c and xer_support.h [H].
+ Year range: INTEGER.c:2 says 2003-2019 [H]. Later stanzas override this one
+ for the files listed there.
+
+Files: src/mmt_mobile/asn1c/common/asn_internal.c
+ src/mmt_mobile/asn1c/common/constraints.c
+ src/mmt_mobile/asn1c/common/per_decoder.c
+ src/mmt_mobile/asn1c/common/per_encoder.c
+Copyright: 2003-2019 Lev Walkin <vlm@lionet.info>
+License: BSD-2-clause
+Comment:
+ [A] asn1c skeleton files that carry no notice in this tree (no header at
+ line 1); assumed to be the same BSD-2-clause runtime as their siblings.
+ Confirm against the pinned upstream commit.
+
+Files: src/mmt_mobile/asn1c/s1ap/*
+ src/mmt_mobile/asn1c/ngap/*
+ src/mmt_mobile/asn1c/common/EXTERNAL.c
+ src/mmt_mobile/asn1c/common/EXTERNAL.h
+ src/mmt_mobile/asn1c/common/S1AP-PDU.c
+ src/mmt_mobile/asn1c/common/S1AP-PDU.h
+ src/mmt_mobile/asn1c/common/asn_constant.h
+Copyright: Montimage
+License: Apache-2.0
+Comment:
+ Machine-generated by "asn1c-0.9.29 (http://lionet.info/asn1c)" from the
+ 3GPP S1AP (TS 36.413) and NGAP (TS 38.413) ASN.1 modules [H: banner lines 2-5
+ of every file, 1841 of 1841 s1ap+ngap files]. Files carry no copyright or
+ licence statement. Status of the output is [A]: (1) asn1c places no
+ restriction on generated output beyond its BSD runtime [A], (2) 3GPP/ETSI
+ rights in the ASN.1 source may extend to the derived structure definitions
+ [A, unresolved]. EXTERNAL.* is generated from asn1c's own standard module
+ ASN1C-UsefulInformationObjectClasses.asn1 (banner line 3) [H]; asn_constant.h
+ is generated from the asn1c skeleton [H]. Do not hand-edit (CLAUDE.md hard
+ rule); regenerate with asn1c 0.9.29 if the specs are made available.
+
+Files: src/mmt_core/private_include/queue.h
+Copyright: 1991, 1993 The Regents of the University of California
+License: BSD-3-clause
+Comment:
+ BSD sys/queue.h (496 lines, @(#)queue.h 8.5 (Berkeley) 8/20/94) [G].
+ The licence header was DELETED by upstream commit 1b02f7e0 ("Correct some
+ license and copyright", 2017-08-28); the current file has no header [H].
+ Original header recoverable with
+ git show 1b02f7e0^:src/mmt_core/private_include/queue.h [G]. Restore it in
+ the source (BSD-3-clause requires the notice to be retained).
+
+Files: src/mmt_core/src/mmt_inet_ntop.c
+Copyright: 2000 Apple Computer, Inc.
+ 1994, 1995 Massachusetts Institute of Technology
+License: APSL-2.0 and MIT-1994
+Comment:
+ The current file has no header [H], but the code is the IPv6 text formatter
+ (zero-run compression with zr[]/hexa[][]) that carried an Apple Public Source
+ License 2.0 header plus an MIT 1994/1995 permission notice until commit
+ 7a6f98db / 1b02f7e0 (2017-08-28) deleted them [G]. The body is still
+ derived: compare git show 1b02f7e0^:src/mmt_core/src/mmt_inet_ntop.c with
+ the current file (162 lines) [G]. APSL-2.0 is file-level copyleft (modified
+ Covered Code must remain APSL-2.0, source must be available) and is
+ not Apache-2.0; Debian has historically accepted APSL-2.0 as DFSG-free
+ [A, verify with debian-legal/ftpmasters]. Cleanest fix: replace the file with
+ a small clean-room implementation (glibc already provides inet_ntop) or
+ restore the notices.
+
+Files: src/mmt_tcpip/lib/protocols/proto_citrix.c
+Copyright: 2012-2022 ntop.org
+ 2026 Montimage
+License: LGPL-3+
+Comment:
+ Lines 14-15 state "Based on nDPI's citrix.c detection logic (ntop/nDPI,
+ LGPL-3.0)" [H]. Upstream citrix.c header: "Copyright (C) 2012-22 -
+ ntop.org ... GNU Lesser General Public License ... either version 3 ... or
+ (at your option) any later version", "based on the OpenDPI and PACE
+ technology by ipoque GmbH" [W]. The MMT function reimplements the same byte
+ signatures (0x7f7f494341 00, "CGP/01", "Citrix.TcpProxyService"); whether
+ that is a protectable derivative is a judgement for the maintainer [A]. The
+ file is shown as LGPL-3+ here because the file itself declares the derivation.
+ Also see proto_syslog.c:91 ("nDPI-inspired") and the ~120 files that share
+ the OpenDPI/nDPI structure (header comment above).
+
+Files: tools/phase0/ci/pcaps/tcp_ecn_sample.pcap
+ tools/phase0/ci/pcaps/ip_teardrop_overlaping_ip_fragments.pcap
+ tools/phase0/ci/pcaps/tcp_tpncp_tcp.pcap
+Copyright: UNKNOWN
+License: UNKNOWN
+Comment:
+ TODO BLOCKER. Third-party captures of unknown provenance, imported from a
+ separate "mmt-test" repository (tools/phase0/golden_pcaps.txt:3-4, 18, 32) [H]. Names
+ and content match the Wireshark wiki SampleCaptures entries
+ "tcp-ecn-sample.pcap" (addresses 1.1.x.x) and "teardrop.cap" [W: names on
+ wiki.wireshark.org/SampleCaptures; the page states no licence]; tcp_tpncp_tcp
+ contains an AudioCodes INI configuration file. No licence evidence in the
+ tree. Options: obtain a licence statement, replace by synthetic captures
+ (tools/phase0/gen_*_pcap.py already generate 12+), or add to Files-Excluded
+ (the phase0 harness is CI-only; Debian's build does not use it).
+
+Files: tools/phase0/ci/pcaps/tcp_bbc-out-of-order.pcap
+ tools/phase0/ci/pcaps/arp_padding.pcap
+ src/examples/google-fr.pcap
+Copyright: Montimage
+License: Apache-2.0
+Comment:
+ TODO. Recorded on a Montimage test LAN (tools/phase0/ci/sanitize_pcaps.py:4-12)
+ [H], but the payloads contain third-party content: the full HTML of a
+ www.bbc.com page (its head contains rel="copyright" to bbc.co.uk terms) and
+ Google's www.google.fr response [H, via strings]. The baseline name of the ARP
+ capture is THALES/arp_padding.pcap (tools/phase0/golden_pcaps.txt), i.e.
+ obtained from a third party [H]; permission to redistribute is unconfirmed.
+
+License: Apache-2.0
+ On Debian systems, the full text of the Apache License, Version 2.0 can be
+ found in the file `/usr/share/common-licenses/Apache-2.0'.
+
+License: GPL-3+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ On Debian systems, the complete text of the GNU General Public License
+ version 3 can be found in `/usr/share/common-licenses/GPL-3'.
+
+License: LGPL-3+
+ This library is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ .
+ This library is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Lesser General Public License for more details.
+ .
+ On Debian systems, the complete text of the GNU Lesser General Public
+ License version 3 can be found in `/usr/share/common-licenses/LGPL-3'.
+
+License: MIT
+ Permission is hereby granted, free of charge, to any person obtaining a
+ copy of this software and associated documentation files (the
+ "Software"), to deal in the Software without restriction, including
+ without limitation the rights to use, copy, modify, merge, publish,
+ distribute, sublicense, and/or sell copies of the Software, and to permit
+ persons to whom the Software is furnished to do so, subject to the
+ following conditions:
+ .
+ The above copyright notice and this permission notice shall be included
+ in all copies or substantial portions of the Software.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+ NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+ USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+License: BSD-2-clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ SUCH DAMAGE.
+
+License: BSD-3-clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+ 3. Neither the name of the University nor the names of its contributors
+    may be used to endorse or promote products derived from this software
+    without specific prior written permission.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ SUCH DAMAGE.
+
+License: MIT-1994
+ Permission to use, copy, modify, and distribute this software and
+ its documentation for any purpose and without fee is hereby
+ granted, provided that both the above copyright notice and this
+ permission notice appear in all copies, that both the above
+ copyright notice and this permission notice appear in all
+ supporting documentation, and that the name of M.I.T. not be used
+ in advertising or publicity pertaining to distribution of the
+ software without specific, written prior permission.  M.I.T. makes
+ no representations about the suitability of this software for any
+ purpose.  It is provided "as is" without express or implied
+ warranty.
+ .
+ THIS SOFTWARE IS PROVIDED BY M.I.T. ``AS IS''.  M.I.T. DISCLAIMS
+ ALL EXPRESS OR IMPLIED WARRANTIES WITH REGARD TO THIS SOFTWARE,
+ INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT
+ SHALL M.I.T. BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+ USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ SUCH DAMAGE.
+ .
+ (Text as in the notice removed from mmt_inet_ntop.c by commit 1b02f7e0.)
+
+License: APSL-2.0
+ TODO: paste the verbatim Apple Public Source License, Version 2.0 from
+ https://www.opensource.apple.com/apsl/ here. It is not reproduced in this
+ draft because it is not in the repository or in /usr/share/common-licenses;
+ the original file header only referenced it (see git show
+ 1b02f7e0^:src/mmt_core/src/mmt_inet_ntop.c, lines 1-23).
+
+License: UNKNOWN
+ No licence information is available for these files. This stanza must be
+ removed (by excluding, replacing or licensing the files) before upload.

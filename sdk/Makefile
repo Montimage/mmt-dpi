@@ -12,7 +12,7 @@ else
 endif
 
 default: sdk
-.PHONY: sdk install uninstall clean dist-clean --check-built --check-prefix FORCE
+.PHONY: sdk install install-fhs uninstall clean dist-clean --check-built --check-prefix FORCE
 
 include $(RULESDIR)/arch-$(ARCH).mk
 
@@ -640,3 +640,72 @@ $(REACTION_DIR_STAMP): FORCE
 	$(QUIET) if [ "`cat $@ 2>/dev/null`" != "$(MMT_SEC_REACTION_DIR_DEFAULT)" ]; then echo "$(MMT_SEC_REACTION_DIR_DEFAULT)" > $@; fi
 $(SRCDIR)/mmt_security/tips_report.o: $(REACTION_DIR_STAMP)
 endif
+
+#  - - - - - - - - - - - - - -
+#  I N S T A L L - F H S
+#  - - - - - - - - - - - - - -
+# Distribution layout (issue #475): install under $(DESTDIR) at the FHS
+# locations the caller names — the lib<name>.so.$(SOVERSION) runtime links
+# and lib<name>.so development links (relative), the plugin directory as
+# relative links to those libraries, a pkg-config file. No
+# /etc/ld.so.conf.d drop-in, no ldconfig call (the dpkg/rpm triggers run it),
+# no licence files (debian/copyright carries them) and no install manifest
+# (the package manager owns the file list). `install` and the MMT_BASE
+# contract are unchanged.
+#
+# The directories are the existing MMT_LIB/MMT_INC/MMT_PLUGINS/MMT_EXAMS
+# variables, and they must reach the build as well as this target:
+# MMT_PLUGINS is compiled into plugins_engine.o (PLUGINS_REPOSITORY_OPT), so
+# a library built for /opt/mmt would look for its plugins there; like
+# `install`, this target never compiles and --check-built refuses that
+# mismatch. Example (debian/rules does the same):
+#   V="MMT_LIB=/usr/lib/x86_64-linux-gnu MMT_INC=/usr/include/mmt-dpi \
+#      MMT_PLUGINS=/usr/lib/x86_64-linux-gnu/mmt-dpi/plugins \
+#      MMT_EXAMS=/usr/share/doc/libmmt-dpi-dev/examples"
+#   make -C sdk $V && make -C sdk $V DESTDIR=/tmp/stage install-fhs
+# INSTALL_STATIC=1 also installs the static archives (off: distros seldom want them).
+ifneq ($(filter install-fhs,$(MAKECMDGOALS)),)
+$(foreach v,MMT_LIB MMT_INC MMT_PLUGINS MMT_EXAMS,$(if $(filter file default undefined,$(origin $(v))),$(error install-fhs needs $(v)=<dir> on the build and on this target: the /opt/mmt default is not an FHS location)))
+endif
+
+DESTDIR       ?=
+MMT_PKGCONFIG ?= $(MMT_LIB)/pkgconfig
+FHS_LIBS      := $(LIBCORE) $(LIBTCPIP) $(LIBMOBILE) $(LIBBAPP) $(LIBDICOM)
+FHS_PLUGINS   := $(LIBTCPIP) $(LIBMOBILE) $(LIBBAPP) $(LIBDICOM)
+ifdef ENABLESEC
+FHS_LIBS      += $(LIBSECURITY) $(LIBFUZZ)
+endif
+
+install-fhs: --check-built
+	@ install -d -m 0755 $(DESTDIR)$(MMT_LIB) $(DESTDIR)$(MMT_INC) $(DESTDIR)$(MMT_PLUGINS) $(DESTDIR)$(MMT_EXAMS) $(DESTDIR)$(MMT_PKGCONFIG)
+	@ for lib in $(FHS_LIBS); do \
+		install -m 0755 $(SDKLIB)/$$lib.so.$(VERSION) $(DESTDIR)$(MMT_LIB)/ \
+		&& ln -sf $$lib.so.$(VERSION) $(DESTDIR)$(MMT_LIB)/$$lib.so.$(SOVERSION) \
+		&& ln -sf $$lib.so.$(SOVERSION) $(DESTDIR)$(MMT_LIB)/$$lib.so || exit 1; \
+	done
+# The plugin directory holds relative links to the one installed copy: the
+# core dlopen()s every *.so in it, and a link resolves to the same object an
+# application that links the library directly already has mapped.
+	@ rel=`realpath -s --relative-to=$(DESTDIR)$(MMT_PLUGINS) $(DESTDIR)$(MMT_LIB)` \
+	&& for lib in $(FHS_PLUGINS); do \
+		ln -sf $$rel/$$lib.so.$(SOVERSION) $(DESTDIR)$(MMT_PLUGINS)/$$lib.so || exit 1; \
+	done
+	@ $(if $(INSTALL_STATIC),install -m 0644 $(SDKLIB)/*.a $(DESTDIR)$(MMT_LIB)/,:)
+	@ umask 022 && cp -R $(SDKINC)/. $(DESTDIR)$(MMT_INC)/ \
+		&& find $(DESTDIR)$(MMT_INC) -type d -exec chmod 0755 {} + \
+		&& find $(DESTDIR)$(MMT_INC) -type f -exec chmod 0644 {} +
+	@ umask 022 && cp -R $(SDKXAM)/. $(DESTDIR)$(MMT_EXAMS)/ \
+		&& find $(DESTDIR)$(MMT_EXAMS) -type d -exec chmod 0755 {} + \
+		&& find $(DESTDIR)$(MMT_EXAMS) -type f -exec chmod 0644 {} +
+	@ umask 022 && printf '%s\n' \
+		'libdir=$(MMT_LIB)' 'includedir=$(MMT_INC)' 'plugindir=$(MMT_PLUGINS)' '' \
+		'Name: mmt-dpi' 'Description: MMT-DPI deep packet inspection library' \
+		'URL: https://github.com/montimage-projects/mmt-dpi' 'Version: $(VERSION)' \
+		'Libs: -L$${libdir} -lmmt_core' 'Libs.private: -ldl -lpthread -lm' \
+		'Cflags: -I$${includedir}' > $(DESTDIR)$(MMT_PKGCONFIG)/mmt-dpi.pc \
+		&& chmod 0644 $(DESTDIR)$(MMT_PKGCONFIG)/mmt-dpi.pc
+# Same assertion as `install`: nothing group/world-writable in the loader path.
+	@ if find $(DESTDIR)$(MMT_LIB) -type f -perm /022 -print -quit | grep -q .; then \
+		echo "ERROR: group/world-writable file under $(DESTDIR)$(MMT_LIB)" >&2; exit 1; \
+	fi
+	@ echo "[MMT-]> Installed the FHS layout under $(DESTDIR)$(MMT_LIB)"

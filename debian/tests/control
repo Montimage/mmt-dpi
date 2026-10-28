@@ -1,0 +1,3 @@
+Tests: installed-consumer
+Depends: libmmt-dpi-dev, gcc, libc6-dev, libpcap-dev, pkgconf
+Restrictions: allow-stderr

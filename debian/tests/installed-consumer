@@ -1,0 +1,9 @@
+#!/bin/sh
+# Compile the CI consumer against the installed -dev package (pkg-config only)
+# and replay the vendored fixtures through the installed plugins.
+set -eu
+exec bash tools/ci/tests/run-installed-consumer.sh --no-engines \
+    --libdir "/usr/lib/$(dpkg-architecture -qDEB_HOST_MULTIARCH)" \
+    --includedir /usr/include/mmt-dpi \
+    --plugindir "/usr/lib/$(dpkg-architecture -qDEB_HOST_MULTIARCH)/mmt-dpi/plugins" \
+    --distro debian --arch "$(dpkg --print-architecture)"

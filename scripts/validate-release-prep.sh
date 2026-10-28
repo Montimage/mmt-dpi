@@ -72,7 +72,7 @@ else
         "$(first_match "$ROOT/dist/ZIP/mmt-install-common.sh" 's/^VERSION="\${VERSION:-\([^}]*\)}".*/\1/p')"
     agree "CHANGELOG.md topmost 'Version' heading" "$VERSION" \
         "$(first_match "$ROOT/CHANGELOG.md" 's/^Version \([0-9][^ ]*\).*/\1/p')"
-    # debian/ is not tracked on main yet (issue #475): checked only when present.
+    # debian/ (issue #475): checked when present, so a tree without it still validates.
     if [ -f "$ROOT/debian/changelog" ]; then
         agree "debian/changelog upstream version" "$VERSION" \
             "$(first_match "$ROOT/debian/changelog" '1s/^[^ ]* (\([0-9]*:\)\{0,1\}\([^)]*\)).*/\2/p' | sed 's/-[^-]*$//; s/+\(dfsg\|ds\).*$//')"

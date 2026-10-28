@@ -1,0 +1,42 @@
+Maintaining the Debian packaging of mmt-dpi
+===========================================
+
+debian/ lives in the upstream repository (montimage-projects/mmt-dpi). It
+builds through `make -C sdk install-fhs` (FHS paths, upstream's SOVERSION) and is
+independent of the upstream `make deb` package, which installs under /opt/mmt.
+
+Binary packages
+  libmmt-dpi1     libmmt_core.so.1 and the protocol plugins (tcpip, tmobile,
+                  tdicom, business_app). The core dlopen()s the plugins from
+                  /usr/lib/<triplet>/mmt-dpi/plugins/ (links to the libraries).
+  libmmt-dpi-dev  headers (/usr/include/mmt-dpi), libmmt_*.so links,
+                  mmt-dpi.pc, examples. Static archives are not shipped.
+The security and fuzz engines (ENABLESEC=1, libxml2) are deliberately not
+built for Debian yet.
+
+Releasing a new upstream version
+  1. Bump VERSION (docs/Prepare-for-a-new-released-version.md) and add a
+     debian/changelog entry `<version>+ds-1`; scripts/validate-release-prep.sh
+     (the version-agreement job and the tag's verify-tag job) fails otherwise.
+  2. Tag vX.Y.Z. The release workflow attaches mmt-dpi-X.Y.Z.tar.gz
+     (tools/ci/build-source-tarball.sh: `git archive` + `gzip -n`, byte
+     reproducible), SHA256SUMS and a provenance attestation.
+  3. `uscan` fetches the tag archive and, because of Files-Excluded in
+     debian/copyright, repacks it as mmt-dpi_X.Y.Z+ds.orig.tar.xz.
+  4. Build in a clean chroot: `sbuild -d unstable` (or `pbuilder`), then run
+     `lintian -i -I --pedantic` and `autopkgtest` on the result.
+
+Changing the ABI
+  SOVERSION is upstream's (end of rules/common.mk, issue #536; the abi-diff
+  job fails an incompatible change that does not move it). When it moves,
+  rename libmmt-dpi1 to libmmt-dpi<SOVERSION> in debian/control and the
+  *.install / *.lintian-overrides file names.
+
+Local check of the whole packaging
+  docker run --rm -v "$PWD":/work -w /work debian:13 \
+      bash tools/ci/build-debian-package.sh
+  builds, lints, installs and runs the consumer against the installed files.
+
+Blockers before an upload to Debian: see debian/license-audit.md and the
+"Comment" of debian/copyright. The changelog still names a placeholder ITP
+bug (#ITP-BUG-NUMBER) and the distribution is UNRELEASED.

@@ -1,0 +1,4 @@
+usr/include/mmt-dpi
+usr/lib/*/libmmt_*.so
+usr/lib/*/pkgconfig/mmt-dpi.pc
+usr/share/doc/libmmt-dpi-dev/examples

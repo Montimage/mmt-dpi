@@ -296,6 +296,25 @@ check "no residue under prefix after round trip" \
 check_fail "unwritable prefix still refused for non-root" \
     bash -c "cd '${Z}' && MMT_BASE=/sys/mmt-nope bash install.sh"
 
+# --- 5b. Distribution packaging (issue #475) -------------------------------
+# The debian/changelog version is checked by scripts/validate-release-prep.sh
+# (the version-agreement job and verify-tag), not here.
+echo "--- distribution packaging: FHS install guards, debian/, source tarball ---"
+check_fail "install-fhs refuses the /opt/mmt default directories" \
+    make -C "${REPO_ROOT}/sdk" install-fhs
+check_fail "install-fhs needs the plugin directory named too" \
+    make -C "${REPO_ROOT}/sdk" MMT_LIB=/x/lib MMT_INC=/x/inc MMT_EXAMS=/x/ex install-fhs
+check "debian/ is a 3.0 (quilt) source with an executable rules file" \
+    bash -c "grep -qx '3.0 (quilt)' '${REPO_ROOT}/debian/source/format' && [ -x '${REPO_ROOT}/debian/rules' ]"
+check "debian/copyright is machine-readable (DEP-5)" \
+    bash -c "head -1 '${REPO_ROOT}/debian/copyright' | grep -q 'copyright-format/1.0'"
+check "debian/control names the Montimage maintainer" \
+    bash -c "grep -q '^Maintainer: .*<developer@montimage.eu>' '${REPO_ROOT}/debian/control'"
+check "source tarball is reproducible and holds only tracked files" \
+    bash -c "bash '${REPO_ROOT}/tools/ci/build-source-tarball.sh' --verify --out '${WORK}/tarball' >'${WORK}/tb.log' 2>&1 \
+        && tar -tzf '${WORK}'/tarball/mmt-dpi-*.tar.gz | grep -q '/rules/common.mk\$' \
+        && ! tar -tzf '${WORK}'/tarball/mmt-dpi-*.tar.gz | grep -qE '\.(o|so|a)\$'"
+
 # --- 6. Examples: compile + behaviour ---------------------------------------
 echo "--- example programs (build SDK to throwaway prefix) ---"
 PREFIX2="${WORK}/sdk-prefix"
@@ -539,6 +558,41 @@ check "symlinked manifest target untouched" \
 rm -rf "${SYMP}"
 check "dist-clean is an alias for uninstall" \
     grep -q '^dist-clean: uninstall$' "${REPO_ROOT}/sdk/Makefile"
+
+# --- 7b. FHS install for distribution packages (issue #475) -----------------
+# The build above baked ${PREFIX2}/plugins into plugins_engine.o, so that is
+# the plugin directory install-fhs must be given; the other three are FHS-like
+# paths staged under DESTDIR.
+echo "--- make install-fhs: staged FHS layout ---"
+FHS="${WORK}/fhs"
+FHS_LIB=/usr/lib/mmt-test-triplet
+FHS_VARS=(MMT_LIB="${FHS_LIB}" MMT_INC=/usr/include/mmt-dpi
+          MMT_PLUGINS="${PREFIX2}/plugins" MMT_EXAMS=/usr/share/doc/libmmt-dpi-dev/examples)
+check_fail "install-fhs refuses a plugin directory the build was not made for" \
+    "${SDKM[@]}" MMT_LIB=/l MMT_INC=/i MMT_PLUGINS=/p MMT_EXAMS=/e DESTDIR="${WORK}/fhs-refused" install-fhs
+check "refused install-fhs created nothing" test ! -e "${WORK}/fhs-refused"
+check "install-fhs (real run) compiles nothing" \
+    bash -c "! \"\$@\" DESTDIR='${FHS}' install-fhs 2>&1 | grep -q '\[COMPILE\]'" _ "${SDKM[@]}" "${FHS_VARS[@]}"
+for l in libmmt_core libmmt_tcpip libmmt_tmobile libmmt_business_app libmmt_tdicom; do
+    check "install-fhs: ${l}.so.${SOV} -> ${l}.so.${VER}, ${l}.so -> ${l}.so.${SOV}" \
+        bash -c "[ -f '${FHS}${FHS_LIB}/${l}.so.${VER}' ] \
+            && [ \"\$(readlink '${FHS}${FHS_LIB}/${l}.so.${SOV}')\" = '${l}.so.${VER}' ] \
+            && [ \"\$(readlink '${FHS}${FHS_LIB}/${l}.so')\" = '${l}.so.${SOV}' ]"
+done
+for l in libmmt_tcpip libmmt_tmobile libmmt_business_app libmmt_tdicom; do
+    check "install-fhs: plugin ${l}.so is a relative link to the installed library" \
+        bash -c "t=\"\$(readlink '${FHS}${PREFIX2}/plugins/${l}.so')\" && [ \"\${t#/}\" = \"\$t\" ] \
+            && [ \"\$(readlink -f '${FHS}${PREFIX2}/plugins/${l}.so')\" = \"\$(readlink -f '${FHS}${FHS_LIB}/${l}.so.${VER}')\" ]"
+done
+check "install-fhs: no static archive, no loader drop-in, no manifest" \
+    bash -c "! ls '${FHS}${FHS_LIB}'/*.a >/dev/null 2>&1 && [ -z \"\$(find '${FHS}' -name 'mmt-dpi.conf' -o -name '.mmt-dpi-manifest')\" ]"
+check "install-fhs: headers, examples and the pkg-config file" \
+    bash -c "[ -f '${FHS}/usr/include/mmt-dpi/mmt_core.h' ] \
+        && [ -f '${FHS}/usr/share/doc/libmmt-dpi-dev/examples/extract_all.c' ] \
+        && grep -qx 'libdir=${FHS_LIB}' '${FHS}${FHS_LIB}/pkgconfig/mmt-dpi.pc' \
+        && grep -qx 'Version: ${VER}' '${FHS}${FHS_LIB}/pkgconfig/mmt-dpi.pc'"
+check "install-fhs: no group/world-writable file" \
+    bash -c "[ -z \"\$(find '${FHS}' -type f -perm /022)\" ]"
 
 # --- 8. Package split and licence files in the built .deb (issue #497) ------
 # An ENABLESEC=1 `make deb` yields mmt-dpi and mmt-dpi-security; both list

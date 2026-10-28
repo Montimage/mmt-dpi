@@ -33,6 +33,12 @@
 #
 #   --prefix DIR       install root to test (default /opt/mmt — the package's
 #                      own layout; the unit suite passes a throwaway prefix)
+#   --libdir DIR       library directory   (default <prefix>/dpi/lib)
+#   --includedir DIR   header directory    (default <prefix>/dpi/include)
+#   --plugindir DIR    plugin directory    (default <prefix>/plugins)
+#                      The three overrides describe an FHS install (issue #475,
+#                      `make install-fhs`, e.g. the Debian package) whose
+#                      layout is not rooted under one prefix.
 #   --package FILE     package file for logging; '-' or omitted = none
 #   --distro ID        distro tag recorded in the logs (default unknown)
 #   --arch ARCH        architecture tag (default: uname -m)
@@ -63,6 +69,9 @@ FIXTURES="${FIXTURES:-${SCRIPT_DIR}/fixtures.txt}"
 PCAP_DIR="${PCAP_DIR:-${REPO_ROOT}/tools/phase0/ci/pcaps}"
 
 PREFIX="/opt/mmt"
+LIB_OVERRIDE=""
+INC_OVERRIDE=""
+PLUGINS_OVERRIDE=""
 PACKAGE="-"
 DISTRO="unknown"
 ARCH="$(uname -m)"
@@ -73,6 +82,9 @@ LDCONF_FILE="${LDCONF_FILE:-/etc/ld.so.conf.d/mmt-dpi.conf}"
 while [ $# -gt 0 ]; do
     case "$1" in
         --prefix)         PREFIX="${2:?--prefix needs a directory}"; shift 2 ;;
+        --libdir)         LIB_OVERRIDE="${2:?--libdir needs a directory}"; shift 2 ;;
+        --includedir)     INC_OVERRIDE="${2:?--includedir needs a directory}"; shift 2 ;;
+        --plugindir)      PLUGINS_OVERRIDE="${2:?--plugindir needs a directory}"; shift 2 ;;
         --package)        PACKAGE="${2:?--package needs a file or -}"; shift 2 ;;
         --distro)         DISTRO="${2:?--distro needs an id}"; shift 2 ;;
         --arch)           ARCH="${2:?--arch needs a value}"; shift 2 ;;
@@ -114,9 +126,9 @@ fail() { say "✗ $*"; exit 1; }
 
 say "prefix=${PREFIX} engines_expected=${EXPECT_ENGINES} root_install=${ROOT_INSTALL}"
 
-LIB="${PREFIX}/dpi/lib"
-INC="${PREFIX}/dpi/include"
-PLUGINS="${PREFIX}/plugins"
+LIB="${LIB_OVERRIDE:-${PREFIX}/dpi/lib}"
+INC="${INC_OVERRIDE:-${PREFIX}/dpi/include}"
+PLUGINS="${PLUGINS_OVERRIDE:-${PREFIX}/plugins}"
 
 # --- 1. installed layout ------------------------------------------------------
 [ -d "${INC}" ] || fail "packaged headers missing: ${INC}"

@@ -1,0 +1,2 @@
+usr/lib/*/libmmt_*.so.*
+usr/lib/*/mmt-dpi/plugins/*.so

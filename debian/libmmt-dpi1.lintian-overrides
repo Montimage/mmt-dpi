@@ -1,0 +1,7 @@
+# libmmt_core.so.1 and the four protocol plugins (tcpip, tmobile, tdicom,
+# business_app) are one ABI: the core dlopen()s the plugins from
+# /usr/lib/<triplet>/mmt-dpi/plugins/ (symlinks to the libraries installed
+# beside it), each plugin resolves its core symbols from the libmmt_core the
+# process already maps, and all five share SOVERSION 1. Splitting them into five packages would let users
+# install a core without its plugins, which classifies nothing.
+libmmt-dpi1: package-name-doesnt-match-sonames libmmt-business-app1 libmmt-core1 libmmt-tcpip1 libmmt-tdicom1 libmmt-tmobile1

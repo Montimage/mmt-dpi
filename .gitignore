@@ -171,3 +171,17 @@ vendor/bundle/
 .env
 .env.*
 !.env.example
+
+# Debian build output (dpkg-buildpackage run in the tree, issue #475)
+debian/.debhelper/
+debian/tmp/
+debian/files
+debian/*.substvars
+debian/*.debhelper.log
+debian/debhelper-build-stamp
+debian/libmmt-dpi1/
+debian/libmmt-dpi-dev/
+debian/libmmt-dpi1-dbgsym/
+dist/source/
+dist/debian-packages/
+!debian/README.source

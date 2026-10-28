@@ -241,6 +241,7 @@ All flags are passed as make variables, e.g. `make -C sdk DEBUG=1`.
 | `VERBOSE=1` | Print full compile commands | `rules/common.mk:21-24` |
 | `MMT_EXTRA_CFLAGS=...` | Extra C flags appended after the gnu17 dialect pin (the last `-std` wins, e.g. `-std=gnu2x`); default GCC toolchain only | `rules/arch-linux.mk:20-21` |
 | `MMT_CCACHE=ccache` | Opt-in compiler cache (issue #553): the launcher goes in front of `$(CC)`/`$(CXX)`; unset changes nothing. Make reads it from the environment, so `MMT_CCACHE=ccache bash tests/run_all_tests.sh` caches every SDK the suites build. `CCACHE_BASEDIR` defaults to the checkout; `BUILD=coverage` stays uncached; a missing launcher stops the build. Default GCC toolchain only | `rules/arch-linux.mk:73-85` |
+| `make -C sdk install-fhs` | FHS install under `DESTDIR` for distribution packages (issue #475): versioned runtime links, relative plugin links, a pkg-config file, no loader drop-in, no manifest. Needs `MMT_LIB`, `MMT_INC`, `MMT_PLUGINS` and `MMT_EXAMS` on the build and the install; `install` and the `MMT_BASE` contract (§4) are unchanged | `sdk/Makefile` (`install-fhs` target) |
 
 ## 3. Testing
 
@@ -714,17 +715,17 @@ make -C sdk -j$(nproc)`.
 
 Facts a later agent cannot infer from the build system alone (issue #480).
 
-- **The maintainer's #475 Debian work is not on `main`.** It lives on the
-  open PR #476 (branch `feat/475-publish-mmt-dpi-through-official-ubuntu`)
-  and, while it is in progress, in the maintainer's local checkout as
-  uncommitted changes: about a dozen modified tracked files plus the untracked
-  `debian/`, `tools/ci/build-debian-package.sh` and
-  `tools/ci/build-source-tarball.sh`. Run `git status --short` before
-  starting any modernization task; if that work is in the tree, land it on its
-  own branch (`git switch -c <branch> && git add -A && git commit`) or stash
-  it (`git stash push -u -m "#475 Debian work"`) before P0 starts. Never
-  overwrite, reset, `git clean`, pop or drop it — and never pop, apply or drop
-  a stash entry you did not create.
+- **The #475 Debian source package is in the tree.** `debian/` (binary
+  packages `libmmt-dpi1` and `libmmt-dpi-dev`, built through
+  `make -C sdk install-fhs`), `tools/ci/build-debian-package.sh` and
+  `tools/ci/build-source-tarball.sh` came from the maintainer's #475 Debian
+  work, which sat uncommitted in a local checkout (the docs half went through
+  the closed PR #476); the layout and how it coexists with `make deb` are in
+  [DECISIONS.md](https://github.com/montimage-projects/mmt-dpi/blob/main/docs/DECISIONS.md)
+  (2026-10-29). Issue #475 stays open for the official-channel submission.
+  Run `git status --short` before starting any task: never overwrite, reset,
+  `git clean`, pop or drop work you did not create — and never pop, apply or
+  drop a stash entry you did not create.
 - **Phase0 gate commands.** Both gates build and install the SDK themselves;
   give each a scratch prefix (`MMT_PREFIX`; unset, each gate installs into a
   fresh `mktemp -d /tmp/mmt-phase0.XXXXXX` it removes on exit — issue #508):

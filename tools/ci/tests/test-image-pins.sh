@@ -237,8 +237,9 @@ before() { [ -n "$1" ] && [[ "$1" < "$2" ]]; }
 # matrix image as a whole baseline line once trailing comments are stripped,
 # so a `# retire-by:` comment never fails a leg (issue #516).
 recorded_cmd="sed 's/[[:space:]]*#.*\$//' tools/ci/base-images.txt | grep -Fx -- \"\$IMAGE\""
-expect 0 "both release-packages verify steps strip comments before matching" \
-    test "$(grep -cF -- "run: ${recorded_cmd}" "${WF}/release-packages.yml")" -eq 2
+expect 0 "every release-packages verify step strips comments before matching" \
+    test "$(grep -cF -- "run: ${recorded_cmd}" "${WF}/release-packages.yml")" -eq \
+         "$(grep -cF -- "- name: Verify pinned base image is recorded" "${WF}/release-packages.yml")"
 matrix_images() {
     sed -n 's/^ *- {.*image: *"\([^"]*\)".*/\1/p' "${WF}/release-packages.yml" | sort -u
 }
