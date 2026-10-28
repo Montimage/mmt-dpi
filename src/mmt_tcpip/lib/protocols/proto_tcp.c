@@ -872,6 +872,14 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     debug("[tcp_pre_classification_function] packet %"PRIu64" at index: %d\n",ipacket->packet_id,index);
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
     int l4_offset = get_packet_offset_at_index(ipacket, index);
+    /* Issue #530: doff, ports and flags are read below; an IP header whose
+     * options reach the end of the capture left none of them captured.
+     * Synthetic harness packets may carry no p_hdr — skip the caplen check then. */
+    if (l4_offset < 0
+     || (ipacket->p_hdr != NULL
+      && !mmt_have_bytes(ipacket, (size_t) l4_offset, sizeof(struct tcphdr)))) {
+        return MMT_CLASSIFY_SKIP;
+    }
     if (packet->iphv6) {
         packet->l4_packet_len = (ipacket->p_hdr->caplen - l4_offset);
     }
@@ -987,6 +995,14 @@ int tcp_pre_classification_function_with_reassemble(ipacket_t * ipacket, unsigne
     debug("[tcp_pre_classification_function_with_reassemble] packet %"PRIu64" at index: %d\n",ipacket->packet_id,index);
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
     int l4_offset = get_packet_offset_at_index(ipacket, index);
+    /* Issue #530: doff, ports and flags are read below; an IP header whose
+     * options reach the end of the capture left none of them captured.
+     * Synthetic harness packets may carry no p_hdr — skip the caplen check then. */
+    if (l4_offset < 0
+     || (ipacket->p_hdr != NULL
+      && !mmt_have_bytes(ipacket, (size_t) l4_offset, sizeof(struct tcphdr)))) {
+        return MMT_CLASSIFY_SKIP;
+    }
     if (packet->iphv6) {
         packet->l4_packet_len = (ipacket->p_hdr->caplen - l4_offset);
     }

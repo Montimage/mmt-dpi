@@ -32,6 +32,24 @@
 #   default run replays before fuzzing    -> "replayed N regression(s)"
 #   digest drift / unlisted / missing file / empty manifest -> 2
 #
+# libFuzzer mode (issue #530) — --fuzzer points at a stub packet_fuzzer, so
+# nothing is built; it logs its argv and replays ${FUZZ_STUB_DIR}/lf-* for
+# the phase named in lf-phase (replay | fuzz | corpus):
+#   clean replay + fuzz + merge           -> 0
+#   fuzz rc 1 + crash-* artifact (a real ASan exit) -> 1, <artifact>.log/.pcap
+#   fuzz rc 1 + sanitizer banner, no artifact -> 1
+#   fuzz rc 77 (-error_exitcode)          -> 1
+#   fuzz rc 78 + timeout-* artifact       -> 1
+#   fuzz rc 1, no artifact, no banner     -> 2 (harness breakage)
+#   fuzz rc 126                           -> 2
+#   replay of a committed input crashes   -> 1 (names the input)
+#   seeds drift from gen_seeds.py         -> 2
+#   a seed no longer reaches its dissector -> 2
+#   --replay-only: files only, no -max_len, no fuzzing; an explicit
+#     --corpus is replayed with -runs=0
+#   --corpus without --libfuzzer, --prefix with it, a missing --fuzzer
+#     binary                              -> 2
+#
 # Usage: bash tools/ci/tests/test-fuzz-verdicts.sh
 # Exit: 0 = all checks passed, 1 = at least one failed, 2 = self-test broke.
 
@@ -108,9 +126,19 @@ EOF
 chmod +x "${STUBS}/gcc"
 
 # --- stub: python3 -----------------------------------------------------------
-# run-fuzz.sh calls python3 only for mutate.py: <mutate> <seed> <out> --seed N.
+# Dispatches on the script: gen_seeds.py --check exits FUZZ_STUB_SEEDS_RC and
+# --list names one family; to_pcap.py copies; anything else is mutate.py:
+# <mutate> <seed> <out> --seed N.
 cat > "${STUBS}/python3" <<'EOF'
 #!/usr/bin/env bash
+case "${1:-}" in
+    */gen_seeds.py)
+        case " $* " in
+            *" --list "*) echo "smb smb"; exit 0 ;;
+            *) exit "${FUZZ_STUB_SEEDS_RC:-0}" ;;
+        esac ;;
+    */to_pcap.py) cp "$2" "$3"; exit 0 ;;
+esac
 if [ "${FUZZ_STUB_MUTATE_RC:-0}" != "0" ]; then
     echo "stub mutate.py failing (rc=${FUZZ_STUB_MUTATE_RC})" >&2
     exit "${FUZZ_STUB_MUTATE_RC}"
@@ -119,6 +147,34 @@ printf 'stub-mutant\n' > "$3"
 exit 0
 EOF
 chmod +x "${STUBS}/python3"
+
+# --- stub: packet_fuzzer (libFuzzer mode) -----------------------------------
+# Logs its argv to lf-argv. MMT_FUZZ_PRINT_PATHS prints lf-paths (the seed
+# classification check); -merge=1 succeeds. Otherwise the phase — fuzz when
+# -max_total_time is given, corpus for -runs=0, else replay — is compared
+# with lf-phase, and on a match the stub prints lf-stderr, creates
+# <artifact_prefix><lf-artifact> and exits lf-rc.
+cat > "${STUBS}/packet_fuzzer" <<'EOF'
+#!/usr/bin/env bash
+c="${FUZZ_STUB_DIR}"
+printf '%s\n' "$*" >> "${c}/lf-argv"
+if [ -n "${MMT_FUZZ_PRINT_PATHS:-}" ]; then cat "${c}/lf-paths"; exit 0; fi
+phase=replay prefix=""
+for a in "$@"; do
+    case "${a}" in
+        -merge=1) exit 0 ;;
+        -max_total_time=*) phase=fuzz ;;
+        -runs=0) phase=corpus ;;
+        -artifact_prefix=*) prefix="${a#*=}" ;;
+    esac
+done
+[ "${phase}" = "$(cat "${c}/lf-phase")" ] || exit 0
+echo "Running: /stub/input-${phase}" >&2
+[ -f "${c}/lf-stderr" ] && cat "${c}/lf-stderr" >&2
+[ -f "${c}/lf-artifact" ] && printf 'x' > "${prefix}$(cat "${c}/lf-artifact")"
+exit "$(cat "${c}/lf-rc")"
+EOF
+chmod +x "${STUBS}/packet_fuzzer"
 
 # --- harness -----------------------------------------------------------------
 PASS=0
@@ -281,6 +337,139 @@ EXTRA_ARGS=( --replay-only --regressions "${REG}" )
 
 reset_reg; rm -f "${REG}"/*.pcap; grep -v '^[0-9a-f]' "${REAL_REGRESSIONS}/manifest.txt" > "${REG}/manifest.txt"
 expect_rc "--replay-only with an empty manifest -> exit 2" 2
+EXTRA_ARGS=()
+
+# --- libFuzzer mode (issue #530) ----------------------------------------------
+LF_CORPUS="${WORK}/corpus"
+LF_ARGS=()
+STUB_SEEDS_RC=0
+
+run_lf() {
+    # Runs the REAL wrapper in libFuzzer mode against the stub target.
+    local got
+    set +e
+    env PATH="${STUBS}:${PATH}" FUZZ_STUB_DIR="${CONTROL}" \
+        FUZZ_STUB_SEEDS_RC="${STUB_SEEDS_RC}" \
+        bash "${RUN_FUZZ}" --libfuzzer --seconds 5 --artifacts "${ARTIFACTS}" \
+             "${LF_ARGS[@]}" >"${WORK}/out.log" 2>&1
+    got=$?
+    set -e
+    printf '%s' "${got}"
+}
+
+lf_control() {
+    # $1 = phase, $2 = rc, $3 = artifact name ("" = none), $4 = stderr.
+    printf '%s\n' "$1" > "${CONTROL}/lf-phase"
+    printf '%s\n' "$2" > "${CONTROL}/lf-rc"
+    if [ -n "${3:-}" ]; then printf '%s' "$3" > "${CONTROL}/lf-artifact"; else rm -f "${CONTROL}/lf-artifact"; fi
+    if [ -n "${4:-}" ]; then printf '%s\n' "$4" > "${CONTROL}/lf-stderr"; else rm -f "${CONTROL}/lf-stderr"; fi
+    printf 'meta.ethernet.ip.tcp.smb\n' > "${CONTROL}/lf-paths"
+    : > "${CONTROL}/lf-argv"
+    STUB_SEEDS_RC=0
+    rm -rf "${ARTIFACTS}" "${LF_CORPUS}"; mkdir -p "${ARTIFACTS}"
+    LF_ARGS=( --fuzzer "${STUBS}/packet_fuzzer" --corpus "${LF_CORPUS}" )
+}
+
+expect_lf() {
+    # $1 = scenario name, $2 = expected wrapper exit code.
+    local name="$1" want="$2" got
+    TESTED=$((TESTED + 1))
+    got="$(run_lf)"
+    if [ "${got}" = "${want}" ]; then
+        PASS=$((PASS + 1)); printf '  ✓ %-52s exit %s\n' "${name}" "${got}"
+    else
+        FAIL=$((FAIL + 1)); printf '  ✗ %-52s expected exit %s, got %s\n' "${name}" "${want}" "${got}"
+        sed 's/^/      | /' "${WORK}/out.log" | tail -25
+    fi
+}
+
+expect_file() {
+    # $1 = check name, $2 = path that must exist.
+    TESTED=$((TESTED + 1))
+    if [ -e "$2" ]; then
+        PASS=$((PASS + 1)); printf '  ✓ %-52s\n' "$1"
+    else
+        FAIL=$((FAIL + 1)); printf '  ✗ %-52s missing %s\n' "$1" "$2"
+    fi
+}
+
+expect_argv() {
+    # $1 = check name, $2 = ERE that must match a libFuzzer invocation of the
+    # last run — or, with $3 = "!", must match none of them.
+    local hit=0
+    TESTED=$((TESTED + 1))
+    grep -qE -- "$2" "${CONTROL}/lf-argv" && hit=1
+    if { [ "${3:-}" != "!" ] && [ "${hit}" -eq 1 ]; } || { [ "${3:-}" = "!" ] && [ "${hit}" -eq 0 ]; }; then
+        PASS=$((PASS + 1)); printf '  ✓ %-52s\n' "$1"
+    else
+        FAIL=$((FAIL + 1)); printf '  ✗ %-52s argv %s/%s/\n' "$1" "${3:-}" "$2"
+        sed 's/^/      | /' "${CONTROL}/lf-argv"
+    fi
+}
+
+echo ""
+echo "libFuzzer mode (issue #530)"
+lf_control fuzz 0
+expect_lf "--libfuzzer clean replay + fuzz -> 0" 0
+expect_grep "libFuzzer PASS banner" "libFuzzer PASS"
+expect_argv "fuzz run bounds input size, writes the corpus" "-max_len=65536 .*-max_total_time=5 .*${LF_CORPUS} "
+expect_argv "replay reads seeds whole (no -max_len)" "^-error_exitcode=77 -timeout_exitcode=78 -timeout=20 -rss_limit_mb=2560 -artifact_prefix=[^ ]+ [^-][^ ]*/seeds/"
+expect_argv "corpus minimised after fuzzing" "^-merge=1 "
+
+lf_control fuzz 1 crash-0123abcd '==7==ERROR: AddressSanitizer: heap-buffer-overflow'
+expect_lf "fuzz rc 1 + crash artifact (real ASan exit) -> 1" 1
+expect_file "finding log written" "${ARTIFACTS}/libfuzzer-crash-0123abcd.log"
+expect_file "finding wrapped as a pcap" "${ARTIFACTS}/libfuzzer-crash-0123abcd.pcap"
+expect_grep "FAIL banner" "libFuzzer FAIL"
+
+lf_control fuzz 1 "" 'src/x.c:3:1: runtime error: index 255 out of bounds'
+expect_lf "fuzz rc 1 + UBSan banner, no artifact -> 1" 1
+
+lf_control fuzz 77
+expect_lf "fuzz rc 77 (-error_exitcode) -> 1" 1
+
+lf_control fuzz 78 timeout-4567
+expect_lf "fuzz rc 78 + timeout artifact -> 1" 1
+expect_file "timeout log written" "${ARTIFACTS}/libfuzzer-timeout-4567.log"
+
+lf_control fuzz 1
+expect_lf "fuzz rc 1, no artifact, no banner -> harness exit 2" 2
+
+lf_control fuzz 126
+expect_lf "fuzz rc 126 -> harness exit 2" 2
+
+lf_control replay 1 "" '==9==ERROR: AddressSanitizer: heap-buffer-overflow'
+expect_lf "replay of a committed input crashes -> 1" 1
+expect_grep "replay finding names the input" "rc=1\) -> /stub/input-replay"
+expect_argv "no fuzzing after a replay failure" "-max_total_time" "!"
+
+lf_control fuzz 0; STUB_SEEDS_RC=1
+expect_lf "seeds drifted from gen_seeds.py -> exit 2" 2
+
+lf_control fuzz 0; printf 'meta.ethernet.ip.tcp.unknown\n' > "${CONTROL}/lf-paths"
+expect_lf "seed no longer reaches its dissector -> exit 2" 2
+expect_grep "classification failure named" "no longer classified as smb"
+
+lf_control fuzz 0; LF_ARGS=( --fuzzer "${STUBS}/packet_fuzzer" --replay-only )
+expect_lf "--libfuzzer --replay-only -> 0" 0
+expect_argv "--replay-only does not fuzz" "-max_total_time|-max_len" "!"
+expect_grep "replay PASS banner" "libFuzzer replay PASS"
+
+lf_control corpus 1 crash-89ab '==9==ERROR: AddressSanitizer: SEGV'
+mkdir -p "${LF_CORPUS}"; printf 'x' > "${LF_CORPUS}/input"
+LF_ARGS=( --fuzzer "${STUBS}/packet_fuzzer" --corpus "${LF_CORPUS}" --replay-only )
+expect_lf "--replay-only --corpus replays it, finding -> 1" 1
+expect_argv "corpus replayed with -runs=0" "-runs=0 ${LF_CORPUS}\$"
+
+lf_control fuzz 0; LF_ARGS=( --fuzzer "${WORK}/no-such-fuzzer" )
+expect_lf "--fuzzer binary missing -> exit 2" 2
+
+lf_control fuzz 0; LF_ARGS=( --prefix "${PREFIX}" )
+expect_lf "--libfuzzer with --prefix -> exit 2" 2
+
+set_control 0
+EXTRA_ARGS=( --corpus "${LF_CORPUS}" )
+expect_rc "--corpus without --libfuzzer -> exit 2" 2
 EXTRA_ARGS=()
 
 echo ""

@@ -194,7 +194,10 @@ int mmt_classify_soulseek_tcp(ipacket_t * ipacket, unsigned index) {
                 && !get_u16(packet->payload, 2)) {
             const uint32_t usrlen = get_l32(packet->payload, 5);
 
-            if (usrlen <= packet->payload_packet_len - 4 + 1 + 4 + 4 + 1 + 4) {
+            /* Issue #530: typelen (4 bytes) and type (1 byte) follow the
+             * 9-byte prefix and the user name, so 14 bytes besides usrlen
+             * must be in the payload; the old bound let both be read past it. */
+            if (usrlen <= packet->payload_packet_len - (4 + 1 + 4 + 4 + 1)) {
                 const uint32_t typelen = get_l32(packet->payload, 4 + 1 + 4 + usrlen);
                 const uint8_t type = packet->payload[4 + 1 + 4 + usrlen + 4];
                 if (typelen == 1 && (type == 'F' || type == 'P' || type == 'D')) {

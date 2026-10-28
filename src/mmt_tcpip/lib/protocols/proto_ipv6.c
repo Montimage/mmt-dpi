@@ -688,6 +688,9 @@ void *ip6_sessionizer(void *protocol_context, ipacket_t *ipacket, unsigned index
 int ip6_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 
     int offset = get_packet_offset_at_index(ipacket, index);
+    /* Issue #530: nexthdr was read without checking caplen. */
+    if (offset < 0 || !mmt_have_bytes(ipacket, (size_t) offset, sizeof(struct ipv6hdr)))
+        return 0;
     mmt_una_ipv6hdr_t * ip6_hdr = (mmt_una_ipv6hdr_t *) & ipacket->data[offset];
 
     uint8_t next_hdr = ip6_hdr->nexthdr;

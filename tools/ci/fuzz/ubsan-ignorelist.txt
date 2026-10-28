@@ -1,0 +1,23 @@
+# Sanitizer ignorelist for the clang libFuzzer build (issue #530) — passed as
+# -fsanitize-ignorelist= by tools/ci/run-fuzz.sh --libfuzzer to the SDK
+# objects and to tools/ci/fuzz/packet_fuzzer.c. The gcc mutation gate does not
+# use it and keeps -fsanitize=undefined in full.
+#
+# It switches off two UBSan checks only clang implements in this form, both
+# of which fire on well-formed traffic (the first protocol init, the first
+# IPv4 packet of every golden capture), so they would mask every real finding:
+#
+# [function] — every protocol init is defined `int init_proto_X_struct()` (no
+#   prototype) and called through `int (*)(void)` from the init table in
+#   src/mmt_tcpip/lib/configured_protocols.c; clang's -fsanitize=function
+#   reports the mismatched function type at the first call.
+# [alignment] — clang checks pointer alignment at memcpy() arguments, so the
+#   issue #57 copy of a 4-byte address out of the byte-aligned packet buffer
+#   (src/mmt_tcpip/lib/protocols/ip_session_id_management.c, a uint32_t *
+#   parameter) is reported although the access itself is a byte copy. The
+#   gcc gate and tools/phase0/tests/run_ip_unaligned_header_test.sh keep
+#   checking alignment.
+[function]
+src:*
+[alignment]
+src:*

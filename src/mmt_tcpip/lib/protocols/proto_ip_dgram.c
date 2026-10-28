@@ -424,7 +424,10 @@ int ip_dgram_update_holes( ip_dgram_t *dg, const uint8_t *x, unsigned off, unsig
          dg->x   = x0;
          dg->len = roff;
       }
-      (void)memcpy( dg->x + off, x, len );
+      /* Issue #530: an empty fragment reaches here with dg->x still NULL,
+       * and NULL + off is undefined even for a zero-length copy. */
+      if( len > 0 )
+         (void)memcpy( dg->x + off, x, len );
 
       //BW: delete the fragment if necessary
       if( do_delete ) {

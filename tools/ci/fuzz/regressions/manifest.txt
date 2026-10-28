@@ -10,3 +10,43 @@
 # ftp_session_data_analysis (weekly fuzz run 36412709200).
 #   python3 tools/ci/fuzz/mutate.py tools/phase0/ci/pcaps/ftp_multiple_session.pcap out --seed 36412723701
 7b292b34abab71ddbfead47ccf47f8f018814d6505cc9eb6e7753e17ff7a4d6d  ftp_multiple_session-seed36412723701.pcap
+
+# Issue #530 — heap-buffer-overflow READ in ethernet_classify_next_proto (proto_ethernet.c): EtherType read from a frame shorter than 14 bytes.
+#   found by tools/ci/fuzz/packet_fuzzer.c, wrapped with tools/ci/fuzz/to_pcap.py
+e6a96654cf6abf9b32e63d1a7ce1446ddb55497c0b207956abff3b6c9e4e6d3d  libfuzzer-ethernet-short-frame.pcap
+
+# Issue #530 — heap-buffer-overflow READ in tcp_pre_classification_function (proto_tcp.c): data offset read before the 20-byte TCP header is known to be captured.
+#   found by tools/ci/fuzz/packet_fuzzer.c, wrapped with tools/ci/fuzz/to_pcap.py
+cf3ae86f44dd4da90be53b603fbdd3dc06a274d256599ef0d9ce44f990e5ee0f  libfuzzer-tcp-header-past-caplen.pcap
+
+# Issue #530 — heap-buffer-overflow READ in llc_classify_next_proto (proto_llc.c): LLC header read past caplen.
+#   found by tools/ci/fuzz/packet_fuzzer.c, wrapped with tools/ci/fuzz/to_pcap.py
+c5b46bc6f67685b71202ff9a91fa1af39d55e17ccddd82391f30c8e046a7128e  libfuzzer-llc-short-header.pcap
+
+# Issue #530 — heap-buffer-overflow READ in ip_classify_next_proto (proto_ip.c): protocol/IHL read past caplen.
+#   found by tools/ci/fuzz/packet_fuzzer.c, wrapped with tools/ci/fuzz/to_pcap.py
+53723c2dab593c7079449951872e48a11f073762043960784afd03fcc55c850d  libfuzzer-ip-header-past-caplen.pcap
+
+# Issue #530 — heap-buffer-overflow READ in ip6_classify_next_proto (proto_ipv6.c): next header read past caplen.
+#   found by tools/ci/fuzz/packet_fuzzer.c, wrapped with tools/ci/fuzz/to_pcap.py
+dcd3741e3e2573480670858ca8da88bbcc71d520fc5f66de73e9e7006da280e9  libfuzzer-ipv6-header-past-caplen.pcap
+
+# Issue #530 — heap-buffer-overflow READ in mmt_check_tpkt (proto_tpkt.c): TPKT length read at an offset past caplen.
+#   found by tools/ci/fuzz/packet_fuzzer.c, wrapped with tools/ci/fuzz/to_pcap.py
+8fb0f9efbd2abc9f8bd5b4b7fbefc85835009b83b1437a7a9200d9a0420c9353  libfuzzer-tpkt-header-past-caplen.pcap
+
+# Issue #530 — UBSan index 255 out of bounds of packet_tlvs[0xFF] in radius_session_data_analysis (proto_radius.c): out-of-bounds pointer write for TLV type 255.
+#   found by tools/ci/fuzz/packet_fuzzer.c, wrapped with tools/ci/fuzz/to_pcap.py
+ac925eb95d91b2613bf645e0944391d9be4ff39051bfc6bee0514a258907c43b  libfuzzer-radius-tlv-type-255.pcap
+
+# Issue #530 — heap-buffer-overflow READ in mmt_classify_soulseek_tcp (proto_soulseek.c): wrong usrlen bound lets typelen/type be read past the payload.
+#   found by tools/ci/fuzz/packet_fuzzer.c, wrapped with tools/ci/fuzz/to_pcap.py
+04a0bfb7fedf7a549894764580711ba007401229afe538f30d034aad98739be0  libfuzzer-soulseek-usrlen-bound.pcap
+
+# Issue #530 — UBSan NULL + 0 in llhttp_execute (llhttp_api.c) called with a NULL payload from http_internal_session_data_analysis (proto_http.c).
+#   found by tools/ci/fuzz/packet_fuzzer.c, wrapped with tools/ci/fuzz/to_pcap.py
+cb1ce8dc69320375e3afec526b3126352f09b88d6a090668ffdb4ebb091183af  libfuzzer-http-null-payload.pcap
+
+# Issue #530 — UBSan NULL + 0 in ip_dgram_update_holes (proto_ip_dgram.c): memcpy of an empty fragment into a not yet allocated buffer.
+#   found by tools/ci/fuzz/packet_fuzzer.c, wrapped with tools/ci/fuzz/to_pcap.py
+d55b7f69566b9bc2c6f73ba313b8f02b7fd4fa925f3b3c1f3c68c18dacc2b990  libfuzzer-ip-dgram-empty-fragment.pcap

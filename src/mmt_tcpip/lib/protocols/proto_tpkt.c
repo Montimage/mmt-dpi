@@ -47,6 +47,12 @@ int mmt_check_tpkt(ipacket_t * ipacket, unsigned index) {
         if (packet->tcp != NULL) {
             if (ntohs(packet->tcp->dest) == 102 || ntohs(packet->tcp->source) == 102) {
                 int tpkt_offset = get_packet_offset_at_index(ipacket, index + 1);
+                /* Issue #530: the header was read at an offset past caplen. */
+                if (tpkt_offset < 0
+                 || (uint64_t) tpkt_offset + sizeof (mmt_una_tpkthdr_t) > ipacket->p_hdr->caplen) {
+                    MMT_ADD_PROTOCOL_TO_BITMASK(packet->flow->excluded_protocol_bitmask, PROTO_TPKT);
+                    return 0;
+                }
                 mmt_una_tpkthdr_t * tpkt_header = (mmt_una_tpkthdr_t *)&ipacket->data[tpkt_offset];
                 if (tpkt_header != NULL && ntohs(tpkt_header->length) == payload_len) {
                     int l3_offset = get_packet_offset_at_index(ipacket, index);

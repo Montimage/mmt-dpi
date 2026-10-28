@@ -860,15 +860,26 @@ jobs:
     # crash once found stays gated on every pull request whatever the seed.
     # Family and full tiers (#656): a tests or tooling change compiles no
     # SDK source differently, and the fuzz inputs are mapped full.
+    #
+    # libFuzzer (issue #530, F-TEST-013): run-fuzz.sh --libfuzzer builds the
+    # coverage-guided target tools/ci/fuzz/packet_fuzzer.c with clang. Every
+    # run replays the committed seeds (one capture per F-TEST-013 family)
+    # and regressions through it — the blocking, commit-deterministic part.
+    # The schedule then fuzzes for 1200 s from the corpus kept in the
+    # Actions cache and saves the grown, minimised corpus under a new key;
+    # other events replay that cached corpus without blocking, since its
+    # content depends on the cache, not on the commit. Their restore also
+    # keeps the entry from expiring between weekly runs; the corpus is
+    # uploaded as an artifact too, as a fallback.
     needs: changes
     if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' && needs.changes.outputs.tier != 'tests' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 80
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - uses: ./.github/actions/bootstrap-deps
       with:
-        extra-packages: python3
+        extra-packages: python3 clang libclang-rt-18-dev
     - name: Replay the fuzz regressions, then fuzz the golden corpus + the fuzz engine
       env:
         FUZZ_SECONDS: ${{ github.event_name == 'schedule' && '1800' || '300' }}
@@ -877,6 +888,39 @@ jobs:
         # identical on every runner; the nightly run explores freely.
         FUZZ_ITER: ${{ github.event_name == 'schedule' && '0' || '1200' }}
       run: bash tools/ci/run-fuzz.sh --seconds "${FUZZ_SECONDS}" --seed "${FUZZ_SEED}" --iterations "${FUZZ_ITER}" --artifacts fuzz-artifacts
+    - name: Restore the libFuzzer corpus
+      if: ${{ !cancelled() }}
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: fuzz-corpus
+        key: fuzz-corpus-${{ github.run_id }}
+        restore-keys: |
+          fuzz-corpus-
+    - name: libFuzzer — replay the committed seeds and regressions
+      if: ${{ !cancelled() && github.event_name != 'schedule' }}
+      run: bash tools/ci/run-fuzz.sh --libfuzzer --replay-only --artifacts fuzz-artifacts --keep-fuzzer "${RUNNER_TEMP}/packet_fuzzer"
+    - name: libFuzzer — replay the cached corpus (advisory)
+      if: ${{ !cancelled() && github.event_name != 'schedule' && hashFiles('fuzz-corpus/**') != '' }}
+      continue-on-error: true
+      run: bash tools/ci/run-fuzz.sh --libfuzzer --replay-only --corpus fuzz-corpus --fuzzer "${RUNNER_TEMP}/packet_fuzzer" --artifacts fuzz-corpus-replay
+    - name: libFuzzer — replay, then fuzz from the cached corpus
+      if: ${{ !cancelled() && github.event_name == 'schedule' }}
+      # run_number, not run_id: libFuzzer's -seed is a 32-bit value.
+      run: bash tools/ci/run-fuzz.sh --libfuzzer --seconds 1200 --seed "${{ github.run_number }}" --corpus fuzz-corpus --artifacts fuzz-artifacts
+    - name: Save the libFuzzer corpus
+      if: ${{ !cancelled() && github.event_name == 'schedule' && hashFiles('fuzz-corpus/**') != '' }}
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: fuzz-corpus
+        key: fuzz-corpus-${{ github.run_id }}
+    - name: Upload the libFuzzer corpus
+      if: ${{ !cancelled() && github.event_name == 'schedule' }}
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: fuzz-corpus
+        path: fuzz-corpus/
+        if-no-files-found: ignore
+        retention-days: 30
     - name: Upload crash reproducers
       if: failure()
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

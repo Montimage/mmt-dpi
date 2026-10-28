@@ -10,6 +10,11 @@ int llc_classify_next_proto(ipacket_t *ipacket, unsigned index)
 {
     int offset = get_packet_offset_at_index(ipacket, index);
 
+    /* Issue #530: the 3-byte header was read without checking caplen. */
+    if (offset < 0
+     || (uint64_t) offset + sizeof (llc_hdr_t) > ipacket->p_hdr->caplen)
+        return 0;
+
     llc_hdr_t * llc = (llc_hdr_t *)&ipacket->data[offset];
     classified_proto_t retval;
     retval.offset = -1;
@@ -28,7 +33,9 @@ int llc_classify_next_proto(ipacket_t *ipacket, unsigned index)
         retval.proto_id = PROTO_STP;
         retval.status = Classified;
     }
-    else if (llc->dsap == 0xaa && llc->ssap == 0xaa && llc->cf == 0x03)
+    else if (llc->dsap == 0xaa && llc->ssap == 0xaa && llc->cf == 0x03
+             /* Issue #530: the SNAP protocol id ends 8 bytes in. */
+             && (uint64_t) offset + 8 <= ipacket->p_hdr->caplen)
     {
         uint16_t * pid = (uint16_t *)&ipacket->data[offset + 1 + 1 + 1 + 3];
         switch (ntohs(*pid)) // Layer 3 protocol identifier

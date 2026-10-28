@@ -10,6 +10,12 @@
 int ethernet_classify_next_proto(ipacket_t * ipacket, unsigned index) {
     int offset = get_packet_offset_at_index(ipacket, index);
 
+    /* Issue #530: h_proto is the last field of the 14-byte header; a shorter
+     * captured frame used to be read past caplen. */
+    if (offset < 0
+     || (uint64_t) offset + sizeof (struct ethhdr) > ipacket->p_hdr->caplen)
+        return 0;
+
     const struct ethhdr *ethernet = (struct ethhdr *) & ipacket->data[offset];
     classified_proto_t retval;
     retval.offset = -1;

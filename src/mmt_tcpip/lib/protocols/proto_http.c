@@ -367,7 +367,9 @@ int http_internal_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     // Feed the data to the HTTP parse.
     // As two parser exists for both client -> server and server -> client
     // directions, get the corresponding parser first, then feed it the payload data.
-    if( ipacket->session->session_data[index] != NULL ) {
+    /* Issue #530: a packet with no payload carries a NULL payload pointer, and
+     * llhttp_execute() computes data + len from it (undefined behaviour). */
+    if( ipacket->session->session_data[index] != NULL && packet->payload != NULL ) {
       llhttp_errno_t err;
       llhttp_t * parser = &((stream_parser_t *) ipacket->session->session_data[index])->parser[ipacket->session->last_packet_direction];
 

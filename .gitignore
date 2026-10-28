@@ -148,6 +148,8 @@ gitleaks-report.json
 
 # fuzz-gate crash reproducers (tools/ci/run-fuzz.sh)
 fuzz-artifacts/
+# libFuzzer working corpus (tools/ci/run-fuzz.sh --libfuzzer, issue #530)
+fuzz-corpus/
 
 # python bytecode from tools/ci/fuzz/mutate.py
 __pycache__/

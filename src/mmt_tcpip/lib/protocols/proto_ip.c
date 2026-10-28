@@ -594,6 +594,9 @@ uint8_t build_ipv4_session_key(u_char * ip_packet, unsigned ip_packet_len, mmt_s
 int ip_classify_next_proto(ipacket_t * ipacket, unsigned index) {
     /* If we get here, then the packet is not fragmented. */
     int offset = get_packet_offset_at_index(ipacket, index);
+    /* Issue #530: protocol and ihl were read without checking caplen. */
+    if (offset < 0 || !mmt_have_bytes(ipacket, (size_t) offset, sizeof(struct iphdr)))
+        return 0;
     const mmt_una_iphdr_t * ip_hdr = (mmt_una_iphdr_t *) & ipacket->data[offset];
 
     classified_proto_t retval;

@@ -33,9 +33,13 @@ struct radius_header {
  */
 typedef struct radius_header __attribute__((aligned(1))) mmt_una_radius_header_t;
 
+/* Issue #530: one slot per value of the 8-bit TLV type (0..255); 0xFF slots
+ * left type 255 writing one element past the array. */
+#define RADIUS_TLV_SLOTS 0x100
+
 typedef struct radius_session_context_struct {
     int tlv_count;
-    tlv_t * packet_tlvs[0xFF]; // This will hold the different TLVs found in the last packet.
+    tlv_t * packet_tlvs[RADIUS_TLV_SLOTS]; // This will hold the different TLVs found in the last packet.
     tlv_t * vendor_3gpp_tlvs[VENDOR_3GPP_MAX_TLV_TYPE + 1]; // This will hold the different TLVs found in the last packet.
 } radius_session_context_t;
 
@@ -2020,7 +2024,7 @@ int radius_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     radius_session_data = ipacket->session->session_data[index];
     if (radius_session_data) {
         int count;
-        for (count = 0; count < 0xFF; count++) {
+        for (count = 0; count < RADIUS_TLV_SLOTS; count++) {
             radius_session_data->packet_tlvs[count] = NULL;
         }
         for (count = 0; count <= VENDOR_3GPP_MAX_TLV_TYPE; count++) {
