@@ -101,15 +101,6 @@ MSG_TYPE values (in hexidecimal):
 #define NB_MSG_POSITIVE_QUERY_RESPONSE 21
 #define NB_MSG_NEGATIVE_QUERY_RESPONSE 22
 
-struct mmt_netbios_header_struct {
-  uint8_t msg_type;
-  uint8_t flags;
-  uint16_t datagram_id;
-  uint32_t source_ip;
-  uint16_t source_port;
-  uint8_t * data;
-};
-
 static void mmt_int_netbios_add_connection(ipacket_t * ipacket) {
     mmt_internal_add_connection(ipacket, PROTO_NETBIOS, MMT_REAL_PROTOCOL);
 }
@@ -358,18 +349,23 @@ DIRECT_UNIQUE, DIRECT_GROUP, & BROADCAST DATAGRAM
 */
 int netbios_classify_next_proto(ipacket_t * ipacket, unsigned index) {
     int offset = get_packet_offset_at_index(ipacket, index);
-    // uint8_t * netbios_type = (uint8_t *) & ipacket->data[offset];
-    // printf("Message type: %d\n", *netbios_type);
-    struct mmt_netbios_header_struct * netbios_header = (struct mmt_netbios_header_struct *) & ipacket->data[offset];
+    /* Issue #531: the header is read byte-wise within caplen — overlaying
+     * a header struct (8-byte aligned: it ended in a pointer) on the packet
+     * was a misaligned access (UBSan) and read source_port (bytes 8-9) past
+     * a shorter capture. */
+    if (offset < 0 || (uint64_t) offset + 10 > ipacket->p_hdr->caplen)
+        return 0;
+    const uint8_t *netbios_header = &ipacket->data[offset];
+    const uint16_t source_port = ntohs(get_u16(netbios_header, 8));
     classified_proto_t retval;
     retval.proto_id = 0;
     // Classify base on port number
-    if (ntohs(netbios_header->source_port) == 138 || ntohs(netbios_header->source_port) == 445) {
+    if (source_port == 138 || source_port == 445) {
       retval.proto_id = PROTO_SMB;
     }
     retval.status = Classified;
     retval.offset = -1;
-    switch(netbios_header->msg_type){
+    switch(netbios_header[0]){
       case NB_MSG_SESSION_MESSAGE:
         retval.offset = 4;
         break;

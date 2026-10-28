@@ -4,6 +4,7 @@
 # and vendored sources excluded, must not exceed this count; the
 # verify-helpers job fails when they do. Measured on 340947c5 (121 blocks,
 # 293 lines). Lower the number when blocks are deleted — never raise it
-# without a recorded justification.
+# without a recorded justification. Issue #531 deleted the commented-out
+# netbios_type lines of proto_netbios.c: 120 blocks, 291 lines.
 # Re-measure: bash tools/ci/lint-commented-code.sh
-121
+120

@@ -155,10 +155,24 @@
 #                               libmmt_tmobile.a whole-archive (the shared
 #                               library hides the asn1c symbols).
 #
+# Issue #531 adds the "classify" fixture: a classifier sweep over the TCP/IP
+# dissectors with the most uncovered classifier-body lines — each case
+# replays its protocol's opening exchange (TCP handshake first) to the
+# classifier's add-connection call, every attribute of the protocol is
+# extracted, and the direct-download-link host matcher is walked host by
+# host. Under SANITIZE=asan its NetBIOS cases pin the fix of
+# netbios_classify_next_proto(), which overlaid a pointer-aligned struct on
+# the packet (UBSan misaligned access) and read past a short capture.
+#
+#   test_tcpip_classify_api.c — packet/API path: crafted
+#                               Ethernet/IPv4/{TCP,UDP} exchanges through
+#                               mmt_init_handler + packet_process, one host
+#                               pair per case.
+#
 # Usage: tests/parser_boundaries/run_tests.sh [fixture ...]
 #   no arguments runs every fixture; "udp"/"dtls"/"dns-soa"/"dns-txt"/"dns-names"/"nfs"/"int"/
-#   "tcp-options"/"radius-dns"/"quic"/"gre"/"classifier-audit"/"tcp-events"/"s1ap-integer"
-#   select a fixture family.
+#   "tcp-options"/"radius-dns"/"quic"/"gre"/"classifier-audit"/"tcp-events"/"s1ap-integer"/
+#   "classify" select a fixture family.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -166,7 +180,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # --- fixture selection -----------------------------------------------------
 FIXTURES=( "$@" )
-[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer)
+[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify)
 UNIT_TESTS=()
 API_TESTS=()
 MOBILE_TESTS=()
@@ -215,8 +229,11 @@ for f in "${FIXTURES[@]}"; do
         s1ap-integer)
             MOBILE_TESTS+=(s1ap_integer_length)
             ;;
+        classify)
+            API_TESTS+=(tcpip_classify_api)
+            ;;
         *)
-            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer)" >&2
+            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify)" >&2
             exit 2
             ;;
     esac
@@ -357,4 +374,4 @@ if [ "${rc}" -ne 0 ]; then
     echo "✗ parser boundary tests failed" >&2
     exit 1
 fi
-echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455, #505, #513)"
+echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455, #505, #513, #531)"
