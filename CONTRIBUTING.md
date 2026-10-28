@@ -115,10 +115,11 @@ any changed path reaches (issues #552, #656):
 | `tooling` | `tools/ci/`, `scripts/`, non-workflow `.github/` files, root dotfiles — that only tooling and unit suites reference | `unit-tests` on the tooling self-test suites and the suites that reference the file, `lint` |
 | `tests` | one suite's `tests/<suite>/` files, one harness's `tools/phase0/tests/` files | those plus the smoke set, on every suite leg (sanitizers, ARM, unsigned char, toolchains, assertions), the selected harnesses and the phase0 gates |
 | `family` | one family's own sources (a tcpip dissector, `src/mmt_mobile`, `src/mmt_dicom`, `src/mmt_business_app`) | the family's suites and harnesses, those that name the file or reach it through a `tools/ci` self-test they delegate to, plus the smoke set, as above, and `codeql`, `fuzz` |
-| `full` | everything else: `src/mmt_core`, any header, the transport dissectors, shared tcpip code, `rules/`, `sdk/`, workflows, actions, the runners, the map, an unmapped or quoted path | every job on the whole suite and harness set, plus `coverage`, `root-install`, `enablesec`, `abi-diff` |
+| `full` | everything else: `src/mmt_core`, any header, the transport dissectors, shared tcpip code, `rules/`, `sdk/`, workflows, actions, the runners, the map, an unmapped or quoted path | every job on the whole suite and harness set, plus `coverage`, `root-install`, `abi-diff` |
 
-The always-on jobs are `build`, `verify-helpers`, `version-agreement`,
-`pre-commit`, `secret-scan`, `site-onboarding` and `doc-validators` (which also
+The always-on jobs are `build`, `verify-helpers` (which also runs the
+`docs_onboarding` suite against the site it builds), `version-agreement`,
+`pre-commit`, `secret-scan` and `doc-validators` (which also
 runs the `docs_lifecycle` suite on a docs-only change; the other tiers add it
 to the selected suites when a docs path is part of the change). Pushes, tags,
 the schedule and merge-queue runs are always `full`. A job skipped by its `if:`
@@ -126,6 +127,29 @@ reports success, and the matrix jobs run with their steps skipped so each leg
 still reports its own context. Every condition on the classifier's outputs is
 fail-closed — it reads `!= 'false'`, so a failed `changes` job runs
 everything.
+
+Queue-only legs (issue #658): `unit-tests-unsigned-char` (the x86 mirror of
+`unit-tests-arm`) and the `-fsigned-char` leg of `unit-tests` (x86's default
+signedness) skip on every pull request and run in the merge queue, on push
+and on the schedule. The merge queue waits only for the contexts branch
+protection requires, so a leg may leave the PR path only when protection
+requires its context: `check-required-checks.sh` fails a job that skips on
+pull requests in an always-on workflow unless that workflow triggers on
+`merge_group` and the job reports a context of `required-checks.txt` (or a
+required aggregate needs it), and `--live` fails when such a context is not
+live-required. `toolchain-floor`, `toolchain-ceiling`, `assertions-live`,
+`coverage` and the full package matrix still run on pull requests: their
+move waits on the maintainer step below (`packages-gate`, `toolchain-*` and
+`assertions-live` are not live-required yet) and on the coverage-cadence
+decision of `docs/ci-audit-2026-10.md` §8.
+
+Retired contexts (issue #659): a job folded into another keeps an `if: false`
+stub under its old name while protection may still require that context — a
+skipped job reports success and takes no runner. Those contexts are listed in
+[`.github/retired-checks.txt`](.github/retired-checks.txt), not in
+`required-checks.txt`; the checker requires each to name a stub. Applying
+`required-checks.txt` (below) drops them from protection; then delete the
+stubs and their lines.
 
 The selection comes from [`tools/ci/test-map.txt`](tools/ci/test-map.txt):
 `path` globs map paths to tiers (the first match wins), and each suite and

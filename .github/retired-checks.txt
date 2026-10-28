@@ -1,0 +1,28 @@
+# Retired status-check contexts (issue #659).
+#
+# Each context here belonged to a job that re-proved what another job proves,
+# so its assertion moved into that job. Branch protection on main may still
+# require the context, and a required context that no job reports blocks
+# every pull request and merge-queue run. So each keeps a stub job under the
+# same name with `if: false`: it skips on every event, and a skipped job
+# reports success without taking a runner.
+#
+# Same format as .github/required-checks.txt (one context per line; blank
+# lines and `#` lines ignored). A context may not be in both files.
+# tools/ci/check-required-checks.sh fails when a context here names no stub
+# (a job whose job-level `if:` is `false`) that reports on pull requests and
+# merge-group runs; `--live` lists the ones protection still requires.
+#
+# Retiring a context: move its line here from required-checks.txt and turn
+# its job into a stub. A maintainer then removes it from protection (apply
+# required-checks.txt, CONTRIBUTING.md "Required checks and review"); after
+# that, delete the stub and its line here in a follow-up.
+
+# c-cpp.yml `enablesec`: the ENABLESEC=1 compile is made by the shared
+# enablesec SDK build of tests/run_all_tests.sh (rule_engine,
+# installed_consumer) and by codeql.
+enablesec
+# c-cpp.yml `asan-build` (formerly phase0-baseline.yml): the BUILD=asan
+# compile and `__asan_init` check are a step of
+# sanitizer-tests (BUILD=asan, asan).
+ASan/UBSan profile compiles

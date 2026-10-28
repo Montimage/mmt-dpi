@@ -39,11 +39,17 @@ jobs:
     # the classifier names in unit-tests, plus lint (gates=false skips the
     # sanitizer, toolchain, assertions, CodeQL and fuzz jobs); tests and
     # family also run those legs on the named suites (CodeQL and fuzz on
-    # family only); coverage, root-install, enablesec and abi-diff run on
-    # full only (full=false skips them). Every condition on these outputs
-    # is fail-closed: it reads `!= 'false'` (or `!= 'tests'`), so a failed
+    # family only); coverage, root-install and abi-diff run on full only
+    # (full=false skips them). Every condition on these outputs is
+    # fail-closed: it reads `!= 'false'` (or `!= 'tests'`), so a failed
     # `changes` — every output empty — runs everything, and an empty suite
     # list runs every suite.
+    #
+    # Queue-only legs (issue #658): unit-tests-unsigned-char and the
+    # -fsigned-char unit-tests leg skip on every pull request and run in the
+    # merge queue (and on push and the schedule). Both contexts are required,
+    # so the queue waits for them: nothing leaves the PR path ungated, which
+    # tools/ci/check-required-checks.sh enforces.
     #
     # Every required context still reports. A job skipped by its `if:`
     # reports success, so the single-context jobs gate at job level — with
@@ -94,6 +100,10 @@ jobs:
     # unit-tests-unsigned-char below, issue #528).
     # A matrix job: on a docs-only change its steps skip (see `changes`);
     # otherwise the first leg runs the suites `changes` names (all on full).
+    # The -fsigned-char leg repeats x86's default signedness, so it is a
+    # merge-queue leg (issue #658): on a pull request its steps skip. A new
+    # matrix key would rename its required context, so the steps test
+    # extra_cflags instead.
     needs: changes
     if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
@@ -108,11 +118,11 @@ jobs:
             suites: "hashmap memory hexdump mmt_utils mmt_inet_ntop"
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      if: needs.changes.outputs.code != 'false'
+      if: needs.changes.outputs.code != 'false' && (matrix.extra_cflags == '' || github.event_name != 'pull_request')
     - uses: ./.github/actions/bootstrap-deps
-      if: needs.changes.outputs.code != 'false'
+      if: needs.changes.outputs.code != 'false' && (matrix.extra_cflags == '' || github.event_name != 'pull_request')
     - name: Run unit test suites
-      if: needs.changes.outputs.code != 'false'
+      if: needs.changes.outputs.code != 'false' && (matrix.extra_cflags == '' || github.event_name != 'pull_request')
       env:
         EXTRA_CFLAGS: ${{ matrix.extra_cflags }}
         # The leg's fixed list, else the tier's (#656); empty runs every suite.
@@ -152,8 +162,11 @@ jobs:
     # rules/arch-linux.mk), so an unsigned-char bug fails on both
     # architectures and an ARM-only failure points at something else.
     # Runs on the tests, family and full tiers, on the tier's suites (#656).
+    # A merge-queue leg (issue #658): unit-tests-arm already runs unsigned
+    # char on every pull request, so this mirror skips on pull requests and
+    # runs in the merge queue, which waits for its required context.
     needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' }}
+    if: ${{ !cancelled() && github.event_name != 'pull_request' && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
@@ -245,6 +258,18 @@ jobs:
       if: needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false'
     - uses: ./.github/actions/bootstrap-deps
       if: needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false'
+    - name: The BUILD=asan SDK profile compiles and is ASan-instrumented
+      # Folded in from the phase0 `ASan/UBSan profile compiles` job (issue
+      # #659), now a retired stub: the asan leg proves the profile itself.
+      if: matrix.sanitize == 'asan' && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false'
+      run: |
+        make -C sdk clean
+        make -C sdk -j"$(nproc)" BUILD=asan MMT_BASE="${RUNNER_TEMP}/mmt-asan"
+        lib="sdk/lib/libmmt_tcpip.so.$(grep -m1 '^VERSION' rules/common.mk | sed 's/.*:= *//')"
+        echo "Checking ${lib} for ASan instrumentation ..."
+        nm -D "${lib}" | grep -q '__asan_init' \
+          || { echo "::error::no ASan symbols in ${lib}"; exit 1; }
+        make -C sdk clean
     - name: Run unit test suites under sanitizers (${{ matrix.profile }})
       if: needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false'
       env:
@@ -553,6 +578,19 @@ jobs:
           esac
         done
         exit "$fail"
+    # Folded in from the former site-onboarding job (issues #396, #659): it
+    # rebuilt the site this job built above. Last, so the SDK the suite builds
+    # into its throwaway prefix leaves no sdk/lib for the advisory helpers.
+    - uses: ./.github/actions/bootstrap-deps
+    - name: Run the documented first run against the built site (docs_onboarding)
+      # The docs_onboarding suite against docs/_site: the landing page is
+      # checked as rendered, both download links must serve files
+      # byte-identical to docs/first-run/, and the displayed fetch/compile/run
+      # steps run verbatim in an empty directory against a throwaway SDK
+      # install, output diffed.
+      env:
+        DOCS_SITE_DIR: docs/_site
+      run: bash tests/docs_onboarding/run_tests.sh
 
   pre-commit:
     # Pre-commit framework gate (issue #187, F-CI-003). Contributor and
@@ -724,22 +762,37 @@ jobs:
         SUITES: ${{ needs.changes.outputs.suites }}
       run: bash tests/run_all_tests.sh $SUITES
 
+  # --- Retired contexts (issue #659) -----------------------------------------
+  # Each job below re-proved what another job proves, so it was folded into
+  # that job. Branch protection on main may still require its context, and a
+  # required context that no job reports blocks every pull request, so each
+  # keeps a stub under the same name: `if: false` skips it on every event and
+  # a skipped job reports success, using no runner. The contexts are listed
+  # in .github/retired-checks.txt, not .github/required-checks.txt;
+  # tools/ci/check-required-checks.sh checks both. Once a maintainer drops a
+  # context from protection, delete its stub and its retired-checks.txt line.
   enablesec:
-    # Compile the optional security/fuzz engines, which are only built when
-    # the SDK is built with ENABLESEC=1 (issue #126 / F-TEST-003): the CI gate
-    # that proves the engines compile in the shipped configuration. The
-    # rule_engine suite that exercises them is in DEFAULT_SUITES, so the
-    # unit-tests job runs it; this job no longer re-runs it (issue #552,
-    # F-CI-015). Full tier only (#656): the engines' sources are full.
-    needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.full != 'false' }}
+    # Was: `make -C sdk ENABLESEC=1` (issue #126). Now proved by the shared
+    # ENABLESEC=1 SDK build tests/run_all_tests.sh makes for rule_engine and
+    # installed_consumer (the unit-tests and sanitizer legs; every suite in
+    # the merge queue), and by codeql, which traces an ENABLESEC=1 build.
+    if: false
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 5
     steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-    - uses: ./.github/actions/bootstrap-deps
-    - name: Build the SDK with the security engines (ENABLESEC=1)
-      run: make -C sdk ENABLESEC=1 -j"$(nproc)"
+    - run: echo "retired (#659), see .github/retired-checks.txt"
+
+  asan-build:
+    # Was phase0-baseline.yml's BUILD=asan compile + `__asan_init` check. Now
+    # a step of sanitizer-tests (BUILD=asan, asan). Kept in this workflow so
+    # tools/phase0/ci/check_readme_gates.sh, which lists the phase0 gates,
+    # no longer shows it.
+    name: ASan/UBSan profile compiles
+    if: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+    - run: echo "retired (#659), see .github/retired-checks.txt"
 
   secret-scan:
     # Secret scanning gate (issue #160 / F-SEC-006): fail the workflow if
@@ -865,14 +918,17 @@ jobs:
 
   resource-budgets:
     # Resource-budget gate (issue #395, M4): run every resource_bounds fixture
-    # on each supported architecture (amd64 and arm64, the release package
-    # matrix) and check the committed deterministic budgets
+    # on arm64 and check the committed deterministic budgets
     # (tests/resource_bounds/budgets.json) with tools/ci/check-resource-budgets.py:
     # results.json schema validation, an independent re-evaluation of every
     # budget, and failure on an over-budget count or a missing dimension,
     # workload record or metric. The checker's --self-test proves each of
     # those failures is detected. Wall-clock is recorded as a labelled
     # observation only; no budget reads it.
+    # amd64 is the resource_bounds suite's job (issue #659): it is in
+    # DEFAULT_SUITES, so unit-tests runs every fixture on x86 and its
+    # run_tests.sh runs the checker (and its --self-test) on the results; the
+    # former ubuntu-24.04 leg repeated that.
     # A matrix job: on a docs-only change its steps skip (see `changes`), and
     # below the full tier unless `changes` names resource_bounds (#656).
     needs: changes
@@ -882,7 +938,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+        runner: [ubuntu-24.04-arm]
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       if: needs.changes.outputs.code != 'false' && (needs.changes.outputs.full != 'false' || contains(format(' {0} ', needs.changes.outputs.suites), ' resource_bounds '))
@@ -910,34 +966,6 @@ jobs:
         path: ${{ runner.temp }}/resource-bounds/results.json
         if-no-files-found: warn
         retention-days: 14
-
-  site-onboarding:
-    # Onboarding through the built site artifact (issue #396, M4): build the
-    # site with the same recipe Pages publishes (tools/ci/build-docs-site.sh —
-    # built-site link check + manifest), then run the docs_onboarding suite
-    # against docs/_site: the landing page is checked as rendered, both
-    # download links must serve files byte-identical to docs/first-run/, and
-    # the displayed fetch/compile/run steps are executed verbatim in an empty
-    # directory against a throwaway SDK install, output diffed.
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-    - uses: ./.github/actions/bootstrap-deps
-    - name: Set up Ruby for the docs-site build
-      uses: ruby/setup-ruby@b1da4809b005e0178fe08a1d57317bffc00b7b4c # v1.332.0
-      with:
-        ruby-version: "3.4"
-        working-directory: docs
-        bundler-cache: true
-      env:
-        BUNDLE_FROZEN: "true"
-    - name: Build the site artifact
-      run: bash tools/ci/build-docs-site.sh
-    - name: Run the documented first run against the built site
-      env:
-        DOCS_SITE_DIR: docs/_site
-      run: bash tests/docs_onboarding/run_tests.sh
 
   toolchain-ceiling:
     # Toolchain-ceiling gate (issue #514, F-DEP-301/F-DEP-307): the newest GCC

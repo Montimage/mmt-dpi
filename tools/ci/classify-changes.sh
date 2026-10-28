@@ -23,7 +23,10 @@
 #            name the file or reach it through a tools/ci delegate, the smoke
 #            set, the gates, CodeQL and fuzzing
 #   full     everything else — the whole suite and harness set, coverage,
-#            root-install, enablesec, abi-diff
+#            root-install, abi-diff
+# Pull requests never run the queue-only legs (unit-tests-unsigned-char and
+# the -fsigned-char unit-tests leg, issue #658) whatever the tier; the merge
+# queue, fed no path, runs them.
 # The path-to-tier rules, the suite and harness tags and the smoke set live
 # in tools/ci/test-map.txt (checked by tools/ci/check-test-map.sh).
 #

@@ -21,8 +21,11 @@
 #   still in flight when this gate executes, so the decisive evidence is
 #   the latest COMPLETED run of each required check):
 #     - unit-tests                — every matrix leg (name or `name (...)`)
-#     - sanitizer-tests           — every matrix leg (ASan + TSan suites)
-#     - ASan/UBSan profile compiles — the phase0 SDK sanitizer gate
+#     - sanitizer-tests           — every matrix leg (ASan + TSan suites;
+#                                   the ASan leg also builds the BUILD=asan
+#                                   SDK profile and checks __asan_init — the
+#                                   retired `ASan/UBSan profile compiles`
+#                                   context, now a skipped stub, issue #659)
 #     - Golden classification fingerprint unchanged (or its job id
 #       `classification-gate` if the display name is ever dropped)
 #
@@ -188,7 +191,6 @@ if not isinstance(runs, list) or any(not isinstance(r, dict) for r in runs):
 REQUIRED = [
     ("unit tests", ["unit-tests"]),
     ("sanitizer tests", ["sanitizer-tests"]),
-    ("sanitizer SDK profile", ["ASan/UBSan profile compiles"]),
     ("golden classification",
      ["Golden classification fingerprint unchanged", "classification-gate"]),
 ]

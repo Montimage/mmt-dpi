@@ -25,6 +25,12 @@
 # main is set up to merge through a merge queue (issue #657): every workflow
 # reporting a context here also triggers on `merge_group`, and the helper
 # fails a context that a merge-queue run would not report (see its header).
+# A job that skips on pull requests and runs only in the queue (issue #658)
+# must report a context listed here, or be needed by one, or the queue would
+# not wait for it.
+#
+# Retired contexts (issue #659) — folded into another job but possibly still
+# required by protection — are listed in .github/retired-checks.txt, not here.
 
 # --- c-cpp.yml -------------------------------------------------------------
 build
@@ -33,7 +39,10 @@ unit-tests
 # swaps the context at its merge, #490).
 unit-tests (-fsigned-char, hashmap memory hexdump mmt_utils mmt_inet_ntop)
 # Unsigned plain char: the full suite set on native ARM and with
-# -funsigned-char on x86 (issue #528).
+# -funsigned-char on x86 (issue #528). unit-tests-unsigned-char and the
+# -fsigned-char leg above run in the merge queue only (issue #658): on a pull
+# request they skip, so their contexts must stay required for the queue to
+# gate them.
 unit-tests-arm
 unit-tests-unsigned-char
 toolchain-floor
@@ -50,16 +59,12 @@ doc-validators
 version-agreement
 root-install
 assertions-live
-enablesec
 secret-scan
 # Replays tools/ci/fuzz/regressions before fuzzing (issue #486).
 fuzz
-resource-budgets (ubuntu-24.04)
 resource-budgets (ubuntu-24.04-arm)
-site-onboarding
 
 # --- phase0-baseline.yml ---------------------------------------------------
-ASan/UBSan profile compiles
 Golden classification fingerprint unchanged
 # Fragile: `#74` in the unquoted YAML name is a comment, so the context is
 # truncated (rename: a follow-up that swaps the context at its merge, #490).

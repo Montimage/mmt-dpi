@@ -186,6 +186,20 @@ expect("wrong-SHA check run in payload -> not eligible", 1,
        GREEN_RUNS + [run("some-other-check", head_sha=OTHER_SHA)],
        needle="wrong-SHA evidence")
 
+# Issue #659: `ASan/UBSan profile compiles` is a retired stub that reports
+# skipped on every commit; the BUILD=asan profile check runs inside the
+# sanitizer-tests asan leg, so the stub's run is neither needed nor fatal.
+expect("no ASan/UBSan profile compiles run -> still eligible", 0,
+       [r for r in GREEN_RUNS if r["name"] != "ASan/UBSan profile compiles"])
+expect("a skipped ASan/UBSan profile compiles stub -> still eligible", 0,
+       [r if r["name"] != "ASan/UBSan profile compiles" else
+        run("ASan/UBSan profile compiles", conclusion="skipped")
+        for r in GREEN_RUNS])
+expect("sanitizer-tests asan leg failed -> not eligible", 1,
+       [r if r["name"] != "sanitizer-tests (BUILD=asan, asan)" else
+        run("sanitizer-tests (BUILD=asan, asan)", conclusion="failure",
+            completed_at=T3) for r in GREEN_RUNS])
+
 expect("classification via bare job id also satisfies the group", 0,
        [r if r["name"] != "Golden classification fingerprint unchanged" else
         run("classification-gate") for r in GREEN_RUNS])
@@ -233,7 +247,9 @@ rc, out = invoke(GREEN_RUNS, extra_args=("--evidence", epath))
 try:
     doc = json.load(open(epath, encoding="utf-8"))
     check("--evidence records the verdict", rc == 0 and doc["eligible"]
-          and doc["sha"] == SHA and len(doc["checks"]) >= 6
+          # 2 unit-tests legs, 2 sanitizer legs, classification (#659
+          # dropped the retired ASan profile context)
+          and doc["sha"] == SHA and len(doc["checks"]) >= 5
           and len(doc["same_run"]) == 3, out[-400:])
 except Exception as e:
     check("--evidence records the verdict", False, str(e))

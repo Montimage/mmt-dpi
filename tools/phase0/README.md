@@ -103,7 +103,6 @@ list fails the build):
 
 <!-- begin-generated: ci-gates -->
 - `changes` — changes
-- `asan-build` — ASan/UBSan profile compiles
 - `harness-*` — harness-${{ matrix.shard }}
 - `harness-gate` — harness-gate
 - `classification-gate` — Golden classification fingerprint unchanged
@@ -114,9 +113,13 @@ list fails the build):
 
 What each gate asserts:
 
-- **`asan-build`** — `make BUILD=asan` must compile and the resulting library
-  must carry ASan instrumentation (`__asan_init`). Architecture-independent;
-  protects the Phase 2 verification vehicle.
+- **BUILD=asan profile** — `make BUILD=asan` must compile and the resulting
+  library must carry ASan instrumentation (`__asan_init`).
+  Architecture-independent; protects the Phase 2 verification vehicle. No
+  longer a job of this workflow (issue #659): it is a step of the
+  `sanitizer-tests (BUILD=asan, asan)` leg of `c-cpp.yml`, and the old
+  `ASan/UBSan profile compiles` context is a retired stub there
+  (`.github/retired-checks.txt`).
 - **`classification-gate`** — runs `tools/phase0/ci/check_classification.sh`,
   which builds+installs the library, classifies a small **self-contained** pcap
   subset (vendored under `ci/pcaps/`, ~0.6 MB, no dependency on the mmt-test

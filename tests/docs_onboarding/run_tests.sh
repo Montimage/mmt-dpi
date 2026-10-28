@@ -24,7 +24,7 @@
 # https://montimage-projects.github.io/mmt-dpi/ becomes file://$DOCS_SITE_DIR/
 # (default: the docs/ source tree, whose files the site serves verbatim — set
 # DOCS_SITE_DIR=docs/_site, relative to the repository root, to verify a built
-# site artifact instead; CI does, in the site-onboarding job, issue #396), and
+# site artifact instead; CI does, in the verify-helpers job, issue #396), and
 # /opt/mmt becomes the throwaway prefix. $EXTRA_CFLAGS (sanitizer modes) is
 # added to the compile line. The landing page checked in [2/5] is the one
 # under $DOCS_SITE_DIR, so a built site is checked as rendered.

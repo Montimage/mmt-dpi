@@ -40,8 +40,12 @@
 #       - every c-cpp.yml job is in exactly one of those sets, so a new job
 #         has to be classified;
 #     plus the issue #528 jobs (native ARM and x86 -funsigned-char suite
-#     legs, both required) and the issue #552 enablesec change (it builds
-#     ENABLESEC=1 and no longer re-runs a suite unit-tests runs).
+#     legs, both required); the issue #659 folds (enablesec and the phase0
+#     asan-build are `if: false` stubs of retired contexts, the BUILD=asan
+#     check is a sanitizer asan-leg step, site-onboarding is verify-helpers'
+#     last step, resource-budgets is arm64 only); and the issue #658
+#     queue-only legs (unit-tests-unsigned-char and the -fsigned-char leg
+#     skip on pull requests, the other variant legs do not).
 #
 # Part (2) needs python3 with PyYAML: without it, it reports SKIP, unless
 # REQUIRE_PYYAML=1 (the verify-helpers job), under which that fails.
@@ -410,18 +414,19 @@ WORKFLOWS = {
     "c-cpp.yml": {
         "single": ["unit-tests-arm", "unit-tests-unsigned-char",
                    "toolchain-floor", "toolchain-ceiling", "coverage", "lint",
-                   "codeql", "root-install", "assertions-live", "enablesec",
+                   "codeql", "root-install", "assertions-live",
                    "fuzz", "abi-diff"],
         "matrix": ["unit-tests", "sanitizer-tests", "resource-budgets"],
         "docs": ["build", "verify-helpers", "pre-commit", "doc-validators",
-                 "version-agreement", "secret-scan", "site-onboarding"],
+                 "version-agreement", "secret-scan"],
+        "retired": ["enablesec", "asan-build"],
         "other": ["changes", "fuzz-alert"],
     },
     "phase0-baseline.yml": {
-        "single": ["asan-build", "classification-gate", "leak-gate",
-                   "precision-gate"],
+        "single": ["classification-gate", "leak-gate", "precision-gate"],
         "matrix": [],
         "docs": [],
+        "retired": [],
         "other": ["changes", "harness", "harness-gate"],
     },
 }
@@ -432,15 +437,15 @@ TIER_SETS = {
         "gates": ["unit-tests-arm", "unit-tests-unsigned-char",
                   "toolchain-floor", "toolchain-ceiling", "assertions-live",
                   "codeql", "fuzz"],
-        "full": ["coverage", "root-install", "enablesec", "abi-diff"],
+        "full": ["coverage", "root-install", "abi-diff"],
         "not_tests": ["codeql", "fuzz"],
         "suite_legs": ["unit-tests-arm", "unit-tests-unsigned-char",
                        "toolchain-floor", "toolchain-ceiling",
                        "assertions-live", "sanitizer-tests"],
     },
     "phase0-baseline.yml": {
-        "gates": ["asan-build", "classification-gate", "leak-gate",
-                  "precision-gate", "harness"],
+        "gates": ["classification-gate", "leak-gate", "precision-gate",
+                  "harness"],
         "full": [],
         "not_tests": [],
         "suite_legs": [],
@@ -499,7 +504,8 @@ for wf, sets in WORKFLOWS.items():
               and str(legs[0]["run"]).strip().endswith(
                   "bash tests/run_all_tests.sh $SUITES")
               and (legs[0].get("env") or {}).get("SUITES") == SUITES_ENV)
-    listed = [j for k in ("single", "matrix", "docs", "other") for j in sets[k]]
+    listed = [j for k in ("single", "matrix", "docs", "retired", "other")
+              for j in sets[k]]
     if wf == "c-cpp.yml":
         unclassified = sorted(set(jobs) - set(listed))
         check(f"{wf}: every job is classified as a C or a docs job"
@@ -530,6 +536,16 @@ for wf, sets in WORKFLOWS.items():
         job = jobs.get(name) or {}
         check(f"{wf}: docs job {name} never skips on code=false",
               not skips_at_job_level(job))
+    # Issue #659: a retired context's job is a stub that skips on every
+    # event (a skipped job reports success), so it never runs and never
+    # waits on `changes`.
+    for name in sets["retired"]:
+        job = jobs.get(name) or {}
+        check(f"{wf}: retired job {name} is an `if: false` stub with no needs",
+              job.get("if") is False and not needs(job)
+              and all("run_all_tests" not in str(st.get("run", ""))
+                      and "make" not in str(st.get("run", ""))
+                      for st in job.get("steps") or []))
 
 check("the c-cpp.yml and phase0-baseline.yml classify steps are identical",
       bool(classify_steps.get("c-cpp.yml"))
@@ -614,12 +630,87 @@ with open(os.path.join(root, ".github", "required-checks.txt"),
 for ctx in ("unit-tests-arm", "unit-tests-unsigned-char"):
     check(f"required-checks.txt requires {ctx}", ctx in required)
 
-# Issue #552: enablesec proves the engines compile; rule_engine runs in
-# unit-tests (DEFAULT_SUITES), not a second time here.
-es_runs = " ".join(str(s.get("run", ""))
-                   for s in (cc.get("enablesec") or {}).get("steps") or [])
-check("c-cpp.yml: enablesec builds ENABLESEC=1 and re-runs no suite",
-      "ENABLESEC=1" in es_runs and "run_all_tests.sh" not in es_runs)
+# Issue #659: enablesec is retired. The ENABLESEC=1 compile is the shared
+# enablesec SDK build tests/run_all_tests.sh makes for rule_engine and
+# installed_consumer, and codeql traces an ENABLESEC=1 build.
+with open(os.path.join(root, "tests", "run_all_tests.sh"),
+          encoding="utf-8") as fh:
+    runner = fh.read()
+check("tests/run_all_tests.sh builds the ENABLESEC=1 group for rule_engine",
+      "rule_engine|installed_consumer)" in runner
+      and "make_args+=(ENABLESEC=1)" in runner)
+cq = " ".join(str(st.get("run", ""))
+              for st in (cc.get("codeql") or {}).get("steps") or [])
+check("c-cpp.yml: codeql builds the SDK with ENABLESEC=1",
+      "ENABLESEC=1" in cq)
+check("phase0-baseline.yml: the retired asan-build job is gone",
+      "asan-build" not in load("phase0-baseline.yml"))
+with open(os.path.join(root, ".github", "retired-checks.txt"),
+          encoding="utf-8") as fh:
+    retired_ctx = {ln.strip() for ln in fh
+                   if ln.strip() and not ln.lstrip().startswith("#")}
+check("retired-checks.txt lists exactly the two stubs' contexts",
+      retired_ctx == {"enablesec", "ASan/UBSan profile compiles"}
+      and (cc.get("asan-build") or {}).get("name")
+      == "ASan/UBSan profile compiles")
+
+# Issue #659: the BUILD=asan profile check runs in the sanitizer asan leg.
+asan_steps = [st for st in san.get("steps") or []
+              if "__asan_init" in str(st.get("run", ""))]
+check("c-cpp.yml: the sanitizer asan leg builds BUILD=asan and checks "
+      "__asan_init before the suites",
+      len(asan_steps) == 1
+      and "matrix.sanitize == 'asan'" in str(asan_steps[0].get("if", ""))
+      and GATES in str(asan_steps[0].get("if", ""))
+      and "BUILD=asan" in str(asan_steps[0]["run"])
+      and "make -C sdk clean" in str(asan_steps[0]["run"])
+      and (san.get("steps") or []).index(asan_steps[0])
+      < max(i for i, st in enumerate(san.get("steps") or [])
+            if "run_all_tests.sh" in str(st.get("run", ""))))
+
+# Issue #659: site-onboarding folded into verify-helpers, after the site build.
+vh = [str(st.get("run", "")) for st in (cc.get("verify-helpers") or {}).get("steps") or []]
+vh_env = [(st.get("env") or {}) for st in (cc.get("verify-helpers") or {}).get("steps") or []]
+site = [i for i, r in enumerate(vh) if "build-docs-site.sh" in r]
+onb = [i for i, r in enumerate(vh) if "tests/docs_onboarding/run_tests.sh" in r]
+check("c-cpp.yml: verify-helpers runs docs_onboarding against the site it "
+      "built (DOCS_SITE_DIR=docs/_site), as its last step",
+      len(site) == 1 and len(onb) == 1 and site[0] < onb[0]
+      and onb[0] == len(vh) - 1
+      and vh_env[onb[0]].get("DOCS_SITE_DIR") == "docs/_site")
+
+# Issue #659: resource-budgets keeps only the arm64 leg; resource_bounds
+# (DEFAULT_SUITES) runs the fixtures and the checker on x86 in unit-tests.
+check("c-cpp.yml: resource-budgets runs on ubuntu-24.04-arm only",
+      ((rbj.get("strategy") or {}).get("matrix") or {}).get("runner")
+      == ["ubuntu-24.04-arm"])
+check("tests/run_all_tests.sh lists resource_bounds in DEFAULT_SUITES",
+      re.search(r"DEFAULT_SUITES=\([^)]*\bresource_bounds\b", runner, re.S)
+      is not None)
+
+# Issue #658: the unsigned-char mirror and the -fsigned-char leg skip on
+# pull requests (merge queue, push and schedule only); unit-tests-arm and
+# the default unit-tests leg stay on every pull request.
+OFF_PR = "github.event_name != 'pull_request'"
+check("c-cpp.yml: unit-tests-unsigned-char skips on pull requests only",
+      OFF_PR in cond(uc) and GATES in cond(uc) and "!cancelled()" in cond(uc))
+check("c-cpp.yml: unit-tests-arm still runs on pull requests",
+      "event_name" not in cond(arm))
+LEG = "(matrix.extra_cflags == '' || " + OFF_PR + ")"
+check("c-cpp.yml: every unit-tests step skips the -fsigned-char leg on "
+      "pull requests, and only it",
+      all(LEG in str(st.get("if", "")) for st in ut.get("steps") or [])
+      and cond(ut).strip() == "${{ !cancelled() }}"
+      and [leg.get("extra_cflags") for leg in
+           ((ut.get("strategy") or {}).get("matrix") or {}).get("include") or []]
+      == ["", "-fsigned-char"])
+for name in ("toolchain-floor", "toolchain-ceiling", "assertions-live",
+             "coverage", "sanitizer-tests", "unit-tests-arm"):
+    j = cc.get(name) or {}
+    check(f"c-cpp.yml: {name} still runs on pull requests",
+          OFF_PR not in cond(j)
+          and all(OFF_PR not in str(st.get("if", ""))
+                  for st in j.get("steps") or []))
 
 for status, label in results:
     print(f"  {status} {label}")
