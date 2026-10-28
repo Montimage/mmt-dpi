@@ -139,8 +139,8 @@ WORKFLOWS = {
         "other": ["changes", "fuzz-alert"],
     },
     "phase0-baseline.yml": {
-        "single": ["asan-build", "list-harnesses", "classification-gate",
-                   "leak-gate", "precision-gate"],
+        "single": ["asan-build", "classification-gate", "leak-gate",
+                   "precision-gate"],
         "matrix": [],
         "docs": [],
         "other": ["changes", "harness", "harness-gate"],

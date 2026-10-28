@@ -11,7 +11,7 @@
 # tables, so it is nearly pcap-independent. The 64 MiB ceiling gives ~2.5x
 # headroom for runner/libc variance while still catching real bloat.
 #
-# Enforced by tools/phase0/tests/run_memory_ceiling_test.sh (CI job
-# harness-run_memory_ceiling_test.sh in .github/workflows/phase0-baseline.yml).
+# Enforced by tools/phase0/tests/run_memory_ceiling_test.sh (CI leg
+# harness-default in .github/workflows/phase0-baseline.yml).
 
 library_rss_ceiling_kib	65536

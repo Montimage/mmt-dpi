@@ -58,11 +58,13 @@ gen_block() {
             }
         }
     ' "$WORKFLOW"
-    # The `harness` job is a matrix over every tools/phase0/tests/run_*.sh —
-    # spell out the fan-out so the count is auditable from the doc alone.
-    local count
+    # The `harness` job is a fixed matrix of run_all_harnesses.sh slices
+    # (issue #655) over every tools/phase0/tests/run_*.sh — spell out the
+    # leg and harness counts so both are auditable from the doc alone.
+    local count legs
     count=$(find "$TEST_DIR" -maxdepth 1 -name 'run_*.sh' | wc -l)
-    printf '%s\n' "- matrix expansion: \`harness-*\` fans out to ${count} jobs, one per \`tools/phase0/tests/run_*.sh\`"
+    legs=$(grep -c '^          - shard: ' "$WORKFLOW" || true)
+    printf '%s\n' "- matrix expansion: \`harness-*\` runs ${legs} legs, slices of \`tools/phase0/run_all_harnesses.sh\` that together run all ${count} \`tools/phase0/tests/run_*.sh\`"
 }
 
 BLOCK="$(gen_block)" || exit 2

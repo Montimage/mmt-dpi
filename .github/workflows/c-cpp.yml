@@ -448,6 +448,7 @@ jobs:
         bash tools/ci/check-required-checks.sh
         REQUIRE_PYYAML=1 bash tools/ci/tests/test-required-checks.sh
         REQUIRE_PYYAML=1 bash tools/ci/tests/test-classify-changes.sh
+        REQUIRE_PYYAML=1 bash tools/ci/tests/test-harness-shards.sh
     - name: Package-declaration consistency (blocking — issue #219)
       # Was advisory until the .deb/.rpm declarations were reconciled with
       # the build; the contradictions it tracked are closed, so a regression

@@ -273,7 +273,7 @@ without compiling, and the docs-only CI filter self-test
 `test-classify-changes.sh`, issues #528/#552, the public-API contract
 checker self-test `test-api-contracts.sh` and the ABI-diff self-test
 `test-abi-diff.sh`, issue #525, and the plugin export-gate self-test
-`test-exported-symbols.sh`, issue #534) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
+`test-exported-symbols.sh`, issue #534, and the phase0 harness-shard self-test `test-harness-shards.sh`, issue #655) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
 #387); the first three build nothing, `sdk_coverage` builds its own
 `BUILD=coverage` SDK whatever the mode and cleans `sdk/` afterwards. `installed_consumer` (issue #374) drives the
 other

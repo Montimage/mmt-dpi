@@ -64,6 +64,12 @@
 # scripts/validate-exported-symbols.sh (issue #534), which drives the real
 # validator on a fixture shared object and fixture documents (an unrecorded
 # export, a removed one, a missing section, --write; no SDK build).
+# It also runs the phase0 harness-shard self-test beside
+# tools/phase0/run_all_harnesses.sh (issue #655), which drives the runner's
+# --group/--shard/--list selectors and a fixture run that builds no SDK, and
+# pins that the phase0-baseline.yml harness legs cover every harness once.
+# Its wiring half skips without PyYAML; verify-helpers runs it with PyYAML
+# required.
 set -e
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/ci/tests"
 python3 "${TESTS_DIR}/test-release-gates.py" "$@"
@@ -84,3 +90,4 @@ bash "${TESTS_DIR}/test-commented-code-ratchet.sh"
 bash "${TESTS_DIR}/test-api-contracts.sh"
 bash "${TESTS_DIR}/test-abi-diff.sh"
 bash "${TESTS_DIR}/test-exported-symbols.sh"
+bash "${TESTS_DIR}/test-harness-shards.sh"

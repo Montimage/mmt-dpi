@@ -21,7 +21,7 @@
 #     (MMT_SDK_PREBUILT=1) -> leak check via ASan detect_leaks=1 (LSan).
 #   - standalone with valgrind available -> default SDK build under
 #     valgrind --errors-for-leak-kinds=definite --error-exitcode=42.
-#   - standalone without valgrind (e.g. the CI harness-matrix job) ->
+#   - standalone without valgrind ->
 #     BUILD=asan SDK + ASAN_OPTIONS=detect_leaks=1.
 #
 # Usage: tools/phase0/tests/run_leak_regression_test.sh
