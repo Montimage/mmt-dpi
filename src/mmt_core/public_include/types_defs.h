@@ -17,12 +17,12 @@ extern "C" {
 
 #include <netinet/in.h>
 
-#ifndef false
-#define false 0 /**< Code of false value.*/
-#endif
-#ifndef true
-#define true 1 /**< Code of true value. */
-#endif
+/* true/false come from <stdbool.h> (issue #537). This header used to define
+ * `false` as 0 and `true` as 1 itself, for C++ consumers too, where they are
+ * keywords; <stdbool.h> gives C the same values and C++ nothing to collide
+ * with.
+ */
+#include <stdbool.h>
 
 #ifndef ETH_ALEN
 #define ETH_ALEN        6 /**< Ethernet MAC address length in bytes.*/

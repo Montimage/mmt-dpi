@@ -10,6 +10,7 @@
 
 #include "mmt_mobile.h"
 #include "mmt_core.h"
+#include "dbg.h" /* internal diagnostics + likely/unlikely (issue #537) */
 #include "plugin_defs.h"
 #include "extraction_lib.h"
 #include "mmt_common_internal_include.h"

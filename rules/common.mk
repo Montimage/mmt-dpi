@@ -246,7 +246,7 @@ $(LIBBAPP_OBJECTS): CFLAGS +=  -Wno-unused-variable -fPIC
 LIBDICOM_OBJECTS := \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_dicom/*.c))
 
-$(LIBDICOM_OBJECTS): CFLAGS +=  -Wno-unused-variable -fPIC
+$(LIBDICOM_OBJECTS): CFLAGS +=  -Wno-unused-variable -fPIC -I$(SRCDIR)/mmt_core/public_include
 
 # Extra diagnostic warnings (B5). These surface latent defects - format-string
 # bugs, NULL dereferences, variable-length arrays - for triage. They are

@@ -18,7 +18,7 @@ extern "C" {
 #include "mmt_exports.h"
 #include "plugin_defs.h"
 #include "proto_meta.h"
-#include "dbg.h"
+/* dbg.h (debug/check/log_err/likely/...) is SDK-internal since issue #537. */
 #include "mmt_utils.h"
 
 /* NOTE: DLT/protocol constants (DLT_EN10MB, THALES_TDMA_PROTO, ECITIZ_PROTO) logically belong to protocol stacks

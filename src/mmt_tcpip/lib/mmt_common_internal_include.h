@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
 #include "mmt_core.h"
+#include "dbg.h" /* internal diagnostics + likely/unlikely (issue #537) */
 #include "mmt_tcpip_internal_defs_macros.h"
 #include "mmt_tcpip_plugin_structs.h"
 

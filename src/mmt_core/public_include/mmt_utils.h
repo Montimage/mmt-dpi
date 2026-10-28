@@ -20,14 +20,6 @@ extern "C" {
  #include <stdbool.h>
  #include "mmt_exports.h"
 
-//predictor
-#ifndef likely
-#define likely(x)       __builtin_expect(!!(x), 1)
-#endif
-#ifndef unlikely
-#define unlikely(x)     __builtin_expect(!!(x), 0)
-#endif
-
 /**
  * Convert a hexa character to an integer number
  * @param  hc hexa character

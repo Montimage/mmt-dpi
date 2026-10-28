@@ -354,7 +354,11 @@ prose above each table is kept as written.
 ## libmmt_tcpip
 
 `init_proto`, `cleanup_proto`, `init_tcpip_plugin` and `cleanup_tcpip_plugin`
-are declared in `src/mmt_tcpip/include/mmt_tcpip_plugin.h`. The misspelled
+are declared in `src/mmt_tcpip/include/mmt_tcpip_plugin.h`; the six
+`get_content_class_*` / `get_application_class_*` lookups are declared in
+`src/mmt_tcpip/include/mmt_tcpip.h` and defined in
+`src/mmt_tcpip/lib/mmt_tcpip_classes.c` (issue #537 — they were `static inline`
+header bodies, so a consumer calling them now links `-lmmt_tcpip`). The misspelled
 `mmt_search_irc_ssl_detect_ninty_percent_but_very_fast` stays exported until
 2.0.0 (the #237 note above).
 
@@ -362,6 +366,12 @@ are declared in `src/mmt_tcpip/include/mmt_tcpip_plugin.h`. The misspelled
 |:-|
 |`cleanup_proto`|
 |`cleanup_tcpip_plugin`|
+|`get_application_class_by_protocol_id`|
+|`get_application_class_name_by_protocol_id`|
+|`get_content_class_by_content_flags`|
+|`get_content_class_by_content_type`|
+|`get_content_class_name_by_content_flags`|
+|`get_content_class_name_by_content_type`|
 |`init_proto`|
 |`init_tcpip_plugin`|
 |`mmt_search_irc_ssl_detect_ninty_percent_but_very_fast`|

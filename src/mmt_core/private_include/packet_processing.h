@@ -20,7 +20,7 @@ extern "C" {
 #include "memory.h"
 #include "plugin_defs.h"
 #include "cfg_defaults.h"
-
+#include "dbg.h" /* internal diagnostics + likely/unlikely (issue #537) */
 #include <string.h> /* memset in mmt_session_get_children_stats() */
 
 #define PROTO_CLASSIFICATION_DONE       0 /**< defines that processing is done with the classification process.

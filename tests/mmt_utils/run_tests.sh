@@ -14,7 +14,7 @@ echo "Compiling mmt_utils tests..."
 read -r -a extra_cflags <<< "${EXTRA_CFLAGS:-}"
 ${CC:-gcc} "${extra_cflags[@]}" -Wall -Wextra -std=c11 \
     -D'u_char=unsigned char' \
-    -I"$CORE_PUBLIC_INC" \
+    -I"$PROJECT_DIR/src/mmt_core/private_include" -I"$CORE_PUBLIC_INC" \
     -o "$SCRIPT_DIR/test_mmt_utils" \
     "$SCRIPT_DIR/test_mmt_utils.c" \
     "$CORE_SRC/mmt_utils.c" \

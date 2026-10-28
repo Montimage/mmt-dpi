@@ -139,7 +139,7 @@ static int _int_classify_me(ipacket_t * ipacket, unsigned index) {
 		cursor += sizeof(var_type);\
 	}
 
-/* debug() comes from dbg.h via mmt_core.h — it compiles out of -DNDEBUG
+/* debug() comes from the internal dbg.h (issue #537) — it compiles out of -DNDEBUG
  * (release) builds, so it never writes on the packet path (issue #246). */
 
 #define extract_u8( v )\

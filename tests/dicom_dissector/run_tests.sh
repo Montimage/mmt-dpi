@@ -20,6 +20,7 @@ echo "  source    : ${SRC#"$REPO_ROOT"/}"
 
 read -r -a extra_cflags <<< "${EXTRA_CFLAGS:-}"
 ${CC:-gcc} "${extra_cflags[@]}" -O1 -g -Wall -Wextra -std=gnu11 \
+    -I "${REPO_ROOT}/src/mmt_core/public_include" \
     -o "${TEST_BIN}" "${TEST_SRC}"
 
 echo "  running test_dicom_dissector ..."

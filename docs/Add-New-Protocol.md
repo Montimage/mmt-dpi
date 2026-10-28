@@ -80,7 +80,7 @@ If a protocol needs a classification for example protocol rtp, we need to add a 
   MMT_INTER_PROTO(PROTO_UDP, mmt_check_rtp_udp, 50)
    
 ```
-In the same file, update function **get_application_class_by_protocol_id** to include **lemonde** as a WEB protocol.
+Then update function **get_application_class_by_protocol_id** in **`src/mmt_tcpip/lib/mmt_tcpip_classes.c`** to include **lemonde** as a WEB protocol.
 
 ## 3- Add Classification for the Protocol
 

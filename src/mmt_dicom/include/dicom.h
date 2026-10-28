@@ -6,8 +6,10 @@
 extern "C" {
 #endif
 
-#include "../../mmt_core/public_include/plugin_defs.h"
-#include "../../mmt_core/public_include/mmt_core.h"
+/* Resolved through the include path (issue #537): the source-tree relative
+ * form did not exist once the header was installed to $(MMT_INC)/dicom. */
+#include "plugin_defs.h"
+#include "mmt_core.h"
 
 #define PROTO_DICOM 701
 #define PROTO_DICOM_ALIAS "dicom"

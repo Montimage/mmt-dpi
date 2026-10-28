@@ -1,9 +1,28 @@
 #ifndef __dbg_h__
 #define __dbg_h__
 
+/*
+ * Internal diagnostics and branch-prediction macros of the SDK sources.
+ *
+ * Issue #537 (F-BUG-010): this header used to be installed and pulled in by
+ * mmt_core.h, so every consumer got unprefixed debug/check/log_err/sentinel/
+ * likely/... macros that collided with its own. It is private now: library
+ * code reaches it through the internal headers (packet_processing.h,
+ * mmt_common_internal_include.h, mmt_mobile_internal.h,
+ * mmt_business_app_internal.h) and nothing under $(MMT_INC) includes it.
+ */
+
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+
+/* Branch-prediction hints, formerly defined by the public mmt_utils.h. */
+#ifndef likely
+#define likely(x)       __builtin_expect(!!(x), 1)
+#endif
+#ifndef unlikely
+#define unlikely(x)     __builtin_expect(!!(x), 0)
+#endif
 
 #ifdef NDEBUG
 #define debug(M, ...)

@@ -118,6 +118,33 @@ for opt in -O0 -O2; do
     check "byte-order consumer compiles and passes (${opt})" byte_order_consumer "${opt}"
 done
 
+# Header namespace (issue #537, F-BUG-010/F-CLEAN-011): a consumer that
+# defines its own debug/check/likely/unlikely and includes EVERY installed
+# header compiles with -Werror (no redefinition), no dbg.h macro leaks out,
+# and the class-table lookups link from libmmt_tcpip instead of being
+# compiled into the consumer.
+check "installed headers carry no dbg.h" \
+    test -z "$(find "${PREFIX}/dpi/include" -name dbg.h)"
+check_fail "installed mmt_tcpip.h carries no static inline bodies" \
+    grep -n 'static inline' "${PREFIX}/dpi/include/tcpip/mmt_tcpip.h"
+ALL_HEADERS="${WORK}/all_installed_headers.h"
+(cd "${PREFIX}/dpi/include" && find . -name '*.h' | sed 's|^\./||' | LC_ALL=C sort \
+    | sed 's|.*|#include "&"|') > "${ALL_HEADERS}"
+check "every installed header is listed for the namespace consumer" \
+    test "$(wc -l < "${ALL_HEADERS}")" -ge 20
+header_macros_consumer() {
+    local own="$1" bin="${WORK}/header_macros$1"
+    "${CC:-gcc}" "${extra_cflags[@]}" -Wall -Wextra -Werror -DMMT_OWN_MACROS="${own}" \
+        -DMMT_ALL_HEADERS_FILE="\"${ALL_HEADERS}\"" -o "${bin}" \
+        "${SCRIPT_DIR}/test_header_macros.c" \
+        -I "${PREFIX}/dpi/include" -L "${PREFIX}/dpi/lib" -lmmt_tcpip -lmmt_core -ldl \
+        && LD_LIBRARY_PATH="${PREFIX}/dpi/lib" "${bin}"
+}
+check "header-namespace consumer with its own debug/check/likely compiles -Werror and passes" \
+    header_macros_consumer 1
+check "header-namespace consumer sees no internal macro and passes" \
+    header_macros_consumer 0
+
 # Provenance: a real file is hashed and every log line is tagged.
 : > "${WORK}/mmt-dpi_test.deb"
 WANT_SHA="$(sha256sum "${WORK}/mmt-dpi_test.deb" | awk '{print substr($1,1,12)}')"

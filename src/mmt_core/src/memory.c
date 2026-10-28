@@ -5,7 +5,7 @@
 
 #include "memory.h"
 #include "mmt_core.h"
-
+#include "dbg.h"     // unlikely(), mmt_debug_log() (issue #537)
 // B5 (remote-DoS hardening): allocation failure used to call abort(), which
 // tears down the entire host process from inside a shared library - a packet
 // that provokes a huge allocation could therefore crash the host (remote DoS).
