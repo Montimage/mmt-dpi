@@ -11,6 +11,12 @@
 #   - 3GPP vendor-specific attribute guards
 #   - attributes running past the capture never stored
 #
+# test_radius_extraction_golden.c (issue #543) registers every RADIUS
+# attribute and digests what each one extracts over crafted frames; the
+# output must equal radius_extraction.golden, generated against the
+# per-attribute extractors the table-driven ones replaced. A changed line
+# names the attribute whose extraction moved.
+#
 # The suite builds and installs the SDK into a throwaway prefix (the
 # tests/parser_boundaries pattern), so it discards an existing sdk/ build.
 # SDK_BUILD_PROFILE (set by run_all_tests.sh for SANITIZE=asan|tsan and
@@ -24,6 +30,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 TEST_SRC="${SCRIPT_DIR}/test_radius_hardening.c"
 TEST_BIN="${SCRIPT_DIR}/test_radius_hardening"
+GOLDEN_SRC="${SCRIPT_DIR}/test_radius_extraction_golden.c"
+GOLDEN_BIN="${SCRIPT_DIR}/test_radius_extraction_golden"
+GOLDEN="${SCRIPT_DIR}/radius_extraction.golden"
 
 CC="${CC:-gcc}"
 JOBS="${JOBS:-$(nproc 2>/dev/null || echo 2)}"
@@ -69,11 +78,13 @@ fi
 LIB="${PREFIX}/dpi/lib"
 
 # --- [2/3] compile ----------------------------------------------------------
-echo "  [2/3] compiling test_radius_hardening ..."
-"${CC}" "${extra_cflags[@]}" -O1 -g -Wall -Wextra -std=gnu11 \
-    -o "${TEST_BIN}" "${TEST_SRC}" \
-    -I"${PREFIX}/dpi/include" \
-    -L"${LIB}" -lmmt_tcpip -lmmt_core -ldl -lpcap -lpthread -lm
+echo "  [2/3] compiling test_radius_hardening, test_radius_extraction_golden ..."
+for pair in "${TEST_SRC}:${TEST_BIN}" "${GOLDEN_SRC}:${GOLDEN_BIN}"; do
+    "${CC}" "${extra_cflags[@]}" -O1 -g -Wall -Wextra -std=gnu11 \
+        -o "${pair#*:}" "${pair%%:*}" \
+        -I"${PREFIX}/dpi/include" \
+        -L"${LIB}" -lmmt_tcpip -lmmt_core -ldl -lpcap -lpthread -lm
+done
 
 # --- [3/3] run --------------------------------------------------------------
 # The protocol plugins are loaded via dlopen, so under a sanitizer profile
@@ -104,3 +115,21 @@ else
     echo "✗ RADIUS hardening regression tests failed (rc=${rc})" >&2
     exit 1
 fi
+
+echo "  [3/3] running test_radius_extraction_golden ..."
+rc=0
+( cd "${PREFIX}" && \
+    env "${env_prefix[@]}" \
+        ASAN_OPTIONS="detect_leaks=0" \
+        UBSAN_OPTIONS="print_stacktrace=1" \
+        LD_LIBRARY_PATH="${LIB}:${LD_LIBRARY_PATH:-}" \
+        timeout 60 "${GOLDEN_BIN}" ) >"${WORK}/golden.out" || rc=$?
+if [ "${rc}" -ne 0 ]; then
+    echo "✗ test_radius_extraction_golden failed (rc=${rc})" >&2
+    exit 1
+fi
+if ! diff -u "${GOLDEN}" "${WORK}/golden.out" >&2; then
+    echo "✗ RADIUS attribute extraction differs from radius_extraction.golden (lines above name the attributes)" >&2
+    exit 1
+fi
+echo "✓ every RADIUS attribute extracts what radius_extraction.golden pins ($(grep -vc '^#' "${GOLDEN}") attributes)"

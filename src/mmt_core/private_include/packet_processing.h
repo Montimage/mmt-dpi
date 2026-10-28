@@ -850,8 +850,7 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
 /* packet_stats.c — statistics, called by packet_registry.c,
  * packet_pipeline.c and packet_session.c. */
 void free_handler_protocols_statistics(mmt_handler_t *mmt_handler);
-proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, uint32_t proto_offset, unsigned index);
-proto_statistics_internal_t * update_proto_stats_on_new_session(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, int new_session, uint32_t proto_offset, unsigned index);
+proto_statistics_internal_t * update_proto_stats(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, int new_session, uint32_t proto_offset, unsigned index);
 void register_protocol_stats_attributes(protocol_t *proto);
 void register_protocol_session_attributes(protocol_t *proto);
 

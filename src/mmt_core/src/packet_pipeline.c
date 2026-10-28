@@ -1168,14 +1168,11 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
 
     //The protocol is registered: First we check if it requires to maintain a session
     is_new_session = proto_session_management(ipacket, configured_protocol, index);
+    //Update the protocol statistics
+    parent_stats = update_proto_stats(ipacket, configured_protocol, parent_stats, is_new_session == NEW_SESSION, proto_offset, index);
     if (is_new_session == NEW_SESSION) {
-        parent_stats = update_proto_stats_on_new_session(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, is_new_session, proto_offset, index);
         fire_attribute_event(ipacket, configured_protocol->protocol->proto_id, PROTO_SESSION, index, (void *) ipacket->session);
         // fire_evasion_event(ipacket, configured_protocol->protocol->proto_id, index, 1, (void *) NULL);
-    }
-    else {
-        //Update the protocol statistics
-        parent_stats = update_proto_stats_on_packet(ipacket, configured_protocol, parent_stats, proto_offset, index);
     }
 
     //Analyze packet data

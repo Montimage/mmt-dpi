@@ -2,7 +2,7 @@
  * test_radius_dns_ipv6_api.c — packet/API-path test for issue #331: the
  * radius.dns_ipv6 attribute (3GPP-IPv6-DNS-Servers, 3GPP vendor
  * sub-attribute 17, TS 29.061) used to be a stub that never extracted.
- * radius_dns_ipv6_extraction() now reports the first (primary) server
+ * Its extraction (radius_tlv_desc in proto_radius.c, #543) reports the first (primary) server
  * address of the sub-attribute as MMT_DATA_IP6_ADDR.
  *
  *   - a sub-attribute carrying two servers extracts the first one;
