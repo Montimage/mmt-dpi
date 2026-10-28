@@ -44,13 +44,9 @@ int mmt_check_battlefield(ipacket_t * ipacket, unsigned index) {
         if (packet->detected_protocol_stack[0] == PROTO_BATTLEFIELD) {
             if (src != NULL && ((MMT_INTERNAL_TIMESTAMP_TYPE)
                     (packet->tick_timestamp - src->battlefield_ts) < battlefield_timeout)) {
-                MMT_LOG(PROTO_BATTLEFIELD, MMT_LOG_DEBUG,
-                        "battlefield : save src connection packet detected\n");
                 src->battlefield_ts = packet->tick_timestamp;
             } else if (dst != NULL && ((MMT_INTERNAL_TIMESTAMP_TYPE)
                     (packet->tick_timestamp - dst->battlefield_ts) < battlefield_timeout)) {
-                MMT_LOG(PROTO_BATTLEFIELD, MMT_LOG_DEBUG,
-                        "battlefield : save dst connection packet detected\n");
                 dst->battlefield_ts = packet->tick_timestamp;
             }
             return 4;
@@ -65,8 +61,6 @@ int mmt_check_battlefield(ipacket_t * ipacket, unsigned index) {
                 }
             } else if (flow->l4.udp.battlefield_stage == 2 - ipacket->session->last_packet_direction) {
                 if (packet->payload_packet_len > 8 && get_u32(packet->payload, 0) == flow->l4.udp.battlefield_msg_id) {
-                    MMT_LOG(PROTO_BATTLEFIELD,
-                            MMT_LOG_DEBUG, "Battlefield message and reply detected.\n");
                     mmt_int_battlefield_add_connection(ipacket);
                     return 1;
                 }
@@ -82,22 +76,18 @@ int mmt_check_battlefield(ipacket_t * ipacket, unsigned index) {
         } else if (flow->l4.udp.battlefield_stage == 4 - ipacket->session->last_packet_direction) {
             if (packet->payload_packet_len == 7
                     && (packet->payload[0] == 0x02 || packet->payload[packet->payload_packet_len - 1] == 0xe0)) {
-                MMT_LOG(PROTO_BATTLEFIELD, MMT_LOG_DEBUG,
-                        "Battlefield message and reply detected.\n");
                 mmt_int_battlefield_add_connection(ipacket);
                 return 1;
             }
         }
 
         if (packet->payload_packet_len == 18 && mmt_mem_cmp(&packet->payload[5], "battlefield2\x00", 13) == 0) {
-            MMT_LOG(PROTO_BATTLEFIELD, MMT_LOG_DEBUG, "Battlefield 2 hello packet detected.\n");
             mmt_int_battlefield_add_connection(ipacket);
             return 1;
         } else if (packet->payload_packet_len > 10 &&
                 (mmt_mem_cmp(packet->payload, "\x11\x20\x00\x01\x00\x00\x50\xb9\x10\x11", 10) == 0
                 || mmt_mem_cmp(packet->payload, "\x11\x20\x00\x01\x00\x00\x30\xb9\x10\x11", 10) == 0
                 || mmt_mem_cmp(packet->payload, "\x11\x20\x00\x01\x00\x00\xa0\x98\x00\x11", 10) == 0)) {
-            MMT_LOG(PROTO_BATTLEFIELD, MMT_LOG_DEBUG, "Battlefield safe pattern detected.\n");
             mmt_int_battlefield_add_connection(ipacket);
             return 1;
         }

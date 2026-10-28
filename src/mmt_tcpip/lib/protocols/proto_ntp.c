@@ -25,19 +25,15 @@ int mmt_check_ntp(ipacket_t * ipacket, unsigned index) {
         if (!(packet->udp->dest == htons(123) || packet->udp->source == htons(123)))
             goto exclude_ntp;
 
-        MMT_LOG(PROTO_NTP, MMT_LOG_DEBUG, "NTP port detected\n");
 
         if (packet->payload_packet_len != 48)
             goto exclude_ntp;
 
-        MMT_LOG(PROTO_NTP, MMT_LOG_DEBUG, "NTP length detected\n");
         if ((((packet->payload[0] & 0x38) >> 3) <= 4)) {
-            MMT_LOG(PROTO_NTP, MMT_LOG_DEBUG, "detected NTP.");
             mmt_int_ntp_add_connection(ipacket);
             return 1;
         }
 exclude_ntp:
-        MMT_LOG(PROTO_NTP, MMT_LOG_DEBUG, "NTP excluded.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_NTP);
     }
     return 0;

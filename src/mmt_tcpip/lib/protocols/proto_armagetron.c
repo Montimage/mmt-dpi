@@ -21,7 +21,6 @@ int mmt_check_armagetron(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-        MMT_LOG(PROTO_ARMAGETRON, MMT_LOG_DEBUG, "search armagetron.\n");
 
         if (packet->payload_packet_len > 10) {
             /* login request */
@@ -31,7 +30,6 @@ int mmt_check_armagetron(ipacket_t * ipacket, unsigned index) {
                     goto exclude;
                 if (get_u16(packet->payload, 6) == htons(0x0008)
                         && get_u16(packet->payload, packet->payload_packet_len - 2) == 0) {
-                    MMT_LOG(PROTO_ARMAGETRON, MMT_LOG_DEBUG, "detected armagetron.\n");
                     mmt_int_armagetron_add_connection(ipacket);
                     return 1;
                 }
@@ -44,7 +42,6 @@ int mmt_check_armagetron(ipacket_t * ipacket, unsigned index) {
                     goto exclude;
                 if (get_u32(packet->payload, 6) == htonl(0x00000500) && get_u32(packet->payload, 6 + 4) == htonl(0x00010000)
                         && get_u16(packet->payload, packet->payload_packet_len - 2) == 0) {
-                    MMT_LOG(PROTO_ARMAGETRON, MMT_LOG_DEBUG, "detected armagetron.\n");
                     mmt_int_armagetron_add_connection(ipacket);
                     return 1;
                 }
@@ -64,7 +61,6 @@ int mmt_check_armagetron(ipacket_t * ipacket, unsigned index) {
                             && (get_u32(packet->payload, 6 + 10 + val) == htonl(0x00010000)
                             || get_u32(packet->payload, 6 + 10 + val) == htonl(0x00000001))
                             && get_u16(packet->payload, packet->payload_packet_len - 2) == 0) {
-                        MMT_LOG(PROTO_ARMAGETRON, MMT_LOG_DEBUG, "detected armagetron.\n");
                         mmt_int_armagetron_add_connection(ipacket);
                         return 1;
                     }
@@ -73,7 +69,6 @@ int mmt_check_armagetron(ipacket_t * ipacket, unsigned index) {
         }
 
 exclude:
-        MMT_LOG(PROTO_ARMAGETRON, MMT_LOG_DEBUG, "exclude armagetron.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_ARMAGETRON);
     }
     return 0;

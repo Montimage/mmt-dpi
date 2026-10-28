@@ -20,18 +20,15 @@ int mmt_check_world_of_kung_fu(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-        MMT_LOG(PROTO_WORLD_OF_KUNG_FU, MMT_LOG_DEBUG, "search world_of_kung_fu.\n");
 
         if ((packet->payload_packet_len == 16)
                 && ntohl(get_u32(packet->payload, 0)) == 0x0c000000 && ntohl(get_u32(packet->payload, 4)) == 0xd2000c00
                 && (packet->payload[9]
                 == 0x16) && ntohs(get_u16(packet->payload, 10)) == 0x0000 && ntohs(get_u16(packet->payload, 14)) == 0x0000) {
-            MMT_LOG(PROTO_WORLD_OF_KUNG_FU, MMT_LOG_DEBUG, "detected world_of_kung_fu.\n");
             mmt_int_world_of_kung_fu_add_connection(ipacket);
             return 1;
         }
 
-        MMT_LOG(PROTO_WORLD_OF_KUNG_FU, MMT_LOG_DEBUG, "exclude world_of_kung_fu.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_WORLD_OF_KUNG_FU);
     }
     return 0;

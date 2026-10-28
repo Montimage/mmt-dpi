@@ -118,7 +118,6 @@ int mmt_check_pop(ipacket_t * ipacket, unsigned index) {
         uunt16_t dport = ntohs(packet->tcp->dest);
         */
 
-        MMT_LOG(PROTO_POP, MMT_LOG_DEBUG, "search mail_pop\n");
 
         if ((packet->payload_packet_len > 3
                 && (packet->payload[0] == '+' && (packet->payload[1] == 'O' || packet->payload[1] == 'o')
@@ -142,12 +141,9 @@ int mmt_check_pop(ipacket_t * ipacket, unsigned index) {
                 }
             }
 
-            MMT_LOG(PROTO_POP, MMT_LOG_DEBUG,
-                    "mail_pop +OK/-ERR responses: %u, unique commands: %u\n", flow->l4.tcp.mail_pop_stage, bit_count);
 
             if ((bit_count + flow->l4.tcp.mail_pop_stage) >= 3) {
                 if (flow->l4.tcp.mail_pop_stage > 0) {
-                    MMT_LOG(PROTO_POP, MMT_LOG_DEBUG, "mail_pop identified\n");
                     mmt_int_mail_pop_add_connection(ipacket);
                     return 1;
                 } else {
@@ -159,8 +155,6 @@ int mmt_check_pop(ipacket_t * ipacket, unsigned index) {
 
         } else {
             // first part of a split packet
-            MMT_LOG(PROTO_POP, MMT_LOG_DEBUG,
-                    "mail_pop command without line ending -> skip\n");
             return 4;
         }
 
@@ -169,12 +163,9 @@ maybe_split_pop:
         if (((packet->payload_packet_len > 2 && ntohs(get_u16(packet->payload, packet->payload_packet_len - 2)) == 0x0d0a)
                 || flow->l4.tcp.pop_command_bitmask != 0 || flow->l4.tcp.mail_pop_stage != 0) && ipacket->session->data_packet_count < 12) {
             // maybe part of a split pop packet
-            MMT_LOG(PROTO_POP, MMT_LOG_DEBUG,
-                    "maybe part of split mail_pop packet -> skip\n");
             return 4;
         }
 
-        MMT_LOG(PROTO_POP, MMT_LOG_DEBUG, "exclude mail_pop\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_POP);
     }
     return 0;

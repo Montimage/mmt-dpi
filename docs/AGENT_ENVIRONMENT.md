@@ -232,7 +232,7 @@ All flags are passed as make variables, e.g. `make -C sdk DEBUG=1`.
 |------|--------|--------|
 | `DEBUG=1` | `-g` instead of `-O3`; asserts/debug() stay active | `rules/common.mk:87-93` |
 | `NDEBUG=1` | Keep debug/assert active (suppress `-DNDEBUG`; default build defines `-DNDEBUG`) | `rules/common.mk:38-43` |
-| `SHOWLOG=1` | Show `MMT_LOG()` output (`-DDEBUG`). ⚠ Prints decoded, subscriber-identifying fields (IMSI, M-TMSI, UE/eNB IPs, URLs) — build only for captures you may expose, never ship where output is collected (F-SEC-016, #214) | `rules/common.mk:159-171` |
+| `SHOWLOG=1` | Compile in the debug-level log lines (`mmt_log_debug()`, `-DDEBUG`) and default the logger to `debug`; any build reads `MMT_DPI_LOG_LEVEL=off\|error\|warn\|info\|debug` at run time (default `off`, stderr only, issue #545). ⚠ Prints decoded, subscriber-identifying fields (IMSI, M-TMSI, UE/eNB IPs, URLs) — build only for captures you may expose, never ship where output is collected (F-SEC-016, #214) | `rules/common.mk:159-171` |
 | `VALGRIND=1` | Valgrind-friendly instrumentation | `rules/common.mk:94-98` |
 | `TUNE=native` | Opt-in `-march=native` (unsafe for redistributed binaries — off by default) | `rules/common-linux.mk:177-185` |
 | `VERBOSE=1` | Print full compile commands | `rules/common.mk:21-24` |

@@ -692,34 +692,28 @@ int mmt_check_nfs(ipacket_t * ipacket, unsigned index) {
         if (packet->payload_packet_len < (40 + offset))
             goto exclude_nfs;
 
-        MMT_LOG(PROTO_NFS, MMT_LOG_DEBUG, "NFS user match stage 1\n");
 
         if (offset != 0 && get_u32(packet->payload, 0) != htonl(0x80000000 + packet->payload_packet_len - 4))
             goto exclude_nfs;
 
-        MMT_LOG(PROTO_NFS, MMT_LOG_DEBUG, "NFS user match stage 2\n");
 
         if (get_u32(packet->payload, 4 + offset) != 0)
             goto exclude_nfs;
 
-        MMT_LOG(PROTO_NFS, MMT_LOG_DEBUG, "NFS user match stage 3\n");
 
         if (get_u32(packet->payload, 8 + offset) != htonl(0x02))
             goto exclude_nfs;
 
-        MMT_LOG(PROTO_NFS, MMT_LOG_DEBUG, "NFS match stage 3\n");
 
         if (get_u32(packet->payload, 12 + offset) != htonl(0x000186a5)
                 && get_u32(packet->payload, 12 + offset) != htonl(0x000186a3)
                 && get_u32(packet->payload, 12 + offset) != htonl(0x000186a0))
             goto exclude_nfs;
 
-        MMT_LOG(PROTO_NFS, MMT_LOG_DEBUG, "NFS match stage 4\n");
 
         if (ntohl(get_u32(packet->payload, 16 + offset)) > 4)
             goto exclude_nfs;
 
-        MMT_LOG(PROTO_NFS, MMT_LOG_DEBUG, "NFS match\n");
 
         mmt_int_nfs_add_connection(ipacket);
         return 1;

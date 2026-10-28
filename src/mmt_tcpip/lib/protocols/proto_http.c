@@ -271,44 +271,32 @@ uint16_t http_request_url_offset(ipacket_t * ipacket) {
     /* FIRST PAYLOAD PACKET FROM CLIENT */
     /* check if the packet starts with POST or GET */
     if (packet->payload_packet_len >= 4 && mmt_memcmp(packet->payload, "GET ", 4) == 0) {
-        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: GET FOUND\n");
         return 4;
     } else if (packet->payload_packet_len >= 5 && mmt_memcmp(packet->payload, "POST ", 5) == 0) {
-        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: POST FOUND\n");
         return 5;
     } else if (packet->payload_packet_len >= 8 && mmt_memcmp(packet->payload, "OPTIONS ", 8) == 0) {
-        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: OPTIONS FOUND\n");
         return 8;
     } else if (packet->payload_packet_len >= 5 && mmt_memcmp(packet->payload, "HEAD ", 5) == 0) {
-        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: HEAD FOUND\n");
         return 5;
     } else if (packet->payload_packet_len >= 4 && mmt_memcmp(packet->payload, "PUT ", 4) == 0) {
-        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: PUT FOUND\n");
         return 4;
     } else if (packet->payload_packet_len >= 7 && mmt_memcmp(packet->payload, "DELETE ", 7) == 0) {
-        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: DELETE FOUND\n");
         return 7;
     } else if (packet->payload_packet_len >= 8 && mmt_memcmp(packet->payload, "CONNECT ", 8) == 0) {
-        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: CONNECT FOUND\n");
         return 8;
     } else if (packet->payload_packet_len >= 9 && mmt_memcmp(packet->payload, "PROPFIND ", 9) == 0) {
-        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: PROFIND FOUND\n");
         return 9;
     } else if (packet->payload_packet_len >= 7 && mmt_memcmp(packet->payload, "REPORT ", 7) == 0) {
-        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: REPORT FOUND\n");
         return 7;
     } else if (packet->payload_packet_len >= 6 && mmt_memcmp(packet->payload, "PATCH ", 6) == 0) {
         /* issue #113: PATCH was missing from this table, so http.method/http.uri
          * stayed unpopulated for PATCH requests even after PROTO_HTTP classification. */
-        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: PATCH FOUND\n");
         return 6;
     } else if (packet->payload_packet_len >= 6 && mmt_memcmp(packet->payload, "MKCOL ", 6) == 0) {
         /* issue #113: WebDAV MKCOL was missing from this table. */
-        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: MKCOL FOUND\n");
         return 6;
     } else if (packet->payload_packet_len >= 5 && mmt_memcmp(packet->payload, "LOCK ", 5) == 0) {
         /* issue #113: WebDAV LOCK was missing from this table. */
-        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: LOCK FOUND\n");
         return 5;
     }
 

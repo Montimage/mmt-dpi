@@ -53,10 +53,11 @@
  * retransmission-heavy flow — collapsing throughput toward the syscall
  * ceiling. Writes from library code go through these macros instead:
  *
- *   mmt_debug_log(fmt, ...)     packet-path diagnostics and traces; emits
- *                               to stderr only in -DDEBUG builds
- *                               (make SHOWLOG=1) and expands to a no-op
- *                               expression otherwise.
+ *   mmt_debug_log(fmt, ...)     packet-path diagnostics and traces; in
+ *                               -DDEBUG builds (make SHOWLOG=1) a debug
+ *                               line of the SDK logger (mmt_log.h, issue
+ *                               #545: stderr, rate-limited, counted), and a
+ *                               no-op expression otherwise.
  *   mmt_stderr_log(fmt, ...)    unconditional stderr write reserved for
  *                               one-shot init/configuration failures the
  *                               operator must see — never on a packet path.
@@ -66,7 +67,8 @@
  *                               stream is supplied by the caller.
  */
 #ifdef DEBUG
-#define mmt_debug_log(...) fprintf(stderr, __VA_ARGS__)
+#include "mmt_log.h"
+#define mmt_debug_log(...) mmt_log_debug(__VA_ARGS__)
 #else
 #define mmt_debug_log(...) ((void)0)
 #endif

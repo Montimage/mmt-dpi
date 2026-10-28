@@ -152,19 +152,16 @@ int ipv6_dgram_update(ipv6_dgram_t *dg, const mmt_una_ipv6hdr_t *ip, unsigned av
    uint32_t declared = ntohs(ip->payload_len);
    if (ext_header_len >= declared || payload_offset > avail)
    {
-      MMT_LOG( PROTO_IPV6, MMT_LOG_DEBUG, "*** Warning: malformed packet (ipv6 fragment length mismatch)\n" );
       return 1;
    }
    uint32_t payload_len = declared - ext_header_len;
    if ((uint64_t) payload_offset + payload_len > avail)
    {
-      MMT_LOG( PROTO_IPV6, MMT_LOG_DEBUG, "*** Warning: malformed packet (ipv6 fragment beyond captured data)\n" );
       return 1;
    }
    /* Bound the reassembled extent exactly like the IPv4 path. */
    if ((uint64_t) fragment_offset * 8 + payload_len > MMT_IP_FRAG_MAX_DGRAM)
    {
-      MMT_LOG( PROTO_IPV6, MMT_LOG_DEBUG, "*** Warning: malformed packet (ipv6 fragment extent out of range)\n" );
       return 1;
    }
    const uint8_t *payload = (const uint8_t *)ip + payload_offset;
@@ -364,7 +361,6 @@ int ipv6_dgram_update_holes(ipv6_dgram_t *dg, const uint8_t *x, unsigned off, un
     * mirrors the IPv4 path. */
    if ((uint64_t) off + len > MMT_IP_FRAG_MAX_DGRAM)
    {
-      MMT_LOG( PROTO_IPV6, MMT_LOG_DEBUG, "*** Warning: malformed packet (ipv6 fragment extent out of range)\n" );
       return 1;
    }
 

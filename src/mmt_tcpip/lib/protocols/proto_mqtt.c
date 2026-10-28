@@ -41,19 +41,16 @@ int mmt_check_mqtt(ipacket_t * ipacket, unsigned index) {
         uint16_t dport;
         dport = ntohs(packet->tcp->dest);
 
-        MMT_LOG(PROTO_MQTT, MMT_LOG_DEBUG, "mqtt tcp start\n");
 
         /* destination port must be 1883 or 8883 - ports reserved for MQTT http://mqtt.org/faq
          * On 1883 (plain MQTT) the payload must also start with a well-formed
          * fixed header; 8883 carries MQTT over TLS, whose bytes are encrypted. */
         if ((dport == 1883 && mmt_mqtt_fixed_header_ok(packet->payload, packet->payload_packet_len))
                 || dport == 8883) {
-            MMT_LOG(PROTO_MQTT, MMT_LOG_DEBUG, "found mqtt with destination port %u\n", dport);
             mmt_int_mqtt_add_connection(ipacket);
             return 1;
         }
 
-        MMT_LOG(PROTO_MQTT, MMT_LOG_DEBUG, "exclude mqtt\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MQTT);
     }
     return 0;

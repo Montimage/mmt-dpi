@@ -372,22 +372,27 @@
 # error "You are compiling s1ap with the wrong version of ASN1C"
 #endif
 
-//#define DEBUG 1
+/*
+ * Issue #545 (F-BUG-207 of the modernization audit): S1AP_ERROR/S1AP_WARN
+ * used to write to stdout unconditionally, once per malformed PDU. They go
+ * through the SDK logger now — off by default, stderr only, rate-limited per
+ * call site, every event counted (mmt_log.h). The trace levels stay compiled
+ * out unless the build defines DEBUG (make SHOWLOG=1), as before: they print
+ * decoded, subscriber-identifying fields (F-SEC-016).
+ */
+#include "../../mmt_core/private_include/mmt_log.h" /* issue #545 */
 
+# define S1AP_TRAF(x, args...)  mmt_log_debug("[S1AP][T] " x, ##args)
+# define S1AP_INFO(x, args...)  mmt_log_debug("[S1AP][I] " x, ##args)
+# define S1AP_DEBUG(x, args...) mmt_log_debug("[S1AP][D] " x, ##args)
 #if defined(DEBUG)
-# define S1AP_TRAF(x, args...)  fprintf(stdout, "[S1AP][T]"x, ##args)
-# define S1AP_INFO(x, args...)  fprintf(stdout, "[S1AP][I]"x, ##args)
-# define S1AP_DEBUG(x, args...) fprintf(stdout, "[S1AP][D]"x, ##args)
-# define XER_FPRINT( X, Y )     xer_fprint(stdout, X, Y )
+# define XER_FPRINT( X, Y )     xer_fprint(stderr, X, Y )
 #else
-# define S1AP_TRAF(x, args...)
-# define S1AP_INFO(x, args...)
-# define S1AP_DEBUG(x, args...)
 # define XER_FPRINT( X, Y )
 #endif
 
-# define S1AP_ERROR(x, args...) fprintf(stdout, "[S1AP][E]"x, ##args)
-# define S1AP_WARN(x, args...)  fprintf(stdout, "[S1AP][W]"x, ##args)
+# define S1AP_ERROR(x, args...) mmt_log_error("[S1AP] " x, ##args)
+# define S1AP_WARN(x, args...)  mmt_log_warn("[S1AP] " x, ##args)
 
 //Maximum 150 characters (See ETSI TS 136 413 V15.3.0/9.1.8.4 S1 SETUP REQUEST), the last one is for '\0'
 #define ENTITY_NAME_LENGTH (150 + 1)

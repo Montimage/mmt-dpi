@@ -27,7 +27,6 @@ void mmt_classify_imap(ipacket_t * ipacket, unsigned index)
 	const uint8_t *command = 0;
 	*/
 
-	MMT_LOG(PROTO_IMAP, MMT_LOG_DEBUG, "search IMAP.\n");
 
 
 
@@ -255,7 +254,6 @@ void mmt_classify_imap(ipacket_t * ipacket, unsigned index)
 
 		if (saw_command == 1) {
 			if (flow->l4.tcp.mail_imap_stage == 3 || flow->l4.tcp.mail_imap_stage == 5) {
-				MMT_LOG(PROTO_IMAP, MMT_LOG_DEBUG, "mail imap identified\n");
 				mmt_int_mail_imap_add_connection(ipacket);
 				return;
 			}
@@ -263,8 +261,6 @@ void mmt_classify_imap(ipacket_t * ipacket, unsigned index)
 	}
 
 	if (packet->payload_packet_len > 1 && packet->payload[packet->payload_packet_len - 1] == ' ') {
-		MMT_LOG(PROTO_IMAP, MMT_LOG_DEBUG,
-				"maybe a split imap command -> need next packet and imap_stage is set to 4.\n");
 		flow->l4.tcp.mail_imap_stage = 4;
 		return;
 	}
@@ -275,12 +271,9 @@ void mmt_classify_imap(ipacket_t * ipacket, unsigned index)
 	// if the packet count is low enough and at least one command or response was seen before
 	if ((packet->payload_packet_len >= 2 && ntohs(get_u16(packet->payload, packet->payload_packet_len - 2)) == 0x0d0a)
 		&& ipacket->session->data_packet_count < 6 && flow->l4.tcp.mail_imap_stage >= 1) {
-		MMT_LOG(PROTO_IMAP, MMT_LOG_DEBUG,
-				"no imap command or response but packet count < 6 and imap stage >= 1 -> skip\n");
 		return;
 	}
 
-	MMT_LOG(PROTO_IMAP, MMT_LOG_DEBUG, "exclude IMAP.\n");
 	MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_IMAP);
 }
 

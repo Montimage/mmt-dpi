@@ -27,7 +27,6 @@ int mmt_check_quake(ipacket_t * ipacket, unsigned index) {
                 || (packet->payload_packet_len > 20
                 && packet->payload_packet_len < 30
                 && get_u16(packet->payload, 0) == 0xffff && mmt_mem_cmp(&packet->payload[2], "getServers", 10) == 0)) {
-            MMT_LOG(PROTO_QUAKE, MMT_LOG_DEBUG, "Quake IV detected.\n");
             mmt_int_quake_add_connection(ipacket);
             return 1;
         }
@@ -35,20 +34,17 @@ int mmt_check_quake(ipacket_t * ipacket, unsigned index) {
         /* Quake III/Quake Live */
         if (packet->payload_packet_len == 15 && get_u32(packet->payload, 0) == 0xffffffff
                 && mmt_memcmp(&packet->payload[4], "getinfo", 7) == 0) {
-            MMT_LOG(PROTO_QUAKE, MMT_LOG_DEBUG, "Quake III Arena/Quake Live detected.\n");
             mmt_int_quake_add_connection(ipacket);
             return 1;
         }
         if (packet->payload_packet_len == 16 && get_u32(packet->payload, 0) == 0xffffffff
                 && mmt_memcmp(&packet->payload[4], "getchallenge", 12) == 0) {
-            MMT_LOG(PROTO_QUAKE, MMT_LOG_DEBUG, "Quake III Arena/Quake Live detected.\n");
             mmt_int_quake_add_connection(ipacket);
             return 1;
         }
         if (packet->payload_packet_len > 20 && packet->payload_packet_len < 30
                 && get_u32(packet->payload, 0) == 0xffffffff
                 && mmt_memcmp(&packet->payload[4], "getservers", 10) == 0) {
-            MMT_LOG(PROTO_QUAKE, MMT_LOG_DEBUG, "Quake III Arena/Quake Live detected.\n");
             mmt_int_quake_add_connection(ipacket);
             return 1;
         }
@@ -61,7 +57,6 @@ int mmt_check_quake(ipacket_t * ipacket, unsigned index) {
            Quake Wars     ?????
          */
 
-        MMT_LOG(PROTO_QUAKE, MMT_LOG_DEBUG, "Quake excluded.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_QUAKE);
 
     }

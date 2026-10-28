@@ -22,19 +22,16 @@ int mmt_check_kontiki(ipacket_t * ipacket, unsigned index)
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
         if (packet->payload_packet_len == 4 && (get_u32(packet->payload, 0) == htonl(0x02010100))) {
-            MMT_LOG(PROTO_KONTIKI, MMT_LOG_DEBUG, "Kontiki UDP detected.\n");
             mmt_int_kontiki_add_connection(ipacket);
             return 1;
         }
         if (packet->payload_packet_len > 0 && packet->payload[0] == 0x02) {
 
             if (packet->payload_packet_len == 20 && (get_u32(packet->payload, 16) == htonl(0x02040100))) {
-                MMT_LOG(PROTO_KONTIKI, MMT_LOG_DEBUG, "Kontiki UDP detected.\n");
                 mmt_int_kontiki_add_connection(ipacket);
                 return 1;
             }
             if (packet->payload_packet_len == 16 && (get_u32(packet->payload, 12) == htonl(0x000004e4))) {
-                MMT_LOG(PROTO_KONTIKI, MMT_LOG_DEBUG, "Kontiki UDP detected.\n");
                 mmt_int_kontiki_add_connection(ipacket);
                 return 1;
             }

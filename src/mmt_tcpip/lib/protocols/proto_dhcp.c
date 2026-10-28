@@ -29,7 +29,6 @@ int mmt_check_dhcp(ipacket_t * ipacket, unsigned index) {
                 && get_u32(packet->payload, 236) == htonl(0x63825363)
                 && get_u16(packet->payload, 240) == htons(0x3501)) {
 
-            MMT_LOG(PROTO_DHCP, MMT_LOG_DEBUG, "DHCP request\n");
             mmt_int_dhcp_add_connection(ipacket);
             return 1;
         }

@@ -17,6 +17,11 @@
 # hash_utils.c too (its last operator-new sites, and the interposer that
 # failed them, are gone with the C++ TU).
 #
+# Issue #545: test_mmt_log compiles src/mmt_core/src/mmt_log.c, the SDK
+# logger, with its unit test (levels, MMT_DPI_LOG_LEVEL, stderr-only output,
+# per-site rate limit, counters under concurrent writers — under TSan in the
+# SANITIZE=tsan mode).
+#
 # Issue #525: the same library objects (plus mmt_attr_sprintf_compat.c and,
 # since #533, mmt_utils.c) also
 # link test_api_contracts — the public-API contract table, one entry per
@@ -101,6 +106,11 @@ objects+=("$SCRIPT_DIR/test_core_engine.o")
     "$SCRIPT_DIR/mmt_attr_sprintf_compat.o" "$SCRIPT_DIR/mmt_utils.o" \
     "$SCRIPT_DIR/test_api_contracts.o" -lm -lpthread -ldl
 
+# Issue #545: the logger and its unit test.
+"$CC" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${INCS[@]}" \
+    -o "$SCRIPT_DIR/test_mmt_log" "$CORE_SRC/mmt_log.c" "$SCRIPT_DIR/test_mmt_log.c" \
+    -lpthread
+
 # Run from a scratch directory: load_plugins() scans ./plugins first, and an
 # empty/missing one deterministically takes the no-plugin early return. The
 # engine prints verbose DEBUG lines; keep them in a log and only surface it
@@ -132,5 +142,15 @@ if bash "$PROJECT_DIR/tools/ci/check-api-contracts.sh" --decls "$WORK/api_decls.
     echo "Public-API contract tests: PASSED"
 else
     echo "Public-API contract tests: FAILED"
+    exit 1
+fi
+
+echo "Running logger tests (issue #545)..."
+if ( cd "$WORK" && "$SCRIPT_DIR/test_mmt_log" > "$WORK/mmt_log.log" 2>&1 ); then
+    tail -n 1 "$WORK/mmt_log.log"
+    echo "Logger tests: PASSED"
+else
+    cat "$WORK/mmt_log.log"
+    echo "Logger tests: FAILED"
     exit 1
 fi

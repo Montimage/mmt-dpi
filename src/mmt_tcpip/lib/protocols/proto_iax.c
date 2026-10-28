@@ -39,7 +39,6 @@ static void mmt_search_setup_iax(ipacket_t * ipacket) {
             && packet->payload[11] <= 15) {
 
         if (packet->payload_packet_len == 12) {
-            MMT_LOG(PROTO_IAX, MMT_LOG_DEBUG, "found IAX.\n");
             mmt_int_iax_add_connection(ipacket);
             return;
         }
@@ -47,7 +46,6 @@ static void mmt_search_setup_iax(ipacket_t * ipacket) {
         for (i = 0; i < MMT_IAX_MAX_INFORMATION_ELEMENTS; i++) {
             packet_len = packet_len + 2 + packet->payload[packet_len + 1];
             if (packet_len == packet->payload_packet_len) {
-                MMT_LOG(PROTO_IAX, MMT_LOG_DEBUG, "found IAX.\n");
                 mmt_int_iax_add_connection(ipacket);
                 return;
             }

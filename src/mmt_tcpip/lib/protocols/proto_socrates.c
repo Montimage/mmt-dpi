@@ -20,22 +20,17 @@ int mmt_check_socrates_tcp(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-        MMT_LOG(PROTO_SOCRATES, MMT_LOG_DEBUG, "search socrates.\n");
 
         if (packet->payload_packet_len > 13 && packet->payload[0] == 0xfe
                 && packet->payload[packet->payload_packet_len - 1] == 0x05) {
-            MMT_LOG(PROTO_SOCRATES, MMT_LOG_DEBUG, "found fe.\n");
             if (packet->payload_packet_len == ntohl(get_u32(packet->payload, 2))) {
-                MMT_LOG(PROTO_SOCRATES, MMT_LOG_DEBUG, "len match.\n");
                 if (mmt_memcmp(&packet->payload[6], "socrates", 8) == 0) {
-                    MMT_LOG(PROTO_SOCRATES, MMT_LOG_DEBUG, "found socrates tcp.\n");
                     mmt_socrates_add_connection(ipacket);
                     return 1;
                 }
             }
         }
 
-        MMT_LOG(PROTO_SOCRATES, MMT_LOG_DEBUG, "exclude socrates.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SOCRATES);
     }
     return 0;
@@ -49,20 +44,15 @@ int mmt_check_socrates_udp(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-        MMT_LOG(PROTO_SOCRATES, MMT_LOG_DEBUG, "search socrates.\n");
 
         if (packet->payload_packet_len > 9 && packet->payload[0] == 0xfe
                 && packet->payload[packet->payload_packet_len - 1] == 0x05) {
-            MMT_LOG(PROTO_SOCRATES, MMT_LOG_DEBUG, "found fe.\n");
-            MMT_LOG(PROTO_SOCRATES, MMT_LOG_DEBUG, "len match.\n");
             if (mmt_memcmp(&packet->payload[2], "socrates", 8) == 0) {
-                MMT_LOG(PROTO_SOCRATES, MMT_LOG_DEBUG, "found socrates udp.\n");
                 mmt_socrates_add_connection(ipacket);
                 return 1;
             }
         }
 
-        MMT_LOG(PROTO_SOCRATES, MMT_LOG_DEBUG, "exclude socrates.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SOCRATES);
     }
     return 0;

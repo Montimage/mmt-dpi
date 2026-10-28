@@ -65,7 +65,6 @@ int icmp_data_extraction(const ipacket_t * packet, unsigned proto_index,
      * past the capture buffer. */
     size_t data_start = (size_t) proto_offset + (size_t) attribute_offset;
     if (!mmt_have_bytes(packet, data_start, 0)) {
-        MMT_LOG( PROTO_ICMP, MMT_LOG_DEBUG, "*** Warning: malformed packet (icmp length mismatch)\n" );
         return 0;
     }
     int data_len = (int) (packet->p_hdr->caplen - data_start);

@@ -37,7 +37,6 @@ int mmt_classify_rtsp(ipacket_t * ipacket, unsigned index) {
 	struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
 	struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
 
-	MMT_LOG(PROTO_RTSP, MMT_LOG_DEBUG, "calling mmt_search_rtsp_tcp_udp.\n");
 
 
 	if (flow->rtsprdt_stage == 0
@@ -47,13 +46,11 @@ int mmt_classify_rtsp(ipacket_t * ipacket, unsigned index) {
 		) {
 		flow->rtsprdt_stage = 1 + ipacket->session->last_packet_direction;
 
-		MMT_LOG(PROTO_RTSP, MMT_LOG_DEBUG, "maybe handshake 1; need next packet, return.\n");
 		return 4;
 	}
 
 	if (ipacket->session->data_packet_count < 3 && flow->rtsprdt_stage == 1 + ipacket->session->last_packet_direction) {
 
-		MMT_LOG(PROTO_RTSP, MMT_LOG_DEBUG, "maybe handshake 2; need next packet.\n");
 		return 4;
 	}
 
@@ -63,21 +60,17 @@ int mmt_classify_rtsp(ipacket_t * ipacket, unsigned index) {
 		if (mmt_memcmp(packet->payload, "RTSP/1.0 ", 9) == 0) {
 
 
-			MMT_LOG(PROTO_RTSP, MMT_LOG_DEBUG, "found RTSP/1.0 .\n");
 
 			if (dst != NULL) {
-				MMT_LOG(PROTO_RTSP, MMT_LOG_DEBUG, "found dst.\n");
 				mmt_get_source_ip_from_packet(packet, &dst->rtsp_ip_address);
 				dst->rtsp_timer = packet->tick_timestamp;
 				dst->rtsp_ts_set = 1;
 			}
 			if (src != NULL) {
-				MMT_LOG(PROTO_RTSP, MMT_LOG_DEBUG, "found src.\n");
 				mmt_get_destination_ip_from_packet(packet, &src->rtsp_ip_address);
 				src->rtsp_timer = packet->tick_timestamp;
 				src->rtsp_ts_set = 1;
 			}
-			MMT_LOG(PROTO_RTSP, MMT_LOG_DEBUG, "found RTSP.\n");
 			flow->rtsp_control_flow = 1;
 			mmt_int_rtsp_add_connection(ipacket, MMT_REAL_PROTOCOL);
 			return 1;
@@ -89,13 +82,10 @@ int mmt_classify_rtsp(ipacket_t * ipacket, unsigned index) {
 			|| (MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTOCOL_RTCP) == 0)
 #endif
 		)) {
-		MMT_LOG(PROTO_RTSP, MMT_LOG_DEBUG,
-				"maybe RTSP RTP, RTSP RTCP, RDT; need next packet.\n");
 		return 4;
 	}
 
 
-	MMT_LOG(PROTO_RTSP, MMT_LOG_DEBUG, "didn't find handshake, exclude.\n");
 	MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_RTSP);
 	return 0;
 }

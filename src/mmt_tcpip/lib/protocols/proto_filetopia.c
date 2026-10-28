@@ -24,7 +24,6 @@ int mmt_check_filetopia(ipacket_t * ipacket, unsigned index) {
             if (packet->payload_packet_len >= 50 && packet->payload_packet_len <= 70
                     && packet->payload[0] == 0x03 && packet->payload[1] == 0x9a
                     && packet->payload[3] == 0x22 && packet->payload[packet->payload_packet_len - 1] == 0x2b) {
-                MMT_LOG(PROTO_FILETOPIA, MMT_LOG_DEBUG, "Filetopia stage 1 detected\n");
                 flow->l4.tcp.filetopia_stage = 1;
                 return 4;
             }
@@ -40,7 +39,6 @@ int mmt_check_filetopia(ipacket_t * ipacket, unsigned index) {
                     }
                 }
 
-                MMT_LOG(PROTO_FILETOPIA, MMT_LOG_DEBUG, "Filetopia stage 2 detected\n");
                 flow->l4.tcp.filetopia_stage = 2;
                 return 4;
             }
@@ -49,7 +47,6 @@ int mmt_check_filetopia(ipacket_t * ipacket, unsigned index) {
             if (packet->payload_packet_len >= 4 && packet->payload_packet_len <= 100
                     && packet->payload[0] == 0x03 && packet->payload[1] == 0x9a
                     && (packet->payload[3] == 0x22 || packet->payload[3] == 0x23)) {
-                MMT_LOG(PROTO_FILETOPIA, MMT_LOG_DEBUG, "Filetopia detected\n");
                 mmt_int_filetopia_add_connection(ipacket);
                 return 1;
             }

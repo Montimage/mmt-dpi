@@ -25,8 +25,6 @@ int mmt_check_halflife2(ipacket_t * ipacket, unsigned index) {
                     && get_u32(packet->payload, 0) == 0xFFFFFFFF
                     && get_u32(packet->payload, packet->payload_packet_len - 4) == htonl(0x30303000)) {
                 flow->l4.udp.halflife2_stage = 1 + ipacket->session->last_packet_direction;
-                MMT_LOG(PROTO_HALFLIFE2, MMT_LOG_DEBUG,
-                        "halflife2 client req detected, waiting for server reply\n");
                 return 4;
             }
         } else if (flow->l4.udp.halflife2_stage == 2 - ipacket->session->last_packet_direction) {
@@ -34,7 +32,6 @@ int mmt_check_halflife2(ipacket_t * ipacket, unsigned index) {
                     && get_u32(packet->payload, 0) == 0xFFFFFFFF
                     && get_u32(packet->payload, packet->payload_packet_len - 4) == htonl(0x30303000)) {
                 mmt_int_halflife2_add_connection(ipacket);
-                MMT_LOG(PROTO_HALFLIFE2, MMT_LOG_DEBUG, "halflife2 server reply detected\n");
                 return 1;
             }
         }

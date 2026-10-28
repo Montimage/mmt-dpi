@@ -58,7 +58,6 @@ int udp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     packet->l4_protocol = 17; /* UDP for sure ;) */
 
     if( packet->l4_packet_len < sizeof( struct udphdr )) {
-        MMT_LOG( PROTO_UDP, MMT_LOG_DEBUG, "*** Warning: malformed packet (udp length mismatch)\n" );
         return MMT_CLASSIFY_SKIP;
     }
 

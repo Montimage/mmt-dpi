@@ -127,7 +127,6 @@ int mmt_check_quic(ipacket_t * ipacket, unsigned index)
         	// debug("QUIC: Calculating QUIC over UDP");
         	if((((sport == 80) || (dport == 80) || (sport == 443) || (dport == 443))))
 			    {
-			     MMT_LOG(PROTO_QUIC,MMT_LOG_DEBUG, "exclude quic.\n");
 			     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_QUIC);
 				// Minimum-length gate: the public-header reads below touch up to
 				// QUIC_MIN_PAYLOAD_LEN bytes, but the selection mask only guarantees
@@ -135,7 +134,6 @@ int mmt_check_quic(ipacket_t * ipacket, unsigned index)
 				// read so a truncated/crafted packet cannot over-read (issue #6, H3).
 			     if (packet->payload_packet_len < QUIC_MIN_PAYLOAD_LEN)
 			     {
-			       MMT_LOG(PROTO_QUIC,MMT_LOG_DEBUG, "exclude quic.\n");
 			       return 0;
 			     }
 				// Settings without version. First check if PUBLIC FLAGS & SEQ bytes are 0x0. SEQ must be 1 at least.
@@ -144,11 +142,9 @@ int mmt_check_quic(ipacket_t * ipacket, unsigned index)
 			       if (sequence(packet->payload, packet->payload_packet_len) < 1)
 			       {
 			         
-			         MMT_LOG(PROTO_QUIC,MMT_LOG_DEBUG, "exclude quic.\n");
 			         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_QUIC);
 			       }
 
-			       MMT_LOG(PROTO_QUIC,MMT_LOG_DEBUG, "found quic.\n");
 			       // debug("QUIC: Found QUIC");
 			       mmt_int_quic_add_connection(ipacket);
                    return 1;
@@ -178,7 +174,6 @@ int mmt_check_quic(ipacket_t * ipacket, unsigned index)
 			            (vers[2] == '0' && vers[3] == '9')))
 			           
 			          {
-			           MMT_LOG(PROTO_QUIC,MMT_LOG_DEBUG, "found quic.\n");
 			           // debug("QUIC: Found QUIC");
 			       		mmt_int_quic_add_connection(ipacket);
 			           return 1;
@@ -188,12 +183,10 @@ int mmt_check_quic(ipacket_t * ipacket, unsigned index)
 			   } 
 			   else
 			   {
-			     MMT_LOG(PROTO_QUIC,MMT_LOG_DEBUG, "exclude quic.\n");
 			     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_QUIC);
 			   }
         }
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_QUIC);
-        MMT_LOG(PROTO_QUIC, MMT_LOG_DEBUG, "exclude quic.\n");
         return 0;
 
     }

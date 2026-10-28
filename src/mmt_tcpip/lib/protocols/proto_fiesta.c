@@ -20,14 +20,12 @@ int mmt_check_fiesta(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-        MMT_LOG(PROTO_FIESTA, MMT_LOG_DEBUG, "search fiesta.\n");
 
         if (flow->l4.tcp.fiesta_stage == 0 && packet->payload_packet_len == 5
                 && get_u16(packet->payload, 0) == ntohs(0x0407)
                 && (packet->payload[2] == 0x08)
                 && (packet->payload[4] == 0x00 || packet->payload[4] == 0x01)) {
 
-            MMT_LOG(PROTO_FIESTA, MMT_LOG_DEBUG, "maybe fiesta symmetric, first packet.\n");
             flow->l4.tcp.fiesta_stage = 1 + ipacket->session->last_packet_direction;
             goto maybe_fiesta;
         }
@@ -35,7 +33,6 @@ int mmt_check_fiesta(ipacket_t * ipacket, unsigned index) {
                 && ((packet->payload_packet_len > 1 && packet->payload_packet_len - 1 == packet->payload[0])
                 || (packet->payload_packet_len > 3 && packet->payload[0] == 0
                 && get_l16(packet->payload, 1) == packet->payload_packet_len - 3))) {
-            MMT_LOG(PROTO_FIESTA, MMT_LOG_DEBUG, "Maybe fiesta.\n");
             goto maybe_fiesta;
         }
         if (flow->l4.tcp.fiesta_stage == (1 + ipacket->session->last_packet_direction)) {
@@ -60,16 +57,13 @@ int mmt_check_fiesta(ipacket_t * ipacket, unsigned index) {
             }
         }
 
-        MMT_LOG(PROTO_FIESTA, MMT_LOG_DEBUG, "exclude fiesta.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_FIESTA);
         return 0;
 
 maybe_fiesta:
-        MMT_LOG(PROTO_FIESTA, MMT_LOG_DEBUG, "Stage is set to %d.\n", flow->l4.tcp.fiesta_stage);
         return 4;
 
 add_fiesta:
-        MMT_LOG(PROTO_FIESTA, MMT_LOG_DEBUG, "detected fiesta.\n");
         mmt_int_fiesta_add_connection(ipacket);
         return 1;
     }

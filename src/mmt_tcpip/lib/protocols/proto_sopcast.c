@@ -73,13 +73,11 @@ static void mmt_search_sopcast_tcp(ipacket_t * ipacket) {
   struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 	if (ipacket->session->data_packet_count == 1 && packet->payload_packet_len == 54 && get_u16(packet->payload, 0) == ntohs(0x0036)) {
 		if (mmt_int_is_sopcast_tcp(packet->payload, packet->payload_packet_len)) {
-			MMT_LOG(PROTO_SOPCAST, MMT_LOG_DEBUG, "found sopcast TCP \n");
 			mmt_int_sopcast_add_connection(ipacket);
 			return;
 		}
 	}
 
-	MMT_LOG(PROTO_SOPCAST, MMT_LOG_DEBUG, "exclude sopcast TCP.  \n");
 	MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SOPCAST);
 
 }
@@ -92,14 +90,12 @@ static void mmt_search_sopcast_udp(ipacket_t * ipacket) {
 //      struct mmt_id_struct         *src=mmt_struct->src;
 //      struct mmt_id_struct         *dst=mmt_struct->dst;
 
-	MMT_LOG(PROTO_SOPCAST, MMT_LOG_DEBUG, "search sopcast.  \n");
 
 	if (packet->payload_packet_len == 52 && packet->payload[0] == 0xff
 		&& packet->payload[1] == 0xff && packet->payload[2] == 0x01
 		&& packet->payload[8] == 0x02 && packet->payload[9] == 0xff
 		&& packet->payload[10] == 0x00 && packet->payload[11] == 0x2c
 		&& packet->payload[12] == 0x00 && packet->payload[13] == 0x00 && packet->payload[14] == 0x00) {
-		MMT_LOG(PROTO_SOPCAST, MMT_LOG_DEBUG, "found sopcast with if I.  \n");
 		mmt_int_sopcast_add_connection(ipacket);
 		return;
 	}
@@ -108,7 +104,6 @@ static void mmt_search_sopcast_udp(ipacket_t * ipacket) {
 		&& packet->payload[8] == 0x01 && packet->payload[9] == 0xff
 		&& packet->payload[10] == 0x00 && packet->payload[11] == 0x14
 		&& packet->payload[12] == 0x00 && packet->payload[13] == 0x00) {
-		MMT_LOG(PROTO_SOPCAST, MMT_LOG_DEBUG, "found sopcast with if II.  \n");
 		mmt_int_sopcast_add_connection(ipacket);
 		return;
 	}
@@ -118,7 +113,6 @@ static void mmt_search_sopcast_udp(ipacket_t * ipacket) {
 		&& packet->payload[8] == 0x03 && packet->payload[9] == 0xff
 		&& packet->payload[10] == 0x00 && packet->payload[11] == 0x34
 		&& packet->payload[12] == 0x00 && packet->payload[13] == 0x00 && packet->payload[14] == 0x00) {
-		MMT_LOG(PROTO_SOPCAST, MMT_LOG_DEBUG, "found sopcast with if III.  \n");
 		mmt_int_sopcast_add_connection(ipacket);
 		return;
 	}
@@ -128,7 +122,6 @@ static void mmt_search_sopcast_udp(ipacket_t * ipacket) {
 		&& packet->payload[8] == 0x06
 		&& packet->payload[9] == 0x01 && packet->payload[10] == 0x00
 		&& packet->payload[11] == 0x22 && packet->payload[12] == 0x00 && packet->payload[13] == 0x00) {
-		MMT_LOG(PROTO_SOPCAST, MMT_LOG_DEBUG, "found sopcast with if IV.  \n");
 		mmt_int_sopcast_add_connection(ipacket);
 		return;
 	}
@@ -138,7 +131,6 @@ static void mmt_search_sopcast_udp(ipacket_t * ipacket) {
 		&& packet->payload[8] == 0x01
 		&& packet->payload[9] == 0x01 && packet->payload[10] == 0x00
 		&& packet->payload[11] == 0x14 && packet->payload[12] == 0x00 && packet->payload[13] == 0x00) {
-		MMT_LOG(PROTO_SOPCAST, MMT_LOG_DEBUG, "found sopcast with if V.  \n");
 		mmt_int_sopcast_add_connection(ipacket);
 		return;
 	}
@@ -149,7 +141,6 @@ static void mmt_search_sopcast_udp(ipacket_t * ipacket) {
 		&& packet->payload[8] == 0x06
 		&& packet->payload[9] == 0x01 && packet->payload[10] == 0x01
 		&& packet->payload[11] == 0x16 && packet->payload[12] == 0x00 && packet->payload[13] == 0x00) {
-		MMT_LOG(PROTO_SOPCAST, MMT_LOG_DEBUG, "found sopcast with if VI.  \n");
 		mmt_int_sopcast_add_connection(ipacket);
 		return;
 	}
@@ -159,14 +150,12 @@ static void mmt_search_sopcast_udp(ipacket_t * ipacket) {
 		&& packet->payload[10] == 0x00 && packet->payload[11] == 0x44
 		&& packet->payload[16] == 0x01 && packet->payload[15] == 0x01
 		&& packet->payload[12] == 0x00 && packet->payload[13] == 0x00 && packet->payload[14] == 0x00) {
-		MMT_LOG(PROTO_SOPCAST, MMT_LOG_DEBUG, "found sopcast with if VII.  \n");
 		mmt_int_sopcast_add_connection(ipacket);
 		return;
 	}
 
 	/* Attention please: no asymmetric detection necessary. This detection works asymmetrically as well. */
 
-	MMT_LOG(PROTO_SOPCAST, MMT_LOG_DEBUG, "exclude sopcast.  \n");
 	MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SOPCAST);
 
 }

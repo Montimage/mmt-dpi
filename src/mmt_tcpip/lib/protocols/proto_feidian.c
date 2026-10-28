@@ -23,9 +23,6 @@ int mmt_check_feidian_tcp(ipacket_t * ipacket, unsigned index) {
         if (packet->tcp->dest == htons(8080) && packet->payload_packet_len == 4
                 && packet->payload[0] == 0x29 && packet->payload[1] == 0x1c
                 && packet->payload[2] == 0x32 && packet->payload[3] == 0x01) {
-            MMT_LOG(PROTO_FEIDIAN, MMT_LOG_DEBUG,
-                    "Feidian: found the flow (TCP): packet_size: %u; Flowstage: %u\n",
-                    packet->payload_packet_len, flow->l4.udp.feidian_stage);
             mmt_int_feidian_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return 1;
         } else if (packet->payload_packet_len > 50 && mmt_memcmp(packet->payload, "GET /", 5) == 0) {
@@ -36,9 +33,6 @@ int mmt_check_feidian_tcp(ipacket_t * ipacket, unsigned index) {
                 return 1;
             }
         }
-        MMT_LOG(PROTO_FEIDIAN, MMT_LOG_DEBUG,
-                "Feidian: discarted the flow (TCP): packet_size: %u; Flowstage: %u\n",
-                packet->payload_packet_len, flow->l4.udp.feidian_stage);
 
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_FEIDIAN);
 
@@ -68,9 +62,6 @@ int mmt_check_feidian_udp(ipacket_t * ipacket, unsigned index) {
                 return 1;
             }
         }
-        MMT_LOG(PROTO_FEIDIAN, MMT_LOG_DEBUG,
-                "Feidian: discarted the flow (UDP): packet_size: %u; Flowstage: %u\n",
-                packet->payload_packet_len, flow->l4.udp.feidian_stage);
 
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_FEIDIAN);
     }

@@ -23,12 +23,9 @@ int mmt_check_http_application_activesync(ipacket_t * ipacket, unsigned index) {
                 && ((mmt_memcmp(packet->payload, "OPTIONS /Microsoft-Server-ActiveSync?", 37) == 0)
                 || (mmt_memcmp(packet->payload, "POST /Microsoft-Server-ActiveSync?", 34) == 0))) {
             mmt_int_activesync_add_connection(ipacket);
-            MMT_LOG(PROTO_HTTP_APPLICATION_ACTIVESYNC, MMT_LOG_DEBUG,
-                    " flow marked as ActiveSync \n");
             return 1;
         }
 
-        MMT_LOG(PROTO_HTTP_APPLICATION_ACTIVESYNC, MMT_LOG_DEBUG, "exclude activesync\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP_APPLICATION_ACTIVESYNC);
 
     }

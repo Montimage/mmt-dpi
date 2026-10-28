@@ -265,7 +265,7 @@ int init_proto_ips_data(){
 
 	// IPS_DATA is a single, independent protocol, register it as a stack
 	if( register_protocol_stack(PROTO_IPS_DATA, PROTO_IPS_DATA_ALIAS, _ips_data_stack_classification) == 0 ){
-		fprintf(stderr, "Cannot register protocol stack %s", PROTO_IPS_DATA_ALIAS );
+		mmt_stderr_log("Cannot register protocol stack %s", PROTO_IPS_DATA_ALIAS );
 		return 0;
 	}
 	return register_protocol(protocol_struct, PROTO_IPS_DATA);

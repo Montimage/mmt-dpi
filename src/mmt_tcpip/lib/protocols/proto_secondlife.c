@@ -22,15 +22,12 @@ int mmt_check_secondlife_tcp(ipacket_t * ipacket, unsigned index) {
 
         if (packet->payload_packet_len > 5
                 && mmt_memcmp(packet->payload, "GET /", 5) == 0) {
-            MMT_LOG(PROTO_SECONDLIFE, MMT_LOG_DEBUG, "Second Life HTTP 'GET /'' found.\n");
             mmt_parse_packet_line_info(ipacket);
             if (packet->user_agent_line.ptr != NULL
                     && packet->user_agent_line.len >
                     97
                     && mmt_memcmp(&packet->user_agent_line.ptr[86],
                     "SecondLife/", 11) == 0) {
-                MMT_LOG(PROTO_SECONDLIFE, MMT_LOG_DEBUG,
-                        "Second Life TCP HTTP User Agent detected.\n");
                 mmt_int_secondlife_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return 1;
             }
@@ -42,8 +39,6 @@ int mmt_check_secondlife_tcp(ipacket_t * ipacket, unsigned index) {
                                 && mmt_memcmp(&packet->host_line.ptr[packet->host_line.len -
                                 (1 + x + 19)],
                                 ".agni.lindenlab.com", 19) == 0) {
-                            MMT_LOG(PROTO_SECONDLIFE, MMT_LOG_DEBUG,
-                                    "Second Life TCP HTTP Host detected.\n");
                             mmt_int_secondlife_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                             return 1;
                         }
@@ -53,7 +48,6 @@ int mmt_check_secondlife_tcp(ipacket_t * ipacket, unsigned index) {
             }
         }
 
-        MMT_LOG(PROTO_SECONDLIFE, MMT_LOG_DEBUG, "Second Life excluded.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SECONDLIFE);
 
     }
@@ -70,30 +64,25 @@ int mmt_check_secondlife_udp(ipacket_t * ipacket, unsigned index) {
 
         if (packet->payload_packet_len == 46
                 && mmt_memcmp(packet->payload, "\x40\x00\x00\x00\x01\x00\xff\xff\x00\x03", 10) == 0) {
-            MMT_LOG(PROTO_SECONDLIFE, MMT_LOG_DEBUG, "Second Life 0xffff0003 detected.\n");
             mmt_int_secondlife_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return 1;
         }
         if (packet->payload_packet_len == 54
                 && mmt_memcmp(packet->payload, "\x40\x00\x00\x00\x01\x00\xff\xff\x00\x52", 10) == 0) {
-            MMT_LOG(PROTO_SECONDLIFE, MMT_LOG_DEBUG, "Second Life 0xffff0052 detected.\n");
             mmt_int_secondlife_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return 1;
         }
         if (packet->payload_packet_len == 58
                 && mmt_memcmp(packet->payload, "\x40\x00\x00\x00\x01\x00\xff\xff\x00\xa9", 10) == 0) {
-            MMT_LOG(PROTO_SECONDLIFE, MMT_LOG_DEBUG, "Second Life 0xffff00a9 detected.\n");
             mmt_int_secondlife_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return 1;
         }
         if (packet->payload_packet_len > 54 && mmt_memcmp(packet->payload, "\x40\x00\x00\x00\x01\x00\x08", 7) == 0 &&
                 get_u32(packet->payload, packet->payload_packet_len - 4) == 0) {
-            MMT_LOG(PROTO_SECONDLIFE, MMT_LOG_DEBUG, "Second Life 0x08 detected.\n");
             mmt_int_secondlife_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return 1;
         }
 
-        MMT_LOG(PROTO_SECONDLIFE, MMT_LOG_DEBUG, "Second Life excluded.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SECONDLIFE);
 
     }

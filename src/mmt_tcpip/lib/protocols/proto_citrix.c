@@ -55,7 +55,6 @@ static int check_citrix_payload(ipacket_t * ipacket) {
             0x7F, 0x7F, 0x49, 0x43, 0x41, 0x00
         };
         if (mmt_memcmp(packet->payload, ica_header, sizeof(ica_header)) == 0) {
-            MMT_LOG(PROTO_CITRIX, MMT_LOG_DEBUG, "Found citrix (ICA handshake, 6 bytes).\n");
             return 1;
         }
     }
@@ -69,11 +68,9 @@ static int check_citrix_payload(ipacket_t * ipacket) {
             0x1a, 0x43, 0x47, 0x50, 0x2f, 0x30, 0x31
         };
         if (mmt_memcmp(packet->payload, cgp_header, sizeof(cgp_header)) == 0) {
-            MMT_LOG(PROTO_CITRIX, MMT_LOG_DEBUG, "Found citrix (CGP/01).\n");
             return 1;
         }
         if (mmt_strnstr((const char *)packet->payload, "Citrix.TcpProxyService", payload_len) != NULL) {
-            MMT_LOG(PROTO_CITRIX, MMT_LOG_DEBUG, "Found citrix (TcpProxyService).\n");
             return 1;
         }
     }

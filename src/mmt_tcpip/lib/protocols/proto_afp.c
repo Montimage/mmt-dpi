@@ -29,7 +29,6 @@ int mmt_check_afp(ipacket_t * ipacket, unsigned index) {
                 get_u32(packet->payload, 8) == htonl(packet->payload_packet_len - 16) &&
                 get_u32(packet->payload, 12) == 0 && get_u16(packet->payload, 16) == htons(0x0104)) {
 
-            MMT_LOG(PROTO_AFP, MMT_LOG_DEBUG, "AFP: DSI OpenSession detected.\n");
             mmt_int_afp_add_connection(ipacket);
             return 1;
         }
@@ -42,11 +41,9 @@ int mmt_check_afp(ipacket_t * ipacket, unsigned index) {
                 get_u32(packet->payload, 8) == htonl(packet->payload_packet_len - 16) &&
                 get_u32(packet->payload, 12) == 0 && get_u16(packet->payload, 16) == htons(0x0f00)) {
 
-            MMT_LOG(PROTO_AFP, MMT_LOG_DEBUG, "AFP: DSI GetStatus detected.\n");
             mmt_int_afp_add_connection(ipacket);
             return 1;
         }
-        MMT_LOG(PROTO_AFP, MMT_LOG_DEBUG, "AFP excluded.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_AFP);
     }
     return 0;

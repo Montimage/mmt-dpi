@@ -56,7 +56,7 @@ make -j$(nproc) SHOWLOG=1
 |--------|-------------|--------|
 | `DEBUG=1` | `-g` instead of `-O3`; asserts/debug() stay active | `rules/common.mk:87-93` |
 | `NDEBUG=1` | Suppress `-DNDEBUG` (keep debug/assert active; default build defines `-DNDEBUG`) | `rules/common.mk:38-43` |
-| `SHOWLOG=1` | Show `MMT_LOG()` output (`-DDEBUG`) — emits subscriber-identifying decoded data (see caution above) | `rules/common.mk:159-171` |
+| `SHOWLOG=1` | Compile in the debug-level log lines (`mmt_log_debug()`, `-DDEBUG`) and default the logger to `debug` — any build reads `MMT_DPI_LOG_LEVEL=off\|error\|warn\|info\|debug` at run time (default `off`, stderr only, issue #545); a SHOWLOG build emits subscriber-identifying decoded data (see caution above) | `rules/common.mk:159-171` |
 | `VALGRIND=1` | Valgrind-friendly instrumentation | `rules/common.mk:94-98` |
 | `ENABLESEC=1` | Build `libmmt_security` + `libmmt_fuzz` (needs `libxml2-dev`) | `rules/common.mk:225-228` |
 | `BUILD=asan` | AddressSanitizer + UBSan profile | `rules/common.mk:100-127` |

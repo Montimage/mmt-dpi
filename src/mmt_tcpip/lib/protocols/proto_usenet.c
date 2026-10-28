@@ -20,8 +20,6 @@ int mmt_check_usenet(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-        MMT_LOG(PROTO_USENET, MMT_LOG_DEBUG, "USENET: search usenet.\n");
-        MMT_LOG(PROTO_USENET, MMT_LOG_DEBUG, "USENET: STAGE IS %u.\n", flow->l4.tcp.usenet_stage);
 
         // check for the first server replay
         /*
@@ -32,10 +30,8 @@ int mmt_check_usenet(ipacket_t * ipacket, unsigned index) {
                 && ((mmt_mem_cmp(packet->payload, "200 ", 4) == 0)
                 || (mmt_mem_cmp(packet->payload, "201 ", 4) == 0))) {
 
-            MMT_LOG(PROTO_USENET, MMT_LOG_DEBUG, "USENET: found 200 or 201.\n");
             flow->l4.tcp.usenet_stage = 1 + ipacket->session->last_packet_direction;
 
-            MMT_LOG(PROTO_USENET, MMT_LOG_DEBUG, "USENET: maybe hit.\n");
             return 4;
         }
 
@@ -48,23 +44,17 @@ int mmt_check_usenet(ipacket_t * ipacket, unsigned index) {
         // check for client username
         if (flow->l4.tcp.usenet_stage == 2 - ipacket->session->last_packet_direction) {
             if (packet->payload_packet_len > 20 && (mmt_mem_cmp(packet->payload, "AUTHINFO USER ", 14) == 0)) {
-                MMT_LOG(PROTO_USENET, MMT_LOG_DEBUG, "USENET: username found\n");
                 flow->l4.tcp.usenet_stage = 3 + ipacket->session->last_packet_direction;
 
-                MMT_LOG(PROTO_USENET, MMT_LOG_DEBUG, "USENET: found usenet.\n");
                 mmt_int_usenet_add_connection(ipacket);
                 return 1;
             } else if (packet->payload_packet_len == 13 && (mmt_mem_cmp(packet->payload, "MODE READER\r\n", 13) == 0)) {
-                MMT_LOG(PROTO_USENET, MMT_LOG_DEBUG,
-                        "USENET: no login necessary but we are a client.\n");
 
-                MMT_LOG(PROTO_USENET, MMT_LOG_DEBUG, "USENET: found usenet.\n");
                 mmt_int_usenet_add_connection(ipacket);
                 return 1;
             }
         }
 
-        MMT_LOG(PROTO_USENET, MMT_LOG_DEBUG, "USENET: exclude usenet.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_USENET);
 
     }

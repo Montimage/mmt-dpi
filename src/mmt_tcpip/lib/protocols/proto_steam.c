@@ -25,7 +25,6 @@ int mmt_check_steam(ipacket_t * ipacket, unsigned index) {
                     && ntohl(get_u32(packet->payload, 0)) <= 0x07
                     && ntohs(packet->tcp->dest) >= 27030 && ntohs(packet->tcp->dest) <= 27040) {
                 flow->l4.tcp.steam_stage = 1 + ipacket->session->last_packet_direction;
-                MMT_LOG(PROTO_STEAM, MMT_LOG_DEBUG, "steam stage 1\n");
                 return 4;
             }
 
@@ -33,12 +32,10 @@ int mmt_check_steam(ipacket_t * ipacket, unsigned index) {
             if ((packet->payload_packet_len == 1 || packet->payload_packet_len == 5)
                     && packet->payload[0] == 0x01) {
                 mmt_int_steam_add_connection(ipacket);
-                MMT_LOG(PROTO_STEAM, MMT_LOG_DEBUG, "steam detected\n");
                 return 1;
             }
         }
 
-        MMT_LOG(PROTO_STEAM, MMT_LOG_DEBUG, "steam excluded.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_STEAM);
 
     }

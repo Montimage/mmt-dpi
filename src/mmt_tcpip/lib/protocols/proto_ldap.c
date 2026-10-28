@@ -20,7 +20,6 @@ int mmt_check_ldap(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct * flow = packet->flow;
 
-        MMT_LOG(PROTO_LDAP, MMT_LOG_DEBUG, "search ldap\n");
 
         if (packet->payload_packet_len >= 14 && packet->payload[0] == 0x30) {
             // simple type
@@ -29,14 +28,12 @@ int mmt_check_ldap(ipacket_t * ipacket, unsigned index) {
 
                 if (packet->payload[3] == 0x01 &&
                         (packet->payload[5] == 0x60 || packet->payload[5] == 0x61) && packet->payload[6] == 0x07) {
-                    MMT_LOG(PROTO_LDAP, MMT_LOG_DEBUG, "found ldap simple type 1\n");
                     mmt_int_ldap_add_connection(ipacket);
                     return 1;
                 }
 
                 if (packet->payload[3] == 0x02 &&
                         (packet->payload[6] == 0x60 || packet->payload[6] == 0x61) && packet->payload[7] == 0x07) {
-                    MMT_LOG(PROTO_LDAP, MMT_LOG_DEBUG, "found ldap simple type 2\n");
                     mmt_int_ldap_add_connection(ipacket);
                     return 1;
                 }
@@ -49,7 +46,6 @@ int mmt_check_ldap(ipacket_t * ipacket, unsigned index) {
                         (packet->payload[9] == 0x60 || packet->payload[9] == 0x61 || packet->payload[9] == 0x63 ||
                         packet->payload[9] == 0x64) && packet->payload[10] == 0x84) {
 
-                    MMT_LOG(PROTO_LDAP, MMT_LOG_DEBUG, "found ldap type 1\n");
                     mmt_int_ldap_add_connection(ipacket);
                     return 1;
                 }
@@ -58,14 +54,12 @@ int mmt_check_ldap(ipacket_t * ipacket, unsigned index) {
                         (packet->payload[10] == 0x60 || packet->payload[10] == 0x61 || packet->payload[10] == 0x63 ||
                         packet->payload[10] == 0x64) && packet->payload[11] == 0x84) {
 
-                    MMT_LOG(PROTO_LDAP, MMT_LOG_DEBUG, "found ldap type 2\n");
                     mmt_int_ldap_add_connection(ipacket);
                     return 1;
                 }
             }
         }
 
-        MMT_LOG(PROTO_LDAP, MMT_LOG_DEBUG, "ldap excluded.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_LDAP);
     }
     return 0;

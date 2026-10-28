@@ -679,7 +679,6 @@ static void mmt_int_rtp_add_connection(ipacket_t * ipacket) {
 
 static void init_seq(struct mmt_internal_tcpip_session_struct *flow, uint8_t direction, uint16_t seq) {
     flow->rtp_seqnum[direction] = seq;
-    MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "rtp_seqnum[%u] = %u\n", direction, seq);
 }
 
 /* returns difference between old and new highest sequence number */
@@ -704,57 +703,44 @@ static void mmt_rtp_search(ipacket_t * ipacket, const uint8_t * payload, const u
      * the 12-byte minimum-length gate below, never before it. */
     uint16_t seqnum;
 
-    MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "search rtp.\n");
 
     if (payload_len == 4 && get_u32(packet->payload, 0) == 0 && ipacket->session->data_packet_count < 8) {
-        MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "need next packet, maybe ClearSea out calls.\n");
         return;
     }
 
     if (payload_len == 5 && mmt_memcmp(payload, "hello", 5) == 0) {
-        MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG,
-                "need next packet, initial hello packet of SIP out calls.\n");
         return;
     }
 
     if (payload_len == 1 && payload[0] == 0) {
-        MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG,
-                "need next packet, payload_packet_len == 1 && payload[0] == 0.\n");
         return;
     }
 
     if (payload_len == 3 && mmt_memcmp(payload, "png", 3) == 0) {
         /* weird packet found in Ninja GlobalIP trace */
-        MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "skipping packet with len = 3 and png payload.\n");
         return;
     }
 
     if (payload_len < 12) {
-        MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "minimal packet size for rtp packets: 12.\n");
         goto exclude_rtp;
     }
 
     if (payload_len == 12 && get_u32(payload, 0) == 0 && get_u32(payload, 4) == 0 && get_u32(payload, 8) == 0) {
-        MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "skipping packet with len = 12 and only 0-bytes.\n");
         return;
     }
 
     seqnum = ntohs(get_u16(payload, 2));
 
     if ((payload[0] & 0xc0) == 0xc0 || (payload[0] & 0xc0) == 0x40 || (payload[0] & 0xc0) == 0x00) {
-        MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "version = 3 || 1 || 0, maybe first rtp packet.\n");
         return;
     }
 
     if ((payload[0] & 0xc0) != 0x80) {
-        MMT_LOG(PROTO_RTP,
-                MMT_LOG_DEBUG, "rtp version must be 2, first two bits of a packets must be 10.\n");
         goto exclude_rtp;
     }
 
     /* rtp_payload_type are the last seven bits of the second byte */
     if (flow->rtp_payload_type[ipacket->session->last_packet_direction] != (payload[1] & 0x7F)) {
-        MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "payload_type has changed, reset stages.\n");
         ipacket->session->last_packet_direction == 0 ? (flow->rtp_stage1 = 0) : (flow->rtp_stage2 = 0);
     }
     /* first bit of first byte is not part of payload_type */
@@ -763,52 +749,33 @@ static void mmt_rtp_search(ipacket_t * ipacket, const uint8_t * payload, const u
     stage = (ipacket->session->last_packet_direction == 0 ? flow->rtp_stage1 : flow->rtp_stage2);
 
     if (stage > 0) {
-        MMT_LOG(PROTO_RTP,
-                MMT_LOG_DEBUG, "stage = %u.\n", packet->last_packet_direction == 0 ? flow->rtp_stage1 : flow->rtp_stage2);
         if (flow->rtp_ssid[ipacket->session->last_packet_direction] != get_u32(payload, 8)) {
-            MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "ssid has changed, goto exclude rtp.\n");
             goto exclude_rtp;
         }
 
         if (seqnum == flow->rtp_seqnum[ipacket->session->last_packet_direction]) {
-            MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "maybe \"retransmission\", need next packet.\n");
             return;
         } else if ((uint16_t) (seqnum - flow->rtp_seqnum[ipacket->session->last_packet_direction]) < RTP_MAX_OUT_OF_ORDER) {
-            MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG,
-                    "new packet has larger sequence number (within valid range)\n");
             update_seq(flow, ipacket->session->last_packet_direction, seqnum);
         } else if ((uint16_t) (flow->rtp_seqnum[ipacket->session->last_packet_direction] - seqnum) < RTP_MAX_OUT_OF_ORDER) {
-            MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG,
-                    "new packet has smaller sequence number (within valid range)\n");
             init_seq(flow, ipacket->session->last_packet_direction, seqnum);
         } else {
-            MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG,
-                    "sequence number diff is too big, goto exclude rtp.\n");
             goto exclude_rtp;
         }
     } else {
-        MMT_LOG(PROTO_RTP,
-                MMT_LOG_DEBUG, "rtp_ssid[%u] = %u.\n", ipacket->session->last_packet_direction,
-                flow->rtp_ssid[ipacket->session->last_packet_direction]);
         flow->rtp_ssid[ipacket->session->last_packet_direction] = get_u32(payload, 8);
         if (ipacket->session->data_packet_count < 3) {
-            MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "packet_counter < 3, need next packet.\n");
         }
         init_seq(flow, ipacket->session->last_packet_direction, seqnum);
     }
     if (seqnum <= 3) {
-        MMT_LOG(PROTO_RTP,
-                MMT_LOG_DEBUG, "sequence_number = %u, too small, need next packet, return.\n", seqnum);
         return;
     }
 
     if (stage == 3) {
-        MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "add connection I.\n");
         mmt_int_rtp_add_connection(ipacket);
     } else {
         ipacket->session->last_packet_direction == 0 ? flow->rtp_stage1++ : flow->rtp_stage2++;
-        MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "stage[%u]++; need next packet.\n",
-                ipacket->session->last_packet_direction);
     }
     return;
 
@@ -816,11 +783,9 @@ exclude_rtp:
 #ifdef PROTO_STUN
     if (packet->detected_protocol_stack[0] == PROTO_STUN
             || packet->real_protocol_read_only == PROTO_STUN) {
-        MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "STUN: is detected, need next packet.\n");
         return;
     }
 #endif							/*  PROTOCOL_STUN */
-    MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "exclude rtp.\n");
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_RTP);
 }
 
@@ -848,8 +813,6 @@ int mmt_check_rtp_tcp(ipacket_t * ipacket, unsigned index) {
                 packet->payload[0] == 0x90 && packet->payload[1] >= 0x01 && packet->payload[1] <= 0x07) {
             if (ipacket->session->data_packet_count == 2)
                 flow->l4.tcp.rtp_special_packets_seen = 1;
-            MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG,
-                    "skipping STUN-like, special yahoo packets with payload[0] == 0x90.\n");
             return 4;
         }
 #ifdef PROTO_STUN
@@ -877,13 +840,10 @@ int mmt_check_rtp_tcp(ipacket_t * ipacket, unsigned index) {
         }
 
         if (MMT_FLOW_PROTOCOL_EXCLUDED(flow, PROTO_STUN)) {
-            MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "exclude rtp.\n");
             MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_RTP);
         } else {
-            MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "STUN not yet excluded, need next packet.\n");
         }
 #else
-        MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "exclude rtp.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_RTP);
 #endif
     }

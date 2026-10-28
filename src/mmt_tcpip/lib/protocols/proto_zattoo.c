@@ -31,7 +31,6 @@ static uint8_t mmt_int_zattoo_user_agent_set(ipacket_t * ipacket) {
     if (ipacket->internal_packet->user_agent_line.ptr != NULL && ((mmt_tcpip_internal_packet_t *) ipacket->internal_packet)->user_agent_line.len == 111) {
         if (mmt_memcmp(ipacket->internal_packet->user_agent_line.ptr +
                 ipacket->internal_packet->user_agent_line.len - 25, "Zattoo/4", sizeof ("Zattoo/4") - 1) == 0) {
-            MMT_LOG(PROTO_ZATTOO, MMT_LOG_DEBUG, "found zattoo useragent\n");
             return 1;
         }
     }
@@ -63,15 +62,11 @@ int mmt_check_zattoo_tcp(ipacket_t * ipacket, unsigned index) {
         }
 
         if (packet->payload_packet_len > 50 && mmt_memcmp(packet->payload, "GET /frontdoor/fd?brand=Zattoo&v=", 33) == 0) {
-            MMT_LOG(PROTO_ZATTOO,
-                    MMT_LOG_DEBUG, "add connection over tcp with pattern GET /frontdoor/fd?brand=Zattoo&v=\n");
             mmt_int_zattoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
             return 1;
         }
         if (packet->payload_packet_len > 50
                 && mmt_memcmp(packet->payload, "GET /ZattooAdRedirect/redirect.jsp?user=", 40) == 0) {
-            MMT_LOG(PROTO_ZATTOO,
-                    MMT_LOG_DEBUG, "add connection over tcp with pattern GET /ZattooAdRedirect/redirect.jsp?user=\n");
             mmt_int_zattoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
             return 1;
         }
@@ -81,9 +76,6 @@ int mmt_check_zattoo_tcp(ipacket_t * ipacket, unsigned index) {
             mmt_parse_packet_line_info(ipacket);
             for (i = 0; i < packet->parsed_lines; i++) {
                 if (packet->line[i].len >= 18 && (mmt_mem_cmp(packet->line[i].ptr, "User-Agent: Zattoo", 18) == 0)) {
-                    MMT_LOG(PROTO_ZATTOO,
-                            MMT_LOG_DEBUG,
-                            "add connection over tcp with pattern POST /channelserver/player/channel/update HTTP/1.1\n");
                     mmt_int_zattoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                     return 1;
                 }
@@ -124,8 +116,6 @@ int mmt_check_zattoo_tcp(ipacket_t * ipacket, unsigned index) {
                         0x04
                         && packet->payload[packet->empty_line_position + 6] ==
                         0x0a && packet->payload[packet->empty_line_position + 7] == 0x00) {
-                    MMT_LOG(PROTO_ZATTOO,
-                            MMT_LOG_DEBUG, "add connection over tcp with pattern POST http://\n");
                     mmt_int_zattoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                     return 1;
                 }
@@ -138,21 +128,16 @@ int mmt_check_zattoo_tcp(ipacket_t * ipacket, unsigned index) {
                     && packet->payload[2] == 0x00
                     && packet->payload[3] == 0x04 && packet->payload[4] == 0x0a && packet->payload[5] == 0x00) {
                 flow->zattoo_stage = 1 + ipacket->session->last_packet_direction;
-                MMT_LOG(PROTO_ZATTOO,
-                        MMT_LOG_DEBUG, "need next packet, seen pattern 0x030400040a00\n");
                 return 4;
             }
             /* the following is is searching for flash, not for zattoo. cust1 wants to do so. */
         } else if (flow->zattoo_stage == 2 - ipacket->session->last_packet_direction
                 && packet->payload_packet_len > 50 && packet->payload[0] == 0x03 && packet->payload[1] == 0x04) {
-            MMT_LOG(PROTO_ZATTOO, MMT_LOG_DEBUG, "add connection over tcp with 0x0304.\n");
             mmt_int_zattoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
             return 1;
         } else if (flow->zattoo_stage == 1 + ipacket->session->last_packet_direction) {
             if (packet->payload_packet_len > 500 && packet->payload[0] == 0x00 && packet->payload[1] == 0x00) {
                 flow->zattoo_stage = 3 + ipacket->session->last_packet_direction;
-                MMT_LOG(PROTO_ZATTOO,
-                        MMT_LOG_DEBUG, "need next packet, seen pattern 0x0000\n");
                 return 4;
             }
             if (packet->payload_packet_len > 50
@@ -161,28 +146,19 @@ int mmt_check_zattoo_tcp(ipacket_t * ipacket, unsigned index) {
                     && packet->payload[2] == 0x00
                     && packet->payload[3] == 0x04 && packet->payload[4] == 0x0a && packet->payload[5] == 0x00) {
             }
-            MMT_LOG(PROTO_ZATTOO, MMT_LOG_DEBUG,
-                    "need next packet, seen pattern 0x030400040a00\n");
             return 4;
         } else if (flow->zattoo_stage == 4 - ipacket->session->last_packet_direction
                 && packet->payload_packet_len > 50 && packet->payload[0] == 0x03 && packet->payload[1] == 0x04) {
-            MMT_LOG(PROTO_ZATTOO, MMT_LOG_DEBUG, "add connection over tcp with 0x0304.\n");
             mmt_int_zattoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
             return 1;
         } else if (flow->zattoo_stage == 5 + ipacket->session->last_packet_direction && (packet->payload_packet_len == 125)) {
-            MMT_LOG(PROTO_ZATTOO, MMT_LOG_DEBUG, "detected zattoo.\n");
             mmt_int_zattoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
             return 1;
         } else if (flow->zattoo_stage == 6 - ipacket->session->last_packet_direction && packet->payload_packet_len == 1412) {
-            MMT_LOG(PROTO_ZATTOO, MMT_LOG_DEBUG, "found zattoo.\n");
             mmt_int_zattoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
             return 1;
         }
-        MMT_LOG(PROTO_ZATTOO, MMT_LOG_DEBUG,
-                "ZATTOO: discarted the flow (TCP): packet_size: %u; Flowstage: %u\n",
-                packet->payload_packet_len, flow->zattoo_stage);
 
-        MMT_LOG(PROTO_ZATTOO, MMT_LOG_DEBUG, "exclude zattoo.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_ZATTOO);
     }
     return 0;
@@ -218,19 +194,13 @@ int mmt_check_zattoo_udp(ipacket_t * ipacket, unsigned index) {
                 || get_u32(packet->payload, 0) == htonl(0x03040004)
                 || get_u32(packet->payload, 0) == htonl(0x03010005))) {
             if (++flow->zattoo_stage == 2) {
-                MMT_LOG(PROTO_ZATTOO, MMT_LOG_DEBUG, "add connection over udp.\n");
                 mmt_int_zattoo_add_connection(ipacket, MMT_REAL_PROTOCOL);
                 return 1;
             }
-            MMT_LOG(PROTO_ZATTOO, MMT_LOG_DEBUG, "need next packet udp.\n");
             return 4;
         }
 
-        MMT_LOG(PROTO_ZATTOO, MMT_LOG_DEBUG,
-                "ZATTOO: discarded the flow (UDP): packet_size: %u; Flowstage: %u\n",
-                packet->payload_packet_len, flow->zattoo_stage);
 
-        MMT_LOG(PROTO_ZATTOO, MMT_LOG_DEBUG, "exclude zattoo.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_ZATTOO);
 
     }

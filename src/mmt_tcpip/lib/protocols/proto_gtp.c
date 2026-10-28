@@ -61,7 +61,6 @@ int mmt_check_gtp(ipacket_t * ipacket, unsigned index) {
 	struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 	struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-	MMT_LOG(PROTO_GTP, MMT_LOG_DEBUG, "search gtp.\n");
 
 	// const u_int8_t *packet_payload = packet->payload;
 	u_int32_t payload_len = packet->payload_packet_len;
@@ -82,14 +81,12 @@ int mmt_check_gtp(ipacket_t * ipacket, unsigned index) {
 				u_int16_t message_len = ntohs(gtp->message_len);
 
 				if (message_len <= (payload_len - sizeof(struct gtp_header_generic))) {
-					MMT_LOG(PROTO_GTP, MMT_LOG_DEBUG, "found gtp.\n");
 					mmt_int_gtp_add_connection(ipacket);
 					return 1;
 				}
 			}
 		}
 	}
-	MMT_LOG(PROTO_GTP, MMT_LOG_DEBUG, "exclude gtp.\n");
 	MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_GTP);
 	return 0;
 }

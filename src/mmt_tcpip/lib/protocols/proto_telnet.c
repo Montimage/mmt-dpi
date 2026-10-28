@@ -53,16 +53,13 @@ int mmt_check_telnet(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = ipacket->internal_packet->flow;
 
-        MMT_LOG(PROTO_TELNET, MMT_LOG_DEBUG, "search telnet.\n");
 
         if (search_iac(ipacket) == 1) {
             if (flow->l4.tcp.telnet_stage == 2) {
-                MMT_LOG(PROTO_TELNET, MMT_LOG_DEBUG, "telnet identified.\n");
                 mmt_int_telnet_add_connection(ipacket);
                 return 1;
             }
             flow->l4.tcp.telnet_stage++;
-            MMT_LOG(PROTO_TELNET, MMT_LOG_DEBUG, "telnet stage %u.\n", flow->l4.tcp.telnet_stage);
             return 4;
         }
 
@@ -70,7 +67,6 @@ int mmt_check_telnet(ipacket_t * ipacket, unsigned index) {
             return 4;
         }
 
-        MMT_LOG(PROTO_TELNET, MMT_LOG_DEBUG, "telnet excluded.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_TELNET);
     }
     return 0;

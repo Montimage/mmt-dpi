@@ -21,7 +21,6 @@ int mmt_check_fasttrack(ipacket_t * ipacket, unsigned index) {
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
         if (packet->payload_packet_len > 6 && ntohs(get_u16(packet->payload, packet->payload_packet_len - 2)) == 0x0d0a) {
-            MMT_LOG(PROTO_FASTTRACK, MMT_LOG_TRACE, "detected 0d0a at the end of the packet.\n");
 
             if (mmt_memcmp(packet->payload, "GIVE ", 5) == 0 && packet->payload_packet_len >= 8) {
                 uint16_t i;
@@ -32,20 +31,16 @@ int mmt_check_fasttrack(ipacket_t * ipacket, unsigned index) {
                     }
                 }
 
-                MMT_LOG(PROTO_FASTTRACK, MMT_LOG_TRACE, "FASTTRACK GIVE DETECTED\n");
                 mmt_int_fasttrack_add_connection(ipacket);
                 return 1;
             }
 
             if (packet->payload_packet_len > 50 && mmt_memcmp(packet->payload, "GET /", 5) == 0) {
                 uint8_t a = 0;
-                MMT_LOG(PROTO_FASTTRACK, MMT_LOG_TRACE, "detected GET /. \n");
                 mmt_parse_packet_line_info(ipacket);
                 for (a = 0; a < packet->parsed_lines; a++) {
                     if ((packet->line[a].len > 17 && mmt_memcmp(packet->line[a].ptr, "X-Kazaa-Username: ", 18) == 0)
                             || (packet->line[a].len > 23 && mmt_memcmp(packet->line[a].ptr, "User-Agent: PeerEnabler/", 24) == 0)) {
-                        MMT_LOG(PROTO_FASTTRACK, MMT_LOG_TRACE,
-                                "detected X-Kazaa-Username: || User-Agent: PeerEnabler/\n");
                         mmt_int_fasttrack_add_connection(ipacket);
                         return 1;
                     }
@@ -54,7 +49,6 @@ int mmt_check_fasttrack(ipacket_t * ipacket, unsigned index) {
         }
 
 exclude_fasttrack:
-        MMT_LOG(PROTO_FASTTRACK, MMT_LOG_TRACE, "fasttrack/kazaa excluded.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_FASTTRACK);
     }
     return 0;

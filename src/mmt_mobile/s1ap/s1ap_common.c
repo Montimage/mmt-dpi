@@ -544,7 +544,6 @@ static inline int _decode_s1ap_initialuemessageies(
 							message->imsi[d] = '0' + digits[d];
 						memset( &message->imsi[d], 0, sizeof( message->imsi ) - d );
 						message->has_imsi = 1;
-						//printf("Got IMSI: %.*s\n", 15, message->imsi );
 						break;
 					}
 					case EPS_MOBILE_IDENTITY_GUTI: {
@@ -1093,7 +1092,7 @@ int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
 	asn_dec_rval_t dec_ret;
 
 	if (message == NULL) {
-		fprintf(stderr, "[S1AP] NULL output message pointer\n");
+		S1AP_ERROR("NULL output message pointer");
 		return -1;
 	}
 
@@ -1103,7 +1102,7 @@ int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
 	/* F-SEC-011 (issue #214): a NULL buffer with a nonzero length is
 	 * rejected unconditionally — aper_decode() would dereference it. */
 	if (buffer == NULL) {
-		fprintf(stderr, "[S1AP] NULL input buffer\n");
+		S1AP_ERROR("NULL input buffer");
 		return -1;
 	}
 
@@ -1116,7 +1115,7 @@ int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
 			0);
 
 	if (dec_ret.code != RC_OK) {
-		fprintf(stderr, "[S1AP] Failed to decode S1AP, code %d, consumed: %zu\n", dec_ret.code, dec_ret.consumed);
+		S1AP_WARN("Failed to decode S1AP, code %d, consumed: %zu", dec_ret.code, dec_ret.consumed);
 		/* aper_decode leaves the partially-decoded tree in pdu_p — free it
 		 * here or every malformed S1AP packet leaks it (F-BUG-078).
 		 * ASN_STRUCT_FREE is NULL-safe. */
@@ -1146,7 +1145,7 @@ int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
 		message->procedure_code = pdu_p->choice.unsuccessfulOutcome->procedureCode;
 		break;
 	default:
-		fprintf(stderr, "[S1AP] Unknown S1AP presence (%d)\n", (int)pdu_p->present);
+		S1AP_WARN("Unknown S1AP presence (%d)", (int)pdu_p->present);
 		break;
 	}
 

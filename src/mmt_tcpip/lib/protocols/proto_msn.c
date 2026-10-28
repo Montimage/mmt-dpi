@@ -39,17 +39,14 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
     uint16_t plen;
     uint16_t status = 0;
 
-    MMT_LOG(PROTO_MSN, MMT_LOG_TRACE, "search msn tcp.\n");
 #ifdef PROTO_SSL
     if (packet->detected_protocol_stack[0] == PROTO_SSL) {
-        MMT_LOG(PROTO_MSN, MMT_LOG_TRACE, "msn ssl ft test\n");
         if (ipacket->session->data_packet_count < 10) {
         }
 
         if (ipacket->session->data_packet_count == 7 && packet->payload_packet_len > 300) {
             if (mmt_memcmp(packet->payload + 24, "MSNSLP", 6) == 0
                     || (get_u32(packet->payload, 0) == htonl(0x30000000) && get_u32(packet->payload, 4) == 0x00000000)) {
-                MMT_LOG(PROTO_MSN, MMT_LOG_TRACE, "detected MSN File Transfer, ifdef ssl.\n");
                 mmt_int_msn_add_connection(ipacket, MMT_REAL_PROTOCOL);
                 return;
             }
@@ -57,12 +54,7 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
         if (packet->payload_packet_len > 8 && ipacket->session->data_packet_count >= 5 && ipacket->session->data_packet_count <= 10 && (get_u32(packet->payload, 0) == htonl(0x18000000)
                 && get_u32(packet->payload, 4) == 0x00000000)) {
             flow->l4.tcp.msn_ssl_ft++;
-            MMT_LOG(PROTO_MSN, MMT_LOG_TRACE,
-                    "increased msn ft ssl stage to: %u at packet nr: %u\n", flow->l4.tcp.msn_ssl_ft,
-                    flow->data_packet_count);
             if (flow->l4.tcp.msn_ssl_ft == 2) {
-                MMT_LOG(PROTO_MSN, MMT_LOG_TRACE,
-                        "detected MSN File Transfer, ifdef ssl 2.\n");
                 mmt_int_msn_add_connection(ipacket, MMT_REAL_PROTOCOL);
             }
             return;
@@ -88,8 +80,6 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
                 && ((ntohl(get_u32(packet->payload, 24)) == 0x000f0004 && ntohl(get_u32(packet->payload, 28)) == 0x72c64bc6)
                 || (ntohl(get_u32(packet->payload, 20)) == 0x000f0004
                 && ntohl(get_u32(packet->payload, 24)) == 0x72c64bc6))) {
-            MMT_LOG(PROTO_MSN, MMT_LOG_TRACE,
-                    "found MSN in packets that also contain voice.messenger.live.com.\n");
 
             /* The unverified alternative video pattern (payload[86..87] ==
              * 0x05dc) was never enabled and has been dropped. */
@@ -110,14 +100,10 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
 
                     if (mmt_memcmp(&packet->payload[packet->payload_packet_len - 6], "CVR",
                             3) == 0 || mmt_memcmp(&packet->payload[packet->payload_packet_len - 8], "MSNP", 4) == 0) {
-                        MMT_LOG(PROTO_MSN, MMT_LOG_TRACE,
-                                "found MSN by pattern VER...CVR/MSNP ODOA.\n");
                         mmt_int_msn_add_connection(ipacket, MMT_REAL_PROTOCOL);
                         return;
                     }
                     if (mmt_memcmp(&packet->payload[4], "MSNFT", 5) == 0) {
-                        MMT_LOG(PROTO_MSN, MMT_LOG_TRACE,
-                                "found MSN FT by pattern VER MSNFT...0d0a.\n");
                         mmt_int_msn_add_connection(ipacket, MMT_REAL_PROTOCOL);
                         return;
                     }
@@ -162,8 +148,6 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
                         (packet->content_line.len >= 14 &&
                         mmt_memcmp(packet->content_line.ptr, "text/x-msnmsgr",
                         14) == 0))) {
-                    MMT_LOG(PROTO_MSN, MMT_LOG_TRACE,
-                            "found MSN by pattern POST http:// .... application/x-msn-messenger.\n");
                     mmt_int_msn_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                     return;
                 }
@@ -188,16 +172,12 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
                     for (c = 13; c < 50; c++) {
                         if (mmt_memcmp(&packet->payload[c], "/", 1) == 0) {
                             if (mmt_memcmp(&packet->payload[c], "/gateway/gateway.dll", 20) == 0) {
-                                MMT_LOG(PROTO_MSN, MMT_LOG_TRACE,
-                                        "found  pattern http://.../gateway/gateway.ddl.\n");
                                 status = 1;
                                 break;
                             }
                         }
                     }
                 } else if ((mmt_memcmp(&packet->payload[5], "/gateway/gateway.dll", 20) == 0)) {
-                    MMT_LOG(PROTO_MSN, MMT_LOG_TRACE,
-                            "found  pattern http://.../gateway/gateway.ddl.\n");
                     status = 1;
                 }
             }
@@ -223,8 +203,6 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
                             && MMT_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask,
                             PROTO_MSN)
                             != 0)) {
-                        MMT_LOG(PROTO_MSN, MMT_LOG_TRACE,
-                                "found MSN with pattern text/xml; charset=utf-8.\n");
                         mmt_int_msn_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                         return;
                     }
@@ -233,10 +211,6 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
                                 (mmt_memcmp(packet->line[a].ptr, "CVR ", 4) == 0
                                 || mmt_memcmp(packet->line[a].ptr, "VER ",
                                 4) == 0 || mmt_memcmp(packet->line[a].ptr, "ANS ", 4) == 0)) {
-                            MMT_LOG(PROTO_MSN, MMT_LOG_TRACE,
-                                    "found MSN with pattern text/sml; charset0utf-8.\n");
-                            MMT_LOG(PROTO_MSN, 
-                                    MMT_LOG_TRACE, "MSN xml CVS / VER / ANS found\n");
                             mmt_int_msn_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                             return;
                         }
@@ -266,13 +240,10 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
                         (packet->content_line.len >= 14 &&
                         mmt_memcmp(packet->content_line.ptr, "text/x-msnmsgr",
                         14) == 0))) {
-                    MMT_LOG(PROTO_MSN, MMT_LOG_TRACE,
-                            "HTTP/1.0 200 OK .... application/x-msn-messenger.\n");
                     mmt_int_msn_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                     return;
                 }
                 if (mmt_int_find_xmsn(ipacket) == 1) {
-                    MMT_LOG(PROTO_MSN, MMT_LOG_TRACE, "HTTP/1.0 200 OK .... X-MSN.\n");
                     mmt_int_msn_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                     return;
                 }
@@ -283,8 +254,6 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
         /* now block proxy connection */
         if (packet->payload_packet_len >= 42) {
             if (mmt_memcmp(packet->payload, "CONNECT messenger.hotmail.com:1863 HTTP/1.", 42) == 0) {
-                MMT_LOG(PROTO_MSN, MMT_LOG_TRACE,
-                        "found MSN  with pattern CONNECT messenger.hotmail.com:1863 HTTP/1..\n");
                 mmt_int_msn_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;
             }
@@ -311,7 +280,6 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
 
                 while (plen < endlen) {
                     if (mmt_check_for_email_address(ipacket, plen) != 0) {
-                        MMT_LOG(PROTO_MSN, MMT_LOG_TRACE, "found mail address\n");
                         break;
                     }
                     if (packet->payload_packet_len > plen + 1
@@ -324,8 +292,6 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
                     }
 
                 }
-                MMT_LOG(PROTO_MSN, MMT_LOG_TRACE,
-                        "found MSN  with pattern USR/ANS ...mail_address.\n");
                 mmt_int_msn_add_connection(ipacket, MMT_REAL_PROTOCOL);
                 return;
             }
@@ -355,13 +321,10 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
                     27) == 0) ||
                     (packet->content_line.len >= 14 &&
                     mmt_memcmp(packet->content_line.ptr, "text/x-msnmsgr", 14) == 0))) {
-                MMT_LOG(PROTO_MSN, MMT_LOG_TRACE,
-                        "HTTP/1.0 200 OK .... application/x-msn-messenger.\n");
                 mmt_int_msn_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;
             }
             if (mmt_int_find_xmsn(ipacket) == 1) {
-                MMT_LOG(PROTO_MSN, MMT_LOG_TRACE, "HTTP/1.0 200 OK .... X-MSN.\n");
                 mmt_int_msn_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;
             }
@@ -376,7 +339,6 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
             && MMT_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, PROTO_MSN) != 0)) {
         if (ipacket->session->data_packet_count == 1 &&
                 packet->payload_packet_len > 12 && mmt_memcmp(packet->payload, "recipientid=", 12) == 0) {
-            MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "detected file transfer.\n");
             mmt_int_msn_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return;
         }
@@ -391,7 +353,6 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
         /* asymmetric detection to this pattern is asym (2) */
         if ((packet->payload_packet_len == 4 || packet->payload_packet_len == 8)
                 && get_u32(packet->payload, 0) == htonl(0x04000000)) {
-            MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "maybe first TCP MSN detected\n");
 
             if (packet->payload_packet_len == 8 && get_u32(packet->payload, 4) == htonl(0x666f6f00)) {
                 flow->l4.tcp.msn_stage = 5 + ipacket->session->last_packet_direction;
@@ -405,12 +366,10 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
     } else if (flow->l4.tcp.msn_stage == 1 + ipacket->session->last_packet_direction) {
         if (packet->payload_packet_len > 10 && get_u32(packet->payload, 0) == htonl(0x666f6f00)) {
             mmt_int_msn_add_connection(ipacket, MMT_REAL_PROTOCOL);
-            MMT_LOG(PROTO_MSN, MMT_LOG_TRACE, "MSN File Transfer detected 1\n");
             return;
         }
         /* did not see this pattern in any trace */
         if (packet->payload_packet_len == 56 && get_u32(packet->payload, 16) == 0) {
-            MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "maybe Second TCP MSN detected\n");
             flow->l4.tcp.msn_stage = 3 + ipacket->session->last_packet_direction;
             return;
         }
@@ -418,30 +377,25 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
     } else if (flow->l4.tcp.msn_stage == 2 - ipacket->session->last_packet_direction
             && packet->payload_packet_len == 4 && get_u32(packet->payload, 0) == htonl(0x30000000)) {
         mmt_int_msn_add_connection(ipacket, MMT_REAL_PROTOCOL);
-        MMT_LOG(PROTO_MSN, MMT_LOG_TRACE, "MSN File Transfer detected 2\n");
         return;
     } else if ((flow->l4.tcp.msn_stage == 3 + ipacket->session->last_packet_direction)
             || (flow->l4.tcp.msn_stage == 4 - ipacket->session->last_packet_direction)) {
         if (packet->payload_packet_len == 4 && get_u32(packet->payload, 0) == htonl(0x30000000)) {
             mmt_int_msn_add_connection(ipacket, MMT_REAL_PROTOCOL);
-            MMT_LOG(PROTO_MSN, MMT_LOG_TRACE, "MSN File Transfer detected 2\n");
             return;
         }
     } else if (flow->l4.tcp.msn_stage == 6 - ipacket->session->last_packet_direction) {
         if ((packet->payload_packet_len == 4) &&
                 (get_u32(packet->payload, 0) == htonl(0x10000000) || get_u32(packet->payload, 0) == htonl(0x30000000))) {
             mmt_int_msn_add_connection(ipacket, MMT_REAL_PROTOCOL);
-            MMT_LOG(PROTO_MSN, MMT_LOG_TRACE, "MSN File Transfer detected 3\n");
             return;
         }
     } else if (flow->l4.tcp.msn_stage == 5 + ipacket->session->last_packet_direction) {
         if ((packet->payload_packet_len == 20) && get_u32(packet->payload, 0) == htonl(0x10000000)) {
             mmt_int_msn_add_connection(ipacket, MMT_REAL_PROTOCOL);
-            MMT_LOG(PROTO_MSN, MMT_LOG_TRACE, "MSN File Transfer detected 3\n");
             return;
         }
     }
-    MMT_LOG(PROTO_MSN, MMT_LOG_TRACE, "msn 7.\n");
     if (ipacket->session->data_packet_count <= MAX_PACKETS_FOR_MSN) {
         if (packet->tcp->source == htons(443)
                 || packet->tcp->dest == htons(443)) {
@@ -451,7 +405,6 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
                         || mmt_memcmp(&packet->payload[172], "INVITE MSNMSGR", 14) == 0) {
                     mmt_int_msn_add_connection(ipacket, MMT_REAL_PROTOCOL);
 
-                    MMT_LOG(PROTO_MSN, MMT_LOG_TRACE, "MSN File Transfer detected 3\n");
                     return;
                 }
             }
@@ -460,7 +413,6 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
         /* For no
            n port 443 flows exclude flow bitmask after first packet itself */
     }
-    MMT_LOG(PROTO_MSN, MMT_LOG_TRACE, "exclude msn.\n");
 mmt_msn_exclude:
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MSN);
 }
@@ -484,7 +436,6 @@ static void mmt_search_udp_msn_misc(ipacket_t * ipacket) {
     if (packet->payload_packet_len == 20
             && get_u32(packet->payload, 4) == 0 && packet->payload[9] == 0
             && get_u16(packet->payload, 10) == htons(0x0100)) {
-        MMT_LOG(PROTO_MSN, MMT_LOG_TRACE, "msn udp misc data connection detected\n");
         mmt_int_msn_add_connection(ipacket, MMT_REAL_PROTOCOL);
     }
 

@@ -35,7 +35,6 @@ void mmt_classify_smtp(ipacket_t * ipacket, unsigned index) {
   struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
 
-    MMT_LOG(PROTO_SMTP, MMT_LOG_DEBUG, "search mail_smtp.\n");
 
 
     if (packet->payload_packet_len > 2 && ntohs(get_u16(packet->payload, packet->payload_packet_len - 2)) == 0x0d0a) {
@@ -131,11 +130,8 @@ void mmt_classify_smtp(ipacket_t * ipacket, unsigned index) {
                 bit_count += (flow->l4.tcp.smtp_command_bitmask >> a) & 0x01;
             }
         }
-        MMT_LOG(PROTO_SMTP, MMT_LOG_DEBUG, "seen smtp commands and responses: %u.\n",
-                bit_count);
 
         if (bit_count >= 3) {
-            MMT_LOG(PROTO_SMTP, MMT_LOG_DEBUG, "mail smtp identified\n");
             mmt_int_mail_smtp_add_connection(ipacket);
             return;
         }
@@ -148,11 +144,9 @@ void mmt_classify_smtp(ipacket_t * ipacket, unsigned index) {
             packet->payload_packet_len >= 4 &&
             (ntohs(get_u16(packet->payload, packet->payload_packet_len - 2)) == 0x0d0a
             || mmt_memcmp(packet->payload, "220", 3) == 0 || mmt_memcmp(packet->payload, "EHLO", 4) == 0)) {
-        MMT_LOG(PROTO_SMTP, MMT_LOG_DEBUG, "maybe SMTP, need next packet.\n");
         return;
     }
 
-    MMT_LOG(PROTO_SMTP, MMT_LOG_DEBUG, "exclude smtp\n");
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SMTP);
 
 }

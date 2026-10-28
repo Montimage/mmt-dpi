@@ -42,7 +42,6 @@ int mmt_check_dropbox_udp(ipacket_t * ipacket, unsigned index)
                             && (packet->udp->dest == dropbox_port)) {
                         if (payload_len > 2) {
                             if (strncmp((const char*)packet->payload, "{\"", 2) == 0) {
-                                MMT_LOG(PROTO_DROPBOX, MMT_LOG_DEBUG, "Found dropbox.\n");
                                 mmt_int_dropbox_add_connection(ipacket, 0);
                                 return 1;
                             }
@@ -50,7 +49,6 @@ int mmt_check_dropbox_udp(ipacket_t * ipacket, unsigned index)
                     }
                 }
 
-                MMT_LOG(PROTO_DROPBOX, MMT_LOG_DEBUG, "exclude dropbox.\n");
                 MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_DROPBOX);
             }
         }

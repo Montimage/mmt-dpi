@@ -24,7 +24,6 @@ int mmt_check_maplestory(ipacket_t * ipacket, unsigned index) {
                 && (ntohl(get_u32(packet->payload, 0)) == 0x0e003a00 || ntohl(get_u32(packet->payload, 0)) == 0x0e003b00
                 || ntohl(get_u32(packet->payload, 0)) == 0x0e004200)
                 && ntohs(get_u16(packet->payload, 4)) == 0x0100 && (packet->payload[6] == 0x32 || packet->payload[6] == 0x33)) {
-            MMT_LOG(PROTO_MAPLESTORY, MMT_LOG_DEBUG, "found maplestory.\n");
             mmt_int_maplestory_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return 1;
         }
@@ -42,7 +41,6 @@ int mmt_check_maplestory(ipacket_t * ipacket, unsigned index) {
                         5) == 0
                         && mmt_memcmp(packet->user_agent_line.ptr, "Patcher", 7) == 0
                         && mmt_memcmp(packet->host_line.ptr, "patch.", 6) == 0) {
-                    MMT_LOG(PROTO_MAPLESTORY, MMT_LOG_DEBUG, "found maplestory update.\n");
                     mmt_int_maplestory_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                     return 1;
                 }
@@ -50,13 +48,11 @@ int mmt_check_maplestory(ipacket_t * ipacket, unsigned index) {
                     && mmt_memcmp(&packet->payload[10], "story/",
                     6) == 0
                     && mmt_memcmp(packet->user_agent_line.ptr, "AspINet", 7) == 0) {
-                MMT_LOG(PROTO_MAPLESTORY, MMT_LOG_DEBUG, "found maplestory update.\n");
                 mmt_int_maplestory_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return 1;
             }
         }
 
-        MMT_LOG(PROTO_MAPLESTORY, MMT_LOG_DEBUG, "exclude maplestory.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MAPLESTORY);
     }
     return 0;

@@ -35,19 +35,14 @@ int mmt_int_search_thunder_udp(ipacket_t * ipacket)
     if (packet->payload_packet_len > 8 && packet->payload[0] >= 0x30
             && packet->payload[0] < 0x40 && packet->payload[1] == 0 && packet->payload[2] == 0 && packet->payload[3] == 0) {
         if (flow->thunder_stage == 3) {
-            MMT_LOG(PROTO_THUNDER, MMT_LOG_DEBUG, "THUNDER udp detected\n");
             mmt_int_thunder_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return 1;
         }
 
         flow->thunder_stage++;
-        MMT_LOG(PROTO_THUNDER, MMT_LOG_DEBUG,
-                "maybe thunder udp packet detected, stage increased to %u\n", flow->thunder_stage);
         return 4;
     }
 
-    MMT_LOG(PROTO_THUNDER, MMT_LOG_DEBUG,
-            "excluding thunder udp at stage %u\n", flow->thunder_stage);
 
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_THUNDER);
     return 0;
@@ -61,14 +56,11 @@ int mmt_int_search_thunder_tcp(ipacket_t * ipacket)
     if (packet->payload_packet_len > 8 && packet->payload[0] >= 0x30
             && packet->payload[0] < 0x40 && packet->payload[1] == 0 && packet->payload[2] == 0 && packet->payload[3] == 0) {
         if (flow->thunder_stage == 3) {
-            MMT_LOG(PROTO_THUNDER, MMT_LOG_DEBUG, "THUNDER tcp detected\n");
             mmt_int_thunder_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return 1;
         }
 
         flow->thunder_stage++;
-        MMT_LOG(PROTO_THUNDER, MMT_LOG_DEBUG,
-                "maybe thunder tcp packet detected, stage increased to %u\n", flow->thunder_stage);
         return 4;
     }
 
@@ -76,9 +68,6 @@ int mmt_int_search_thunder_tcp(ipacket_t * ipacket)
             && mmt_mem_cmp(packet->payload, "POST / HTTP/1.1\r\n", 17) == 0) {
         mmt_parse_packet_line_info(ipacket);
 
-        MMT_LOG(PROTO_THUNDER, MMT_LOG_DEBUG,
-                "maybe thunder http POST packet detected, parsed packet lines: %u, empty line set %u (at: %u)\n",
-                packet->parsed_lines, packet->empty_line_position_set, packet->empty_line_position);
 
         if (packet->empty_line_position_set != 0 &&
                 packet->content_line.ptr != NULL &&
@@ -90,15 +79,11 @@ int mmt_int_search_thunder_tcp(ipacket_t * ipacket)
                 && packet->payload[packet->empty_line_position + 3] == 0x00
                 && packet->payload[packet->empty_line_position + 4] == 0x00
                 && packet->payload[packet->empty_line_position + 5] == 0x00) {
-            MMT_LOG(PROTO_THUNDER, MMT_LOG_DEBUG,
-                    "maybe thunder http POST packet application does match\n");
             mmt_int_thunder_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
             return 1;
         }
         return 4;
     }
-    MMT_LOG(PROTO_THUNDER, MMT_LOG_DEBUG,
-            "excluding thunder tcp at stage %u\n", flow->thunder_stage);
 
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_THUNDER);
     return 0;
@@ -116,13 +101,9 @@ int mmt_int_search_thunder_http(ipacket_t * ipacket)
     if (packet->detected_protocol_stack[0] == PROTO_THUNDER) {
         if (src != NULL && ((MMT_INTERNAL_TIMESTAMP_TYPE)
                 (packet->tick_timestamp - src->thunder_ts) < thunder_timeout)) {
-            MMT_LOG(PROTO_THUNDER, MMT_LOG_DEBUG,
-                    "thunder : save src connection packet detected\n");
             src->thunder_ts = packet->tick_timestamp;
         } else if (dst != NULL && ((MMT_INTERNAL_TIMESTAMP_TYPE)
                 (packet->tick_timestamp - dst->thunder_ts) < thunder_timeout)) {
-            MMT_LOG(PROTO_THUNDER, MMT_LOG_DEBUG,
-                    "thunder : save dst connection packet detected\n");
             dst->thunder_ts = packet->tick_timestamp;
         }
         return 4;
@@ -130,7 +111,6 @@ int mmt_int_search_thunder_http(ipacket_t * ipacket)
 
     if (packet->payload_packet_len > 5
             && mmt_memcmp(packet->payload, "GET /", 5) == 0 && MMT_SRC_OR_DST_HAS_PROTOCOL(src, dst, PROTO_THUNDER)) {
-        MMT_LOG(PROTO_THUNDER, MMT_LOG_DEBUG, "HTTP packet detected.\n");
         mmt_parse_packet_line_info(ipacket);
 
         if (packet->parsed_lines > 7
@@ -149,8 +129,6 @@ int mmt_int_search_thunder_http(ipacket_t * ipacket)
                 && packet->user_agent_line.len > 49
                 && mmt_mem_cmp(packet->user_agent_line.ptr,
                 "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)", 50) == 0) {
-            MMT_LOG(PROTO_THUNDER, MMT_LOG_DEBUG,
-                    "Thunder HTTP download detected, adding flow.\n");
             mmt_int_thunder_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
             return 1;
         }

@@ -72,15 +72,6 @@ typedef struct udphdr __attribute__((aligned(1))) mmt_una_udphdr_t;
         MMT_CORRELATED_PROTOCOL = 1
     } mmt_protocol_type_t;
 
-    typedef enum {
-        MMT_LOG_ERROR,
-        MMT_LOG_TRACE,
-        MMT_LOG_DEBUG
-    } mmt_log_level_t;
-
-    typedef void (*mmt_debug_function_ptr) (uint32_t protocol,
-            void *module_struct, mmt_log_level_t log_level, const char *format, ...);
-
 
     ////////////////////////////////////////////////////////////////////////////////
     ///////////// INTERNAL MACROS - MUST BE UPDATED WITH EVERY VERSION /////////////
@@ -369,12 +360,6 @@ typedef struct udphdr __attribute__((aligned(1))) mmt_una_udphdr_t;
      **********************/
 #define MMT_SELECT_DETECTION_WITH_REAL_PROTOCOL ( 1 << 0 )
 
-#define MMT_LOG_BITTORRENT(proto, mod, log_level, args...) {}
-
-#define MMT_LOG_GNUTELLA(proto, mod, log_level, args...) {}
-
-#define MMT_LOG_EDONKEY(proto, mod, log_level, args...) {}
-#define MMT_LOG(proto, mod, log_level, args...) {}
 
     /* the get_uXX will return raw network packet bytes !! */
 /*

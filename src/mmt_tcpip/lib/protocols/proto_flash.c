@@ -45,17 +45,10 @@ int mmt_check_flash(ipacket_t * ipacket, unsigned index) {
                 && (packet->payload[0] == 0x03 || packet->payload[0] == 0x06)) {
             flow->l4.tcp.flash_bytes = packet->payload_packet_len;
             if (packet->tcp->psh == 0) {
-                MMT_LOG(PROTO_FLASH, MMT_LOG_DEBUG, "FLASH pass 1: \n");
                 flow->l4.tcp.flash_stage = ipacket->session->last_packet_direction + 1;
 
-                MMT_LOG(PROTO_FLASH, MMT_LOG_DEBUG,
-                        "FLASH pass 1: flash_stage: %u, flash_bytes: %u\n", flow->l4.tcp.flash_stage,
-                        flow->l4.tcp.flash_bytes);
                 return 4;
             } else if (packet->tcp->psh != 0 && flow->l4.tcp.flash_bytes == 1537) {
-                MMT_LOG(PROTO_FLASH, MMT_LOG_DEBUG,
-                        "FLASH hit: flash_stage: %u, flash_bytes: %u\n", flow->l4.tcp.flash_stage,
-                        flow->l4.tcp.flash_bytes);
                 flow->l4.tcp.flash_stage = 3;
                 mmt_int_flash_add_connection(ipacket);
                 return 1;
@@ -63,30 +56,19 @@ int mmt_check_flash(ipacket_t * ipacket, unsigned index) {
         } else if (flow->l4.tcp.flash_stage == 1 + ipacket->session->last_packet_direction) {
             flow->l4.tcp.flash_bytes += packet->payload_packet_len;
             if (packet->tcp->psh != 0 && flow->l4.tcp.flash_bytes == 1537) {
-                MMT_LOG(PROTO_FLASH, MMT_LOG_DEBUG,
-                        "FLASH hit: flash_stage: %u, flash_bytes: %u\n", flow->l4.tcp.flash_stage,
-                        flow->l4.tcp.flash_bytes);
                 flow->l4.tcp.flash_stage = 3;
                 mmt_int_flash_add_connection(ipacket);
                 return 1;
             } else if (packet->tcp->psh == 0 && flow->l4.tcp.flash_bytes < 1537) {
-                MMT_LOG(PROTO_FLASH, MMT_LOG_DEBUG,
-                        "FLASH pass 2: flash_stage: %u, flash_bytes: %u\n", flow->l4.tcp.flash_stage,
-                        flow->l4.tcp.flash_bytes);
                 return 4;
             }
         }
 
-        MMT_LOG(PROTO_FLASH, MMT_LOG_DEBUG,
-                "FLASH might be excluded: flash_stage: %u, flash_bytes: %u, packet_direction: %u\n",
-                flow->l4.tcp.flash_stage, flow->l4.tcp.flash_bytes, packet->last_packet_direction);
 
         if (MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP) != 0) {
-            MMT_LOG(PROTO_FLASH, MMT_LOG_DEBUG, "FLASH: exclude\n");
             MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_FLASH);
             return 0;
         } else {
-            MMT_LOG(PROTO_FLASH, MMT_LOG_DEBUG, "FLASH avoid early exclude from http\n");
         }
 
     }

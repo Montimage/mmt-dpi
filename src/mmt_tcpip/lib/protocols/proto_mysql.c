@@ -35,7 +35,6 @@ int mmt_check_mysql(ipacket_t * ipacket, unsigned index) {
                             && get_u64(packet->payload, a + 19) == 0x0ULL //13 more
                             && get_u32(packet->payload, a + 27) == 0x0 //filler bytes
                             && get_u8(packet->payload, a + 31) == 0x0) {
-                        MMT_LOG(PROTO_MYSQL, MMT_LOG_DEBUG, "MySQL detected.\n");
                         mmt_int_mysql_add_connection(ipacket);
                         return 1;
                     }

@@ -1803,14 +1803,12 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
                 (mmt_memcmp(packet->payload, "USER ", 5) == 0 ||
                  mmt_memcmp(packet->payload, "user ", 5) == 0)) {
 
-            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP: found USER command\n");
             flow->l4.tcp.ftp_codes_seen |= FTP_USER_CMD;
             current_ftp_code = FTP_USER_CMD;
         } else if (packet->payload_packet_len >= 4 &&
                    (mmt_memcmp(packet->payload, "FEAT", 4) == 0 ||
                     mmt_memcmp(packet->payload, "feat", 4) == 0)) {
 
-            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP: found FEAT command\n");
             flow->l4.tcp.ftp_codes_seen |= FTP_FEAT_CMD;
             current_ftp_code = FTP_FEAT_CMD;
         } else{
@@ -1832,21 +1830,18 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
                 (mmt_memcmp(packet->payload, "220 ", 4) == 0 ||
                  mmt_memcmp(packet->payload, "220-", 4) == 0)) {
             debug("FTP: found 220 reply code\n");
-            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP: found 220 reply code\n");
             flow->l4.tcp.ftp_codes_seen |= FTP_220_CODE;
             current_ftp_code = FTP_220_CODE;
         } else if (packet->payload_packet_len > 4 &&
                    (mmt_memcmp(packet->payload, "331 ", 4) == 0 ||
                     mmt_memcmp(packet->payload, "331-", 4) == 0)) {
 
-            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP: found 331 reply code\n");
             flow->l4.tcp.ftp_codes_seen |= FTP_331_CODE;
             current_ftp_code = FTP_331_CODE;
         } else if (packet->payload_packet_len > 4 &&
                    (mmt_memcmp(packet->payload, "211 ", 4) == 0 ||
                     mmt_memcmp(packet->payload, "211-", 4) == 0)) {
 
-            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP: found 211 reply code\n");
             flow->l4.tcp.ftp_codes_seen |= FTP_211_CODE;
             current_ftp_code = FTP_211_CODE;
         } else if (!mmt_int_check_possible_ftp_reply((char*)packet->payload, packet->payload_packet_len)) {
@@ -1862,7 +1857,6 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
         &&(packet->tcp && (packet->tcp->dest != htons(25) && packet->tcp->source != htons(25)))
         ) {
 
-        MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP detected\n");
         debug("[PROTO_FTP] search_ftp: FTP detected");
         mmt_int_ftp_add_connection(ipacket);
         return 1;
@@ -1914,17 +1908,13 @@ static void search_passive_ftp_mode(ipacket_t * ipacket) {
      * (packet->iph == NULL) the reply is handled like EPSV (229): the data
      * connection goes to the control connection's server address. */
     if (packet->payload_packet_len > 3 && mmt_mem_cmp(packet->payload, "227 ", 4) == 0) {
-        MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP passive mode initial string\n");
 
         plen = 4; //=4 for "227 "
         while (1) {
             if (plen >= packet->payload_packet_len) {
-                MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG,
-                        "plen >= packet->payload_packet_len, return\n");
                 return;
             }
             if (packet->payload[plen] == '(') {
-                MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "found (. break.\n");
                 break;
             }
 
@@ -1942,19 +1932,13 @@ static void search_passive_ftp_mode(ipacket_t * ipacket) {
                 (ftp_ip << 8) +
                 mmt_bytestream_to_number(&packet->payload[plen], packet->payload_packet_len - plen, &plen);
             if (oldplen == plen || plen >= packet->payload_packet_len) {
-                MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP passive mode %u value parse failed\n",
-                        i);
                 return;
             }
             if (packet->payload[plen] != ',') {
 
-                MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG,
-                        "FTP passive mode %u value parse failed, char ',' is missing\n", i);
                 return;
             }
             plen++;
-            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG,
-                    "FTP passive mode %u value parsed, ip is now: %u\n", i, ftp_ip);
 
         }
         if (dst != NULL) {
@@ -1964,13 +1948,11 @@ static void search_passive_ftp_mode(ipacket_t * ipacket) {
                 mmt_get_source_ip_from_packet(packet, &dst->ftp_ip);
             dst->ftp_timer = packet->tick_timestamp;
             dst->ftp_timer_set = 1;
-            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "saved ftp_ip, ftp_timer, ftp_timer_set to dst");
         }
         if (src != NULL) {
             mmt_get_destination_ip_from_packet(packet, &src->ftp_ip);
             src->ftp_timer = packet->tick_timestamp;
             src->ftp_timer_set = 1;
-            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "saved ftp_ip, ftp_timer, ftp_timer_set to src");
         }
         return;
     }
@@ -1980,13 +1962,11 @@ static void search_passive_ftp_mode(ipacket_t * ipacket) {
             mmt_get_source_ip_from_packet(packet, &dst->ftp_ip);
             dst->ftp_timer = packet->tick_timestamp;
             dst->ftp_timer_set = 1;
-            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "saved ftp_ip, ftp_timer, ftp_timer_set to dst");
         }
         if (src != NULL) {
             mmt_get_destination_ip_from_packet(packet, &src->ftp_ip);
             src->ftp_timer = packet->tick_timestamp;
             src->ftp_timer_set = 1;
-            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "saved ftp_ip, ftp_timer, ftp_timer_set to src");
         }
         return;
     }
@@ -2006,15 +1986,11 @@ static void search_active_ftp_mode(ipacket_t * ipacket) {
             mmt_get_destination_ip_from_packet(packet, &src->ftp_ip);
             src->ftp_timer = packet->tick_timestamp;
             src->ftp_timer_set = 1;
-            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP ACTIVE MODE FOUND, command is %.*s\n", 4,
-                    packet->payload);
         }
         if (dst != NULL) {
             mmt_get_source_ip_from_packet(packet, &dst->ftp_ip);
             dst->ftp_timer = packet->tick_timestamp;
             dst->ftp_timer_set = 1;
-            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP ACTIVE MODE FOUND, command is %.*s\n", 4,
-                    packet->payload);
         }
     }
     return;
@@ -2037,14 +2013,12 @@ int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
                 && packet->detected_protocol_stack[0] == PROTO_UNKNOWN
                 && MMT_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask,
                         PROTO_FTP) != 0 && src->ftp_timer_set != 0) {
-            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "possible ftp data, src!= 0.\n");
 
             if (((MMT_INTERNAL_TIMESTAMP_TYPE)
                     (packet->tick_timestamp - src->ftp_timer)) >= ftp_connection_timeout) {
                 src->ftp_timer_set = 0;
             } else if (ntohs(packet->tcp->dest) > 1024
                        && (ntohs(packet->tcp->source) > 1024 || ntohs(packet->tcp->source) == 20)) {
-                MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "detected FTP data stream.\n");
                 debug("[PROTO_FTP] mmt_check_ftp: detected FTP data stream (0)");
                 mmt_int_ftp_add_connection(ipacket);
                 return 1;
@@ -2056,7 +2030,6 @@ int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
                 && packet->detected_protocol_stack[0] == PROTO_UNKNOWN
                 && MMT_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask,
                         PROTO_FTP) != 0 && dst->ftp_timer_set != 0) {
-            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "possible ftp data; dst!= 0.\n");
 
             if (((MMT_INTERNAL_TIMESTAMP_TYPE)
                     (packet->tick_timestamp - dst->ftp_timer)) >= ftp_connection_timeout) {
@@ -2064,7 +2037,6 @@ int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
 
             } else if (ntohs(packet->tcp->dest) > 1024
                        && (ntohs(packet->tcp->source) > 1024 || ntohs(packet->tcp->source) == 20)) {
-                MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "detected FTP data stream.\n");
                 debug("[PROTO_FTP] mmt_check_ftp: detected FTP data stream (1)");
                 mmt_int_ftp_add_connection(ipacket);
                 return 1;
@@ -2074,16 +2046,12 @@ int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
 
         /* skip packets without payload */
         if (packet->payload_packet_len == 0) {
-            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG,
-                    "FTP test skip because of data connection or zero byte packet_payload.\n");
             return 0;
         }
         /* skip excluded connections */
 
         // we test for FTP connection and search for passive mode
         if (packet->detected_protocol_stack[0] == PROTO_FTP) {
-            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG,
-                    "detected ftp command mode. going to test data mode.\n");
             search_passive_ftp_mode(ipacket);
 
             search_active_ftp_mode(ipacket);
@@ -2091,11 +2059,9 @@ int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
         }
 
         if (packet->detected_protocol_stack[0] == PROTO_UNKNOWN && search_ftp(ipacket) != 0) {
-            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "unknown. need next packet.\n");       
             return 4;
         }
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_FTP);
-        MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "exclude ftp.\n");
 
     }
     return 0;

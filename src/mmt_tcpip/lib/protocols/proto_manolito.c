@@ -41,28 +41,24 @@ uint8_t search_manolito_tcp(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-    MMT_LOG(PROTO_MANOLITO, MMT_LOG_DEBUG, "MANOLITO TCP DETECTION\n");
 
     if (flow->l4.tcp.manolito_stage == 0 && packet->payload_packet_len > 6) {
         if (mmt_mem_cmp(packet->payload, "SIZ ", 4) != 0)
             goto end_manolito_nothing_found;
 
         flow->l4.tcp.manolito_stage = 1 + ipacket->session->last_packet_direction;
-        MMT_LOG(PROTO_MANOLITO, MMT_LOG_DEBUG, "MANOLITO Stage 1.\n");
         goto end_manolito_maybe_hit;
 
     } else if ((flow->l4.tcp.manolito_stage == 2 - ipacket->session->last_packet_direction)
             && packet->payload_packet_len > 4) {
         if (mmt_mem_cmp(packet->payload, "STR ", 4) != 0)
             goto end_manolito_nothing_found;
-        MMT_LOG(PROTO_MANOLITO, MMT_LOG_DEBUG, "MANOLITO Stage 2.\n");
         flow->l4.tcp.manolito_stage = 3 + ipacket->session->last_packet_direction;
         goto end_manolito_maybe_hit;
 
     } else if ((flow->l4.tcp.manolito_stage == 4 - ipacket->session->last_packet_direction) && packet->payload_packet_len > 5) {
         if (mmt_mem_cmp(packet->payload, "MD5 ", 4) != 0)
             goto end_manolito_nothing_found;
-        MMT_LOG(PROTO_MANOLITO, MMT_LOG_DEBUG, "MANOLITO Stage 3.\n");
         flow->l4.tcp.manolito_stage = 5 + ipacket->session->last_packet_direction;
         goto end_manolito_maybe_hit;
 
@@ -70,22 +66,18 @@ uint8_t search_manolito_tcp(ipacket_t * ipacket) {
 
         if (mmt_mem_cmp(packet->payload, "GO!!", 4) != 0)
             goto end_manolito_nothing_found;
-        MMT_LOG(PROTO_MANOLITO, MMT_LOG_DEBUG, "MANOLITO Stage 4.\n");
         goto end_manolito_found;
     }
     goto end_manolito_nothing_found;
 
 end_manolito_found:
-    MMT_LOG(PROTO_MANOLITO, MMT_LOG_DEBUG, "MANOLITO FOUND\n");
     mmt_int_manolito_add_connection(ipacket);
     return 1;
 
 end_manolito_maybe_hit:
-    MMT_LOG(PROTO_MANOLITO, MMT_LOG_DEBUG, "MANOLITO maybe hit.\n");
     return 4;
 
 end_manolito_nothing_found:
-    MMT_LOG(PROTO_MANOLITO, MMT_LOG_DEBUG, "MANOLITO NOTHING FOUND\n");
     return 0;
 }
 
@@ -129,7 +121,6 @@ int mmt_check_manolito_udp(ipacket_t * ipacket, unsigned index) {
             if (src != NULL && src->manolito_last_pkt_arrival_time != 0
                     && (packet->tick_timestamp - src->manolito_last_pkt_arrival_time <
                     manolito_subscriber_timeout)) {
-                MMT_LOG(PROTO_MANOLITO, MMT_LOG_DEBUG, "MANOLITO: UDP detected \n");
                 mmt_int_manolito_add_connection(ipacket);
                 return 1;
             } else if (src != NULL
@@ -141,7 +132,6 @@ int mmt_check_manolito_udp(ipacket_t * ipacket, unsigned index) {
             if (dst != NULL && dst->manolito_last_pkt_arrival_time != 0
                     && (packet->tick_timestamp - dst->manolito_last_pkt_arrival_time <
                     manolito_subscriber_timeout)) {
-                MMT_LOG(PROTO_MANOLITO, MMT_LOG_DEBUG, "MANOLITO: UDP detected \n");
                 mmt_int_manolito_add_connection(ipacket);
                 return 1;
             } else if (dst != NULL
@@ -157,7 +147,6 @@ int mmt_check_manolito_udp(ipacket_t * ipacket, unsigned index) {
                     || (packet->payload_packet_len == 20 && !get_u16(packet->payload, 2) && !get_u32(packet->payload, 8)
                     && !get_u16(packet->payload, 18) && get_u16(packet->payload, 0))
                     ) { //20B pkt is For PING
-                MMT_LOG(PROTO_MANOLITO, MMT_LOG_DEBUG, "MANOLITO: UDP detected \n");
                 mmt_int_manolito_add_connection(ipacket);
                 return 1;
             } else if (ipacket->session->data_packet_count < 7) {

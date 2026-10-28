@@ -20,19 +20,16 @@ int mmt_check_xdmcp_tcp(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-        MMT_LOG(PROTO_XDMCP, MMT_LOG_DEBUG, "search xdmcp.\n");
 
         if ((ntohs(packet->tcp->dest) >= 6000 && ntohs(packet->tcp->dest) <= 6005)
                 && packet->payload_packet_len == 48
                 && packet->payload[0] == 0x6c && packet->payload[1] == 0x00
                 && ntohs(get_u16(packet->payload, 6)) == 0x1200 && ntohs(get_u16(packet->payload, 8)) == 0x1000) {
 
-            MMT_LOG(PROTO_XDMCP, MMT_LOG_DEBUG, "found xdmcp over tcp.\n");
             mmt_int_xdmcp_add_connection(ipacket);
             return 1;
         }
         
-        MMT_LOG(PROTO_XDMCP, MMT_LOG_DEBUG, "exclude xdmcp.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_XDMCP);
     }
     return 0;
@@ -46,18 +43,15 @@ int mmt_check_xdmcp_udp(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-        MMT_LOG(PROTO_XDMCP, MMT_LOG_DEBUG, "search xdmcp.\n");
 
         if (ntohs(packet->udp->dest) == 177
                 && packet->payload_packet_len >= 6 && packet->payload_packet_len == 6 + ntohs(get_u16(packet->payload, 4))
                 && ntohs(get_u16(packet->payload, 0)) == 0x0001 && ntohs(get_u16(packet->payload, 2)) == 0x0002) {
 
-            MMT_LOG(PROTO_XDMCP, MMT_LOG_DEBUG, "found xdmcp over udp.\n");
             mmt_int_xdmcp_add_connection(ipacket);
             return 1;
         }
 
-        MMT_LOG(PROTO_XDMCP, MMT_LOG_DEBUG, "exclude xdmcp.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_XDMCP);
     }
     return 0;

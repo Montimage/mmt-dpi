@@ -44,7 +44,6 @@ static uint8_t mmt_check_for_NOTICE_or_PRIVMSG(ipacket_t * ipacket) {
     for (i = 0; i < packet->payload_packet_len - 7; i++) {
         if (packet->payload[i] == 'N' || packet->payload[i] == 'P') {
             if (mmt_memcmp(&packet->payload[i + 1], "OTICE ", 6) == 0 || mmt_memcmp(&packet->payload[i + 1], "RIVMSG ", 7) == 0) {
-                MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "found NOTICE or PRIVMSG\n");
                 return 1;
             }
         }
@@ -72,7 +71,6 @@ static uint8_t mmt_check_for_Nickname(ipacket_t * ipacket) {
             if ((((packetl - (i + 1)) >= 4) && mmt_memcmp(&packet->payload[i + 1], "ick=", 4) == 0)
                     || (((packetl - (i + 1)) >= 8) && (mmt_memcmp(&packet->payload[i + 1], "ickname=", 8) == 0))
                     || (((packetl - (i + 1)) >= 8) && (mmt_memcmp(&packet->payload[i + 1], "ickName=", 8) == 0))) {
-                MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "found HTTP IRC Nickname pattern\n");
                 return 1;
             }
         }
@@ -91,7 +89,6 @@ static uint8_t mmt_check_for_cmd(ipacket_t * ipacket) {
     for (i = 0; i < packet->payload_packet_len - 4; i++) {
         if (packet->payload[i] == 'c') {
             if (mmt_memcmp(&packet->payload[i + 1], "md=", 3) == 0) {
-                MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "found HTTP IRC cmd pattern  \n");
                 return 1;
             }
         }
@@ -150,7 +147,6 @@ static uint8_t mmt_irc_ssl_detect_1460_1448(ipacket_t * ipacket) {
             && flow->l4.tcp.irc_direction == 2 - ipacket->session->last_packet_direction && (ntohs(get_u16(packet->payload, 2)) == 0x1000
             || ntohs(get_u16(packet->payload, 2)) ==
             0x2000)) {
-        MMT_LOG(PROTO_IRC, MMT_LOG_TRACE, "IRC SSL detected: ->1460,1460,1176,<-4096||8192");
         mmt_int_irc_add_connection(ipacket);
         return 1;
     }
@@ -161,27 +157,23 @@ static uint8_t mmt_irc_ssl_detect_1460_1448(ipacket_t * ipacket) {
             1 + ipacket->session->last_packet_direction))) {
         flow->l4.tcp.irc_stage2 = 4;
         flow->l4.tcp.irc_direction = 1 + ipacket->session->last_packet_direction;
-        MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "len = 1448 first\n");
         return 1;
     }
     if (packet->payload_packet_len == 1448 && flow->l4.tcp.irc_stage2 == 4
             && flow->l4.tcp.irc_direction == 1 + ipacket->session->last_packet_direction) {
         flow->l4.tcp.irc_stage2 = 5;
-        MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "len = 1448 second \n");
         return 1;
     }
     if (packet->payload_packet_len == 1200 && flow->l4.tcp.irc_stage2 == 5
             && flow->l4.tcp.irc_direction == 1 + ipacket->session->last_packet_direction) {
         flow->l4.tcp.irc_stage2 = 6;
         flow->l4.tcp.irc_0x1000_full = 1;
-        MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "len = 1200  \n");
         return 1;
     }
     if (packet->payload_packet_len == 4 && (flow->l4.tcp.irc_stage2 == 6 || flow->l4.tcp.irc_0x1000_full == 1)
             && flow->l4.tcp.irc_direction == 2 - ipacket->session->last_packet_direction && (ntohs(get_u16(packet->payload, 2)) == 0x1000
             || ntohs(get_u16(packet->payload, 2)) ==
             0x2000)) {
-        MMT_LOG(PROTO_IRC, MMT_LOG_TRACE, "IRC SSL detected: ->1448,1448,1200,<-4096||8192");
         mmt_int_irc_add_connection(ipacket);
         return 1;
     }
@@ -205,7 +197,6 @@ static uint8_t mmt_irc_ssl_detect_echo_reply(ipacket_t * ipacket) {
             && flow->l4.tcp.irc_direction == 2 - ipacket->session->last_packet_direction && (ntohs(get_u16(packet->payload, 2)) == 1380
             || ntohs(get_u16(packet->payload, 2)) ==
             2760)) {
-        MMT_LOG(PROTO_IRC, MMT_LOG_TRACE, "IRC SSL detected: ->1380,<-1380||2760");
         mmt_int_irc_add_connection(ipacket);
         return 1;
     }
@@ -220,7 +211,6 @@ static uint8_t mmt_irc_ssl_detect_echo_reply(ipacket_t * ipacket) {
             && flow->l4.tcp.irc_direction == 2 - ipacket->session->last_packet_direction && (ntohs(get_u16(packet->payload, 2)) == 1200
             || ntohs(get_u16(packet->payload, 2)) ==
             2400)) {
-        MMT_LOG(PROTO_IRC, MMT_LOG_TRACE, "IRC SSL detected: ->1200,<-1200||2400");
         mmt_int_irc_add_connection(ipacket);
         return 1;
     }
@@ -235,7 +225,6 @@ static uint8_t mmt_irc_ssl_detect_echo_reply(ipacket_t * ipacket) {
             && flow->l4.tcp.irc_direction == 2 - ipacket->session->last_packet_direction && (ntohs(get_u16(packet->payload, 2)) == 1024
             || ntohs(get_u16(packet->payload, 2)) ==
             2048)) {
-        MMT_LOG(PROTO_IRC, MMT_LOG_TRACE, "IRC SSL detected: ->1024,<-1024||2048");
         mmt_int_irc_add_connection(ipacket);
         return 1;
     }
@@ -250,7 +239,6 @@ static uint8_t mmt_irc_ssl_detect_echo_reply(ipacket_t * ipacket) {
             && flow->l4.tcp.irc_direction == 2 - ipacket->session->last_packet_direction && (ntohs(get_u16(packet->payload, 2)) == 1248
             || ntohs(get_u16(packet->payload, 2)) ==
             2496)) {
-        MMT_LOG(PROTO_IRC, MMT_LOG_TRACE, "IRC SSL detected: ->1248,<-1248||2496");
         mmt_int_irc_add_connection(ipacket);
         return 1;
     }
@@ -265,7 +253,6 @@ static uint8_t mmt_irc_ssl_detect_echo_reply(ipacket_t * ipacket) {
             && flow->l4.tcp.irc_direction == 2 - ipacket->session->last_packet_direction && (ntohs(get_u16(packet->payload, 2)) == 1448
             || ntohs(get_u16(packet->payload, 2)) ==
             2896)) {
-        MMT_LOG(PROTO_IRC, MMT_LOG_TRACE, "IRC SSL detected: ->1448,<-1448||2896");
         mmt_int_irc_add_connection(ipacket);
         return 1;
     }
@@ -297,8 +284,6 @@ static uint8_t mmt_irc_ssl_detect_long_chain(ipacket_t * ipacket) {
     if (packet->payload_packet_len == 4
             && flow->l4.tcp.irc_stage2 == 14
             && flow->l4.tcp.irc_direction == 2 - ipacket->session->last_packet_direction && ntohs(get_u16(packet->payload, 2)) == 8192) {
-        MMT_LOG(PROTO_IRC, MMT_LOG_TRACE,
-                "IRC SSL detected: ->1448,1448,1448,1448,1448,952,<-8192");
         mmt_int_irc_add_connection(ipacket);
         return 1;
     }
@@ -331,8 +316,6 @@ static uint8_t mmt_irc_ssl_detect_long_chain(ipacket_t * ipacket) {
     if (packet->payload_packet_len == 4
             && flow->l4.tcp.irc_stage2 == 19
             && flow->l4.tcp.irc_direction == 2 - ipacket->session->last_packet_direction && ntohs(get_u16(packet->payload, 2)) == 7168) {
-        MMT_LOG(PROTO_IRC, MMT_LOG_TRACE,
-                "IRC SSL detected: ->1024,1448,1448,1200,1448,600,<-7168");
         mmt_int_irc_add_connection(ipacket);
         return 1;
     }
@@ -345,7 +328,6 @@ static uint8_t mmt_irc_ssl_detect_long_chain(ipacket_t * ipacket) {
     if (packet->payload_packet_len == 4
             && flow->l4.tcp.irc_stage2 == 20
             && flow->l4.tcp.irc_direction == 2 - ipacket->session->last_packet_direction && ntohs(get_u16(packet->payload, 2)) == 2404) {
-        MMT_LOG(PROTO_IRC, MMT_LOG_TRACE, "IRC SSL detected: ->1024,1380 <-2404");
         mmt_int_irc_add_connection(ipacket);
         return 1;
 
@@ -355,7 +337,6 @@ static uint8_t mmt_irc_ssl_detect_long_chain(ipacket_t * ipacket) {
 
 uint8_t mmt_search_irc_ssl_detect(ipacket_t * ipacket) {
 
-    MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "called mmt_search_irc_ssl_detect\n");
 
     if (mmt_irc_ssl_detect_1460_1448(ipacket)) {
         return 1;
@@ -391,11 +372,9 @@ static void mmt_irc_touch_detected_peer(ipacket_t * ipacket) {
     }
     if (src != NULL && ((MMT_INTERNAL_TIMESTAMP_TYPE)
             (packet->tick_timestamp - src->irc_ts) < irc_timeout)) {
-        MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "irc : save src connection packet detected\n");
         src->irc_ts = packet->tick_timestamp;
     } else if (dst != NULL && ((MMT_INTERNAL_TIMESTAMP_TYPE)
             (packet->tick_timestamp - dst->irc_ts) < irc_timeout)) {
-        MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "irc : save dst connection packet detected\n");
         dst->irc_ts = packet->tick_timestamp;
     }
 }
@@ -431,8 +410,6 @@ static uint8_t mmt_irc_match_dcc_port(ipacket_t * ipacket) {
         for (counter = 0; counter < dst->irc_number_of_port; counter++) {
             if (dst->irc_port[counter] == sport || dst->irc_port[counter] == dport) {
                 dst->last_time_port_used[counter] = packet->tick_timestamp;
-                MMT_LOG(PROTO_IRC, MMT_LOG_TRACE,
-                        "dest port matched with the DCC port and the flow is marked as IRC");
                 mmt_int_irc_add_connection(ipacket);
                 return 1;
             }
@@ -443,8 +420,6 @@ static uint8_t mmt_irc_match_dcc_port(ipacket_t * ipacket) {
             if (src->irc_port[counter] == sport || src->irc_port[counter] == dport) {
                 src->last_time_port_used[counter] = packet->tick_timestamp;
                 mmt_int_irc_add_connection(ipacket);
-                MMT_LOG(PROTO_IRC, MMT_LOG_TRACE,
-                        "Source port matched with the DCC port and the flow is marked as IRC");
                 return 1;
             }
         }
@@ -482,9 +457,6 @@ static void mmt_irc_scan_server_names(ipacket_t * ipacket) {
                     || (mmt_memcmp(&packet->payload[c1], "irc.discostars.de1", 18)
                     == 0)
                     || (mmt_memcmp(&packet->payload[c1], "irc.rizon.net", 13) == 0)) {
-                MMT_LOG(PROTO_IRC, MMT_LOG_TRACE,
-                        "IRC SSL detected with :- irc.hackthissite.org0 | irc.gamepad.ca1 | dungeon.axenet.org0 "
-                        "| dazed.nuggethaus.net | irc.indymedia.org | irc.discostars.de1 ");
                 mmt_int_irc_add_connection(ipacket);
                 break;
             }
@@ -519,12 +491,6 @@ static void mmt_irc_save_dcc_port(struct mmt_internal_tcpip_id_struct *host,
             host->irc_port[host->irc_number_of_port]
                     = port;
             host->irc_number_of_port++;
-            MMT_LOG
-                    (PROTO_IRC,
-
-                    MMT_LOG_DEBUG, "found port=%d",
-                    ntohs(get_u16(host->irc_port, 0)));
-            MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "%s", done_log);
         }
         host->irc_ts = ts;
     } else if (port != 0 && host->irc_number_of_port == 16) {
@@ -532,11 +498,6 @@ static void mmt_irc_save_dcc_port(struct mmt_internal_tcpip_id_struct *host,
             int less = 0;
             MMT_IRC_FIND_LESS(host->last_time_port_used, less);
             host->irc_port[less] = port;
-            MMT_LOG
-                    (PROTO_IRC,
-
-                    MMT_LOG_DEBUG, "found port=%d",
-                    ntohs(get_u16(host->irc_port, 0)));
         }
         host->irc_ts = ts;
     }
@@ -558,13 +519,8 @@ static uint8_t mmt_irc_read_dcc_ports(ipacket_t * ipacket, uint16_t line_idx, ui
         port =
                 ntohs_mmt_bytestream_to_number
                 (&packet->line[line_idx].ptr[j], packet->payload_packet_len - j, &j);
-        MMT_LOG(PROTO_IRC, MMT_LOG_TRACE, "port %u.",
-                port);
         j = k;
         // hier jetztberlegen, wie die ports abgespeichert werden sollen
-        if (src->irc_number_of_port < 16)
-            MMT_LOG(PROTO_IRC, MMT_LOG_TRACE,
-                "src->irc_number_of_port < 16.");
         mmt_irc_save_dcc_port(src, port, packet->tick_timestamp,
                 "jjeeeeeeeeeeeeeeeeeeeeeeeee");
         if (dst == NULL) {
@@ -574,8 +530,6 @@ static uint8_t mmt_irc_read_dcc_ports(ipacket_t * ipacket, uint16_t line_idx, ui
     if (dst != NULL) {
         port = ntohs_mmt_bytestream_to_number
                 (&packet->line[line_idx].ptr[j], packet->payload_packet_len - j, &j);
-        MMT_LOG(PROTO_IRC, MMT_LOG_TRACE, "port %u.",
-                port);
         // hier das gleiche wie oben.
         /* hier werden 16 ports pro irc flows mitgespeichert. knnte man denn nicht ein-
          * fach an die dst oder src einen flag setzten, dass dieser port fr eine bestimmte
@@ -601,14 +555,12 @@ static void mmt_irc_scan_dcc_args(ipacket_t * ipacket, uint16_t line_idx, uint16
             continue;
         }
         if (mmt_memcmp(&packet->line[line_idx].ptr[j + 1], "xdcc ", 5) == 0) {
-            MMT_LOG(PROTO_IRC, MMT_LOG_TRACE, "xdcc should match.");
         }
         j += 2;
         if (mmt_memcmp(&packet->line[line_idx].ptr[j], "DCC ", 4) != 0) {
             continue;
         }
         j += 4;
-        MMT_LOG(PROTO_IRC, MMT_LOG_TRACE, "found DCC.");
         if (!(mmt_memcmp(&packet->line[line_idx].ptr[j], "SEND ", 5) == 0
                 || (mmt_memcmp(&packet->line[line_idx].ptr[j], "CHAT", 4) == 0)
                 || (mmt_memcmp(&packet->line[line_idx].ptr[j], "chat", 4) == 0)
@@ -616,8 +568,6 @@ static void mmt_irc_scan_dcc_args(ipacket_t * ipacket, uint16_t line_idx, uint16
                 || (mmt_memcmp(&packet->line[line_idx].ptr[j], "TSEND", 5) == 0))) {
             continue;
         }
-        MMT_LOG(PROTO_IRC, MMT_LOG_TRACE,
-                "found CHAT,chat,sslchat,TSEND.");
         j += 4;
 
         while (packet->line[line_idx].len > j &&
@@ -630,11 +580,9 @@ static void mmt_irc_scan_dcc_args(ipacket_t * ipacket, uint16_t line_idx, uint16
 
             if (packet->line[line_idx].ptr[j] == ' ') {
                 (*space)++;
-                MMT_LOG(PROTO_IRC, MMT_LOG_TRACE, "space %u.", *space);
             }
             if (*space == 3) {
                 j++;
-                MMT_LOG(PROTO_IRC, MMT_LOG_TRACE, "read port.");
                 if (mmt_irc_read_dcc_ports(ipacket, line_idx, j)) {
                     break;
                 }
@@ -655,7 +603,6 @@ static void mmt_irc_process_detected(ipacket_t * ipacket) {
     uint8_t space = 0;
     uint8_t have_privmsg = 0;
 
-    MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "detected_irc:");
 
     if (flow->detected_protocol_stack[0] != PROTO_IRC) {
         return;
@@ -676,28 +623,21 @@ static void mmt_irc_process_detected(ipacket_t * ipacket) {
     }
     for (i = 0; i < packet->parsed_lines; i++) {
         if (packet->line[i].len > 6 && mmt_memcmp(packet->line[i].ptr, "NOTICE ", 7) == 0) {
-            MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "NOTICE");
             for (j = 7; j < packet->line[i].len - 8; j++) {
                 if (packet->line[i].ptr[j] == ':') {
                     if (mmt_memcmp(&packet->line[i].ptr[j + 1], "DCC SEND ", 9) == 0
                             || mmt_memcmp(&packet->line[i].ptr[j + 1], "DCC CHAT ", 9) == 0) {
-                        MMT_LOG(PROTO_IRC, MMT_LOG_TRACE,
-                                "found NOTICE and DCC CHAT or DCC SEND.");
                     }
                 }
             }
         }
         have_privmsg = 0;
         if (packet->payload_packet_len > 0 && packet->payload[0] == 0x3a /* 0x3a = ':' */) {
-            MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "3a");
             for (j = 1; j < packet->line[i].len - 9; j++) {
                 if (packet->line[i].ptr[j] == ' ') {
                     j++;
                     if (packet->line[i].ptr[j] == 'P') {
-                        MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "P");
                         j++;
-                        if (mmt_memcmp(&packet->line[i].ptr[j], "RIVMSG ", 7) == 0)
-                            MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "RIVMSG");
                         h = j + 7;
                         have_privmsg = 1;
                         break;
@@ -708,7 +648,6 @@ static void mmt_irc_process_detected(ipacket_t * ipacket) {
         if (have_privmsg
                 || (packet->line[i].len > 7 && (mmt_memcmp(packet->line[i].ptr, "PRIVMSG ", 8) == 0))) {
             if (!have_privmsg) {
-                MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "PRIVMSG	");
                 h = 7;
             }
             mmt_irc_scan_dcc_args(ipacket, i, h, &space);
@@ -755,7 +694,6 @@ static uint8_t mmt_irc_scan_command_stage(ipacket_t * ipacket) {
             if (packet->line[i].ptr[0] == ':') {
                 flow->l4.tcp.irc_3a_counter++;
                 if (flow->l4.tcp.irc_3a_counter == 7) { /* ':' == 0x3a */
-                    MMT_LOG(PROTO_IRC, MMT_LOG_TRACE, "0x3a. seven times. found irc.");
                     mmt_int_irc_add_connection(ipacket);
                     mmt_irc_process_detected(ipacket);
                     return 1;
@@ -763,7 +701,6 @@ static uint8_t mmt_irc_scan_command_stage(ipacket_t * ipacket) {
             }
         }
         if (flow->l4.tcp.irc_3a_counter == 7) { /* ':' == 0x3a */
-            MMT_LOG(PROTO_IRC, MMT_LOG_TRACE, "0x3a. seven times. found irc.");
             mmt_int_irc_add_connection(ipacket);
             mmt_irc_process_detected(ipacket);
             return 1;
@@ -779,19 +716,14 @@ static uint8_t mmt_irc_scan_command_stage(ipacket_t * ipacket) {
             || (mmt_memcmp(packet->payload, "NOTICE ", 7) == 0)
             || (mmt_memcmp(packet->payload, "PRIVMSG ", 8) == 0)
             || (mmt_memcmp(packet->payload, "VERSION ", 8) == 0)) {
-        MMT_LOG(PROTO_IRC, MMT_LOG_TRACE,
-                "USER, NICK, PASS, NOTICE, PRIVMSG one time");
         if (flow->l4.tcp.irc_stage == 2) {
-            MMT_LOG(PROTO_IRC, MMT_LOG_TRACE, "found irc");
             mmt_int_irc_add_connection(ipacket);
             flow->l4.tcp.irc_stage = 3;
         }
         if (flow->l4.tcp.irc_stage == 1) {
-            MMT_LOG(PROTO_IRC, MMT_LOG_TRACE, "second time, stage=2");
             flow->l4.tcp.irc_stage = 2;
         }
         if (flow->l4.tcp.irc_stage == 0) {
-            MMT_LOG(PROTO_IRC, MMT_LOG_TRACE, "first time, stage=1");
             flow->l4.tcp.irc_stage = 1;
         }
         /* irc packets can have either windows line breaks (0d0a) or unix line breaks (0a) */
@@ -799,11 +731,7 @@ static uint8_t mmt_irc_scan_command_stage(ipacket_t * ipacket) {
                 && packet->payload[packet->payload_packet_len - 1] == 0x0a) {
             mmt_parse_packet_line_info(ipacket);
             if (packet->parsed_lines > 1) {
-                MMT_LOG(PROTO_IRC, MMT_LOG_TRACE,
-                        "packet contains more than one line");
                 if (mmt_irc_line_has_second_signal(packet->line, packet->parsed_lines)) {
-                    MMT_LOG(PROTO_IRC,
-                            MMT_LOG_TRACE, "two icq signal words in the same packet");
                     mmt_int_irc_add_connection(ipacket);
                     flow->l4.tcp.irc_stage = 3;
                     return 1;
@@ -812,11 +740,7 @@ static uint8_t mmt_irc_scan_command_stage(ipacket_t * ipacket) {
         } else if (packet->payload[packet->payload_packet_len - 1] == 0x0a) {
             mmt_parse_packet_line_info_unix(ipacket);
             if (packet->parsed_unix_lines > 1) {
-                MMT_LOG(PROTO_IRC, MMT_LOG_TRACE,
-                        "packet contains more than one line");
                 if (mmt_irc_line_has_second_signal(packet->unix_line, packet->parsed_unix_lines)) {
-                    MMT_LOG(PROTO_IRC, MMT_LOG_TRACE,
-                            "two icq signal words in the same packet");
                     mmt_int_irc_add_connection(ipacket);
                     flow->l4.tcp.irc_stage = 3;
                     return 1;
@@ -858,8 +782,6 @@ static uint8_t mmt_irc_check_http_post(ipacket_t * ipacket, uint16_t * http_cont
             && (mmt_check_for_IRC_traces(packet->http_url_name.ptr, packet->http_url_name.len)))
             || ((packet->referer_line.ptr)
             && (mmt_check_for_IRC_traces(packet->referer_line.ptr, packet->referer_line.len)))) {
-        MMT_LOG(PROTO_IRC, MMT_LOG_TRACE,
-                "IRC detected from the Http URL/ Referer header ");
         flow->l4.tcp.irc_stage = 1;
         // HTTP POST Request body is not in the same packet.
         if (!*http_content_ptr_len) {
@@ -884,7 +806,6 @@ static uint8_t mmt_irc_check_http_login(ipacket_t * ipacket, uint16_t http_conte
             || (((packet->payload_packet_len - http_content_ptr_len) > 5)
             && (mmt_memcmp(packet->payload + http_content_ptr_len, "item=", 5) == 0)
             && (mmt_check_for_cmd(ipacket) != 0))) {
-        MMT_LOG(PROTO_IRC, MMT_LOG_TRACE, "IRC Nickname, cmd,  one time");
         mmt_int_irc_add_connection(ipacket);
         return 1;
     }
@@ -897,15 +818,12 @@ void mmt_classify_irc_tcp(ipacket_t * ipacket, unsigned index) {
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
     uint16_t http_content_ptr_len = 0;
 
-    MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "irc : search irc\n");
     if (flow->detected_protocol_stack[0] != PROTO_IRC && ipacket->session->data_packet_count > 70) {
-        MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "exclude irc, packet_counter > 70\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_IRC);
         return;
     }
     if (flow->detected_protocol_stack[0] != PROTO_IRC && ipacket->session->data_packet_count > 30 &&
             flow->l4.tcp.irc_stage2 == 0) {
-        MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "packet_counter > 30, exclude irc.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_IRC);
         return;
     }

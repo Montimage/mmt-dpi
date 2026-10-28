@@ -165,7 +165,7 @@ rules/common.mk:100-127	^# BUILD=asan to compile with AddressSanitizer	^endif	th
 rules/common.mk:120-127	^ifeq \(\$\(BUILD\),asan\)	^endif	the ASan+UBSan flag set the suites mirror	\-fsanitize=address,undefined
 rules/common.mk:129-157	^# BUILD=tsan to compile with ThreadSanitizer	^endif	the BUILD=tsan profile is defined here	\-fsanitize=thread
 rules/common.mk:150-157	^ifeq \(\$\(BUILD\),tsan\)	^endif	the TSan flag set the suites mirror	\-fsanitize=thread
-rules/common.mk:159-171	^# SHOWLOG = 1	^endif	SHOWLOG=1 enables MMT_LOG() output	\-DDEBUG
+rules/common.mk:159-171	^# SHOWLOG = 1	^endif	SHOWLOG=1 compiles in the debug-level log lines	\-DDEBUG
 rules/common.mk:201-203	^ifdef ENABLESEC	^endif	ENABLESEC selects the fuzz include directory	SDKINC_FUZZ
 rules/common.mk:225-228	^ifdef ENABLESEC	^endif	ENABLESEC names the two optional libraries	LIBSECURITY
 rules/common.mk:251-265	^# Extra diagnostic warnings	^MMT_WARN_FLAGS \?=	extra diagnostics are deliberately not -Werror	NOT -Werror

@@ -213,18 +213,15 @@ int mmt_check_smb(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-        MMT_LOG(PROTO_SMB, MMT_LOG_DEBUG, "search SMB.\n");
 
         if (packet->tcp->dest == htons(445)
                 && packet->payload_packet_len > (32 + 4 + 4)
                 && (packet->payload_packet_len - 4) == ntohl(get_u32(packet->payload, 0))
                 && get_u32(packet->payload, 4) == htonl(0xff534d42)) {
-            MMT_LOG(PROTO_SMB, MMT_LOG_DEBUG, "found SMB.\n");
             mmt_int_smb_add_connection(ipacket);
             return 1;
         }
 
-        MMT_LOG(PROTO_SMB, MMT_LOG_DEBUG, "exclude SMB.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SMB);
     }
     return 0;

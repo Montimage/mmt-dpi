@@ -28,7 +28,6 @@ void mmt_classify_worldofwarcraft(ipacket_t * ipacket, unsigned index) {
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
     struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
 
-    MMT_LOG(PROTO_WORLDOFWARCRAFT, MMT_LOG_DEBUG, "Search World of Warcraft.\n");
 
     if (packet->tcp != NULL) {
         if ((packet->payload_packet_len > 6 &&
@@ -41,8 +40,6 @@ void mmt_classify_worldofwarcraft(ipacket_t * ipacket, unsigned index) {
                     mmt_memcmp(packet->user_agent_line.ptr, "Blizzard Web Client",
                     19) == 0) {
                 mmt_int_worldofwarcraft_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
-                MMT_LOG(PROTO_WORLDOFWARCRAFT, MMT_LOG_DEBUG,
-                        "World of Warcraft: Web Client found\n");
                 return;
             }
         }
@@ -57,22 +54,18 @@ void mmt_classify_worldofwarcraft(ipacket_t * ipacket, unsigned index) {
                     && mmt_memcmp(&packet->host_line.ptr[packet->host_line.len - 19],
                     "worldofwarcraft.com", 19) == 0) {
                 mmt_int_worldofwarcraft_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
-                MMT_LOG(PROTO_WORLDOFWARCRAFT, MMT_LOG_DEBUG,
-                        "World of Warcraft: Web Client found\n");
                 return;
             }
         }
         if (packet->payload_packet_len == 50 && mmt_memcmp(&packet->payload[2], "WORLD OF WARCRAFT CONNECTION",
                 28) == 0) {
             mmt_int_worldofwarcraft_add_connection(ipacket, MMT_REAL_PROTOCOL);
-            MMT_LOG(PROTO_WORLDOFWARCRAFT, MMT_LOG_DEBUG, "World of Warcraft: Login found\n");
             return;
         }
         if (packet->tcp->dest == htons(3724) && packet->payload_packet_len < 70
                 && packet->payload_packet_len > 40 && (mmt_memcmp(&packet->payload[4], "WoW", 3) == 0
                 || mmt_memcmp(&packet->payload[5], "WoW", 3) == 0)) {
             mmt_int_worldofwarcraft_add_connection(ipacket, MMT_REAL_PROTOCOL);
-            MMT_LOG(PROTO_WORLDOFWARCRAFT, MMT_LOG_DEBUG, "World of Warcraft: Login found\n");
             return;
         }
 
@@ -80,8 +73,6 @@ void mmt_classify_worldofwarcraft(ipacket_t * ipacket, unsigned index) {
             if (packet->tcp->source == htons(3724)
                     && packet->payload_packet_len == 8 && get_u32(packet->payload, 0) == htonl(0x0006ec01)) {
                 mmt_int_worldofwarcraft_add_connection(ipacket, MMT_REAL_PROTOCOL);
-                MMT_LOG(PROTO_WORLDOFWARCRAFT,
-                        MMT_LOG_DEBUG, "World of Warcraft: connection detected\n");
                 return;
             }
 
@@ -95,16 +86,12 @@ void mmt_classify_worldofwarcraft(ipacket_t * ipacket, unsigned index) {
                     ntohs(get_u16(packet->payload, 0)) == (packet->payload_packet_len - 2)) {
                 if (get_u32(packet->payload, 2) == htonl(0xec010100)) {
 
-                    MMT_LOG(PROTO_WORLDOFWARCRAFT,
-                            MMT_LOG_DEBUG, "probably World of Warcraft, waiting for final packet\n");
                     flow->l4.tcp.wow_stage = 2;
                     return;
                 } else if (packet->payload_packet_len == 41 &&
                         (get_u16(packet->payload, 2) == htons(0x0085) ||
                         get_u16(packet->payload, 2) == htons(0x0034) ||
                         get_u16(packet->payload, 2) == htons(0x1960))) {
-                    MMT_LOG(PROTO_WORLDOFWARCRAFT,
-                            MMT_LOG_DEBUG, "maybe World of Warcraft, need next\n");
                     flow->l4.tcp.wow_stage = 1;
                     return;
                 }
@@ -123,21 +110,15 @@ void mmt_classify_worldofwarcraft(ipacket_t * ipacket, unsigned index) {
                     || mmt_memcmp(&packet->payload[packet->payload_packet_len - 30],
                     "\x94\xec\xff\xfd\x67\x62\xd4\x67\xfb\xf9\xdd\xbd\xfd\x01\xc0\x8f\xf9\x81", 18) == 0)) {
                 mmt_int_worldofwarcraft_add_connection(ipacket, MMT_REAL_PROTOCOL);
-                MMT_LOG(PROTO_WORLDOFWARCRAFT,
-                        MMT_LOG_DEBUG, "World of Warcraft: connection detected\n");
                 return;
             }
             if (packet->payload_packet_len > 32 &&
                     ntohs(get_u16(packet->payload, 0)) == (packet->payload_packet_len - 2)) {
                 if (get_u16(packet->payload, 4) == 0) {
 
-                    MMT_LOG(PROTO_WORLDOFWARCRAFT,
-                            MMT_LOG_DEBUG, "probably World of Warcraft, waiting for final packet\n");
                     flow->l4.tcp.wow_stage = 2;
                     return;
                 } else if (get_u32(packet->payload, 2) == htonl(0x12050000)) {
-                    MMT_LOG(PROTO_WORLDOFWARCRAFT,
-                            MMT_LOG_DEBUG, "probably World of Warcraft, waiting for final packet\n");
                     flow->l4.tcp.wow_stage = 2;
                     return;
                 }
@@ -147,16 +128,11 @@ void mmt_classify_worldofwarcraft(ipacket_t * ipacket, unsigned index) {
         if (flow->l4.tcp.wow_stage == 2) {
             if (packet->payload_packet_len == 4) {
                 mmt_int_worldofwarcraft_add_connection(ipacket, MMT_REAL_PROTOCOL);
-                MMT_LOG(PROTO_WORLDOFWARCRAFT,
-                        MMT_LOG_DEBUG, "World of Warcraft: connection detected\n");
                 return;
             } else if (packet->payload_packet_len > 4 && packet->payload_packet_len <= 16 && packet->payload[4] == 0x0c) {
                 mmt_int_worldofwarcraft_add_connection(ipacket, MMT_REAL_PROTOCOL);
-                MMT_LOG(PROTO_WORLDOFWARCRAFT,
-                        MMT_LOG_DEBUG, "World of Warcraft: connection detected\n");
                 return;
             } else if (ipacket->session->data_packet_count < 3) {
-                MMT_LOG(PROTO_WORLDOFWARCRAFT, MMT_LOG_DEBUG, "waiting for final packet\n");
                 return;
             }
         }
@@ -167,8 +143,6 @@ void mmt_classify_worldofwarcraft(ipacket_t * ipacket, unsigned index) {
                     get_u32(packet->payload, 0) == htonl(0x40000aed) && get_u32(packet->payload, 4) == htonl(0xea070aed)) {
 
                 mmt_int_worldofwarcraft_add_connection(ipacket, MMT_REAL_PROTOCOL);
-                MMT_LOG(PROTO_WORLDOFWARCRAFT,
-                        MMT_LOG_DEBUG, "World of Warcraft: connection detected\n");
                 return;
             }
         }

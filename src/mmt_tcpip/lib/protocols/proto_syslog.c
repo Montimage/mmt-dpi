@@ -32,14 +32,12 @@ static int mmt_int_is_syslog_packet(struct mmt_tcpip_internal_packet_struct *pac
     /* --- "last message repeated" --- */
     if (i + sizeof("last message") - 1 <= payload_len &&
             mmt_memcmp(packet->payload + i, "last message", sizeof("last message") - 1) == 0) {
-        MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "found syslog by 'last message' string.\n");
         return 1;
     }
 
     /* --- "snort: " prefix --- */
     if (i + sizeof("snort: ") - 1 <= payload_len &&
             mmt_memcmp(packet->payload + i, "snort: ", sizeof("snort: ") - 1) == 0) {
-        MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "found syslog by 'snort: ' string.\n");
         return 1;
     }
 
@@ -62,8 +60,6 @@ static int mmt_int_is_syslog_packet(struct mmt_tcpip_internal_packet_struct *pac
                          isdigit(packet->payload[i + 1]) &&
                          isdigit(packet->payload[i + 2]) &&
                          isdigit(packet->payload[i + 3]))) {
-                    MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG,
-                            "found syslog by RFC 5424 version+year pattern.\n");
                     return 1;
                 }
             }
@@ -84,7 +80,6 @@ static int mmt_int_is_syslog_packet(struct mmt_tcpip_internal_packet_struct *pac
              mmt_mem_cmp(&packet->payload[i], "Oct", 3) == 0 ||
              mmt_mem_cmp(&packet->payload[i], "Nov", 3) == 0 ||
              mmt_mem_cmp(&packet->payload[i], "Dec", 3) == 0)) {
-            MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "a month-shortname following: syslog detected.\n");
             return 1;
         }
 
@@ -109,8 +104,6 @@ static int mmt_int_is_syslog_packet(struct mmt_tcpip_internal_packet_struct *pac
                     if (!on_port_514)
                         return 0;
                     /* On port 514, be lenient: just accept PRI header */
-                    MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG,
-                            "found syslog by lenient PRI header on port 514.\n");
                     return 1;
                 }
 
@@ -124,7 +117,6 @@ static int mmt_int_is_syslog_packet(struct mmt_tcpip_internal_packet_struct *pac
                     }
                 }
 
-                MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "found syslog by hostname/tag pattern.\n");
                 return 1;
             }
         } else if (isalnum(packet->payload[i])) {
@@ -140,8 +132,6 @@ static int mmt_int_is_syslog_packet(struct mmt_tcpip_internal_packet_struct *pac
                     break;
                 if (!on_port_514)
                     return 0;
-                MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG,
-                        "found syslog by lenient PRI header on port 514.\n");
                 return 1;
             }
 
@@ -153,14 +143,12 @@ static int mmt_int_is_syslog_packet(struct mmt_tcpip_internal_packet_struct *pac
                 }
             }
 
-            MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "found syslog by hostname/tag pattern.\n");
             return 1;
         }
     }
 
     /* --- Port 514 lenient fallback: valid PRI header is enough --- */
     if (on_port_514) {
-        MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "found syslog by lenient PRI header on port 514.\n");
         return 1;
     }
 
@@ -209,7 +197,6 @@ static void mmt_int_classify_syslog(ipacket_t * ipacket,
                                      struct mmt_internal_tcpip_session_struct *flow) {
     uint32_t i;
 
-    MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "search syslog\n");
 
     /* Issue #192 (F-BUG-054): bound every payload read by what was actually
      * captured, not by payload_packet_len alone — it derives from the
@@ -225,29 +212,24 @@ static void mmt_int_classify_syslog(ipacket_t * ipacket,
     /* Basic sanity: payload length and must start with '<' */
     if (payload_len <= 20 || payload_len > 1024 ||
             packet->payload[0] != '<') {
-        MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "no syslog detected.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SYSLOG);
         return;
     }
 
-    MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "checked len>20 and <1024 and first symbol=<.\n");
 
     /* Parse PRI header: <PRI> */
     i = mmt_int_parse_syslog_pri(packet, payload_len);
     if (i == 0) {
-        MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "there is no > following the number.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SYSLOG);
         return;
     }
 
-    MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "a > following the number.\n");
 
     /* Determine if we're on UDP port 514 for lenient detection */
     int on_port_514 = 0;
     if (packet->udp != NULL) {
         if (packet->udp->dest == htons(514) || packet->udp->source == htons(514)) {
             on_port_514 = 1;
-            MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "detected UDP port 514 — lenient detection.\n");
         }
     }
 
@@ -256,7 +238,6 @@ static void mmt_int_classify_syslog(ipacket_t * ipacket,
         return;
     }
 
-    MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "no syslog detected.\n");
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SYSLOG);
 }
 

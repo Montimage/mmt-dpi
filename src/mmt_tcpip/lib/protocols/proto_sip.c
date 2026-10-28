@@ -62,7 +62,6 @@ static void mmt_search_sip_handshake(ipacket_t * ipacket)
         /* search for STUN Turn ChannelData Prefix */
         uint16_t message_len = ntohs(get_u16(packet->payload, 2));
         if (payload_len - 4 == message_len) {
-            MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found STUN TURN ChannelData prefix.\n");
             payload_len -= 4;
             packet_payload += 4;
         }
@@ -81,7 +80,6 @@ static void mmt_search_sip_handshake(ipacket_t * ipacket)
                     if ((mmt_memcmp(packet_payload + 1, "OTIFY ", 6) == 0)
                         && (mmt_memcmp(&packet_payload[7], "SIP:", 4) == 0 || mmt_memcmp(&packet_payload[7], "sip:", 4) == 0)) {
                         
-                        MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip NOTIFY.\n");
                         mmt_int_sip_add_connection(ipacket, PROTO_SIP);
                         check_sip_internal(ipacket);
                         return;
@@ -91,7 +89,6 @@ static void mmt_search_sip_handshake(ipacket_t * ipacket)
                 if ((mmt_memcmp(packet_payload + 1, "otify ", 6) == 0)
                     && (mmt_memcmp(&packet_payload[7], "SIP:", 4) == 0 || mmt_memcmp(&packet_payload[7], "sip:", 4) == 0)) {
 
-                    MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip NOTIFY.\n");
                     mmt_int_sip_add_connection(ipacket, PROTO_SIP);
                     check_sip_internal(ipacket);
                     return;
@@ -102,7 +99,6 @@ static void mmt_search_sip_handshake(ipacket_t * ipacket)
                 if ((mmt_memcmp(packet_payload + 1, "EGISTER ", 8) == 0)
                     && (mmt_memcmp(&packet_payload[9], "SIP:", 4) == 0 || mmt_memcmp(&packet_payload[9], "sip:", 4) == 0)) {
 
-                    MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip REGISTER.\n");
                     mmt_int_sip_add_connection(ipacket, PROTO_SIP);
                     check_sip_internal(ipacket);
                     return;
@@ -113,7 +109,6 @@ static void mmt_search_sip_handshake(ipacket_t * ipacket)
                 if ((mmt_memcmp(packet_payload + 1, "egister ", 8) == 0)
                     && (mmt_memcmp(&packet_payload[9], "SIP:", 4) == 0 || mmt_memcmp(&packet_payload[9], "sip:", 4) == 0)) {
 
-                    MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip REGISTER.\n");
                     mmt_int_sip_add_connection(ipacket, PROTO_SIP);
                     check_sip_internal(ipacket);
                     return;
@@ -123,7 +118,6 @@ static void mmt_search_sip_handshake(ipacket_t * ipacket)
                 case 'I':
                 if ((mmt_memcmp(packet_payload + 1, "NVITE ", 6) == 0)
                     && (mmt_memcmp(&packet_payload[7], "SIP:", 4) == 0 || mmt_memcmp(&packet_payload[7], "sip:", 4) == 0)) {
-                    MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip INVITE.\n");
                     mmt_int_sip_add_connection(ipacket, PROTO_SIP);
                     check_sip_internal(ipacket);
                     return;
@@ -137,7 +131,6 @@ static void mmt_search_sip_handshake(ipacket_t * ipacket)
                  * Compare "nvite " like the uppercase branch. */
                 if ((mmt_memcmp(packet_payload + 1, "nvite ", 6) == 0)
                     && (mmt_memcmp(&packet_payload[7], "SIP:", 4) == 0 || mmt_memcmp(&packet_payload[7], "sip:", 4) == 0)) {
-                    MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip INVITE.\n");
                     mmt_int_sip_add_connection(ipacket, PROTO_SIP);
                     check_sip_internal(ipacket);
                     return;
@@ -150,7 +143,6 @@ static void mmt_search_sip_handshake(ipacket_t * ipacket)
                  * please delete this comment.
                  */
                 if (mmt_memcmp(packet_payload + 1, "IP/2.0 200 OK", 13) == 0) {
-                    MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip SIP/2.0 0K.\n");
                     mmt_int_sip_add_connection(ipacket, PROTO_SIP);
                     check_sip_internal(ipacket);
                     return;
@@ -167,7 +159,6 @@ static void mmt_search_sip_handshake(ipacket_t * ipacket)
                  * re-matched payload[0]. Compare "ip/2.0 200 OK" (13) like
                  * the uppercase branch. */
                 if (mmt_memcmp(packet_payload + 1, "ip/2.0 200 OK", 13) == 0) {
-                    MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip SIP/2.0 0K.\n");
                     mmt_int_sip_add_connection(ipacket, PROTO_SIP);
                     check_sip_internal(ipacket);
                     return;
@@ -179,7 +170,6 @@ static void mmt_search_sip_handshake(ipacket_t * ipacket)
                 if ((mmt_memcmp(packet_payload + 1, "PTIONS ", 7) == 0)
                         && (mmt_memcmp(&packet_payload[8], "SIP:", 4) == 0
                         || mmt_memcmp(&packet_payload[8], "sip:", 4) == 0)) {
-                    MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip OPTIONS.\n");
                     mmt_int_sip_add_connection(ipacket, PROTO_SIP);
                     check_sip_internal(ipacket);
                     return;
@@ -191,7 +181,6 @@ static void mmt_search_sip_handshake(ipacket_t * ipacket)
                 if ((mmt_memcmp(packet_payload + 1, "ptions ", 7) == 0)
                         && (mmt_memcmp(&packet_payload[8], "SIP:", 4) == 0
                         || mmt_memcmp(&packet_payload[8], "sip:", 4) == 0)) {
-                    MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip OPTIONS.\n");
                     mmt_int_sip_add_connection(ipacket, PROTO_SIP);
                     check_sip_internal(ipacket);
                     return;
@@ -205,19 +194,16 @@ static void mmt_search_sip_handshake(ipacket_t * ipacket)
     /* add bitmask for tcp only, some stupid udp programs
      * send a very few (< 10 ) packets before invite (mostly a 0x0a0x0d, but just search the first 3 payload_packets here */
     if (packet->udp != NULL && ipacket->session->data_packet_count < 20) {
-        MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "need next packet.\n");
         return;
     }
 #ifdef PROTO_STUN
     /* for STUN flows we need some more packets */
     if (packet->udp != NULL && flow->detected_protocol_stack[0] == PROTO_STUN && ipacket->session->data_packet_count < 40) {
-        MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "need next STUN packet.\n");
         return;
     }
 #endif
 
     if (payload_len == 4 && get_u32(packet_payload, 0) == 0) {
-        MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "maybe sip. need next packet.\n");
         return;
     }
 #ifdef PROTO_YAHOO
@@ -225,13 +211,11 @@ static void mmt_search_sip_handshake(ipacket_t * ipacket)
             && packet_payload[3] == payload_len - 20 && get_u32(packet_payload, 4) == 0
             && get_u32(packet_payload, 8) == 0) {
         flow->sip_yahoo_voice = 1;
-        MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "maybe sip yahoo. need next packet.\n");
     }
     if (flow->sip_yahoo_voice && ipacket->session->data_packet_count < 10) {
         return;
     }
 #endif
-    MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "exclude sip.\n");
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SIP);
     return;
 
@@ -243,7 +227,6 @@ int mmt_check_sip(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "sip detection...\n");
 
         /* skip marked packets */
         if (packet->detected_protocol_stack[0] != PROTO_SIP) {

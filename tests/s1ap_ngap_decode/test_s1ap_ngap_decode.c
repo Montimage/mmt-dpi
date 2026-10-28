@@ -23,6 +23,9 @@
  *    functions, encode_ngap() NULL-check, act-aware NAS_PDU handling.
  *  - Issue #532: every per-message NGAP decoder reads the UE ids of its
  *    message and encode_ngap() patches new ones into it.
+ *  - Issue #545: malformed S1AP PDUs write nothing to stdout or stderr by
+ *    default (each failure counted by the SDK logger), and with logging on
+ *    their diagnostics go to stderr, rate-limited per call site.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -118,6 +121,94 @@ static void test_s1ap_outer_ok_inner_fail(void) {
 				cases[i].name);
 		CHECK(desc, ret == -1);
 	}
+}
+
+/* ------------------------------------------------------------------ */
+/* Issue #545: malformed PDUs write nothing — S1AP_ERROR/S1AP_WARN     */
+/* used to print one stdout line per malformed PDU. They go through    */
+/* the SDK logger now: off by default, stderr only, rate-limited per   */
+/* call site, every event counted (src/mmt_core/private_include/       */
+/* mmt_log.h).                                                         */
+/* ------------------------------------------------------------------ */
+static char *read_and_unlink(const char *path) {
+	FILE *f = fopen(path, "r");
+	char *buf = calloc(1, 65537);
+	if (f != NULL && buf != NULL)
+		buf[fread(buf, 1, 65536, f)] = '\0';
+	if (f != NULL)
+		fclose(f);
+	unlink(path);
+	return buf;
+}
+
+/* Decodes n malformed PDUs (outer decode fails, then inner IE-list decode
+ * fails) with fds 1 and 2 captured; returns both captures (caller frees). */
+static void decode_malformed_captured(int n, char **out, char **err) {
+	char out_path[] = "/tmp/s1ap_log_out.XXXXXX";
+	char err_path[] = "/tmp/s1ap_log_err.XXXXXX";
+	int fo = mkstemp(out_path), fe = mkstemp(err_path);
+	fflush(stdout);
+	fflush(stderr);
+	int saved_out = dup(1), saved_err = dup(2);
+	dup2(fo, 1);
+	dup2(fe, 2);
+	for (int i = 0; i < n; i++) {
+		s1ap_message_t msg;
+		uint8_t buf[512];
+		memset(&msg, 0, sizeof(msg));
+		memset(buf, 0xFF, 16);
+		(void) s1ap_decode(&msg, buf, 16);           /* outer decode fails */
+		int len = craft_s1ap_inner_fail(buf, sizeof(buf), 0x00,
+				S1ap_ProcedureCode_id_InitialContextSetup);
+		memset(&msg, 0, sizeof(msg));
+		(void) s1ap_decode(&msg, buf, (uint32_t)len); /* inner IE fails */
+	}
+	fflush(stdout);
+	fflush(stderr);
+	dup2(saved_out, 1);
+	dup2(saved_err, 2);
+	close(saved_out);
+	close(saved_err);
+	close(fo);
+	close(fe);
+	*out = read_and_unlink(out_path);
+	*err = read_and_unlink(err_path);
+}
+
+static void test_s1ap_malformed_pdus_silent(void) {
+	const int n = 50;
+	mmt_log_stats_t before, after;
+	char *out, *err;
+	printf("S1AP malformed PDUs through the logger (issue #545):\n");
+
+	mmt_log_get_stats(&before);
+	decode_malformed_captured(n, &out, &err);
+	mmt_log_get_stats(&after);
+	CHECK("logging is off by default", mmt_log_get_level() == MMT_LOG_LEVEL_OFF);
+	CHECK("malformed PDUs write nothing to stdout", out[0] == '\0');
+	CHECK("malformed PDUs write nothing to stderr (logger off)", err[0] == '\0');
+	CHECK("each failure is still counted",
+			(after.events[MMT_LOG_LEVEL_WARN] - before.events[MMT_LOG_LEVEL_WARN])
+			+ (after.events[MMT_LOG_LEVEL_ERROR] - before.events[MMT_LOG_LEVEL_ERROR])
+			>= (uint64_t)(2 * n));
+	CHECK("no line written while off", after.written == before.written);
+	free(out);
+	free(err);
+
+	mmt_log_set_level(MMT_LOG_LEVEL_WARN);
+	mmt_log_get_stats(&before);
+	decode_malformed_captured(n, &out, &err);
+	mmt_log_get_stats(&after);
+	mmt_log_set_level(MMT_LOG_LEVEL_OFF);
+	CHECK("enabled: still nothing on stdout", out[0] == '\0');
+	CHECK("enabled: S1AP diagnostics reach stderr",
+			strstr(err, "[mmt-dpi][W] s1ap_common.c:") != NULL
+			&& strstr(err, "[S1AP] Failed to decode S1AP") != NULL);
+	CHECK("enabled: the flood is rate-limited per call site",
+			after.rate_limited > before.rate_limited
+			&& after.written - before.written < (uint64_t) n);
+	free(out);
+	free(err);
 }
 
 /* ------------------------------------------------------------------ */
@@ -1653,6 +1744,8 @@ static void test_s1ap_rel16_independent_vector(void) {
 }
 
 int main(void) {
+	/* The logger reads MMT_DPI_LOG_LEVEL once: run with its default (off). */
+	unsetenv("MMT_DPI_LOG_LEVEL");
 	test_s1ap_outer_ok_inner_fail();
 	test_s1ap_valid_vectors();
 	test_s1ap_corpus_initial_ue_message();
@@ -1669,6 +1762,7 @@ int main(void) {
 	test_ngap_message_decoders();
 	test_rel16_generation();
 	test_s1ap_rel16_independent_vector();
+	test_s1ap_malformed_pdus_silent();
 
 	printf("\n%d checks, %d failure(s)\n", checks, failures);
 	return failures ? 1 : 0;

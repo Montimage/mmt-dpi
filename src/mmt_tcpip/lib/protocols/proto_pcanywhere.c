@@ -24,8 +24,6 @@ int mmt_check_pcanywhere(ipacket_t * ipacket, unsigned index)
         if (packet->udp != NULL && packet->udp->dest == htons(5632)
                 && packet->payload_packet_len == 2
                 && (mmt_mem_cmp(packet->payload, "NQ", 2) == 0 || mmt_mem_cmp(packet->payload, "ST", 2) == 0)) {
-            MMT_LOG(PROTO_PCANYWHERE, MMT_LOG_DEBUG,
-                    "PC Anywhere name or status query detected.\n");
             mmt_int_pcanywhere_add_connection(ipacket);
             return 1;
         }

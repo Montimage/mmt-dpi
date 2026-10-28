@@ -452,52 +452,43 @@ uint16_t mmt_check_for_email_address(ipacket_t * ipacket, uint16_t counter) {
     bool is_exist = false;
 
     //a.Nghia8.Nguyen@montimage.eu.fr
-    MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "called mmt_check_for_email_address\n");
     //a
     if ( counter < packet->payload_packet_len && is_letter( packet->payload[counter] ) ) {
-        MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "first letter\n");
         counter++;
         //.Nghia8.Nguyen
         while ( packet->payload_packet_len > counter  &&
                 (is_letter( packet->payload[counter] ) || packet->payload[counter] == '.') ) {
-            MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "further letter\n");
             counter ++;
         }
 
         //@
         if (packet->payload_packet_len > counter && packet->payload[counter] == '@') {
-            MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "@\n");
             counter++;
 
             //montimage
             is_exist = false;
             while ( packet->payload_packet_len > counter  && is_letter( packet->payload[counter] ) ) {
-                MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "domain name\n");
                 counter ++;
                 is_exist = true;
             }
 
             //.
             if ( is_exist && packet->payload_packet_len > counter && packet->payload[counter] == '.') {
-                MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, ".\n");
                 counter++;
 
                 //com
                 is_exist = false;
                 while ( packet->payload_packet_len > counter  && is_letter( packet->payload[counter] ) ) {
-                    MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "subdomain name\n");
                     counter ++;
                     is_exist = true;
                 }
 
                 //optional: .xxx.net.fr
                 while ( is_exist && packet->payload_packet_len > counter && packet->payload[counter] == '.') {
-                    MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, ".\n");
                     counter++;
 
                     is_exist = false;
                     while ( packet->payload_packet_len > counter  && is_letter( packet->payload[counter] ) ) {
-                        MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "subdomain name\n");
                         counter ++;
                         is_exist = true;
                     }
@@ -516,13 +507,11 @@ uint16_t _mmt_check_for_email_address(ipacket_t * ipacket, uint16_t counter) {
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
-    MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "called mmt_check_for_email_address\n");
 
     if (packet->payload_packet_len > counter && ((packet->payload[counter] >= 'a' && packet->payload[counter] <= 'z')
             || (packet->payload[counter] >= 'A' && packet->payload[counter] <= 'Z')
             || (packet->payload[counter] >= '0' && packet->payload[counter] <= '9')
             || packet->payload[counter] == '-' || packet->payload[counter] == '_')) {
-        MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "first letter\n");
         counter++;
         while (packet->payload_packet_len > counter
                 && ((packet->payload[counter] >= 'a' && packet->payload[counter] <= 'z')
@@ -530,44 +519,35 @@ uint16_t _mmt_check_for_email_address(ipacket_t * ipacket, uint16_t counter) {
                     || (packet->payload[counter] >= '0' && packet->payload[counter] <= '9')
                     || packet->payload[counter] == '-' || packet->payload[counter] == '_'
                     || packet->payload[counter] == '.')) {
-            MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "further letter\n");
             counter++;
             if (packet->payload_packet_len > counter && packet->payload[counter] == '@') {
-                MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "@\n");
                 counter++;
                 while (packet->payload_packet_len > counter
                         && ((packet->payload[counter] >= 'a' && packet->payload[counter] <= 'z')
                             || (packet->payload[counter] >= 'A' && packet->payload[counter] <= 'Z')
                             || (packet->payload[counter] >= '0' && packet->payload[counter] <= '9')
                             || packet->payload[counter] == '-' || packet->payload[counter] == '_')) {
-                    MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "letter\n");
                     counter++;
                     if (packet->payload_packet_len > counter && packet->payload[counter] == '.') {
-                        MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, ".\n");
                         counter++;
                         if (packet->payload_packet_len > counter + 1
                                 && ((packet->payload[counter] >= 'a' && packet->payload[counter] <= 'z')
                                     && (packet->payload[counter + 1] >= 'a' && packet->payload[counter + 1] <= 'z'))) {
-                            MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "two letters\n");
                             counter += 2;
                             if (packet->payload_packet_len > counter
                                     && (packet->payload[counter] == ' ' || packet->payload[counter] == ';')) {
-                                MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "whitespace1\n");
                                 return counter;
                             } else if (packet->payload_packet_len > counter && packet->payload[counter] >= 'a'
                                        && packet->payload[counter] <= 'z') {
-                                MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "one letter\n");
                                 counter++;
                                 if (packet->payload_packet_len > counter
                                         && (packet->payload[counter] == ' ' || packet->payload[counter] == ';')) {
-                                    MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "whitespace2\n");
                                     return counter;
                                 } else if (packet->payload_packet_len > counter && packet->payload[counter] >= 'a'
                                            && packet->payload[counter] <= 'z') {
                                     counter++;
                                     if (packet->payload_packet_len > counter
                                             && (packet->payload[counter] == ' ' || packet->payload[counter] == ';')) {
-                                        MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "whitespace3\n");
                                         return counter;
                                     } else {
                                         return 0;

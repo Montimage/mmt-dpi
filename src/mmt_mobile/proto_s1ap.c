@@ -297,13 +297,8 @@ static inline void _assign_enb_mme_ip( s1ap_message_t *msg, const ipacket_t * pa
 static inline int _parse_s1ap_packet( s1ap_message_t *msg, const ipacket_t * packet, unsigned proto_index ){
 
 	memset(msg, 0, sizeof(s1ap_message_t));
-//	char string[1000];
-//	proto_hierarchy_to_str( packet->proto_hierarchy, string );
-//	printf("    %s\n", string );
 
 	int offset = get_packet_offset_at_index(packet, proto_index);
-
-//	printf("ipacket id %lu, proto_index: %d, offset: %d\n", packet->packet_id, proto_index, offset );
 
 	//if body of S1AP packet is empty
 	//=> this is the case of PROTO_SCTP_SHUTDOWN and  PROTO_SCTP_SHUTDOWN_COMPLETE protocols
@@ -349,7 +344,6 @@ static inline int _parse_s1ap_packet( s1ap_message_t *msg, const ipacket_t * pac
 		return 0;
 	const uint32_t data_len = packet->p_hdr->caplen - (size_t)offset;
 
-//	printf("ipacket id %lu, proto_index: %d, offset: %d, data_len: %d\n", packet->packet_id, proto_index, offset, data_len );
 	if( data_len == 0 )
 		return 0;
 
@@ -694,7 +688,7 @@ int init_proto_s1ap() {
 	protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_S1AP, PROTO_S1AP_ALIAS);
 
 	if( protocol_struct == NULL ){
-		S1AP_ERROR("Cannot initialize S1AP protocol\n");
+		mmt_stderr_log("[S1AP] Cannot initialize S1AP protocol\n");
 		return 0;
 	}
 
@@ -705,20 +699,20 @@ int init_proto_s1ap() {
 
 	int ret = register_classification_function_with_parent_protocol( PROTO_SCTP_DATA, _classify_s1ap_from_sctp_data, 100 );
 	if( ret == 0 ){
-		S1AP_ERROR("Need mmt_tcpip library containing PROTO_SCTP_DATA having id = %d\n", PROTO_SCTP_DATA);
+		mmt_stderr_log("[S1AP] Need mmt_tcpip library containing PROTO_SCTP_DATA having id = %d\n", PROTO_SCTP_DATA);
 		return 0;
 	}
 
 	//We need to process S1AP after SCTP_SHUTDOWN and SCTP_SHUTDOWN_COPLETE
 	register_classification_function_with_parent_protocol( PROTO_SCTP_SHUTDOWN, _classify_s1ap_from_sctp_shutdown, 100 );
 	if( ret == 0 ){
-		S1AP_ERROR("Need mmt_tcpip library containing PROTO_SCTP_SHUTDOWN having id = %d\n", PROTO_SCTP_SHUTDOWN);
+		mmt_stderr_log("[S1AP] Need mmt_tcpip library containing PROTO_SCTP_SHUTDOWN having id = %d\n", PROTO_SCTP_SHUTDOWN);
 		return 0;
 	}
 
 	register_classification_function_with_parent_protocol( PROTO_SCTP_SHUTDOWN_COMPLETE, _classify_s1ap_from_sctp_shutdown, 100 );
 	if( ret == 0 ){
-		S1AP_ERROR("Need mmt_tcpip library containing PROTO_SCTP_SHUTDOWN_COMPLETE having id = %d\n", PROTO_SCTP_SHUTDOWN_COMPLETE);
+		mmt_stderr_log("[S1AP] Need mmt_tcpip library containing PROTO_SCTP_SHUTDOWN_COMPLETE having id = %d\n", PROTO_SCTP_SHUTDOWN_COMPLETE);
 		return 0;
 	}
 

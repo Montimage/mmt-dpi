@@ -246,7 +246,6 @@ int mmt_check_radius(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-        MMT_LOG(PROTO_RADIUS, MMT_LOG_DEBUG, "radius detection...\n");
 
         uint32_t payload_len = packet->payload_packet_len;
 
@@ -258,7 +257,6 @@ int mmt_check_radius(ipacket_t * ipacket, unsigned index) {
         if ((payload_len >= 20)
                 && mmt_radius_code_is_valid(h->code)
                 && (ntohs(h->len) == payload_len)) {
-            MMT_LOG(PROTO_RADIUS, MMT_LOG_DEBUG, "Found radius.\n");
             mmt_internal_add_connection(ipacket, PROTO_RADIUS, MMT_REAL_PROTOCOL);
             return 1;
         }

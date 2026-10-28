@@ -17,7 +17,6 @@ int mmt_check_spotify(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        MMT_LOG(PROTO_SPOTIFY, MMT_LOG_DEBUG, "spotify detection...\n");
         struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
         struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
@@ -31,7 +30,6 @@ int mmt_check_spotify(ipacket_t * ipacket, unsigned index) {
              */
             if (((ntohl(packet->iph->saddr) & 0xFFFFFC00) == 0x4E1F0800)
                     || ((ntohl(packet->iph->daddr) & 0xFFFFFC00) == 0x4E1F0800)) {
-                MMT_LOG(PROTO_SPOTIFY, MMT_LOG_DEBUG, "Found spotify.\n");
                 mmt_internal_add_connection(ipacket, PROTO_SPOTIFY, MMT_REAL_PROTOCOL);
                 return 1;
             }
@@ -51,7 +49,6 @@ int mmt_check_spotify(ipacket_t * ipacket, unsigned index) {
                     //Now check if SPOTIFY was already detected for the source address
                     if (src != NULL && MMT_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, PROTO_SPOTIFY)) {
                         flow->l4.tcp.spotify_stage = 2;
-                        MMT_LOG(PROTO_SPOTIFY, MMT_LOG_DEBUG, "Found spotify.\n");
                         mmt_internal_add_connection(ipacket, PROTO_SPOTIFY, MMT_REAL_PROTOCOL);
                         return 1;
                     }

@@ -20,39 +20,32 @@ int mmt_check_florensia_tcp(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-        MMT_LOG(PROTO_FLORENSIA, MMT_LOG_DEBUG, "search florensia.\n");
 
         if (packet->payload_packet_len == 5 && get_l16(packet->payload, 0) == packet->payload_packet_len
                 && packet->payload[2] == 0x65 && packet->payload[4] == 0xff) {
             if (flow->florensia_stage == 1) {
-                MMT_LOG(PROTO_FLORENSIA, MMT_LOG_DEBUG, "found florensia.\n");
                 mmt_florensia_add_connection(ipacket);
                 return 1;
             }
-            MMT_LOG(PROTO_FLORENSIA, MMT_LOG_DEBUG, "maybe florensia -> stage is set to 1.\n");
             flow->florensia_stage = 1;
             return 4;
         }
         if (packet->payload_packet_len > 8 && get_l16(packet->payload, 0) == packet->payload_packet_len
                 && get_u16(packet->payload, 2) == htons(0x0201) && get_u32(packet->payload, 4) == htonl(0xFFFFFFFF)) {
-            MMT_LOG(PROTO_FLORENSIA, MMT_LOG_DEBUG, "maybe florensia -> stage is set to 1.\n");
             flow->florensia_stage = 1;
             return 4;
         }
         if (packet->payload_packet_len == 406 && get_l16(packet->payload, 0) == packet->payload_packet_len
                 && packet->payload[2] == 0x63) {
-            MMT_LOG(PROTO_FLORENSIA, MMT_LOG_DEBUG, "maybe florensia -> stage is set to 1.\n");
             flow->florensia_stage = 1;
             return 4;
         }
         if (packet->payload_packet_len == 12 && get_l16(packet->payload, 0) == packet->payload_packet_len
                 && get_u16(packet->payload, 2) == htons(0x0301)) {
             if (flow->florensia_stage == 1) {
-                MMT_LOG(PROTO_FLORENSIA, MMT_LOG_DEBUG, "found florensia.\n");
                 mmt_florensia_add_connection(ipacket);
                 return 1;
             }
-            MMT_LOG(PROTO_FLORENSIA, MMT_LOG_DEBUG, "maybe florensia -> stage is set to 1.\n");
             flow->florensia_stage = 1;
             return 4;
         }
@@ -60,24 +53,20 @@ int mmt_check_florensia_tcp(ipacket_t * ipacket, unsigned index) {
         if (flow->florensia_stage == 1) {
             if (packet->payload_packet_len == 8 && get_l16(packet->payload, 0) == packet->payload_packet_len
                     && get_u16(packet->payload, 2) == htons(0x0302) && get_u32(packet->payload, 4) == htonl(0xFFFFFFFF)) {
-                MMT_LOG(PROTO_FLORENSIA, MMT_LOG_DEBUG, "found florensia asymmetrically.\n");
                 mmt_florensia_add_connection(ipacket);
                 return 1;
             }
             if (packet->payload_packet_len == 24 && get_l16(packet->payload, 0) == packet->payload_packet_len
                     && get_u16(packet->payload, 2) == htons(0x0202)
                     && get_u32(packet->payload, packet->payload_packet_len - 4) == htonl(0xFFFFFFFF)) {
-                MMT_LOG(PROTO_FLORENSIA, MMT_LOG_DEBUG, "found florensia.\n");
                 mmt_florensia_add_connection(ipacket);
                 return 1;
             }
             if (ipacket->session->data_packet_count < 10 && get_l16(packet->payload, 0) == packet->payload_packet_len) {
-                MMT_LOG(PROTO_FLORENSIA, MMT_LOG_DEBUG, "maybe florensia.\n");
                 return 4;
             }
         }
 
-        MMT_LOG(PROTO_FLORENSIA, MMT_LOG_DEBUG, "exclude florensia.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_FLORENSIA);
     }
     return 0;
@@ -91,22 +80,18 @@ int mmt_check_florensia_udp(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-        MMT_LOG(PROTO_FLORENSIA, MMT_LOG_DEBUG, "search florensia.\n");
 
         if (flow->florensia_stage == 0 && packet->payload_packet_len == 6
                 && get_u16(packet->payload, 0) == ntohs(0x0503) && get_u32(packet->payload, 2) == htonl(0xFFFF0000)) {
-            MMT_LOG(PROTO_FLORENSIA, MMT_LOG_DEBUG, "maybe florensia -> stage is set to 1.\n");
             flow->florensia_stage = 1;
             return 4;
         }
         if (flow->florensia_stage == 1 && packet->payload_packet_len == 8
                 && get_u16(packet->payload, 0) == ntohs(0x0500) && get_u16(packet->payload, 4) == htons(0x4191)) {
-            MMT_LOG(PROTO_FLORENSIA, MMT_LOG_DEBUG, "found florensia.\n");
             mmt_florensia_add_connection(ipacket);
             return 1;
         }
 
-        MMT_LOG(PROTO_FLORENSIA, MMT_LOG_DEBUG, "exclude florensia.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_FLORENSIA);
     }
     return 0;

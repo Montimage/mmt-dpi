@@ -14,7 +14,6 @@ int mmt_check_sflow(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        MMT_LOG(PROTO_SFLOW, MMT_LOG_DEBUG, "sflow detection...\n");
         uint32_t payload_len = packet->payload_packet_len;
 
         /* sFlow v2/v5 datagram header: version(4) agent_address_type(4)
@@ -34,7 +33,6 @@ int mmt_check_sflow(ipacket_t * ipacket, unsigned index) {
                 && ((packet->payload[3] == 2) || (packet->payload[3] == 5))
                 && (addr_type == 1 || addr_type == 2)
                 && (payload_len >= min_len)) {
-            MMT_LOG(PROTO_SFLOW, MMT_LOG_DEBUG, "Found sflow.\n");
             mmt_internal_add_connection(ipacket, PROTO_SFLOW, MMT_REAL_PROTOCOL);
             return 1;
         }

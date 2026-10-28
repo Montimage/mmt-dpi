@@ -26,7 +26,6 @@ int mmt_check_dcerpc(ipacket_t * ipacket, unsigned index) {
                 && (packet->payload[0] == 0x05) /* version 5 */
                 && (packet->payload[1] < 16)    /* Packet type (was payload[2]) */
                 ) {
-            MMT_LOG(MMT_PROTOCOL_DCERPC, MMT_LOG_DEBUG, "DCERPC match\n");
             mmt_int_dcerpc_add_connection(ipacket);
             return 1;
         }

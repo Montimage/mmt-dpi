@@ -44,10 +44,8 @@ static mmt_int_stun_result_t mmt_int_check_stun(ipacket_t * ipacket, const uint8
         uint8_t mod;
         uint8_t old = 1;
         uint8_t padding = 0;
-        MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "len and type match.\n");
 
         if (payload_length == 20) {
-            MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "found stun.\n");
             return MMT_IS_STUN;
         }
 
@@ -68,7 +66,6 @@ static mmt_int_stun_result_t mmt_int_check_stun(ipacket_t * ipacket, const uint8
                     || payload[a + 1] == 0x2a || payload[a + 1] == 0x29 || payload[a + 1] == 0x50
                     || payload[a + 1] == 0x54 || payload[a + 1] == 0x55)))) {
 
-                MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "attribute match.\n");
 
                 a += ((payload[a + 2] << 8) + payload[a + 3] + 4);
                 mod = a % 4;
@@ -76,7 +73,6 @@ static mmt_int_stun_result_t mmt_int_check_stun(ipacket_t * ipacket, const uint8
                     padding = 4 - mod;
                 }
                 if (a == payload_length || (padding && (a + padding) == payload_length)) {
-                    MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "found stun.\n");
                     return MMT_IS_STUN;
                 }
 
@@ -96,7 +92,6 @@ static mmt_int_stun_result_t mmt_int_check_stun(ipacket_t * ipacket, const uint8
                     || payload[a + 1 + padding] == 0x29 || payload[a + 1 + padding] == 0x50
                     || payload[a + 1 + padding] == 0x54 || payload[a + 1 + padding] == 0x55)))) {
 
-                MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "New STUN - attribute match.\n");
 
                 old = 0;
                 a += ((payload[a + 2 + padding] << 8) + payload[a + 3 + padding] + 4);
@@ -106,7 +101,6 @@ static mmt_int_stun_result_t mmt_int_check_stun(ipacket_t * ipacket, const uint8
                     a += 4 - mod;
                 }
                 if (a == payload_length) {
-                    MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "found stun.\n");
                     return MMT_IS_STUN;
                 }
             } else {
@@ -126,7 +120,6 @@ int mmt_check_stun_tcp(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-        MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "search stun.\n");
 
         /* STUN may be encapsulated in TCP packets */
         if (packet->payload_packet_len >= 2 + 20 &&
@@ -137,12 +130,10 @@ int mmt_check_stun_tcp(ipacket_t * ipacket, unsigned index) {
              * keeps the check strict against false positives. */
             if (mmt_int_check_stun(ipacket, packet->payload + 2, packet->payload_packet_len - 2) ==
                     MMT_IS_STUN) {
-                MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "found TCP stun.\n");
                 mmt_int_stun_add_connection(ipacket);
                 return 1;
             }
         }
-        MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "exclude stun.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_STUN);
     }
     return 0;
@@ -358,10 +349,8 @@ int mmt_check_stun_udp(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-        MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "search stun.\n");
 
         if (mmt_int_check_stun(ipacket, packet->payload, packet->payload_packet_len) == MMT_IS_STUN) {
-            MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "found UDP stun.\n");
             mmt_int_stun_add_connection(ipacket);
             check_stun_internal(ipacket);
             return 4;
@@ -372,7 +361,6 @@ int mmt_check_stun_udp(ipacket_t * ipacket, unsigned index) {
             }
         }
 
-        MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "exclude stun.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_STUN);
     }
     return 0;

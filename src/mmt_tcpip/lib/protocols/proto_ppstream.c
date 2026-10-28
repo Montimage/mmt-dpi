@@ -23,12 +23,10 @@ int mmt_check_ppstream_tcp(ipacket_t * ipacket, unsigned index) {
         /* check TCP Connections -> Videodata */
         if (packet->payload_packet_len >= 60 && get_u32(packet->payload, 52) == 0
                 && mmt_memcmp(packet->payload, "PSProtocol\x0", 11) == 0) {
-            MMT_LOG(PROTO_PPSTREAM, MMT_LOG_DEBUG, "found ppstream over tcp.\n");
             mmt_int_ppstream_add_connection(ipacket);
             return 1;
         }
 
-        MMT_LOG(PROTO_PPSTREAM, MMT_LOG_DEBUG, "exclude ppstream.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_PPSTREAM);
 
     }
@@ -49,8 +47,6 @@ int mmt_check_ppstream_udp(ipacket_t * ipacket, unsigned index) {
                 || (packet->payload_packet_len >= 6 && packet->payload_packet_len - 6 == get_l16(packet->payload, 0)))) {
             flow->l4.udp.ppstream_stage++;
             if (flow->l4.udp.ppstream_stage == 5) {
-                MMT_LOG(PROTO_PPSTREAM, MMT_LOG_DEBUG,
-                        "found ppstream over udp pattern len, 43.\n");
                 mmt_int_ppstream_add_connection(ipacket);
                 return 1;
             }
@@ -66,7 +62,6 @@ int mmt_check_ppstream_udp(ipacket_t * ipacket, unsigned index) {
 
             if (packet->payload[2] == 0x00 && packet->payload[3] == 0x00 && packet->payload[4] == 0x03) {
                 flow->l4.udp.ppstream_stage = 7;
-                MMT_LOG(PROTO_PPSTREAM, MMT_LOG_DEBUG, "need next packet I.\n");
                 return 1;
             }
         }
@@ -77,13 +72,10 @@ int mmt_check_ppstream_udp(ipacket_t * ipacket, unsigned index) {
                 || (packet->payload_packet_len == get_l16(packet->payload, 0))
                 || (packet->payload_packet_len >= 6 && packet->payload_packet_len - 6 == get_l16(packet->payload, 0)))
                 && (packet->payload[2] == 0x00 && packet->payload[4] == 0x03)) {
-            MMT_LOG(PROTO_PPSTREAM, MMT_LOG_DEBUG,
-                    "found ppstream over udp with pattern Vb.\n");
             mmt_int_ppstream_add_connection(ipacket);
             return 1;
         }
 
-        MMT_LOG(PROTO_PPSTREAM, MMT_LOG_DEBUG, "exclude ppstream.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_PPSTREAM);
 
     }

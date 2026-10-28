@@ -20,30 +20,25 @@ int mmt_check_guildwars(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-        MMT_LOG(PROTO_GUILDWARS, MMT_LOG_DEBUG, "search guildwars.\n");
 
         if (packet->payload_packet_len == 64 && get_u16(packet->payload, 1) == ntohs(0x050c)
                 && mmt_memcmp(&packet->payload[50], "@2&P", 4) == 0) {
-            MMT_LOG(PROTO_GUILDWARS, MMT_LOG_DEBUG, "GuildWars version 29.350: found.\n");
             mmt_int_guildwars_add_connection(ipacket);
             return 1;
         }
         if (packet->payload_packet_len == 16 && get_u16(packet->payload, 1) == ntohs(0x040c)
                 && get_u16(packet->payload, 4) == ntohs(0xa672)
                 && packet->payload[8] == 0x01 && packet->payload[12] == 0x04) {
-            MMT_LOG(PROTO_GUILDWARS, MMT_LOG_DEBUG, "GuildWars version 29.350: found.\n");
             mmt_int_guildwars_add_connection(ipacket);
             return 1;
         }
         if (packet->payload_packet_len == 21 && get_u16(packet->payload, 0) == ntohs(0x0100)
                 && get_u32(packet->payload, 5) == ntohl(0xf1001000)
                 && packet->payload[9] == 0x01) {
-            MMT_LOG(PROTO_GUILDWARS, MMT_LOG_DEBUG, "GuildWars version 216.107.245.50: found.\n");
             mmt_int_guildwars_add_connection(ipacket);
             return 1;
         }
 
-        MMT_LOG(PROTO_GUILDWARS, MMT_LOG_DEBUG, "exclude guildwars.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_GUILDWARS);
     }
     return 0;

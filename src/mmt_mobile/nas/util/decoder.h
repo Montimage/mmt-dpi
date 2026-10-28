@@ -14,6 +14,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include "branch_optimization.h"
+#include "../../../mmt_core/private_include/mmt_log.h" /* issue #545 */
 
 #define DECODE_U8(buffer, value, size)                   \
     value = *(uint8_t*)(buffer);                         \
@@ -89,7 +90,9 @@ typedef enum {
 /* Defines error code limit below which received message should be discarded
  * because it cannot be further processed */
 #define DECODE_FATAL_ERROR  (DECODE_VALUE_DOESNT_MATCH)
-#define LOG(fmt, args...) fprintf(stderr, "%s:%d: " fmt, __FILE__, __LINE__,##args)
+/* Issue #545: NAS decode diagnostics go through the SDK logger (mmt_log.h):
+ * off by default, stderr only, rate-limited, counted; it adds file:line. */
+#define LOG(fmt, args...) mmt_log_warn("[NAS] " fmt, ##args)
 
 /* Issue #507 (F-BUG-220): the decoders return their error code; there is no
  * process-global error variable, which every decoding thread used to write. */
@@ -103,14 +106,13 @@ typedef enum {
 #define CHECK_PDU_POINTER_AND_LENGTH_DECODER(buffer, minimumlength, length)    \
 		while (unlikely( buffer == NULL ))                                     \
         {                                                                      \
-                LOG("(%s:%d) Got NULL pointer for the payload\n",              \
-                __FILE__, __LINE__);                                           \
+                LOG("Got NULL pointer for the payload\n");                     \
                 return (DECODE_BUFFER_NULL);                                   \
         }                                                                      \
 		while (unlikely( length < minimumlength))                              \
         {                                                                      \
-                LOG("(%s:%d) Expecting at least %d bytes, got %d\n",           \
-                      __FILE__, __LINE__, (int) minimumlength, (int) length);  \
+                LOG("Expecting at least %d bytes, got %d\n",                   \
+                      (int) minimumlength, (int) length);                      \
                 return (DECODE_BUFFER_TOO_SHORT);                              \
         }
 

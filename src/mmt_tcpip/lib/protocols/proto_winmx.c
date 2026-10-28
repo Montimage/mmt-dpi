@@ -28,28 +28,23 @@ int mmt_check_winmx(ipacket_t * ipacket, unsigned index) {
             if (((packet->payload_packet_len) == 4)
                     && (mmt_memcmp(packet->payload, "SEND", 4) == 0)) {
 
-                MMT_LOG(PROTO_WINMX, MMT_LOG_DEBUG, "maybe WinMX Send\n");
                 flow->l4.tcp.winmx_stage = 1;
                 return 4;
             }
 
             if (((packet->payload_packet_len) == 3)
                     && (mmt_memcmp(packet->payload, "GET", 3) == 0)) {
-                MMT_LOG(PROTO_WINMX, MMT_LOG_DEBUG, "found winmx by GET\n");
                 mmt_int_winmx_add_connection(ipacket);
                 return 1;
             }
 
             if (packet->payload_packet_len == 149 && packet->payload[0] == '8') {
-                MMT_LOG(PROTO_WINMX, MMT_LOG_DEBUG, "maybe WinMX\n");
                 if (get_u32(packet->payload, 17) == 0
                         && get_u32(packet->payload, 21) == 0
                         && get_u32(packet->payload, 25) == 0
                         && get_u16(packet->payload, 39) == 0 && get_u16(packet->payload, 135) == htons(0x7edf)
                         && get_u16(packet->payload, 147) == htons(0xf792)) {
 
-                    MMT_LOG(PROTO_WINMX, MMT_LOG_DEBUG,
-                            "found winmx by pattern in first packet\n");
                     mmt_int_winmx_add_connection(ipacket);
                     return 1;
                 }
@@ -60,7 +55,6 @@ int mmt_check_winmx(ipacket_t * ipacket, unsigned index) {
                 uint16_t left = packet->payload_packet_len - 1;
                 while (left > 0) {
                     if (packet->payload[left] == ' ') {
-                        MMT_LOG(PROTO_WINMX, MMT_LOG_DEBUG, "found winmx in second packet\n");
                         mmt_int_winmx_add_connection(ipacket);
                         return 1;
                     } else if (packet->payload[left] < '0' || packet->payload[left] > '9') {

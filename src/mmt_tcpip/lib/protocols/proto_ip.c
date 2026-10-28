@@ -686,9 +686,8 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     if ( len < sizeof( struct iphdr )) {
         /* Issue #212 (F-BUG-042): this printf ran in the packet hot path, so a
          * remote sender could flood stdout with one malformed datagram each.
-         * Routed through the (default-off) MMT_LOG macro like every other
-         * diagnostic in this file's peers. */
-        MMT_LOG(PROTO_IP, MMT_LOG_DEBUG, "*** Warning: malformed packet (not enough data): %"PRIu64"\n", ipacket->packet_id );
+         * Issue #545 removed the compiled-out trace that replaced it: a
+         * short datagram is simply not classified. */
         return 0;
     }
 

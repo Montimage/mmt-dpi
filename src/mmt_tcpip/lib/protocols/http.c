@@ -824,7 +824,6 @@ static inline void check_packet_contents(ipacket_t * ipacket) {
     for (i = 0; i < sizeof(mmt_application_table)/sizeof(mmt_application_table[0]); i++) {
         const struct mmt_content_type_entry *e = &mmt_application_table[i];
         if (packet->content_line.len >= e->min_len && mmt_memcmp(packet->content_line.ptr, e->mime, e->cmp_len) == 0) {
-            MMT_LOG(e->family, MMT_LOG_DEBUG, "%s: Content-Type: %s found.\n", mmt_content_family_label(e->family), e->mime);
             mmt_add_content_type(ipacket, e->family, e->type);
             return;
         }
@@ -834,7 +833,6 @@ static inline void check_packet_contents(ipacket_t * ipacket) {
     for (i = 0; i < sizeof(mmt_audio_table)/sizeof(mmt_audio_table[0]); i++) {
         const struct mmt_content_type_entry *e = &mmt_audio_table[i];
         if (packet->content_line.len >= e->min_len && mmt_memcmp(packet->content_line.ptr, e->mime, e->cmp_len) == 0) {
-            MMT_LOG(e->family, MMT_LOG_DEBUG, "%s: Content-Type: %s found.\n", mmt_content_family_label(e->family), e->mime);
             mmt_add_content_type(ipacket, e->family, e->type);
             return;
         }
@@ -844,7 +842,6 @@ static inline void check_packet_contents(ipacket_t * ipacket) {
     for (i = 0; i < sizeof(mmt_image_table)/sizeof(mmt_image_table[0]); i++) {
         const struct mmt_content_type_entry *e = &mmt_image_table[i];
         if (packet->content_line.len >= e->min_len && mmt_memcmp(packet->content_line.ptr, e->mime, e->cmp_len) == 0) {
-            MMT_LOG(e->family, MMT_LOG_DEBUG, "%s: Content-Type: %s found.\n", mmt_content_family_label(e->family), e->mime);
             mmt_add_content_type(ipacket, e->family, e->type);
             return;
         }
@@ -854,7 +851,6 @@ static inline void check_packet_contents(ipacket_t * ipacket) {
     for (i = 0; i < sizeof(mmt_message_table)/sizeof(mmt_message_table[0]); i++) {
         const struct mmt_content_type_entry *e = &mmt_message_table[i];
         if (packet->content_line.len >= e->min_len && mmt_memcmp(packet->content_line.ptr, e->mime, e->cmp_len) == 0) {
-            MMT_LOG(e->family, MMT_LOG_DEBUG, "%s: Content-Type: %s found.\n", mmt_content_family_label(e->family), e->mime);
             mmt_add_content_type(ipacket, e->family, e->type);
             return;
         }
@@ -864,7 +860,6 @@ static inline void check_packet_contents(ipacket_t * ipacket) {
     for (i = 0; i < sizeof(mmt_model_table)/sizeof(mmt_model_table[0]); i++) {
         const struct mmt_content_type_entry *e = &mmt_model_table[i];
         if (packet->content_line.len >= e->min_len && mmt_memcmp(packet->content_line.ptr, e->mime, e->cmp_len) == 0) {
-            MMT_LOG(e->family, MMT_LOG_DEBUG, "%s: Content-Type: %s found.\n", mmt_content_family_label(e->family), e->mime);
             mmt_add_content_type(ipacket, e->family, e->type);
             return;
         }
@@ -874,7 +869,6 @@ static inline void check_packet_contents(ipacket_t * ipacket) {
     for (i = 0; i < sizeof(mmt_multipart_table)/sizeof(mmt_multipart_table[0]); i++) {
         const struct mmt_content_type_entry *e = &mmt_multipart_table[i];
         if (packet->content_line.len >= e->min_len && mmt_memcmp(packet->content_line.ptr, e->mime, e->cmp_len) == 0) {
-            MMT_LOG(e->family, MMT_LOG_DEBUG, "%s: Content-Type: %s found.\n", mmt_content_family_label(e->family), e->mime);
             mmt_add_content_type(ipacket, e->family, e->type);
             return;
         }
@@ -884,7 +878,6 @@ static inline void check_packet_contents(ipacket_t * ipacket) {
     for (i = 0; i < sizeof(mmt_text_table)/sizeof(mmt_text_table[0]); i++) {
         const struct mmt_content_type_entry *e = &mmt_text_table[i];
         if (packet->content_line.len >= e->min_len && mmt_memcmp(packet->content_line.ptr, e->mime, e->cmp_len) == 0) {
-            MMT_LOG(e->family, MMT_LOG_DEBUG, "%s: Content-Type: %s found.\n", mmt_content_family_label(e->family), e->mime);
             mmt_add_content_type(ipacket, e->family, e->type);
             return;
         }
@@ -894,7 +887,6 @@ static inline void check_packet_contents(ipacket_t * ipacket) {
     for (i = 0; i < sizeof(mmt_video_table)/sizeof(mmt_video_table[0]); i++) {
         const struct mmt_content_type_entry *e = &mmt_video_table[i];
         if (packet->content_line.len >= e->min_len && mmt_memcmp(packet->content_line.ptr, e->mime, e->cmp_len) == 0) {
-            MMT_LOG(e->family, MMT_LOG_DEBUG, "%s: Content-Type: %s found.\n", mmt_content_family_label(e->family), e->mime);
             mmt_add_content_type(ipacket, e->family, e->type);
             return;
         }
@@ -904,7 +896,6 @@ static inline void check_packet_contents(ipacket_t * ipacket) {
     for (i = 0; i < sizeof(mmt_misc_table)/sizeof(mmt_misc_table[0]); i++) {
         const struct mmt_content_type_entry *e = &mmt_misc_table[i];
         if (packet->content_line.len >= e->min_len && mmt_memcmp(packet->content_line.ptr, e->mime, e->cmp_len) == 0) {
-            MMT_LOG(e->family, MMT_LOG_DEBUG, "%s: Content-Type: %s found.\n", mmt_content_family_label(e->family), e->mime);
             mmt_add_content_type(ipacket, e->family, e->type);
             return;
         }
@@ -928,14 +919,12 @@ static inline void qq_parse_packet_URL_and_hostname(ipacket_t * ipacket) {
             /*mmt_memcmp(&packet->payload[4], "/qzone", 6) != 0 ||*/ packet->host_line.len < 7 ||
             mmt_memcmp(&packet->host_line.ptr[packet->host_line.len - 6], "qq.com", 6) != 0) {
 
-        MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "did not find QQ.\n");
         return;
     }
     for (a = 0; a < packet->parsed_lines; a++) {
         if ((packet->line[a].len > 22 && mmt_memcmp(packet->line[a].ptr, "QzoneAuth: zzpaneluin=", 22) == 0) ||
                 (packet->line[a].len > 19 && mmt_memcmp(packet->line[a].ptr, "Cookie: zzpanelkey=", 19) == 0) ||
                 (packet->line[a].len > 13 && mmt_memcmp(packet->line[a].ptr, "Cookie: adid=", 13) == 0)) {
-            MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found QQ.\n");
             mmt_int_http_add_connection(ipacket, PROTO_QQ);
             return;
         }
@@ -949,7 +938,6 @@ static inline void qq_parse_packet_URL_and_hostname(ipacket_t * ipacket) {
 static inline void winmedia_parse_packet_useragentline(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if (packet->user_agent_line.len >= 9 && mmt_memcmp(packet->user_agent_line.ptr, "NSPlayer/", 9) == 0) {
-        MMT_LOG(PROTO_WINDOWSMEDIA, MMT_LOG_DEBUG, "username NSPlayer found\n");
         mmt_int_http_add_connection(ipacket, PROTO_WINDOWSMEDIA);
     }
 }
@@ -960,7 +948,6 @@ static inline void winmedia_parse_packet_useragentline(ipacket_t * ipacket) {
 static inline void spotify_parse_packet_useragentline(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if (packet->user_agent_line.len >= 8 && mmt_memcmp(packet->user_agent_line.ptr, "Spotify-", 8) == 0) {
-        MMT_LOG(PROTO_SPOTIFY, MMT_LOG_DEBUG, "useragent Spotify found\n");
         mmt_int_http_add_connection(ipacket, PROTO_SPOTIFY);
     }
 }
@@ -974,8 +961,6 @@ static inline void mms_parse_packet_contentline(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
     if (packet->content_line.len >= 24 && mmt_mem_cmp(packet->content_line.ptr, "application/x-mms-framed", 24) == 0) {
-        MMT_LOG(PROTO_MMS, MMT_LOG_DEBUG,
-                "MMS: Content-Type: application/x-mms-framed found\n");
         mmt_int_http_add_connection(ipacket, PROTO_MMS);
     }
 }
@@ -988,7 +973,6 @@ static inline void xbox_parse_packet_useragentline(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
     if (packet->user_agent_line.len >= 17 && mmt_memcmp(packet->user_agent_line.ptr, "Xbox Live Client/", 17) == 0) {
-        MMT_LOG(PROTO_XBOX, MMT_LOG_DEBUG, "XBOX: User Agent: Xbox Live Client found\n");
         mmt_int_http_add_connection(ipacket, PROTO_XBOX);
     }
 }
@@ -1000,7 +984,6 @@ static inline void windows_update_packet_useragentline(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
     if (packet->user_agent_line.len >= 20 && mmt_memcmp(packet->user_agent_line.ptr, "Windows-Update-Agent", 20) == 0) {
-        MMT_LOG(PROTO_WINDOWS_UPDATE, MMT_LOG_DEBUG, "WSUS: User Agent: Windows-Update-Agent\n");
         mmt_int_http_add_connection(ipacket, PROTO_WINDOWS_UPDATE);
     }
 }
@@ -1025,7 +1008,6 @@ static inline void flash_check_http_payload(ipacket_t * ipacket) {
     if (mmt_memcmp(pos, "FLV", 3) == 0 && pos[3] == 0x01 && (pos[4] == 0x01 || pos[4] == 0x04 || pos[4] == 0x05)
             && pos[5] == 0x00 && pos[6] == 0x00 && pos[7] == 0x00 && pos[8] == 0x09) {
 
-        MMT_LOG(PROTO_FLASH, MMT_LOG_DEBUG, "Flash content in http detected\n");
         mmt_int_http_add_connection(ipacket, PROTO_FLASH);
     }
 }
@@ -1037,8 +1019,6 @@ static inline void avi_check_http_payload(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-    MMT_LOG(PROTO_AVI, MMT_LOG_DEBUG, "called avi_check_http_payload: %u %u %u\n",
-            packet->empty_line_position_set, flow->l4.tcp.http_empty_line_seen, packet->empty_line_position);
 
     if (packet->empty_line_position_set == 0 && flow->l4.tcp.http_empty_line_seen == 0)
         return;
@@ -1052,7 +1032,6 @@ static inline void avi_check_http_payload(ipacket_t * ipacket) {
     if (flow->l4.tcp.http_empty_line_seen == 1) {
         if (packet->payload_packet_len > 20 && mmt_memcmp(packet->payload, "RIFF", 4) == 0
                 && mmt_memcmp(packet->payload + 8, "AVI LIST", 8) == 0) {
-            MMT_LOG(PROTO_AVI, MMT_LOG_DEBUG, "Avi content in http detected\n");
             mmt_int_http_add_connection(ipacket, PROTO_AVI);
         }
         flow->l4.tcp.http_empty_line_seen = 0;
@@ -1064,11 +1043,9 @@ static inline void avi_check_http_payload(ipacket_t * ipacket) {
         // for reference see http://msdn.microsoft.com/archive/default.asp?url=/archive/en-us/directx9_c/directx/htm/avirifffilereference.asp
         uint32_t p = packet->empty_line_position + 2;
 
-        MMT_LOG(PROTO_AVI, MMT_LOG_DEBUG, "p = %u\n", p);
 
         if ((p + 16) <= packet->payload_packet_len && mmt_memcmp(&packet->payload[p], "RIFF", 4) == 0
                 && mmt_memcmp(&packet->payload[p + 8], "AVI LIST", 8) == 0) {
-            MMT_LOG(PROTO_AVI, MMT_LOG_DEBUG, "Avi content in http detected\n");
             mmt_int_http_add_connection(ipacket, PROTO_AVI);
         }
     }
@@ -1082,8 +1059,6 @@ static inline void teamviewer_check_http_payload(ipacket_t * ipacket) {
     //struct mmt_internal_tcpip_session_struct *flow = packet->flow;
     const uint8_t *pos;
 
-    MMT_LOG(PROTO_TEAMVIEWER, MMT_LOG_DEBUG, "called teamviewer_check_http_payload: %u %u %u\n",
-            packet->empty_line_position_set, flow->l4.tcp.http_empty_line_seen, packet->empty_line_position);
 
     if (packet->empty_line_position_set == 0 || (packet->empty_line_position + 5) > (packet->payload_packet_len))
         return;
@@ -1091,7 +1066,6 @@ static inline void teamviewer_check_http_payload(ipacket_t * ipacket) {
     pos = &packet->payload[packet->empty_line_position] + 2;
 
     if (pos[0] == 0x17 && pos[1] == 0x24) {
-        MMT_LOG(PROTO_TEAMVIEWER, MMT_LOG_DEBUG, "TeamViewer content in http detected\n");
         mmt_int_http_add_connection(ipacket, PROTO_TEAMVIEWER);
     }
 }
@@ -1103,7 +1077,6 @@ static inline void off_parse_packet_contentline(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
     if (packet->content_line.len >= 4 && mmt_memcmp(packet->content_line.ptr, "off/", 4) == 0) {
-        MMT_LOG(PROTO_OFF, MMT_LOG_DEBUG, "off: Content-Type: off/ found\n");
         mmt_int_http_add_connection(ipacket, PROTO_OFF);
     }
 }
@@ -1117,7 +1090,6 @@ static inline void move_parse_packet_contentline(ipacket_t * ipacket) {
     if (packet->content_line.len == 15
             && (mmt_memcmp(packet->content_line.ptr, "application/qmx", 15) == 0
             || mmt_memcmp(packet->content_line.ptr, "application/qss", 15) == 0)) {
-        MMT_LOG(PROTO_MOVE, MMT_LOG_DEBUG, "MOVE application qmx or qss detected\n");
         mmt_int_http_add_connection(ipacket, PROTO_MOVE);
     }
 }
@@ -1134,7 +1106,6 @@ static inline void ogg_parse_packet_contentline(ipacket_t * ipacket) {
     if ((packet->content_line.len == 15 && mmt_memcmp(packet->content_line.ptr, "application/ogg", 15) == 0)
             || (packet->content_line.len == 9 && mmt_memcmp(packet->content_line.ptr, "video/ogg", 9) == 0)
             || (packet->content_line.len == 9 && mmt_memcmp(packet->content_line.ptr, "audio/ogg", 9) == 0)) {
-        MMT_LOG(PROTO_OGG, MMT_LOG_DEBUG, "OGG application detected\n");
         mmt_int_http_add_connection(ipacket, PROTO_OGG);
     }
 }
@@ -1146,7 +1117,6 @@ static inline void rtsp_parse_packet_acceptline(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
     if (packet->accept_line.len >= 28 && mmt_memcmp(packet->accept_line.ptr, "application/x-rtsp-tunnelled", 28) == 0) {
-        MMT_LOG(PROTO_RTSP, MMT_LOG_DEBUG, "RTSP accept line detected\n");
         mmt_int_http_add_connection(ipacket, PROTO_RTSP);
     }
 }
@@ -1193,8 +1163,6 @@ static inline void check_content_type_and_change_protocol(ipacket_t * ipacket) {
     uint8_t a;
 
     if (packet->content_line.ptr != NULL && packet->content_line.len != 0) {
-        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "Content Type Line found %.*s\n",
-                packet->content_line.len, packet->content_line.ptr);
 #ifdef PROTO_MMS
         mms_parse_packet_contentline(ipacket);
 #endif
@@ -1210,8 +1178,6 @@ static inline void check_content_type_and_change_protocol(ipacket_t * ipacket) {
     }
     /* check user agent here too */
     if (packet->user_agent_line.ptr != NULL && packet->user_agent_line.len != 0) {
-        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "User Agent Type Line found %.*s\n",
-                packet->user_agent_line.len, packet->user_agent_line.ptr);
 #ifdef PROTO_XBOX
         xbox_parse_packet_useragentline(ipacket);
 #endif
@@ -1228,8 +1194,6 @@ static inline void check_content_type_and_change_protocol(ipacket_t * ipacket) {
     }
     /* check for host line */
     if (packet->host_line.ptr != NULL) {
-        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HOST Line found %.*s\n",
-                packet->host_line.len, packet->host_line.ptr);
 #ifdef PROTO_QQ
         qq_parse_packet_URL_and_hostname(ipacket);
 #endif
@@ -1239,8 +1203,6 @@ static inline void check_content_type_and_change_protocol(ipacket_t * ipacket) {
 
     /* check for accept line */
     if (packet->accept_line.ptr != NULL) {
-        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "Accept Line found %.*s\n",
-                packet->accept_line.len, packet->accept_line.ptr);
 #ifdef PROTO_RTSP
         rtsp_parse_packet_acceptline(ipacket);
 #endif
@@ -1249,7 +1211,6 @@ static inline void check_content_type_and_change_protocol(ipacket_t * ipacket) {
 #ifdef PROTO_MPEG
     for (a = 0; a < packet->parsed_lines; a++) {
         if (packet->line[a].len > 11 && mmt_memcmp(packet->line[a].ptr, "Icy-MetaData", 12) == 0) {
-            MMT_LOG(PROTO_MPEG, MMT_LOG_DEBUG, "MPEG: Icy-MetaData found.\n");
             mmt_int_http_add_connection(ipacket, PROTO_MPEG);
             return;
         }
@@ -1262,7 +1223,6 @@ static inline void check_content_type_and_change_protocol(ipacket_t * ipacket) {
 
 static inline void check_http_payload(ipacket_t * ipacket) {
 
-    MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "called check_http_payload.\n");
 
 #ifdef PROTO_FLASH
     flash_check_http_payload(ipacket);
@@ -1290,7 +1250,6 @@ static inline uint16_t http_request_url_offset(ipacket_t * ipacket) {
     switch(packet->payload[0]){
         case 'G':
             if(mmt_memcmp(packet->payload, "GET ", 4) == 0){
-                MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: GET FOUND\n");
                 return 4;
             }
         break;
@@ -1298,19 +1257,16 @@ static inline uint16_t http_request_url_offset(ipacket_t * ipacket) {
             switch(packet->payload[1]){
                 case 'O':
                     if(packet->payload_packet_len >= 5 && mmt_memcmp(packet->payload, "POST ", 5) == 0){
-                        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: POST FOUND\n");
                         return 5;
                     }
                 break;
                 case 'U':
                     if(mmt_memcmp(packet->payload, "PUT ", 4) == 0){
-                        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: PUT FOUND\n");
                         return 4;
                     }
                 break;
                 case 'R':
                     if(packet->payload_packet_len >= 9 && mmt_memcmp(packet->payload, "PROPFIND ", 9) == 0){
-                        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: PROPFIND FOUND\n");
                         return 9;
                     }
                 break;
@@ -1319,7 +1275,6 @@ static inline uint16_t http_request_url_offset(ipacket_t * ipacket) {
                      * flow whose first request used PATCH was permanently
                      * excluded from HTTP classification. */
                     if(packet->payload_packet_len >= 6 && mmt_memcmp(packet->payload, "PATCH ", 6) == 0){
-                        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: PATCH FOUND\n");
                         return 6;
                     }
                 break;
@@ -1328,44 +1283,37 @@ static inline uint16_t http_request_url_offset(ipacket_t * ipacket) {
         case 'M':
             /* issue #101: WebDAV MKCOL was missing from this table. */
             if(packet->payload_packet_len >= 6 && mmt_memcmp(packet->payload, "MKCOL ", 6) == 0){
-                MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: MKCOL FOUND\n");
                 return 6;
             }
         break;
         case 'L':
             /* issue #101: WebDAV LOCK was missing from this table. */
             if(packet->payload_packet_len >= 5 && mmt_memcmp(packet->payload, "LOCK ", 5) == 0){
-                MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: LOCK FOUND\n");
                 return 5;
             }
         break;
         case 'O':
             if(packet->payload_packet_len >= 8 && mmt_memcmp(packet->payload, "OPTIONS ", 8) == 0){
-                MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: OPTIONS FOUND\n");
                 return 8;
             }
         break;
         case 'H':
             if(packet->payload_packet_len >= 5 && mmt_memcmp(packet->payload, "HEAD ", 5) == 0){
-                MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: HEAD FOUND\n");
                 return 5;
             }
         break;
         case 'D':
             if(packet->payload_packet_len >= 7 && mmt_memcmp(packet->payload, "DELETE ", 7) == 0){
-                MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: DELETE FOUND\n");
                 return 7;
             }
         break;
         case 'C':
             if(packet->payload_packet_len >= 8 && mmt_memcmp(packet->payload, "CONNECT ", 8) == 0){
-                MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: CONNECT FOUND\n");
                 return 8;
             }
         break;
         case 'R':
             if(packet->payload_packet_len >= 7 && mmt_memcmp(packet->payload, "REPORT ", 7) == 0){
-                MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: REPORT FOUND\n");
                 return 7;
             }
         break;
@@ -1814,7 +1762,6 @@ void mmt_classify_http(ipacket_t * ipacket, unsigned index) {
      * checks below decide. Decision and rationale: docs/DECISIONS.md
      * (issue #334). */
 
-    MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "search http\n");
 
     /* set client-server_direction */
     if (flow->l4.tcp.http_setup_dir == 0) {
@@ -1823,27 +1770,21 @@ void mmt_classify_http(ipacket_t * ipacket, unsigned index) {
             //This is still the TCP handshake, do nothing
             return;
         }
-        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "initializes http to stage: 1 \n");
         flow->l4.tcp.http_setup_dir = 1 + ipacket->session->last_packet_direction;
     }
 
     if (MMT_COMPARE_PROTOCOL_TO_BITMASK
             (detection_bitmask, packet->detected_protocol_stack[0]) != 0) {
-        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
-                "protocol might be detected earlier as http jump to payload type detection\n");
         goto http_parse_detection;
     }
 
     if (flow->l4.tcp.http_setup_dir == 1 + ipacket->session->last_packet_direction) {
-        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "http stage: 1\n");
 
         if (flow->l4.tcp.http_wait_for_retransmission) {
             if (!packet->tcp_retransmission) {
                 if (ipacket->session->data_packet_count <= 5) {
-                    MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "still waiting for retransmission\n");
                     return;
                 } else {
-                    MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "retransmission not found, exclude\n");
                     http_bitmask_exclude(flow);
                     return;
                 }
@@ -1853,7 +1794,6 @@ void mmt_classify_http(ipacket_t * ipacket, unsigned index) {
         if (flow->l4.tcp.http_stage == 0) {
             filename_start = http_request_url_offset(ipacket);
             if (filename_start == 0) {
-                MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "filename not found, exclude\n");
                 http_bitmask_exclude(flow);
                 return;
             }
@@ -1862,7 +1802,6 @@ void mmt_classify_http(ipacket_t * ipacket, unsigned index) {
 
             if (packet->parsed_lines <= 1) {
                 /* parse one more packet .. */
-                MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "just one line, search next packet\n");
                 flow->l4.tcp.http_stage = 1;
                 return;
             }
@@ -1875,7 +1814,6 @@ void mmt_classify_http(ipacket_t * ipacket, unsigned index) {
                 packet->http_method.ptr = packet->line[0].ptr;
                 packet->http_method.len = filename_start - 1;
 
-                MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "http structure detected, adding\n");
 
                 /* CONNECT stays PROTO_HTTP (the method is still exposed through
                  * the http.method attribute); a distinct protocol ID was
@@ -1887,10 +1825,8 @@ void mmt_classify_http(ipacket_t * ipacket, unsigned index) {
                 if (packet->host_line.ptr != NULL) {
                     /* aaahh, skip this direction and wait for a server reply here */
                     flow->l4.tcp.http_stage = 2;
-                    MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP START HOST found\n");
                     return;
                 }
-                MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP START HOST found\n");
 
                 /* host not found, check in next packet after */
                 flow->l4.tcp.http_stage = 1;
@@ -1906,13 +1842,9 @@ void mmt_classify_http(ipacket_t * ipacket, unsigned index) {
 
                 /* wait some packets in case request is split over more than 2 packets */
                 if (ipacket->session->data_packet_count < 5) {
-                    MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
-                            "line still not finished, search next packet\n");
                     return;
                 } else {
                     /* stop parsing here */
-                    MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
-                            "HTTP: PACKET DOES NOT HAVE A LINE STRUCTURE\n");
                     http_bitmask_exclude(flow);
                     return;
                 }
@@ -1921,8 +1853,6 @@ void mmt_classify_http(ipacket_t * ipacket, unsigned index) {
             if (packet->line[0].len >= 9 && mmt_memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
                 mmt_int_http_add_connection(ipacket, PROTO_HTTP);
                 check_content_type_and_change_protocol(ipacket);
-                MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
-                        "HTTP START HTTP found in 2. packet, check host here...\n");
                 /* HTTP found, look for host... */
                 flow->l4.tcp.http_stage = 2;
 
@@ -1930,7 +1860,6 @@ void mmt_classify_http(ipacket_t * ipacket, unsigned index) {
             }
         }
     }
-    MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: REQUEST NOT HTTP CONFORM\n");
     http_bitmask_exclude(flow);
     return;
 
@@ -1938,7 +1867,6 @@ http_parse_detection:
     if (flow->l4.tcp.http_setup_dir == 1 + ipacket->session->last_packet_direction) {
         /* we have something like http here, so check for host and content type if possible */
         if (flow->l4.tcp.http_stage == 0 || flow->l4.tcp.http_stage == 3) {
-            MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP RUN MAYBE NEXT GET/POST...\n");
             // parse packet
             mmt_parse_packet_line_info(ipacket);
             if (packet->http_response.ptr) {
@@ -1961,33 +1889,24 @@ http_parse_detection:
                     packet->http_method.ptr = packet->line[0].ptr;
                     packet->http_method.len = filename_start - 1;
 
-                    MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "next http action, "
-                            "resetting to http and search for other protocols later.\n");
                     mmt_int_http_add_connection(ipacket, PROTO_HTTP);
                 }
                 check_content_type_and_change_protocol(ipacket);
                 /* HTTP found, look for host... */
                 if (packet->host_line.ptr != NULL) {
-                    MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
-                            "HTTP RUN MAYBE NEXT HOST found, skipping all packets from this direction\n");
                     /* aaahh, skip this direction and wait for a server reply here */
                     flow->l4.tcp.http_stage = 2;
                     return;
                 }
-                MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
-                        "HTTP RUN MAYBE NEXT HOST NOT found, scanning one more packet from this direction\n");
                 flow->l4.tcp.http_stage = 1;
             }
         } else if (flow->l4.tcp.http_stage == 1) {
             // parse packet and maybe find a packet info with host ptr,...
             mmt_parse_packet_line_info(ipacket);
             check_content_type_and_change_protocol(ipacket);
-            MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP RUN second packet scanned\n");
             /* HTTP found, look for host... */
             flow->l4.tcp.http_stage = 2;
         }
-        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
-                "HTTP skipping client packets after second packet\n");
         return;
     }
     /* server response */
@@ -1997,7 +1916,6 @@ http_parse_detection:
         check_content_type_and_change_protocol(ipacket);
 
         if (packet->empty_line_position_set != 0 || flow->l4.tcp.http_empty_line_seen == 1) {
-            MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "empty line. check_http_payload.\n");
             check_http_payload(ipacket);
         }
         if (flow->l4.tcp.http_stage == 2) {
@@ -2005,11 +1923,8 @@ http_parse_detection:
         } else {
             flow->l4.tcp.http_stage = 0;
         }
-        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
-                "HTTP response first or second packet scanned,new stage is: %u\n", flow->l4.tcp.http_stage);
         return;
     } else {
-        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP response next packet skipped\n");
     }
 }
 

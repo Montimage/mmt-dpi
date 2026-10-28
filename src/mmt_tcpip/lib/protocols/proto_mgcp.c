@@ -52,7 +52,6 @@ int mmt_check_mgcp(ipacket_t * ipacket, unsigned index) {
         // now search for string "MGCP " in the rest of the message
         while ((pos + 5) < packet->payload_packet_len) {
             if (mmt_memcmp(&packet->payload[pos], "MGCP ", 5) == 0) {
-                MMT_LOG(PROTO_MGCP, MMT_LOG_DEBUG, "MGCP match.\n");
                 mmt_int_mgcp_add_connection(ipacket);
                 return 1;
             }
@@ -60,7 +59,6 @@ int mmt_check_mgcp(ipacket_t * ipacket, unsigned index) {
         }
 
 mgcp_excluded:
-        MMT_LOG(PROTO_MGCP, MMT_LOG_DEBUG, "exclude MGCP.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MGCP);
 
     }

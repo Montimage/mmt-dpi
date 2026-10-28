@@ -148,12 +148,10 @@ int ip_dgram_update( ip_dgram_t *dg, const mmt_una_iphdr_t *ip, unsigned len ,un
     *     ~4 GiB and the hole update memcpy's gigabytes past the buffer),
     *   - the captured datagram must actually contain ip_len bytes. */
    if(( ip_hl < sizeof( struct iphdr )) || ( ip_hl > len )) {
-      MMT_LOG( PROTO_IP, MMT_LOG_DEBUG, "*** Warning: malformed packet (header length mismatch)\n" );
       return 1;
    }
 
    if(( ip_len < ip_hl ) || ( ip_len > len )) {
-      MMT_LOG( PROTO_IP, MMT_LOG_DEBUG, "*** Warning: malformed packet (length mismatch)\n" );
       return 1;
    }
 
@@ -161,7 +159,6 @@ int ip_dgram_update( ip_dgram_t *dg, const mmt_una_iphdr_t *ip, unsigned len ,un
     * legally address at most a 65535-byte datagram, so off+len beyond that is
     * malformed and also keeps every reassembly buffer <= 64 KiB. */
    if( (uint64_t) ip_off + ( ip_len - ip_hl ) > MMT_IP_FRAG_MAX_DGRAM ) {
-      MMT_LOG( PROTO_IP, MMT_LOG_DEBUG, "*** Warning: malformed packet (fragment extent out of range)\n" );
       return 1;
    }
 
@@ -337,7 +334,6 @@ int ip_dgram_update_holes( ip_dgram_t *dg, const uint8_t *x, unsigned off, unsig
     * front — callers should have validated this already, but the check keeps
     * the hole math and the buffer growth below bounded no matter who calls. */
    if( (uint64_t) off + len > MMT_IP_FRAG_MAX_DGRAM ) {
-      MMT_LOG( PROTO_IP, MMT_LOG_DEBUG, "*** Warning: malformed packet (fragment extent out of range)\n" );
       return 1;
    }
 

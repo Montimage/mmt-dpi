@@ -38,22 +38,9 @@ int mmt_classify_soulseek_tcp(ipacket_t * ipacket, unsigned index) {
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
     struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
 
-    MMT_LOG(PROTO_SOULSEEK, MMT_LOG_DEBUG, "Soulseek: search soulseec tcp \n");
 
 
     if (packet->detected_protocol_stack[0] == PROTO_SOULSEEK) {
-        MMT_LOG(PROTO_SOULSEEK, MMT_LOG_DEBUG, "packet marked as Soulseek\n");
-        if (src != NULL)
-            MMT_LOG(PROTO_SOULSEEK, MMT_LOG_DEBUG,
-                "  SRC bitmask: %u, packet tick %llu , last safe access timestamp: %llu\n",
-                MMT_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, PROTO_SOULSEEK)
-                != 0 ? 1 : 0, (uint64_t) packet->tick_timestamp, (uint64_t) src->soulseek_last_safe_access_time);
-        if (dst != NULL)
-            MMT_LOG(PROTO_SOULSEEK, MMT_LOG_DEBUG,
-                "  DST bitmask: %u, packet tick %llu , last safe ts: %llu\n",
-                MMT_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, PROTO_SOULSEEK)
-                != 0 ? 1 : 0, (uint64_t) packet->tick_timestamp, (uint64_t) dst->soulseek_last_safe_access_time);
-
         if (packet->payload_packet_len == 431) {
             if (dst != NULL) {
                 dst->soulseek_last_safe_access_time = packet->tick_timestamp;
@@ -74,8 +61,6 @@ int mmt_classify_soulseek_tcp(ipacket_t * ipacket, unsigned index) {
                 (packet->tick_timestamp -
                 src->soulseek_last_safe_access_time) <
                 soulseek_connection_ip_tick_timeout)) {
-            MMT_LOG(PROTO_SOULSEEK, MMT_LOG_DEBUG,
-                    "Soulseek: SRC update last safe access time and SKIP_FOR_TIME \n");
             src->soulseek_last_safe_access_time = packet->tick_timestamp;
         }
 
@@ -83,8 +68,6 @@ int mmt_classify_soulseek_tcp(ipacket_t * ipacket, unsigned index) {
                 (packet->tick_timestamp -
                 dst->soulseek_last_safe_access_time) <
                 soulseek_connection_ip_tick_timeout)) {
-            MMT_LOG(PROTO_SOULSEEK, MMT_LOG_DEBUG,
-                    "Soulseek: DST update last safe access time and SKIP_FOR_TIME \n");
             dst->soulseek_last_safe_access_time = packet->tick_timestamp;
         }
     }
@@ -94,10 +77,6 @@ int mmt_classify_soulseek_tcp(ipacket_t * ipacket, unsigned index) {
             && ((MMT_INTERNAL_TIMESTAMP_TYPE)
             (packet->tick_timestamp - dst->soulseek_last_safe_access_time) <
             soulseek_connection_ip_tick_timeout)) {
-        MMT_LOG(PROTO_SOULSEEK, MMT_LOG_DEBUG,
-                "Soulseek: Plain detection on Port : %u packet_tick_timestamp: %u soulseeek_last_safe_access_time: %u soulseek_connection_ip_ticktimeout: %u\n",
-                dst->soulseek_listen_port, packet->tick_timestamp,
-                dst->soulseek_last_safe_access_time, soulseek_connection_ip_tick_timeout);
         mmt_int_soulseek_add_connection(ipacket);
         return 1;
     }
@@ -130,8 +109,6 @@ int mmt_classify_soulseek_tcp(ipacket_t * ipacket, unsigned index) {
                     {
                         index += get_l32(packet->payload, index + 4) + 8; // enf of "hash value"
                         if (index == get_l32(packet->payload, 0)) {
-                            MMT_LOG(PROTO_SOULSEEK,
-                                    MMT_LOG_DEBUG, "Soulseek Login Detected\n");
                             mmt_int_soulseek_add_connection(ipacket);
                             return 1;
                         }
@@ -146,7 +123,6 @@ int mmt_classify_soulseek_tcp(ipacket_t * ipacket, unsigned index) {
 
             if (msgcode == 0x7d) {
                 flow->l4.tcp.soulseek_stage = 1 + ipacket->session->last_packet_direction;
-                MMT_LOG(PROTO_SOULSEEK, MMT_LOG_DEBUG, "Soulseek Messages Search\n");
                 return 4;
             } else if (msgcode == 0x02 && packet->payload_packet_len == 12) {
                 const uint32_t soulseek_listen_port = get_l32(packet->payload, 8);
@@ -156,8 +132,6 @@ int mmt_classify_soulseek_tcp(ipacket_t * ipacket, unsigned index) {
 
                     if (packet->tcp != NULL && src->soulseek_listen_port == 0) {
                         src->soulseek_listen_port = soulseek_listen_port;
-                        MMT_LOG(PROTO_SOULSEEK, 
-                                MMT_LOG_DEBUG, "\n Listen Port Saved : %u", src->soulseek_listen_port);
                         mmt_int_soulseek_add_connection(ipacket);
                         return 1;
                     }
@@ -173,18 +147,14 @@ int mmt_classify_soulseek_tcp(ipacket_t * ipacket, unsigned index) {
                         && namelen <= packet->payload_packet_len
                         && (4 + 1 + 4 + namelen + 4 + 1 + 4) ==
                         packet->payload_packet_len && (type == 'F' || type == 'P' || type == 'D')) {
-                    MMT_LOG(PROTO_SOULSEEK, MMT_LOG_DEBUG, "soulseek detected\n");
                     mmt_int_soulseek_add_connection(ipacket);
                     return 1;
                 }
-                MMT_LOG(PROTO_SOULSEEK, MMT_LOG_DEBUG, "1\n");
             }
-            MMT_LOG(PROTO_SOULSEEK, MMT_LOG_DEBUG, "3\n");
             //Peer Message : Pierce Firewall
             if (packet->payload_packet_len == 9 && get_l32(packet->payload, 0) == 5
                     && packet->payload[4] <= 0x10 && get_u32(packet->payload, 5) != 0x00000000) {
                 flow->l4.tcp.soulseek_stage = 1 + ipacket->session->last_packet_direction;
-                MMT_LOG(PROTO_SOULSEEK, MMT_LOG_TRACE, "Soulseek Size 9 Pierce Firewall\n");
                 return 4;
             }
 
@@ -201,8 +171,6 @@ int mmt_classify_soulseek_tcp(ipacket_t * ipacket, unsigned index) {
                 const uint32_t typelen = get_l32(packet->payload, 4 + 1 + 4 + usrlen);
                 const uint8_t type = packet->payload[4 + 1 + 4 + usrlen + 4];
                 if (typelen == 1 && (type == 'F' || type == 'P' || type == 'D')) {
-                    MMT_LOG(PROTO_SOULSEEK, 
-                            MMT_LOG_DEBUG, "soulseek detected Pattern command(D|P|F).\n");
                     mmt_int_soulseek_add_connection(ipacket);
                     return 1;
                 }
@@ -213,7 +181,6 @@ int mmt_classify_soulseek_tcp(ipacket_t * ipacket, unsigned index) {
         if (packet->payload_packet_len > 8) {
             if ((packet->payload[0] || packet->payload[1]) && get_l32(packet->payload, 4) == 9) {
                 /* 9 is search result */
-                MMT_LOG(PROTO_SOULSEEK, MMT_LOG_DEBUG, "soulseek detected Second Pkt\n");
                 mmt_int_soulseek_add_connection(ipacket);
                 return 1;
             }
@@ -223,8 +190,6 @@ int mmt_classify_soulseek_tcp(ipacket_t * ipacket, unsigned index) {
                 {
                     const uint32_t usrlen = get_l32(packet->payload, 8);
                     if (usrlen <= packet->payload_packet_len && 4 + 4 + 4 + usrlen == packet->payload_packet_len) {
-                        MMT_LOG(PROTO_SOULSEEK, 
-                                MMT_LOG_DEBUG, "Soulseek Request Get Peer Address Detected\n");
                         mmt_int_soulseek_add_connection(ipacket);
                         return 1;
                     }
@@ -233,14 +198,12 @@ int mmt_classify_soulseek_tcp(ipacket_t * ipacket, unsigned index) {
         }
 
         if (packet->payload_packet_len == 8 && get_l32(packet->payload, 4) == 0x00000004) {
-            MMT_LOG(PROTO_SOULSEEK, MMT_LOG_DEBUG, "soulseek detected\n");
             mmt_int_soulseek_add_connection(ipacket);
             return 1;
         }
 
         if (packet->payload_packet_len == 4
                 && get_u16(packet->payload, 2) == 0x00 && get_u16(packet->payload, 0) != 0x00) {
-            MMT_LOG(PROTO_SOULSEEK, MMT_LOG_DEBUG, "soulseek detected\n");
             mmt_int_soulseek_add_connection(ipacket);
             return 1;
         } else if (packet->payload_packet_len == 4) {
@@ -250,8 +213,6 @@ int mmt_classify_soulseek_tcp(ipacket_t * ipacket, unsigned index) {
     } else if (flow->l4.tcp.soulseek_stage == 1 + ipacket->session->last_packet_direction) {
         if (packet->payload_packet_len > 8) {
             if (packet->payload[4] == 0x03 && get_l32(packet->payload, 5) == 0x00000031) {
-                MMT_LOG(PROTO_SOULSEEK, 
-                        MMT_LOG_DEBUG, "soulseek detected Second Pkt with SIGNATURE :: 0x0331000000 \n");
                 mmt_int_soulseek_add_connection(ipacket);
                 return 1;
             }
@@ -259,7 +220,6 @@ int mmt_classify_soulseek_tcp(ipacket_t * ipacket, unsigned index) {
     }
     if (flow->l4.tcp.soulseek_stage == 3 && packet->payload_packet_len == 8 && !get_u32(packet->payload, 4)) {
 
-        MMT_LOG(PROTO_SOULSEEK, MMT_LOG_DEBUG, "soulseek detected bcz of 8B  pkt\n");
         mmt_int_soulseek_add_connection(ipacket);
         return 1;
     }

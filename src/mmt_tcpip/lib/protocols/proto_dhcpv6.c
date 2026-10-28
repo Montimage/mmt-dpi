@@ -26,12 +26,10 @@ int mmt_check_dhcpv6(ipacket_t * ipacket, unsigned index) {
                 (packet->udp->dest == htons(546) || packet->udp->dest == htons(547)) &&
                 packet->payload[0] >= 1 && packet->payload[0] <= 13) {
 
-            MMT_LOG(PROTO_DHCPV6, MMT_LOG_DEBUG, "DHCPv6 detected.\n");
             mmt_int_dhcpv6_add_connection(ipacket);
             return 1;
         }
 
-        MMT_LOG(PROTO_DHCPV6, MMT_LOG_DEBUG, "DHCPv6 excluded.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_DHCPV6);
     }
     return 0;

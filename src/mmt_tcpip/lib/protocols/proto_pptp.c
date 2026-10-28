@@ -26,12 +26,10 @@ int mmt_check_pptp(ipacket_t * ipacket, unsigned index) {
                 && (get_u16(packet->payload, 8) == htons(0x0001) /* control type: start-control-connection-request */
                 )) {
 
-            MMT_LOG(PROTO_PPTP, MMT_LOG_DEBUG, "found pptp.\n");
             mmt_int_pptp_add_connection(ipacket);
             return 1;
         }
 
-        MMT_LOG(PROTO_PPTP, MMT_LOG_DEBUG, "exclude pptp.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_PPTP);
     }
     return 0;

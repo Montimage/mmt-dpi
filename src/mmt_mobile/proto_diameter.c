@@ -179,7 +179,7 @@ int init_proto_diameter_struct() {
 	int ret = register_classification_function_with_parent_protocol( PROTO_SCTP_DATA, _classify_from_sctp_data, 100 );
 	if( ret == 0 ){
 		//no SCTP (need to do if diameter can work with TCP)
-		fprintf(stderr, "Need mmt_tcpip library containing PROTO_SCTP_DATA having id = %d", PROTO_SCTP_DATA);
+		mmt_stderr_log("Need mmt_tcpip library containing PROTO_SCTP_DATA having id = %d", PROTO_SCTP_DATA);
 		return PROTO_NOT_REGISTERED;
 	}
 	return register_protocol(protocol_struct, PROTO_DIAMETER);

@@ -51,7 +51,6 @@ int mmt_check_tds(ipacket_t * ipacket, unsigned index) {
                 switch (flow->l4.tcp.tds_login_version) {
                     case 0x12:
                         if (packet->payload[0] == 0x12) {
-                            MMT_LOG(PROTO_TDS, MMT_LOG_DEBUG, "TDS detected\n");
                             mmt_int_tds_add_connection(ipacket);
                             return 1;
                         } else {

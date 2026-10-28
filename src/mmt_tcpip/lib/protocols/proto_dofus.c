@@ -25,44 +25,37 @@ void mmt_classify_dofus(ipacket_t * ipacket, unsigned index) {
 	if (packet->payload_packet_len == 13 && get_u16(packet->payload, 1) == ntohs(0x0508)
 		&& get_u16(packet->payload, 5) == ntohs(0x04a0)
 		&& get_u16(packet->payload, packet->payload_packet_len - 2) == ntohs(0x0194)) {
-		MMT_LOG(PROTO_DOFUS, MMT_LOG_DEBUG, "found dofus.\n");
 		mmt_dofus_add_connection(ipacket);
 		return;
 	}
 	if (flow->l4.tcp.dofus_stage == 0 && packet->payload_packet_len == 3 && mmt_memcmp(packet->payload, "HG", 2) == 0
 		&& packet->payload[packet->payload_packet_len - 1] == 0) {
 		flow->l4.tcp.dofus_stage = 1;
-		MMT_LOG(PROTO_DOFUS, MMT_LOG_DEBUG, "maybe dofus.\n");
 		return;
 	}
 	if (flow->l4.tcp.dofus_stage == 0 && packet->payload_packet_len == 35 && mmt_memcmp(packet->payload, "HC", 2) == 0
 		&& packet->payload[packet->payload_packet_len - 1] == 0) {
 		flow->l4.tcp.dofus_stage = 1;
-		MMT_LOG(PROTO_DOFUS, MMT_LOG_DEBUG, "maybe dofus.\n");
 		return;
 	}
 	if (flow->l4.tcp.dofus_stage == 0 && packet->payload_packet_len > 2 && packet->payload[0] == 'A'
 		&& (packet->payload[1] == 'x' || packet->payload[1] == 'X')
 		&& packet->payload[packet->payload_packet_len - 1] == 0) {
 		flow->l4.tcp.dofus_stage = 1;
-		MMT_LOG(PROTO_DOFUS, MMT_LOG_DEBUG, "maybe dofus.\n");
 		return;
 	}
 	if (flow->l4.tcp.dofus_stage == 0 && packet->payload_packet_len == 12 && mmt_memcmp(packet->payload, "Af", 2) == 0
 		&& packet->payload[packet->payload_packet_len - 1] == 0) {
 		flow->l4.tcp.dofus_stage = 1;
-		MMT_LOG(PROTO_DOFUS, MMT_LOG_DEBUG, "maybe dofus.\n");
 		return;
 	}
 	if (flow->l4.tcp.dofus_stage == 0 && packet->payload_packet_len > 2 && mmt_memcmp(packet->payload, "Ad", 2)
 		&& packet->payload[packet->payload_packet_len - 1] == 0) {
 		flow->l4.tcp.dofus_stage = 1;
-		MMT_LOG(PROTO_DOFUS, MMT_LOG_DEBUG, "maybe dofus.\n");
 		return;
 	}
 	if (packet->payload_packet_len == 11 && mmt_memcmp(packet->payload, "AT", 2) == 0 && packet->payload[10] == 0x00) {
 		if (flow->l4.tcp.dofus_stage == 1) {
-			MMT_LOG(PROTO_DOFUS, MMT_LOG_DEBUG, "found dofus.\n");
 			mmt_dofus_add_connection(ipacket);
 			return;
 		}
@@ -70,7 +63,6 @@ void mmt_classify_dofus(ipacket_t * ipacket, unsigned index) {
 	if (flow->l4.tcp.dofus_stage == 1 && packet->payload_packet_len == 5
 		&& packet->payload[0] == 'A' && packet->payload[4] == 0x00 && (packet->payload[1] == 'T'
 																	   || packet->payload[1] == 'k')) {
-		MMT_LOG(PROTO_DOFUS, MMT_LOG_DEBUG, "found dofus asym.\n");
 		mmt_dofus_add_connection(ipacket);
 		return;
 	}
@@ -90,7 +82,6 @@ void mmt_classify_dofus(ipacket_t * ipacket, unsigned index) {
 		if (packet->payload_packet_len == 49 && ntohs(get_u16(packet->payload, 15)) + 17 != packet->payload_packet_len) {
 			goto exclude;
 		}
-		MMT_LOG(PROTO_DOFUS, MMT_LOG_DEBUG, "found dofus.\n");
 		mmt_dofus_add_connection(ipacket);
 		return;
 	}
@@ -101,7 +92,6 @@ void mmt_classify_dofus(ipacket_t * ipacket, unsigned index) {
 			goto exclude;
 		len2 = ntohs(get_u16(packet->payload, 5 + len));
 		if (5 + len + 2 + len2 == packet->payload_packet_len) {
-			MMT_LOG(PROTO_DOFUS, MMT_LOG_DEBUG, "found dofus.\n");
 			mmt_dofus_add_connection(ipacket);
 			return;
 		}
@@ -116,13 +106,11 @@ void mmt_classify_dofus(ipacket_t * ipacket, unsigned index) {
 		if ((12 + len + 2 + len2 + 1) > packet->payload_packet_len)
 			goto exclude;
 		if (12 + len + 2 + len2 + 1 == packet->payload_packet_len && packet->payload[12 + len + 2 + len2] == 0x01) {
-			MMT_LOG(PROTO_DOFUS, MMT_LOG_DEBUG, "found dofus.\n");
 			mmt_dofus_add_connection(ipacket);
 			return;
 		}
 	}
   exclude:
-	MMT_LOG(PROTO_DOFUS, MMT_LOG_DEBUG, "exclude dofus.\n");
 	MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_DOFUS);
 }
 

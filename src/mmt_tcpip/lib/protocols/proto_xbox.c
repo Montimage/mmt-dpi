@@ -30,7 +30,6 @@ int mmt_check_xbox(ipacket_t * ipacket, unsigned index) {
             uint16_t dport = ntohs(packet->udp->dest);
             uint16_t sport = ntohs(packet->udp->source);
 
-            MMT_LOG(PROTO_XBOX, MMT_LOG_DEBUG, "search xbox\n");
 
             if (packet->payload_packet_len > 12 &&
                     get_u32(packet->payload, 0) == 0 && packet->payload[5] == 0x58 &&
@@ -43,7 +42,6 @@ int mmt_check_xbox(ipacket_t * ipacket, unsigned index) {
                         (packet->payload[4] == 0x06 && packet->payload[6] == 0x4e)) {
 
                     mmt_int_xbox_add_connection(ipacket);
-                    MMT_LOG(PROTO_XBOX, MMT_LOG_DEBUG, "xbox udp connection detected\n");
                     return 1;
                 }
             }
@@ -57,17 +55,14 @@ int mmt_check_xbox(ipacket_t * ipacket, unsigned index) {
                     || (packet->payload_packet_len == 28 && ntohl(get_u32(packet->payload, 0)) == 0x015f2c00))) {
                 if (flow->l4.udp.xbox_stage == 1) {
                     mmt_int_xbox_add_connection(ipacket);
-                    MMT_LOG(PROTO_XBOX, MMT_LOG_DEBUG, "xbox udp connection detected\n");
                     return 1;
                 }
-                MMT_LOG(PROTO_XBOX, MMT_LOG_DEBUG, "maybe xbox.\n");
                 flow->l4.udp.xbox_stage++;
                 return 4;
             }
 
             /* exclude here all non matched udp traffic, exclude here tcp only if http has been excluded, because xbox could use http */
             if (packet->tcp == NULL || MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP) != 0) {
-                MMT_LOG(PROTO_XBOX, MMT_LOG_DEBUG, "xbox udp excluded.\n");
                 MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_XBOX);
                 return 0;
             }

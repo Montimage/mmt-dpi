@@ -241,8 +241,6 @@ int mmt_int_edonkey_tcp(ipacket_t * ipacket) {
             if (packet->payload[5] == 0x01 && ((packet->payload[6] == 0x10 && get_l32(packet->payload, 29) < 0x0F)
                     || (get_l32(packet->payload, 28) > 0x00
                     && get_l32(packet->payload, 28) < 0x0F))) {
-                MMT_LOG_EDONKEY(PROTO_EDONKEY, MMT_LOG_DEBUG,
-                        "edk hello meta tag recognized\n");
                 flow->edk_stage = 16 + ipacket->session->last_packet_direction;
                 return 4;
             }
@@ -265,16 +263,11 @@ int mmt_int_edonkey_tcp(ipacket_t * ipacket) {
                 || (packet->payload_packet_len >= 20 && get_l32(packet->payload, 1) <= (packet->payload_packet_len - 5)
                 && (packet->payload[0] == 0xe3 || packet->payload[0] == 0xc5)
                 && packet->payload[5] == 0x01)) {
-            MMT_LOG_EDONKEY(PROTO_EDONKEY,
-                    MMT_LOG_DEBUG, "edk 17: detected plain detection\n");
             mmt_add_connection_as_edonkey(ipacket,
                     MMT_PROTOCOL_SAFE_DETECTION, MMT_PROTOCOL_PLAIN_DETECTION);
             return 1;
         }
 
-        MMT_LOG_EDONKEY(PROTO_EDONKEY, MMT_LOG_DEBUG,
-                "edk 17: id: %u, %u, %u not detected\n",
-                packet->payload[0], get_l32(packet->payload, 1), packet->payload[5]);
     }
 exclude_edk_tcp:
 

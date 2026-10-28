@@ -22,12 +22,10 @@ int mmt_check_stealthnet(ipacket_t * ipacket, unsigned index) {
 
         if (packet->payload_packet_len > 40
                 && mmt_memcmp(packet->payload, "LARS REGENSBURGER'S FILE SHARING PROTOCOL", 41) == 0) {
-            MMT_LOG(PROTO_STEALTHNET, MMT_LOG_DEBUG, "found stealthnet\n");
             mmt_int_stealthnet_add_connection(ipacket);
             return 1;
         }
 
-        MMT_LOG(PROTO_STEALTHNET, MMT_LOG_DEBUG, "exclude stealthnet.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_STEALTHNET);
     }
     return 0;

@@ -21,38 +21,26 @@ int mmt_check_warcraft3(ipacket_t * ipacket, unsigned index) {
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
         uint16_t l;
-        MMT_LOG(PROTO_WARCRAFT3, MMT_LOG_DEBUG, "search WARCRAFT3\n");
 
         if (ipacket->session->data_packet_count == 1 && packet->payload_packet_len == 1 && packet->payload[0] == 0x01) {
-            MMT_LOG(PROTO_WARCRAFT3, MMT_LOG_DEBUG, "maybe warcraft3: packet_len == 1\n");
             return 4;
         } else if (packet->payload_packet_len >= 4 && (packet->payload[0] == 0xf7 || packet->payload[0] == 0xff)) {
-            MMT_LOG(PROTO_WARCRAFT3, MMT_LOG_DEBUG, "packet_payload begins with 0xf7 or 0xff\n");
             l = packet->payload[2] + (packet->payload[3] << 8); // similar to ntohs
-            MMT_LOG(PROTO_WARCRAFT3, MMT_LOG_DEBUG, "l = %u \n", l);
             while (l <= (packet->payload_packet_len - 4)) {
                 if (packet->payload[l] == 0xf7) {
                     uint16_t temp = (packet->payload[l + 2 + 1] << 8) + packet->payload[l + 2];
-                    MMT_LOG(PROTO_WARCRAFT3, MMT_LOG_DEBUG, "another f7 visited.\n");
                     if (temp <= 2) {
-                        MMT_LOG(PROTO_WARCRAFT3, MMT_LOG_DEBUG, "break\n");
                         break;
                     } else {
                         l += temp;
-                        MMT_LOG(PROTO_WARCRAFT3, MMT_LOG_DEBUG, "l = %u \n", l);
                     }
                 } else {
-                    MMT_LOG(PROTO_WARCRAFT3, MMT_LOG_DEBUG, "break\n");
                     break;
                 }
             }
 
             if (l == packet->payload_packet_len) {
-                MMT_LOG(PROTO_WARCRAFT3, MMT_LOG_DEBUG, "maybe WARCRAFT3\n");
-                MMT_LOG(PROTO_WARCRAFT3, MMT_LOG_DEBUG, "flow->packet_counter = %u \n",
-                        flow->data_packet_count);
                 if (ipacket->session->data_packet_count > 2) {
-                    MMT_LOG(PROTO_WARCRAFT3, MMT_LOG_DEBUG, "detected WARCRAFT3\n");
                     mmt_int_warcraft3_add_connection(ipacket);
                     return 1;
                 }
@@ -60,7 +48,6 @@ int mmt_check_warcraft3(ipacket_t * ipacket, unsigned index) {
             }
         }
 
-        MMT_LOG(PROTO_WARCRAFT3, MMT_LOG_DEBUG, "no warcraft3 detected.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_WARCRAFT3);
 
     }

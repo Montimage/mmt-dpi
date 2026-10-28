@@ -26,7 +26,6 @@ int mmt_check_tvants_tcp(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-        MMT_LOG(PROTO_TVANTS, MMT_LOG_DEBUG, "search tvants.  \n");
 
         if (packet->payload_packet_len > 15
                 && packet->payload[0] == 0x04 && packet->payload[1] == 0x00
@@ -35,11 +34,9 @@ int mmt_check_tvants_tcp(ipacket_t * ipacket, unsigned index) {
                 && packet->payload[6] == 0x00 && packet->payload[7] == 0x00
                 && mmt_memcmp(&packet->payload[8], "TVANTS", 6) == 0) {
 
-            MMT_LOG(PROTO_TVANTS, MMT_LOG_DEBUG, "found tvants over tcp.  \n");
             mmt_int_tvants_add_connection(ipacket);
             return 1;
         }
-        MMT_LOG(PROTO_TVANTS, MMT_LOG_DEBUG, "exclude tvants.  \n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_TVANTS);
 
     }
@@ -54,7 +51,6 @@ int mmt_check_tvants_udp(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-        MMT_LOG(PROTO_TVANTS, MMT_LOG_DEBUG, "search tvants.  \n");
 
         if (packet->payload_packet_len > 57
                 && packet->payload[0] == 0x04 && packet->payload[1] == 0x00
@@ -65,11 +61,9 @@ int mmt_check_tvants_udp(ipacket_t * ipacket, unsigned index) {
                 && (mmt_memcmp(&packet->payload[48], "TVANTS", 6) == 0
                 || mmt_memcmp(&packet->payload[49], "TVANTS", 6) == 0 || mmt_memcmp(&packet->payload[51], "TVANTS", 6) == 0)) {
 
-            MMT_LOG(PROTO_TVANTS, MMT_LOG_DEBUG, "found tvants over udp.  \n");
             mmt_int_tvants_add_connection(ipacket);
             return 1;
         }
-        MMT_LOG(PROTO_TVANTS, MMT_LOG_DEBUG, "exclude tvants.  \n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_TVANTS);
     }
     return 0;

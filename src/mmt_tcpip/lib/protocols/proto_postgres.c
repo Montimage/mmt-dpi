@@ -44,13 +44,11 @@ int mmt_check_postgres(ipacket_t * ipacket, unsigned index) {
             if (flow->l4.tcp.postgres_stage == 2 - ipacket->session->last_packet_direction) {
                 //SSL accepted
                 if (packet->payload_packet_len == 1 && packet->payload[0] == 'S') {
-                    MMT_LOG(PROTO_POSTGRES, MMT_LOG_DEBUG, "PostgreSQL detected, SSL accepted.\n");
                     mmt_int_postgres_add_connection(ipacket);
                     return 1;
                 }
                 //SSL denied
                 if (packet->payload_packet_len == 1 && packet->payload[0] == 'N') {
-                    MMT_LOG(PROTO_POSTGRES, MMT_LOG_DEBUG, "PostgreSQL detected, SSL denied.\n");
                     mmt_int_postgres_add_connection(ipacket);
                     return 1;
                 }
@@ -60,33 +58,28 @@ int mmt_check_postgres(ipacket_t * ipacket, unsigned index) {
                 if (packet->payload_packet_len > 8 &&
                         ntohl(get_u32(packet->payload, 5)) < 10 &&
                         ntohl(get_u32(packet->payload, 1)) == packet->payload_packet_len - 1 && packet->payload[0] == 0x52) {
-                    MMT_LOG(PROTO_POSTGRES, MMT_LOG_DEBUG, "PostgreSQL detected, no SSL.\n");
                     mmt_int_postgres_add_connection(ipacket);
                     return 1;
                 }
             if (flow->l4.tcp.postgres_stage == 6
                     && ntohl(get_u32(packet->payload, 1)) == packet->payload_packet_len - 1 && packet->payload[0] == 'p') {
-                MMT_LOG(PROTO_POSTGRES, MMT_LOG_DEBUG, "found postgres asymmetrically.\n");
                 mmt_int_postgres_add_connection(ipacket);
                 return 1;
             }
             if (flow->l4.tcp.postgres_stage == 5 && packet->payload[0] == 'R') {
                 if (ntohl(get_u32(packet->payload, 1)) == packet->payload_packet_len - 1) {
-                    MMT_LOG(PROTO_POSTGRES, MMT_LOG_DEBUG, "found postgres asymmetrically.\n");
                     mmt_int_postgres_add_connection(ipacket);
                     return 1;
                 }
                 size = ntohl(get_u32(packet->payload, 1)) + 1;
                 if (packet->payload[size - 1] == 'S') {
                     if ((size + get_u32(packet->payload, (size + 1))) == packet->payload_packet_len) {
-                        MMT_LOG(PROTO_POSTGRES, MMT_LOG_DEBUG, "found postgres asymmetrically.\n");
                         mmt_int_postgres_add_connection(ipacket);
                         return 1;
                     }
                 }
                 size += get_u32(packet->payload, (size + 1)) + 1;
                 if (packet->payload[size - 1] == 'S') {
-                    MMT_LOG(PROTO_POSTGRES, MMT_LOG_DEBUG, "found postgres asymmetrically.\n");
                     mmt_int_postgres_add_connection(ipacket);
                     return 1;
                 }

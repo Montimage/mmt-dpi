@@ -26,7 +26,6 @@ int mmt_check_kerberos(ipacket_t * ipacket, unsigned index) {
                     packet->payload[14] == 0x05 &&
                     (packet->payload[19] == 0x0a ||
                     packet->payload[19] == 0x0c || packet->payload[19] == 0x0d || packet->payload[19] == 0x0e)) {
-                MMT_LOG(PROTO_KERBEROS, MMT_LOG_DEBUG, "found KERBEROS\n");
                 mmt_int_kerberos_add_connection(ipacket);
                 return 1;
             }
@@ -34,13 +33,11 @@ int mmt_check_kerberos(ipacket_t * ipacket, unsigned index) {
                     packet->payload[16] == 0x05 &&
                     (packet->payload[21] == 0x0a ||
                     packet->payload[21] == 0x0c || packet->payload[21] == 0x0d || packet->payload[21] == 0x0e)) {
-                MMT_LOG(PROTO_KERBEROS, MMT_LOG_DEBUG, "found KERBEROS\n");
                 mmt_int_kerberos_add_connection(ipacket);
                 return 1;
             }
         }
 
-        MMT_LOG(PROTO_KERBEROS, MMT_LOG_DEBUG, "no KERBEROS detected.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_KERBEROS);
     }
     return 0;

@@ -36,7 +36,6 @@ int mmt_check_veohtv_tcp(ipacket_t * ipacket, unsigned index) {
                         packet->server_line.ptr != NULL &&
                         packet->server_line.len > 5 &&
                         mmt_memcmp(packet->server_line.ptr, "Veoh-", 5) == 0) {
-                    MMT_LOG(PROTO_HTTP_APPLICATION_VEOHTV, MMT_LOG_DEBUG, "VeohTV detected.\n");
                     mmt_int_veohtv_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                     return 1;
                 }
@@ -45,7 +44,6 @@ int mmt_check_veohtv_tcp(ipacket_t * ipacket, unsigned index) {
                             PROTO_HTTP_APPLICATION_VEOHTV);
                     return 0;
                 }
-                MMT_LOG(PROTO_HTTP_APPLICATION_VEOHTV, MMT_LOG_DEBUG, "VeohTV detected.\n");
                 mmt_int_veohtv_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return 1;
             } else if (ipacket->session->data_packet_count_direction[(ipacket->session->setup_packet_direction == 1) ? 0 : 1] > 3) {
@@ -53,7 +51,6 @@ int mmt_check_veohtv_tcp(ipacket_t * ipacket, unsigned index) {
                     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP_APPLICATION_VEOHTV);
                     return 0;
                 }
-                MMT_LOG(PROTO_HTTP_APPLICATION_VEOHTV, MMT_LOG_DEBUG, "VeohTV detected.\n");
                 mmt_int_veohtv_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return 1;
             } else {
@@ -62,7 +59,6 @@ int mmt_check_veohtv_tcp(ipacket_t * ipacket, unsigned index) {
                         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP_APPLICATION_VEOHTV);
                         return 0;
                     }
-                    MMT_LOG(PROTO_HTTP_APPLICATION_VEOHTV, MMT_LOG_DEBUG, "VeohTV detected.\n");
                     mmt_int_veohtv_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                     return 1;
                 }
@@ -95,7 +91,6 @@ int mmt_check_veohtv_udp(ipacket_t * ipacket, unsigned index) {
         if (packet->payload_packet_len == 28 &&
                 get_u32(packet->payload, 16) == htonl(0x00000021) &&
                 get_u32(packet->payload, 20) == htonl(0x00000000) && get_u32(packet->payload, 24) == htonl(0x01040000)) {
-            MMT_LOG(PROTO_HTTP_APPLICATION_VEOHTV, MMT_LOG_DEBUG, "UDP VeohTV found.\n");
             mmt_int_veohtv_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return 1;
         }

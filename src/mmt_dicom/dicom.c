@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "include/dicom.h"
+#include "../mmt_core/private_include/dbg.h" /* mmt_stderr_log (issue #545) */
 #include "../mmt_core/public_include/extraction_lib.h"
 #include <netinet/in.h>
 #include "../mmt_tcpip/include/mmt_tcpip_protocols.h"
@@ -581,7 +582,7 @@ int init_dicom_proto_struct() {
 
 		// Register classification function of DICOM protocol after TCP
 		if(!register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_dicom_tcp, 50)){
-			fprintf(stderr, "\n[err] init_dicom_proto_struct - cannot register_classification_function_with_parent_protocol: PROTO_TCP\n");
+			mmt_stderr_log("\n[err] init_dicom_proto_struct - cannot register_classification_function_with_parent_protocol: PROTO_TCP\n");
 			return -1;
 		};
 		return register_protocol(protocol_struct, PROTO_DICOM);

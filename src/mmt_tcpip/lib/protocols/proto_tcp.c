@@ -901,7 +901,6 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     // would slip past the "l4_packet_len < tcphdr_len" check below for doff 0),
     // so reject the packet before deriving any offsets from it.
     if (packet->tcp->doff < TCP_DOFF_MIN_WORDS) {
-        MMT_LOG( PROTO_TCP, MMT_LOG_DEBUG, "*** Warning: malformed packet (tcp data offset < 5)\n" );
         return MMT_CLASSIFY_SKIP;
     }
     uint16_t tcphdr_len = packet->tcp->doff * TCP_DOFF_WORD_BYTES; //TCP header length
@@ -909,7 +908,6 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     packet->l4_protocol = 6; /* TCP for sure ;) */
 
     if( packet->l4_packet_len < tcphdr_len ) {
-        MMT_LOG( PROTO_TCP, MMT_LOG_DEBUG, "*** Warning: malformed packet (tcp length mismatch)\n" );
         return MMT_CLASSIFY_SKIP;
     }
 
@@ -945,9 +943,6 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
          * kept: it costs one memset per new flow and guarantees a clean
          * detection state whatever ran on this packet before. */
         memset(packet->flow, 0, sizeof (*(packet->flow)));
-        MMT_LOG(PROTO_UNKNOWN, packet,
-                MMT_LOG_DEBUG,
-                "%s:%u: tcp syn packet for unknown protocol, reset detection state\n", __FUNCTION__, __LINE__);
         }
 
     mmt_connection_tracking(ipacket, index);
@@ -1024,7 +1019,6 @@ int tcp_pre_classification_function_with_reassemble(ipacket_t * ipacket, unsigne
     // would slip past the "l4_packet_len < tcphdr_len" check below for doff 0),
     // so reject the packet before deriving any offsets from it.
     if (packet->tcp->doff < TCP_DOFF_MIN_WORDS) {
-        MMT_LOG( PROTO_TCP, MMT_LOG_DEBUG, "*** Warning: malformed packet (tcp data offset < 5)\n" );
         return MMT_CLASSIFY_SKIP;
     }
     uint16_t tcphdr_len = packet->tcp->doff * TCP_DOFF_WORD_BYTES; //TCP header length
@@ -1032,7 +1026,6 @@ int tcp_pre_classification_function_with_reassemble(ipacket_t * ipacket, unsigne
     packet->l4_protocol = 6; /* TCP for sure ;) */
 
     if( packet->l4_packet_len < tcphdr_len ) {
-        MMT_LOG( PROTO_TCP, MMT_LOG_DEBUG, "*** Warning: malformed packet (tcp length mismatch)\n" );
         return MMT_CLASSIFY_SKIP;
     }
 
@@ -1068,9 +1061,6 @@ int tcp_pre_classification_function_with_reassemble(ipacket_t * ipacket, unsigne
          * kept: it costs one memset per new flow and guarantees a clean
          * detection state whatever ran on this packet before. */
         memset(packet->flow, 0, sizeof (*(packet->flow)));
-        MMT_LOG(PROTO_UNKNOWN, packet,
-                MMT_LOG_DEBUG,
-                "%s:%u: tcp syn packet for unknown protocol, reset detection state\n", __FUNCTION__, __LINE__);
         }
 
     mmt_connection_tracking(ipacket, index);

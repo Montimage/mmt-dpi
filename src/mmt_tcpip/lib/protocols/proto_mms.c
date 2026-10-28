@@ -26,7 +26,6 @@ int mmt_check_mms(ipacket_t * ipacket, unsigned index) {
                     && packet->payload[5] == 0xfa && packet->payload[6] == 0x0b
                     && packet->payload[7] == 0xb0 && packet->payload[12] == 0x4d
                     && packet->payload[13] == 0x4d && packet->payload[14] == 0x53 && packet->payload[15] == 0x20) {
-                MMT_LOG(PROTO_MMS, MMT_LOG_DEBUG, "MMS: MSMMS Request found \n");
                 flow->l4.tcp.mms_stage = 1 + ipacket->session->last_packet_direction;
                 return 1;
             }
@@ -36,16 +35,13 @@ int mmt_check_mms(ipacket_t * ipacket, unsigned index) {
                     && packet->payload[6] == 0x0b && packet->payload[7] == 0xb0
                     && packet->payload[12] == 0x4d && packet->payload[13] == 0x4d
                     && packet->payload[14] == 0x53 && packet->payload[15] == 0x20) {
-                MMT_LOG(PROTO_MMS, MMT_LOG_DEBUG, "MMS: MSMMS Response found \n");
                 mmt_int_mms_add_connection(ipacket);
                 return 1;
             }
         }
         if (MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP) != 0) {
-            MMT_LOG(PROTO_MMS, MMT_LOG_DEBUG, "MMS: exclude\n");
             MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MMS);
         } else {
-            MMT_LOG(PROTO_MMS, MMT_LOG_DEBUG, "MMS avoid early exclude from http\n");
         }
     }
     return 0;

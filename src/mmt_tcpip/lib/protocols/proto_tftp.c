@@ -20,29 +20,24 @@ int mmt_check_tftp(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-        MMT_LOG(PROTO_TFTP, MMT_LOG_DEBUG, "search TFTP.\n");
 
         if (packet->payload_packet_len > 3 && flow->l4.udp.tftp_stage == 0
                 && ntohl(get_u32(packet->payload, 0)) == 0x00030001) {
-            MMT_LOG(PROTO_TFTP, MMT_LOG_DEBUG, "maybe tftp. need next packet.\n");
             flow->l4.udp.tftp_stage = 1;
             return 4;
         }
         if (packet->payload_packet_len > 3 && (flow->l4.udp.tftp_stage == 1)
                 && ntohl(get_u32(packet->payload, 0)) == 0x00040001) {
 
-            MMT_LOG(PROTO_TFTP, MMT_LOG_DEBUG, "found tftp.\n");
             mmt_int_tftp_add_connection(ipacket);
             return 1;
         }
         if (packet->payload_packet_len > 1
                 && ((packet->payload[0] == 0 && packet->payload[packet->payload_packet_len - 1] == 0)
                 || (packet->payload_packet_len == 4 && ntohl(get_u32(packet->payload, 0)) == 0x00040000))) {
-            MMT_LOG(PROTO_TFTP, MMT_LOG_DEBUG, "skip initial packet.\n");
             return 4;
         }
 
-        MMT_LOG(PROTO_TFTP, MMT_LOG_DEBUG, "exclude TFTP.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_TFTP);
     }
     return 0;

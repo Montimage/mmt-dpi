@@ -22,7 +22,6 @@ static void parse_gg_foneno(ipacket_t * ipacket) {
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
     uint16_t pos = 18;
 
-    MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "Gadu-Gadu: parse_gg_foneno.\n");
 
     if (packet->payload_packet_len < 19) {
         return;
@@ -38,7 +37,6 @@ static void parse_gg_foneno(ipacket_t * ipacket) {
         char fmnumber[8];
         int i = 0;
         if (mmt_memcmp(&packet->payload[pos], "fmnumber=", 9) == 0) {
-            MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "Gadu-Gadu: fmnumber found .\n");
         } else
             return;
 
@@ -54,8 +52,6 @@ static void parse_gg_foneno(ipacket_t * ipacket) {
             fmnumber[i] = '\0';
             if (src != NULL) {
                 memcpy(src->gg_fmnumber, fmnumber, i);
-                MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG,
-                        "Gadu-Gadu: fmnumber %s\n", src->gg_fmnumber);
             }
         }
     }
@@ -67,8 +63,6 @@ static uint8_t check_for_gadugadu_payload_pattern(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-    MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG,
-            "Gadu-Gadu: check for 0xbebadec0 pattern in payload.\n");
 
     if (packet->payload_packet_len == 12) {
         if ((ipacket->session->data_packet_count == 1) && (ntohl(get_u32(packet->payload, 0)) == 0xbebadec0)) {
@@ -77,8 +71,6 @@ static uint8_t check_for_gadugadu_payload_pattern(ipacket_t * ipacket) {
         }
         if ((flow->l4.tcp.gadugadu_stage == 1) && (ipacket->session->data_packet_count == 2)
                 && (ntohl(get_u32(packet->payload, 0)) == 0xbebadec0)) {
-            MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG,
-                    "Gadu-Gadu: gadugadu pattern bebadec0 FOUND \n");
 
             mmt_int_gadugadu_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return 1;
@@ -91,13 +83,10 @@ static uint8_t check_for_http(ipacket_t * ipacket) {
     
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
-    MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "Gadu-Gadu: check for http.\n");
 
     if (packet->payload_packet_len < 50) {
-        MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "Gadu-Gadu: Packet too small.\n");
         return 0;
     } else if (mmt_memcmp(packet->payload, "GET /appsvc/appmsg", 18) == 0) {
-        MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "Gadu-Gadu: GET FOUND\n");
         parse_gg_foneno(ipacket);
         // parse packet
         mmt_parse_packet_line_info(ipacket);
@@ -110,13 +99,10 @@ static uint8_t check_for_http(ipacket_t * ipacket) {
         if (!(packet->host_line.len >= 19 && mmt_memcmp(packet->host_line.ptr, "appmsg.gadu-gadu.pl", 19) == 0)) {
             return 0;
         }
-        MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG,
-                "Gadu-Gadu: Is gadugadu host FOUND %s\n", packet->host_line.ptr);
 
         mmt_int_gadugadu_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
 
     } else if (mmt_memcmp(packet->payload, "POST /send/message/", 19) == 0) {
-        MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "Gadu-Gadu: GET FOUND\n");
 
         // parse packet
         mmt_parse_packet_line_info(ipacket);
@@ -129,13 +115,10 @@ static uint8_t check_for_http(ipacket_t * ipacket) {
         if (!(packet->host_line.len >= 17 && mmt_memcmp(packet->host_line.ptr, "life.gadu-gadu.pl", 17) == 0)) {
             return 0;
         }
-        MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG,
-                "Gadu-Gadu: Is gadugadu post FOUND %s\n", packet->host_line.ptr);
 
         mmt_int_gadugadu_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
 
     } else if (mmt_memcmp(packet->payload, "GET /rotate_token", 17) == 0) {
-        MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "Gadu-Gadu: GET FOUND\n");
 
         // parse packet
         mmt_parse_packet_line_info(ipacket);
@@ -148,8 +131,6 @@ static uint8_t check_for_http(ipacket_t * ipacket) {
         if (!(packet->host_line.len >= 13 && mmt_memcmp(packet->host_line.ptr, "sms.orange.pl", 13) == 0)) {
             return 0;
         }
-        MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG,
-                "Gadu-Gadu:  gadugadu sms FOUND %s\n", packet->host_line.ptr);
 
         mmt_int_gadugadu_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
 
@@ -164,8 +145,6 @@ static uint8_t check_for_http(ipacket_t * ipacket) {
                 mmt_memcmp(packet->user_agent_line.ptr, "Gadu-Gadu Client", 16) == 0)) {
             return 0;
         }
-        MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG,
-                "Gadu-Gadu:  gadugadu FOUND %s\n", packet->user_agent_line.ptr);
 
         mmt_int_gadugadu_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
 
@@ -209,7 +188,6 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
 
                 }
 
-                MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "gg filetransfer setup detected\n");
 
             } else {
                 if (src != NULL) {
@@ -220,7 +198,6 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
                     dst->gadu_gadu_voice = 1;
                     dst->gg_timeout = packet->tick_timestamp;
                 }
-                MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "gg voice setup detected \n");
             }
         }
         return;
@@ -228,7 +205,6 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
 #ifdef PROTO_HTTP
     if (packet->detected_protocol_stack[0] == PROTO_HTTP) {
 #endif
-        MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "Gadu-Gadu: HTTP CHECK FOUND\n");
         if (packet->tcp != NULL && ntohs(packet->tcp->dest) == 80)
             if (check_for_http(ipacket))
                 return;
@@ -240,7 +216,6 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
     if (packet->tcp != NULL &&
             (ntohs(packet->tcp->dest) == 443 || ntohs(packet->tcp->dest) == 8074
             || ntohs(packet->tcp->source) == 443 || ntohs(packet->tcp->source) == 8074)) {
-        MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "Gadu-Gadu: found port 8074 or 443.\n");
         if (ipacket->session->data_packet_count <= 6) {
 
             if ((packet->payload_packet_len == 9
@@ -259,8 +234,6 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
                     || ntohl(get_u32(packet->payload, 0)) == 0x10000000
                     || ntohl(get_u32(packet->payload, 0)) == 0x15000000)) {
                 flow->l4.tcp.gadugadu_stage++;
-                MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG,
-                        "Gadu-Gadu: len=9,12,100,190-210, stage++.\n");
             }
 
             /*detection of mirinda client .this has a different way of communicating ports */
@@ -268,38 +241,28 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
                     && ntohl(get_u32(packet->payload, 0)) == 0x19000000
                     && get_l32(packet->payload, 4) == packet->payload_packet_len - 8) {
                 flow->l4.tcp.gadugadu_stage++;
-                MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "Gadu-Gadu: len=114, stage++.\n");
                 /* here the asymmetric implementation ends */
 
                 if (flow->l4.tcp.gadugadu_stage == 2) {
                     if (src != NULL) {
 
                         memcpy(src->gg_call_id[src->gg_next_id], &packet->payload[8], 4);
-                        MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "call id parsed %d\n", packet->payload[8]);
 
                         src->gg_ft_ip_address = get_u32(packet->payload, 86);
                         src->gg_ft_port = htons(get_u16(packet->payload, 90));
-                        MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG,
-                                "mirinda file transfer port %d \n", ntohs(src->gg_ft_port));
                     }
                     if (dst != NULL) {
 
                         memcpy(dst->gg_call_id[dst->gg_next_id], &packet->payload[8], 4);
-                        MMT_LOG(PROTO_GADUGADU, 
-                                MMT_LOG_DEBUG, "call id parsed %d\n", packet->payload[8]);
 
                         dst->gg_ft_ip_address = get_u32(packet->payload, 86);
                         dst->gg_ft_port = htons(get_u16(packet->payload, 90));
 
-                        MMT_LOG(PROTO_GADUGADU,
-                                MMT_LOG_DEBUG,
-                                "mirinda file transfer port %d \n", ntohs(dst->gg_ft_port));
                     }
                 }
             }
 
             if (flow->l4.tcp.gadugadu_stage == 2) {
-                MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "Gadu-Gadu: add connection.\n");
 
                 mmt_int_gadugadu_add_connection(ipacket, MMT_REAL_PROTOCOL);
             }
@@ -317,8 +280,6 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
 
                 mmt_int_gadugadu_add_connection(ipacket, MMT_REAL_PROTOCOL);
 
-                MMT_LOG(PROTO_GADUGADU, 
-                        MMT_LOG_DEBUG, "file transfer detected %d\n", ntohs(packet->tcp->dest));
                 return;
             } else {
                 src->gg_ft_ip_address = 0;
@@ -336,10 +297,8 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
 
                 mmt_int_gadugadu_add_connection(ipacket, MMT_REAL_PROTOCOL);
 
-                MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "http file transfer detetced \n");
                 return;
             } else {
-                MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "http file transfer timeout \n");
 
             }
 
@@ -357,11 +316,8 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
 
                 mmt_int_gadugadu_add_connection(ipacket, MMT_REAL_PROTOCOL);
 
-                MMT_LOG(PROTO_GADUGADU, 
-                        MMT_LOG_DEBUG, "file transfer detetced %d\n", htons(packet->tcp->dest));
                 return;
             } else {
-                MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, " file transfer timeout \n");
             }
         }
     }
@@ -375,8 +331,6 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
 
                 mmt_int_gadugadu_add_connection(ipacket, MMT_REAL_PROTOCOL);
 
-                MMT_LOG(PROTO_GADUGADU, 
-                        MMT_LOG_DEBUG, "file transfer detected %d\n", ntohs(packet->tcp->dest));
                 return;
             } else {
                 dst->gg_ft_ip_address = 0;
@@ -394,10 +348,8 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
 
                 mmt_int_gadugadu_add_connection(ipacket, MMT_REAL_PROTOCOL);
 
-                MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "http file transfer detetced \n");
                 return;
             } else {
-                MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "http file transfer timeout \n");
 
             }
 
@@ -415,11 +367,8 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
 
                 mmt_int_gadugadu_add_connection(ipacket, MMT_REAL_PROTOCOL);
 
-                MMT_LOG(PROTO_GADUGADU, 
-                        MMT_LOG_DEBUG, "file transfer detected %d\n", ntohs(packet->tcp->dest));
                 return;
             } else {
-                MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, " file transfer timeout \n");
             }
         }
     }

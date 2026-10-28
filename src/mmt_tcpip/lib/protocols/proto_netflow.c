@@ -14,7 +14,6 @@ int mmt_check_netflow(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        MMT_LOG(PROTO_NETFLOW, MMT_LOG_DEBUG, "netflow detection...\n");
         uint32_t payload_len = packet->payload_packet_len;
 
         /* NetFlow v5/v9: version(2) count(2) sys_uptime(4) unix_secs(4) ...
@@ -27,7 +26,6 @@ int mmt_check_netflow(ipacket_t * ipacket, unsigned index) {
             uint32_t when = ntohl(get_u32(packet->payload, 8)); /* unix_secs */
 
             if (when >= 946684800 /* 1/1/2000 */) {
-                MMT_LOG(PROTO_NETFLOW, MMT_LOG_DEBUG, "Found netflow.\n");
                 mmt_internal_add_connection(ipacket, PROTO_NETFLOW, MMT_REAL_PROTOCOL);
                 return 1;
             }
@@ -40,7 +38,6 @@ int mmt_check_netflow(ipacket_t * ipacket, unsigned index) {
                 && (packet->payload[1] == 10)
                 && (ntohs(get_u16(packet->payload, 2)) == payload_len)
                 && (ntohl(get_u32(packet->payload, 4)) >= 946684800 /* 1/1/2000 */)) {
-            MMT_LOG(PROTO_NETFLOW, MMT_LOG_DEBUG, "Found IPFIX.\n");
             mmt_internal_add_connection(ipacket, PROTO_NETFLOW, MMT_REAL_PROTOCOL);
             return 1;
         }

@@ -41,7 +41,6 @@ int mmt_check_vnc(ipacket_t * ipacket, unsigned index) {
                          (mmt_memcmp(packet->payload, "RFB 003.008", 11) == 0 && packet->payload[11] == 0x0a) ||
                          (mmt_memcmp(packet->payload, "RFB 004.001", 11) == 0 && packet->payload[11] == 0x0a))) {
 
-                    MMT_LOG(PROTO_VNC, MMT_LOG_DEBUG, "found vnc\n");
                     mmt_int_vnc_add_connection(ipacket);
                     return 1;
                 }

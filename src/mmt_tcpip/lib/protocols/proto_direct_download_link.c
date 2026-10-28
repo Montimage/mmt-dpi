@@ -31,7 +31,6 @@ uint8_t search_ddl_domains(ipacket_t * ipacket) {
     uint16_t host_line_len_without_port;
 
     if (packet->payload_packet_len < 100) {
-        MMT_LOG(PROTO_DIRECT_DOWNLOAD_LINK, MMT_LOG_DEBUG, "DDL: Packet too small.\n");
         goto end_ddl_nothing_found;
     }
 
@@ -39,10 +38,8 @@ uint8_t search_ddl_domains(ipacket_t * ipacket) {
 
     if (mmt_memcmp(packet->payload, "POST ", 5) == 0) {
         filename_start = 5; // POST
-        MMT_LOG(PROTO_DIRECT_DOWNLOAD_LINK, MMT_LOG_DEBUG, "DDL: POST FOUND\n");
     } else if (mmt_memcmp(packet->payload, "GET ", 4) == 0) {
         filename_start = 4; // GET
-        MMT_LOG(PROTO_DIRECT_DOWNLOAD_LINK, MMT_LOG_DEBUG, "DDL: GET FOUND\n");
     } else {
         goto end_ddl_nothing_found;
     }
@@ -50,17 +47,12 @@ uint8_t search_ddl_domains(ipacket_t * ipacket) {
     mmt_parse_packet_line_info(ipacket);
 
     if (packet->host_line.ptr == NULL) {
-        MMT_LOG(PROTO_DIRECT_DOWNLOAD_LINK, MMT_LOG_DEBUG, "DDL: NO HOST FOUND\n");
         goto end_ddl_nothing_found;
     }
 
-    MMT_LOG(PROTO_DIRECT_DOWNLOAD_LINK, MMT_LOG_DEBUG, "DDL: Host: found\n");
 
     if (packet->line[0].len < 9 + filename_start
             || mmt_memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) != 0) {
-        MMT_LOG(PROTO_DIRECT_DOWNLOAD_LINK, 
-                MMT_LOG_DEBUG, "DDL: PACKET NOT HTTP CONFORM.\n>>>%.*s<<<\n",
-                8, &packet->line[0].ptr[packet->line[0].len - 9]);
         goto end_ddl_nothing_found;
     }
     // BEGIN OF AUTOMATED CODE GENERATION
@@ -71,11 +63,9 @@ uint8_t search_ddl_domains(ipacket_t * ipacket) {
         i = 2;
         while (host_line_len_without_port >= i && packet->host_line.ptr[host_line_len_without_port - i] >= '0'
                 && packet->host_line.ptr[host_line_len_without_port - i] <= '9') {
-            MMT_LOG(PROTO_DIRECT_DOWNLOAD_LINK, MMT_LOG_DEBUG, "DDL: number found\n");
             i++;
         }
         if (host_line_len_without_port >= i && packet->host_line.ptr[host_line_len_without_port - i] == ':') {
-            MMT_LOG(PROTO_DIRECT_DOWNLOAD_LINK, MMT_LOG_DEBUG, "DDL: ':' found\n");
             host_line_len_without_port = host_line_len_without_port - i;
         }
     }
@@ -665,12 +655,9 @@ uint8_t search_ddl_domains(ipacket_t * ipacket) {
      */
 
 end_ddl_nothing_found:
-    MMT_LOG(PROTO_DIRECT_DOWNLOAD_LINK, MMT_LOG_DEBUG,
-            "Nothing Found\n%.*s\n", packet->payload_packet_len, packet->payload);
     return 0;
 
 end_ddl_found:
-    MMT_LOG(PROTO_DIRECT_DOWNLOAD_LINK, MMT_LOG_DEBUG, "DDL: DIRECT DOWNLOAD LINK FOUND\n");
     mmt_int_direct_download_link_add_connection(ipacket);
     return 1;
 }

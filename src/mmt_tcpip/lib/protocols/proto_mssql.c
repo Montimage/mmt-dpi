@@ -38,7 +38,6 @@ int mmt_check_mssql(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-        MMT_LOG(PROTO_MSSQL, MMT_LOG_DEBUG, "search mssql.\n");
         if(ntohs(packet->tcp->dest)!=102 && ntohs(packet->tcp->source)!=102){ // port 102: for TPKT protocol (COTP protocols)
             // LN: Detect PROTO_MSSQL
             if(packet->payload_packet_len > sizeof(struct tds_packet_header)){
@@ -48,7 +47,6 @@ int mmt_check_mssql(ipacket_t * ipacket, unsigned index) {
                 if ((h->type >= 1 && h->type <= 8) || (h->type >= 14 && h->type <= 18)) {
                     if (h->status == 0x00 || h->status == 0x01 || h->status == 0x02 || h->status == 0x04 || h->status == 0x08 || h->status == 0x09 || h->status == 0x10) {
                         if (ntohs(h->length) == packet->payload_packet_len && h->window == 0x00) {
-                            MMT_LOG(PROTO_MSSQL, MMT_LOG_DEBUG, "found mssql.\n");
                             mmt_int_mssql_add_connection(ipacket);
                             return 1;
                         }
@@ -57,7 +55,6 @@ int mmt_check_mssql(ipacket_t * ipacket, unsigned index) {
             // end of LN: Detect PROTO_MSSQL            
             }
         }
-        MMT_LOG(PROTO_MSSQL, MMT_LOG_DEBUG, "exclude mssql.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MSSQL);
     }
     return 0;

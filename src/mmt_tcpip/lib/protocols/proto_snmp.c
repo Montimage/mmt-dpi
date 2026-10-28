@@ -31,29 +31,24 @@ int mmt_check_snmp(ipacket_t * ipacket, unsigned index) {
                     break;
                 default:
                     if (packet->payload[1] > 0x82) {
-                        MMT_LOG(PROTO_SNMP, MMT_LOG_DEBUG, "SNMP excluded, second byte is > 0x82\n");
                         goto excl;
                     }
                     offset = 2;
             }
 
             if (get_u16(packet->payload, offset) != htons(0x0201)) {
-                MMT_LOG(PROTO_SNMP, MMT_LOG_DEBUG, "SNMP excluded, 0x0201 pattern not found\n");
                 goto excl;
             }
 
             if (packet->payload[offset + 2] >= 0x04) {
-                MMT_LOG(PROTO_SNMP, MMT_LOG_DEBUG, "SNMP excluded, version > 3\n");
                 goto excl;
             }
 
             if (flow->l4.udp.snmp_stage == 0) {
                 if (packet->udp->dest == htons(161) || packet->udp->dest == htons(162)) {
-                    MMT_LOG(PROTO_SNMP, MMT_LOG_DEBUG, "SNMP detected due to port.\n");
                     mmt_int_snmp_add_connection(ipacket);
                     return 1;
                 }
-                MMT_LOG(PROTO_SNMP, MMT_LOG_DEBUG, "SNMP stage 0.\n");
                 if (packet->payload[offset + 2] == 3) {
                     flow->l4.udp.snmp_msg_id = ntohs(get_u32(packet->payload, offset + 8));
                 } else if (packet->payload[offset + 2] == 0) {
@@ -66,33 +61,23 @@ int mmt_check_snmp(ipacket_t * ipacket, unsigned index) {
             } else if (flow->l4.udp.snmp_stage == 1 + ipacket->session->last_packet_direction) {
                 if (packet->payload[offset + 2] == 0) {
                     if (flow->l4.udp.snmp_msg_id != get_u8(packet->payload, offset + 15) - 1) {
-                        MMT_LOG(PROTO_SNMP, MMT_LOG_DEBUG,
-                                "SNMP v1 excluded, message ID doesn't match\n");
                         goto excl;
                     }
                 }
             } else if (flow->l4.udp.snmp_stage == 2 - ipacket->session->last_packet_direction) {
-                MMT_LOG(PROTO_SNMP, MMT_LOG_DEBUG, "SNMP stage 1-2.\n");
                 if (packet->payload[offset + 2] == 3) {
                     if (flow->l4.udp.snmp_msg_id != ntohs(get_u32(packet->payload, offset + 8))) {
-                        MMT_LOG(PROTO_SNMP, MMT_LOG_DEBUG,
-                                "SNMP v3 excluded, message ID doesn't match\n");
                         goto excl;
                     }
                 } else if (packet->payload[offset + 2] == 0) {
                     if (flow->l4.udp.snmp_msg_id != get_u8(packet->payload, offset + 15)) {
-                        MMT_LOG(PROTO_SNMP, MMT_LOG_DEBUG,
-                                "SNMP v1 excluded, message ID doesn't match\n");
                         goto excl;
                     }
                 } else {
                     if (flow->l4.udp.snmp_msg_id != ntohs(get_u16(packet->payload, offset + 15))) {
-                        MMT_LOG(PROTO_SNMP, MMT_LOG_DEBUG,
-                                "SNMP v2 excluded, message ID doesn't match\n");
                         goto excl;
                     }
                 }
-                MMT_LOG(PROTO_SNMP, MMT_LOG_DEBUG, "SNMP detected.\n");
                 mmt_int_snmp_add_connection(ipacket);
                 return 1;
             }

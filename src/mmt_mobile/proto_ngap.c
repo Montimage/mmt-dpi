@@ -217,7 +217,7 @@ int init_proto_ngap_struct() {
 		}
 	int ret = register_classification_function_with_parent_protocol( PROTO_SCTP_DATA, _classify_ngap_from_sctp_data, 100 );
 	if( ret == 0 ){
-		fprintf(stderr, "Need mmt_tcpip library containing PROTO_SCTP_DATA having id = %d", PROTO_SCTP_DATA);
+		mmt_stderr_log("Need mmt_tcpip library containing PROTO_SCTP_DATA having id = %d", PROTO_SCTP_DATA);
 		return PROTO_NOT_REGISTERED;
 	}
 	register_classification_function(protocol_struct, ngap_classify_next_proto);

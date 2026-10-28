@@ -23,7 +23,6 @@ int mmt_check_i23v5(ipacket_t * ipacket, unsigned index) {
 
         uint32_t i;
         uint32_t sum;
-        MMT_LOG(PROTO_I23V5, MMT_LOG_DEBUG, "search i23v5.\n");
 
         /*
          * encryption of i23v5 is tricky:  the 7th bit of the first byte and the sescond bit of the second byte must be set.
@@ -31,25 +30,21 @@ int mmt_check_i23v5(ipacket_t * ipacket, unsigned index) {
          * The sum of the three packets is in another packet at any place.
          */
         if (packet->payload_packet_len > 7 && ((packet->payload[0] & 0x04) == 0x04 && (packet->payload[2] & 0x80) == 0x80)) {
-            MMT_LOG(PROTO_I23V5, MMT_LOG_DEBUG, "found i23v5 handshake bits.\n");
 
             for (i = 3; i < packet->payload_packet_len - 5; i++) {
                 if (packet->payload[i] == 0x0d && packet->payload[i + 1] == 0x58) {
-                    MMT_LOG(PROTO_I23V5, MMT_LOG_DEBUG, "found first i23v5 key len.\n");
                     flow->i23v5_len1 = get_u32(packet->payload, i + 2);
                     return 4;
                 }
             }
             for (i = 3; i < packet->payload_packet_len - 5; i++) {
                 if (packet->payload[i] == 0x0e && packet->payload[i + 1] == 0x58) {
-                    MMT_LOG(PROTO_I23V5, MMT_LOG_DEBUG, "found second i23v5 key len.\n");
                     flow->i23v5_len2 = get_u32(packet->payload, i + 2);
                     return 4;
                 }
             }
             for (i = 3; i < packet->payload_packet_len - 5; i++) {
                 if (packet->payload[i] == 0x0f && packet->payload[i + 1] == 0x58) {
-                    MMT_LOG(PROTO_I23V5, MMT_LOG_DEBUG, "found third i23v5 key len.\n");
                     flow->i23v5_len3 = get_u32(packet->payload, i + 2);
                     return 4;
                 }
@@ -59,7 +54,6 @@ int mmt_check_i23v5(ipacket_t * ipacket, unsigned index) {
                 for (i = 3; i < packet->payload_packet_len - 5; i++) {
                     uint32_t ret = get_u32(packet->payload, i);
                     if (ret == sum) {
-                        MMT_LOG(PROTO_I23V5, MMT_LOG_DEBUG, "key sum matches.\n");
                         mmt_i23v5_add_connection(ipacket);
                         return 1;
                     }
@@ -68,7 +62,6 @@ int mmt_check_i23v5(ipacket_t * ipacket, unsigned index) {
             }
         }
 
-        MMT_LOG(PROTO_I23V5, MMT_LOG_DEBUG, "exclude i23v5.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_I23V5);
 
     }

@@ -156,10 +156,10 @@ CFLAGS   += $(SANITIZE_FLAGS)
 CXXFLAGS += $(SANITIZE_FLAGS)
 endif
 
-# SHOWLOG = 1 to show all the log from MMT_LOG() ...
+# SHOWLOG = 1 to compile in mmt_log_debug() lines; logger defaults to debug (#545)
 #
 #   ⚠ CAUTION (F-SEC-016, issue #214): a SHOWLOG=1 build prints decoded packet
-#   fields to stdout, and several of them are subscriber-identifying — IMSI,
+#   fields to stderr, and several of them are subscriber-identifying — IMSI,
 #   M-TMSI, UE/eNB IPs, eNB/MME names, URLs and hostnames lifted straight out
 #   of the traffic under inspection. Build with SHOWLOG=1 only on captures you
 #   are allowed to expose, and never ship or deploy a SHOWLOG build where the

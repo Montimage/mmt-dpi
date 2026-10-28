@@ -58,7 +58,6 @@ int mmt_check_redis(ipacket_t * ipacket, unsigned index)
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
     	 
-        MMT_LOG(PROTO_REDIS, MMT_LOG_DEBUG,"Redis detection...\n");
         /* skip marked packets */
         if (packet->detected_protocol_stack[0] != PROTO_REDIS) {
           if (packet->tcp_retransmission == 0) {
@@ -75,7 +74,6 @@ int mmt_check_redis(ipacket_t * ipacket, unsigned index)
             if(payload_len == 0) return 0; /* Shouldn't happen */
             /* Break after 20 packets. */
             if(ipacket->session->packet_count > 20) {
-              MMT_LOG(PROTO_REDIS, MMT_LOG_DEBUG,"Exclude Redis.\n");
               MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_REDIS);
               return 0;
             }
@@ -93,7 +91,6 @@ int mmt_check_redis(ipacket_t * ipacket, unsigned index)
             if((packet->tcp->dest == htons(REDIS_DEFAULT_PORT)
                 || packet->tcp->source == htons(REDIS_DEFAULT_PORT))
                && redis_is_resp_opener(first_char)) {
-                MMT_LOG(PROTO_REDIS, MMT_LOG_DEBUG,"Found Redis (port 6379).\n");
                 mmt_int_redis_add_connection(ipacket);
                 return 1;
             }
@@ -101,11 +98,9 @@ int mmt_check_redis(ipacket_t * ipacket, unsigned index)
             if((flow->redis_s2d_first_char != '\0') && (flow->redis_d2s_first_char != '\0')) {
                 if(redis_resp_exchange_match(flow->redis_s2d_first_char,
                                              flow->redis_d2s_first_char)) {
-                    MMT_LOG(PROTO_REDIS, MMT_LOG_DEBUG,"Found Redis.\n");
                     mmt_int_redis_add_connection(ipacket);
                     return 1;
               } else {
-                MMT_LOG(PROTO_REDIS, MMT_LOG_DEBUG,"Exclude Redis.\n");
                 MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_REDIS);
               }
             } else

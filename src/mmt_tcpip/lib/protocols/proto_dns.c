@@ -678,9 +678,8 @@ void * dns_extract_answer_data(uint16_t atype, uint16_t data_length, const u_cha
             break;
         default:
         /* Issue #212 (F-BUG-077): fprintf to stderr ran per packet carrying an
-         * unknown answer type — a remote log flood. Routed through the
-         * (default-off) MMT_LOG macro like the rest of this file. */
-        MMT_LOG(PROTO_DNS, MMT_LOG_DEBUG, "\n[DNS] Do not know the type of answer: %d\n", atype);
+         * unknown answer type — a remote log flood. Issue #545 removed the
+         * compiled-out trace that replaced it: an unknown type is skipped. */
         break;
     }
     return txtValue;
@@ -1191,24 +1190,20 @@ int mmt_classify_dns(ipacket_t * ipacket, unsigned index) {
 
     uint16_t dport = 0;
 
-    MMT_LOG(PROTO_DNS, MMT_LOG_DEBUG, "search DNS.\n");
 
 
     if (packet->udp != NULL) {
         //      const u16 sport=ntohs(packet->udp->source);
         dport = ntohs(packet->udp->dest);
-        MMT_LOG(PROTO_DNS, MMT_LOG_DEBUG, "calculated dport over UDP.\n");
     }
     if (packet->tcp != NULL) {
         //      const u16 sport=ntohs(packet->tcp->source);
         dport = ntohs(packet->tcp->dest);
-        MMT_LOG(PROTO_DNS, MMT_LOG_DEBUG, "calculated dport over tcp.\n");
     }
 
     /*check standard DNS to port 53 */
     if (packet->payload_packet_len >= 12) {
 
-        MMT_LOG(PROTO_DNS, MMT_LOG_DEBUG, "packet-payload-packet-len>=12.\n");
 
         /* dns header
            0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
@@ -1231,20 +1226,17 @@ int mmt_classify_dns(ipacket_t * ipacket, unsigned index) {
          */
 
         if (dns_check_payload(packet->payload,packet->payload_packet_len)){
-            MMT_LOG(PROTO_DNS, MMT_LOG_DEBUG, "found DNS.\n");            
             mmt_int_dns_add_connection(ipacket);    
             if(dport == 53){
                 return 1;
             }
             return 4;
         }else{
-            MMT_LOG(PROTO_DNS, MMT_LOG_DEBUG, "exclude DNS.\n");
             MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_DNS);
             return 0;
         }
     }
 
-    MMT_LOG(PROTO_DNS, MMT_LOG_DEBUG, "exclude DNS.\n");
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_DNS);
     return 0;
 }

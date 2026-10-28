@@ -28,7 +28,6 @@ int mmt_check_bgp(ipacket_t * ipacket, unsigned index) {
                 ntohs(get_u16(packet->payload, 16)) <= packet->payload_packet_len &&
                 (packet->tcp->dest == htons(179) || packet->tcp->source == htons(179))
                 && packet->payload[18] < 5) {
-            MMT_LOG(PROTO_BGP, MMT_LOG_DEBUG, "BGP detected.\n");
             mmt_int_bgp_add_connection(ipacket);
             return 1;
         }

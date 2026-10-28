@@ -27,7 +27,6 @@ void mmt_classify_popo(ipacket_t * ipacket, unsigned index) {
                 && get_u32(packet->payload, 4) == htonl(0x01010000)
                 && get_u32(packet->payload, 8) == htonl(0x06000000)
                 && get_u32(packet->payload, 12) == 0 && get_u32(packet->payload, 16) == 0) {
-            MMT_LOG(PROTO_POPO, MMT_LOG_DEBUG, "POPO detected\n");
             mmt_int_popo_add_connection(ipacket);
             return;
         }
@@ -43,7 +42,6 @@ void mmt_classify_popo(ipacket_t * ipacket, unsigned index) {
 
             if (ntohl(packet->iph->daddr) >= MMT_POPO_IP_SUBNET_START
                     && ntohl(packet->iph->daddr) <= MMT_POPO_IP_SUBNET_END) {
-                MMT_LOG(PROTO_POPO, MMT_LOG_DEBUG, "POPO ip subnet detected\n");
                 mmt_int_popo_add_connection(ipacket);
                 return;
             }
@@ -57,7 +55,6 @@ void mmt_classify_popo(ipacket_t * ipacket, unsigned index) {
             if (packet->payload[ii] == '@')
                 if (!mmt_memcmp(&packet->payload[ii + 1], "163.com", 7)
                         || (ii <= packet->payload_packet_len - 13 && !mmt_memcmp(&packet->payload[ii + 1], "popo.163.com", 12))) {
-                    MMT_LOG(PROTO_POPO, MMT_LOG_DEBUG, "POPO  detected.\n");
                     mmt_int_popo_add_connection(ipacket);
                     return;
                 }

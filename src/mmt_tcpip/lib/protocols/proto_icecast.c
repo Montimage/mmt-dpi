@@ -21,17 +21,14 @@ int mmt_check_icecast(ipacket_t * ipacket, unsigned index) {
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
         uint8_t i;
-        MMT_LOG(PROTO_ICECAST, MMT_LOG_DEBUG, "search icecast.\n");
 
         if ((packet->payload_packet_len < 500 &&
                 packet->payload_packet_len >= 7 && mmt_mem_cmp(packet->payload, "SOURCE ", 7) == 0)
                 || flow->l4.tcp.icecast_stage) {
             mmt_parse_packet_line_info_unix(ipacket);
-            MMT_LOG(PROTO_ICECAST, MMT_LOG_DEBUG, "Icecast lines=%d\n", packet->parsed_unix_lines);
             for (i = 0; i < packet->parsed_unix_lines; i++) {
                 if (packet->unix_line[i].ptr != NULL && packet->unix_line[i].len > 4
                         && mmt_mem_cmp(packet->unix_line[i].ptr, "ice-", 4) == 0) {
-                    MMT_LOG(PROTO_ICECAST, MMT_LOG_DEBUG, "Icecast detected.\n");
                     mmt_int_icecast_add_connection(ipacket);
                     return 1;
                 }
@@ -56,7 +53,6 @@ int mmt_check_icecast(ipacket_t * ipacket, unsigned index) {
             mmt_parse_packet_line_info(ipacket);
             if (packet->server_line.ptr != NULL && packet->server_line.len > 7 &&
                     mmt_memcmp(packet->server_line.ptr, "Icecast", 7) == 0) {
-                MMT_LOG(PROTO_ICECAST, MMT_LOG_DEBUG, "Icecast detected.\n");
                 /* The stream format (ogg, mpeg) is not recorded: there is no
                  * sub-type attribute to carry it. */
                 mmt_int_icecast_add_connection(ipacket);
@@ -65,7 +61,6 @@ int mmt_check_icecast(ipacket_t * ipacket, unsigned index) {
         }
 icecast_exclude:
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_ICECAST);
-        MMT_LOG(PROTO_ICECAST, MMT_LOG_DEBUG, "Icecast excluded.\n");
     }
     return 0;
 }

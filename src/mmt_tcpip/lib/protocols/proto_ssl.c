@@ -914,7 +914,6 @@ int mmt_classify_ssl(ipacket_t * ipacket, unsigned index) {
             return 1;
         } else {
             // SSLv3 Record
-            MMT_LOG(PROTO_SSL, MMT_LOG_DEBUG, "sslv3 len match\n");
             flow->l4.tcp.ssl_stage += 1;
         }
     }
@@ -924,7 +923,6 @@ int mmt_classify_ssl(ipacket_t * ipacket, unsigned index) {
 	if (packet->payload[2] == 0x01 && packet->payload[3] == 0x03
 		&& (packet->payload[4] == 0x00 || packet->payload[4] == 0x01 || packet->payload[4] == 0x02)
 		&& (packet->payload_packet_len - packet->payload[1] == 2)) {
-	  MMT_LOG(PROTO_SSL, MMT_LOG_DEBUG, "sslv2 len match\n");
 	  flow->l4.tcp.ssl_stage += 1;
 	  return 4;
 	}
@@ -935,7 +933,6 @@ int mmt_classify_ssl(ipacket_t * ipacket, unsigned index) {
 		&& (packet->payload_packet_len - 2) >= packet->payload[1]
 		&& (flow->l4.tcp.ssl_stage > 0)) {
 
-		MMT_LOG(PROTO_SSL, MMT_LOG_DEBUG, "sslv2 server len match\n");
    	    flow->l4.tcp.ssl_stage += 1;
 	  return 4;
 	}
@@ -946,7 +943,6 @@ int mmt_classify_ssl(ipacket_t * ipacket, unsigned index) {
 			&& (packet->payload[2] == 0x00 || packet->payload[2] == 0x01 || packet->payload[2] == 0x02 || packet->payload[2] == 0x03)
 			&& (packet->payload_packet_len <= (ssl_read_u16_be(packet->payload, 3) + 5))) {
 		// SSLv3 Record
-		MMT_LOG(PROTO_SSL, MMT_LOG_DEBUG, "sslv3 len match\n");
 		flow->l4.tcp.ssl_stage += 1;
 		return 4;
 	}
@@ -960,7 +956,6 @@ int mmt_classify_ssl(ipacket_t * ipacket, unsigned index) {
 			&& (packet->payload[2] == 0x00 || packet->payload[2] == 0x01 || packet->payload[2] == 0x02 || packet->payload[2] == 0x03)
 			&& (packet->payload_packet_len - ssl_read_u16_be(packet->payload, 3) == 5)) {
 		// SSLv3 Record
-		MMT_LOG(PROTO_SSL, MMT_LOG_DEBUG, "sslv3 len match\n");
 		flow->l4.tcp.ssl_stage += 1;
 		return 4;
 	}
@@ -970,7 +965,6 @@ int mmt_classify_ssl(ipacket_t * ipacket, unsigned index) {
         return 4;
     }
 
-    MMT_LOG(PROTO_SSL, MMT_LOG_DEBUG, "exclude ssl\n");
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SSL);
     return 0;
 }

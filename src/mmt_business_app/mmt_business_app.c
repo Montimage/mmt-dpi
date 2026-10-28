@@ -12,7 +12,7 @@
 
 int init_proto() {
 	if (!init_proto_ips_data()) {
-		fprintf(stderr,	"Error initializing protocol PROTO_IPS_DATA\n Exiting\n");
+		mmt_stderr_log("Error initializing protocol PROTO_IPS_DATA\n Exiting\n");
 		exit(0);
 	}
 	return 1;

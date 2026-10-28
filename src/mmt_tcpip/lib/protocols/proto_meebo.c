@@ -20,7 +20,6 @@ void mmt_classify_meebo(ipacket_t * ipacket, unsigned index) {
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
 
-    MMT_LOG(PROTO_MEEBO, MMT_LOG_DEBUG, "search meebo.\n");
 
     /* catch audio/video flows which are flash (rtmp) */
     if (
@@ -36,18 +35,15 @@ void mmt_classify_meebo(ipacket_t * ipacket, unsigned index) {
         if (packet->payload_packet_len > 900) {
             if (mmt_memcmp(packet->payload + 116, "tokbox/", 7) == 0 ||
                     mmt_memcmp(packet->payload + 316, "tokbox/", 7) == 0) {
-                MMT_LOG(PROTO_MEEBO, MMT_LOG_DEBUG, "found meebo/tokbox flash flow.\n");
                 mmt_int_meebo_add_connection(ipacket);
                 return;
             }
         }
 
         if (ipacket->session->data_packet_count < 16 && ipacket->session->data_packet_count_direction[ipacket->session->setup_packet_direction] < 6) {
-            MMT_LOG(PROTO_MEEBO, MMT_LOG_DEBUG, "need next packet.\n");
             return;
         }
 
-        MMT_LOG(PROTO_MEEBO, MMT_LOG_DEBUG, "exclude meebo.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MEEBO);
         return;
     }
@@ -66,48 +62,40 @@ void mmt_classify_meebo(ipacket_t * ipacket, unsigned index) {
                 && packet->host_line.len >= 9
                 && mmt_memcmp(&packet->host_line.ptr[packet->host_line.len - 9], "meebo.com", 9) == 0) {
 
-            MMT_LOG(PROTO_MEEBO, MMT_LOG_DEBUG, "Found Meebo host\n");
             host_or_referer_match = 1;
         } else if (packet->host_line.ptr != NULL
                 && packet->host_line.len >= 10
                 && mmt_memcmp(&packet->host_line.ptr[packet->host_line.len - 10], "tokbox.com", 10) == 0) {
 
-            MMT_LOG(PROTO_MEEBO, MMT_LOG_DEBUG, "Found tokbox host\n");
             /* set it to 2 to avoid having plain tokbox traffic detected as meebo */
             host_or_referer_match = 2;
         } else if (packet->host_line.ptr != NULL && packet->host_line.len >= 13
                 && mmt_memcmp(&packet->host_line.ptr[packet->host_line.len - 13],
                 "74.114.28.110", 13) == 0) {
 
-            MMT_LOG(PROTO_MEEBO, MMT_LOG_DEBUG, "Found meebo IP\n");
             host_or_referer_match = 1;
         } else if (packet->referer_line.ptr != NULL &&
                 packet->referer_line.len >= 21 &&
                 mmt_memcmp(packet->referer_line.ptr, "http://www.meebo.com/",
                 21) == 0) {
 
-            MMT_LOG(PROTO_MEEBO, MMT_LOG_DEBUG, "Found meebo referer\n");
             host_or_referer_match = 1;
         } else if (packet->referer_line.ptr != NULL &&
                 packet->referer_line.len >= 22 &&
                 mmt_memcmp(packet->referer_line.ptr, "http://mee.tokbox.com/",
                 22) == 0) {
 
-            MMT_LOG(PROTO_MEEBO, MMT_LOG_DEBUG, "Found tokbox referer\n");
             host_or_referer_match = 1;
         } else if (packet->referer_line.ptr != NULL &&
                 packet->referer_line.len >= 21 &&
                 mmt_memcmp(packet->referer_line.ptr, "http://74.114.28.110/",
                 21) == 0) {
 
-            MMT_LOG(PROTO_MEEBO, MMT_LOG_DEBUG, "Found meebo IP referer\n");
             host_or_referer_match = 1;
         }
 
         if (host_or_referer_match) {
             if (host_or_referer_match == 1) {
-                MMT_LOG(PROTO_MEEBO, MMT_LOG_DEBUG,
-                        "Found Meebo traffic based on host/referer\n");
                 mmt_int_meebo_add_connection(ipacket);
                 return;
             }
@@ -115,25 +103,20 @@ void mmt_classify_meebo(ipacket_t * ipacket, unsigned index) {
     }
 
     if (packet->detected_protocol_stack[0] == PROTO_MEEBO) {
-        MMT_LOG(PROTO_MEEBO, MMT_LOG_DEBUG,
-                "in case that ssl meebo has been detected return.\n");
         return;
     }
 
     if (flow!=NULL && ipacket->session->data_packet_count < 5 && packet->detected_protocol_stack[0] == PROTO_UNKNOWN
             && MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SSL) == 0) {
-        MMT_LOG(PROTO_MEEBO, MMT_LOG_DEBUG, "ssl not yet excluded. need next packet.\n");
         return;
     }
 #ifdef PROTO_FLASH
     if (ipacket->session->data_packet_count < 5 && packet->detected_protocol_stack[0] == PROTO_UNKNOWN &&
             !MMT_FLOW_PROTOCOL_EXCLUDED(flow, PROTO_FLASH)) {
-        MMT_LOG(PROTO_MEEBO, MMT_LOG_DEBUG, "flash not yet excluded. need next packet.\n");
         return;
     }
 #endif
 
-    MMT_LOG(PROTO_MEEBO, MMT_LOG_DEBUG, "exclude meebo.\n");
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MEEBO);
 }
 

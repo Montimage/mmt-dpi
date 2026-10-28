@@ -208,7 +208,6 @@ static void mmt_search_qq_udp(ipacket_t * ipacket)
     {0x1549, 0x1801, 0x180d, 0x0961, 0x01501, 0x0e35, 0x113f, 0x0b37, 0x1131, 0x163a, 0x1e0d};
     uint16_t no_of_patterns = 11, index = 0;
 
-    MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "search qq udp.\n");
 
     if (flow->qq_stage <= 3) {
         if ((packet->payload_packet_len == 27 && ntohs(get_u16(packet->payload, 0)) == 0x0300
@@ -228,8 +227,6 @@ static void mmt_search_qq_udp(ipacket_t * ipacket)
                 && packet->payload[4] == packet->payload_packet_len)))) {
             flow->qq_stage++;
             if (flow->qq_stage == 3) {
-                MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG,
-                        "found qq udp pattern 030001 or 000e35 four times.\n");
                 mmt_int_qq_add_connection(ipacket, MMT_REAL_PROTOCOL);
                 return;
             }
@@ -242,8 +239,6 @@ static void mmt_search_qq_udp(ipacket_t * ipacket)
                     flow->qq_stage++;
                     // maybe we can test here packet->payload[4] == packet->payload_packet_len
                     if (flow->qq_stage == 3) {
-                        MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG,
-                                "found qq udp pattern 02 ... 03 four times.\n");
                         mmt_int_qq_add_connection(ipacket, MMT_REAL_PROTOCOL);
                         return;
                     }
@@ -257,7 +252,6 @@ static void mmt_search_qq_udp(ipacket_t * ipacket)
                 if (pat == p8000_patt_02[index]) {
                     flow->qq_stage++;
                     if (flow->qq_stage == 3) {
-                        MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found qq udp pattern four times.\n");
                         mmt_int_qq_add_connection(ipacket, MMT_REAL_PROTOCOL);
                         return;
                     }
@@ -276,8 +270,6 @@ static void mmt_search_qq_udp(ipacket_t * ipacket)
                 && packet->payload[packet->payload_packet_len - 1] == 0x03) {
             flow->qq_stage++;
             if (flow->qq_stage == 3) {
-                MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG,
-                        "found qq udp pattern 04 1159 ... 03 four times.\n");
                 mmt_int_qq_add_connection(ipacket, MMT_REAL_PROTOCOL);
                 return;
             }
@@ -289,8 +281,6 @@ static void mmt_search_qq_udp(ipacket_t * ipacket)
                 || packet->payload[packet->payload_packet_len - 1] == 0x03)) {
             flow->qq_stage++;
             if (flow->qq_stage == 3) {
-                MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG,
-                        "found qq udp pattern 02/06 0100 ... 03/00 four times.\n");
                 mmt_int_qq_add_connection(ipacket, MMT_REAL_PROTOCOL);
                 return;
             }
@@ -301,8 +291,6 @@ static void mmt_search_qq_udp(ipacket_t * ipacket)
                 && ntohs(get_u16(packet->payload, 1)) == 0x1131 && packet->payload[packet->payload_packet_len - 1] == 0x03) {
             flow->qq_stage++;
             if (flow->qq_stage == 3) {
-                MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG,
-                        "found qq udp pattern 02 1131 ... 03 four times.\n");
                 mmt_int_qq_add_connection(ipacket, MMT_REAL_PROTOCOL);
                 return;
             }
@@ -314,8 +302,6 @@ static void mmt_search_qq_udp(ipacket_t * ipacket)
                 get_u16(packet->payload, 4) == htons(0x0b0b)) {
             flow->qq_stage++;
             if (flow->qq_stage == 3) {
-                MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG,
-                        "found qq udp pattern 0203[packet_length_0b0b] three times.\n");
                 mmt_int_qq_add_connection(ipacket, MMT_REAL_PROTOCOL);
                 return;
             }
@@ -328,8 +314,6 @@ static void mmt_search_qq_udp(ipacket_t * ipacket)
                     && ntohs(get_u16(packet->payload, 2)) == packet->payload_packet_len) {
                 flow->qq_stage++;
                 if (flow->qq_stage == 3) {
-                    MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG,
-                            "found qq udp pattern 02 02 <length> four times.\n");
                     mmt_int_qq_add_connection(ipacket, MMT_REAL_PROTOCOL);
                     return;
                 }
@@ -342,18 +326,15 @@ static void mmt_search_qq_udp(ipacket_t * ipacket)
     if (mmt_is_valid_qq_packet(packet)) {
         flow->qq_stage++;
         if (flow->qq_stage == 3) {
-            MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found qq over udp.\n");
             mmt_int_qq_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return;
         }
-        MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found qq packet stage %d\n", flow->qq_stage);
         return;
     }
 
     if (mmt_is_valid_qq_ft_packet(packet)) {
         flow->qq_stage++;
         if (flow->qq_stage == 3) {
-            MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found qq ft over udp.\n");
             mmt_int_qq_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return;
         }
@@ -364,7 +345,6 @@ static void mmt_search_qq_udp(ipacket_t * ipacket)
         return;
     }
 
-    MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "QQ excluded\n");
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_QQ);
 }
 
@@ -376,13 +356,11 @@ static void mmt_search_qq_tcp(ipacket_t * ipacket)
     uint16_t i = 0;
     //  u16 a = 0;
 
-    MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "search qq tcp.\n");
 
     if (packet->payload_packet_len == 39 && get_u32(packet->payload, 0) == htonl(0x27000000) &&
             get_u16(packet->payload, 4) == htons(0x0014) && get_u32(packet->payload, 11) != 0 &&
             get_u16(packet->payload, packet->payload_packet_len - 2) == htons(0x0000)) {
         if (flow->qq_stage == 4) {
-            MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found qq over tcp - maybe ft/audio/video.\n");
             mmt_int_qq_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return;
         }
@@ -429,7 +407,6 @@ static void mmt_search_qq_tcp(ipacket_t * ipacket)
             ) {
         flow->qq_stage++;
         if (flow->qq_stage == 3) {
-            MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found qq over tcp.\n");
             mmt_int_qq_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return;
         }
@@ -439,7 +416,6 @@ static void mmt_search_qq_tcp(ipacket_t * ipacket)
     if (mmt_is_valid_qq_packet(packet)) {
         flow->qq_stage++;
         if (flow->qq_stage == 3) {
-            MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found qq over tcp.\n");
             mmt_int_qq_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return;
         }
@@ -449,7 +425,6 @@ static void mmt_search_qq_tcp(ipacket_t * ipacket)
     if (mmt_is_valid_qq_ft_packet(packet)) {
         flow->qq_stage++;
         if (flow->qq_stage == 3) {
-            MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found qq ft over tcp.\n");
             mmt_int_qq_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return;
         }
@@ -470,7 +445,6 @@ static void mmt_search_qq_tcp(ipacket_t * ipacket)
             && get_u16(packet->payload, 3) == htons(0x0f5f)))) {
         flow->qq_stage++;
         if (flow->qq_stage == 3) {
-            MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found qq udp pattern 02 ... 03 four times.\n");
             mmt_int_qq_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return;
         }
@@ -494,8 +468,6 @@ static void mmt_search_qq_tcp(ipacket_t * ipacket)
             && packet->payload[packet->payload_packet_len - 1] == 0x03) {
         flow->qq_stage++;
         if (flow->qq_stage == 3) {
-            MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG,
-                    "found qq udp pattern 04 1159 ... 03 four times.\n");
             mmt_int_qq_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return;
         }
@@ -504,9 +476,7 @@ static void mmt_search_qq_tcp(ipacket_t * ipacket)
 
     if (packet->payload_packet_len > 100
             && ((mmt_mem_cmp(packet->payload, "GET", 3) == 0) || (mmt_mem_cmp(packet->payload, "POST", 4) == 0))) {
-        MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found GET or POST.\n");
         if (mmt_memcmp(packet->payload, "GET /qqfile/qq", 14) == 0) {
-            MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found qq over tcp GET /qqfile/qq.\n");
             mmt_int_qq_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
             return;
         }
@@ -514,21 +484,17 @@ static void mmt_search_qq_tcp(ipacket_t * ipacket)
 
         if (packet->user_agent_line.ptr != NULL
                 && (packet->user_agent_line.len > 7 && mmt_memcmp(packet->user_agent_line.ptr, "QQClient", 8) == 0)) {
-            MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found qq over tcp GET...QQClient\n");
             mmt_int_qq_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
             return;
         }
         for (i = 0; i < packet->parsed_lines; i++) {
             if (packet->line[i].len > 3 && mmt_memcmp(packet->line[i].ptr, "QQ: ", 4) == 0) {
-                MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found qq over tcp GET...QQ: \n");
                 mmt_int_qq_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;
             }
         }
         if (packet->host_line.ptr != NULL) {
-            MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "host line ptr\n");
             if (packet->host_line.len > 11 && mmt_memcmp(&packet->host_line.ptr[0], "www.qq.co.za", 12) == 0) {
-                MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found qq over tcp Host: www.qq.co.za\n");
                 mmt_int_qq_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;
             }
@@ -541,7 +507,6 @@ static void mmt_search_qq_tcp(ipacket_t * ipacket)
                 break;
             }
             if (i == 81) {
-                MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found qq Mail.\n");
                 mmt_int_qq_add_connection(ipacket, MMT_REAL_PROTOCOL);
                 return;
             }
@@ -550,18 +515,15 @@ static void mmt_search_qq_tcp(ipacket_t * ipacket)
     if (flow->qq_stage == 0 && packet->payload_packet_len == 182 && get_u32(packet->payload, 0) == htonl(0x000000b2)
             && get_u32(packet->payload, 4) == htonl(0x01020000)
             && get_u32(packet->payload, 8) == htonl(0x04015151) && get_u32(packet->payload, 12) == htonl(0x4d61696c)) {
-        MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found qq Mail.\n");
         mmt_int_qq_add_connection(ipacket, MMT_REAL_PROTOCOL);
         return;
     }
     if (packet->payload_packet_len == 204 && flow->qq_stage == 0 && get_u32(packet->payload, 200) == htonl(0xfbffffff)) {
         for (i = 0; i < 200; i++) {
-            MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "i = %u\n", i);
             if (packet->payload[i] != 0) {
                 break;
             }
             if (i == 199) {
-                MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found qq chat or file transfer\n");
                 mmt_int_qq_add_connection(ipacket, MMT_REAL_PROTOCOL);
                 return;
             }
@@ -572,8 +534,6 @@ static void mmt_search_qq_tcp(ipacket_t * ipacket)
 #endif							/* MMT_PROTOCOL_HTTP */
 
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_QQ);
-        MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "QQ tcp excluded; len %u\n",
-                packet->payload_packet_len);
 
 #ifdef PROTO_HTTP
     }
