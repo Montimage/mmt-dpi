@@ -1,6 +1,6 @@
 /*
- * test_session_table.cpp — regression tests for the per-flow session store and
- * the session-timeout milestone lists in src/mmt_core/src/hash_utils.cpp.
+ * test_session_table.c — regression tests for the per-flow session store and
+ * the session-timeout milestone lists in src/mmt_core/src/hash_utils.c.
  *
  * Issue #199 coverage:
  *   - F-BUG-001: the table resize must restore the previous slot array when
@@ -10,26 +10,46 @@
  *   - F-BUG-011: update_session_timeout_milestone()/force_session_timeout()
  *     must not dereference session->previous when it is NULL (a session that is
  *     not the milestone head but was never linked into the list).
+ *
+ * Issue #539 coverage (hash_utils ported from C++ to C):
+ *   - the parked-milestone index (a sorted array since the port, a std::map
+ *     before) keeps milestones parked out of order sorted: drain and the
+ *     range-expiry sweep dispatch ring and parked milestones in ascending
+ *     order, as the std::sort over pair<milestone, head> did;
+ *   - growing the parked index, and the drain snapshot, are malloc
+ *     allocations (malloc fault injected via -Wl,--wrap=malloc): a failure
+ *     returns MMT_TIMEOUT_NOMEM / dispatches nothing, and leaves every live
+ *     milestone in place.
  */
-#include <cstdint>
-#include <cstdio>
-#include <cstring>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
-extern "C" {
 #include "hash_utils.h" /* pulls packet_processing.h: protocol_instance_t, mmt_handler_t, mmt_session_t */
-}
 
 static int g_failures = 0;
 #define CHECK(cond, msg) do { if (!(cond)) { \
         fprintf(stderr, "  FAIL [%s:%d]: %s\n", __FILE__, __LINE__, (msg)); g_failures++; } } while (0)
 
 /* ---- calloc failure injection (linked with -Wl,--wrap=calloc) ------------- */
-extern "C" void *__real_calloc(size_t nmemb, size_t size);
+void *__real_calloc(size_t nmemb, size_t size);
+void *__wrap_calloc(size_t nmemb, size_t size);
 static long g_calloc_budget = -1; /* -1 = unlimited; N = next N calls succeed */
-extern "C" void *__wrap_calloc(size_t nmemb, size_t size) {
+void *__wrap_calloc(size_t nmemb, size_t size) {
     if (g_calloc_budget == 0) return NULL;
     if (g_calloc_budget > 0) g_calloc_budget--;
     return __real_calloc(nmemb, size);
+}
+
+/* ---- malloc failure injection (linked with -Wl,--wrap=malloc) ------------- */
+void *__real_malloc(size_t size);
+void *__wrap_malloc(size_t size);
+static long g_malloc_budget = -1; /* -1 = unlimited; N = next N calls succeed */
+void *__wrap_malloc(size_t size) {
+    if (g_malloc_budget == 0) return NULL;
+    if (g_malloc_budget > 0) g_malloc_budget--;
+    return __real_malloc(size);
 }
 
 /* ---- key helpers: keys are plain ints addressed by pointer ---------------- */
@@ -201,6 +221,127 @@ static void test_session_iteration(void) {
     delete_session_map_space(store);
 }
 
+/* ---- issue #539: parked-milestone index order and allocation failure ------ */
+/* A milestone further than the ring's maximum span (1 << 22 s) from every
+ * live one cannot get a ring slot and is parked. */
+#define FAR_SPAN ((uint32_t) (1u << 23))
+#define BASE     ((uint32_t) 100000000u)
+
+static uint32_t g_dispatched[16];
+static int g_dispatch_n = 0;
+static void record_milestone(void *key, void *value, void *args) {
+    (void) key; (void) args;
+    const mmt_session_t *head = (const mmt_session_t *) value;
+    if (g_dispatch_n < 16) g_dispatched[g_dispatch_n] = head->session_timeout_milestone;
+    g_dispatch_n++;
+}
+
+static int arm(mmt_handler_t *h, mmt_session_t *s, uint32_t milestone) {
+    memset(s, 0, sizeof(*s));
+    s->session_timeout_milestone = milestone;
+    return insert_session_timeout_milestone(h, milestone, s);
+}
+
+static void test_parked_index_order(void) {
+    fprintf(stderr, "  test: ring + parked milestones dispatch in ascending order (#539)\n");
+    mmt_handler_t h;
+    memset(&h, 0, sizeof(h));
+    h.timeout_milestones_map = init_timeout_milestones_index();
+    CHECK(h.timeout_milestones_map != NULL, "init_timeout_milestones_index");
+    if (h.timeout_milestones_map == NULL) return;
+
+    /* One ring milestone, then outliers parked deliberately out of order —
+     * above and below it — so the sorted insert is exercised at the tail,
+     * the head and in the middle. */
+    const uint32_t order[6] = { BASE + 3 * FAR_SPAN, BASE + FAR_SPAN, BASE - FAR_SPAN,
+                                BASE + 2 * FAR_SPAN, BASE - 2 * FAR_SPAN, BASE + 5 * FAR_SPAN };
+    mmt_session_t ring, parked[6], joiner;
+    CHECK(arm(&h, &ring, BASE) == MMT_TIMEOUT_INSERTED, "the first milestone takes a ring slot");
+    for (int i = 0; i < 6; i++) {
+        CHECK(arm(&h, &parked[i], order[i]) == MMT_TIMEOUT_PARKED, "an out-of-span milestone is parked");
+    }
+    CHECK(arm(&h, &joiner, BASE + FAR_SPAN) == MMT_TIMEOUT_PARKED, "a session joins its parked milestone");
+    CHECK(get_timed_out_session_list(&h, BASE + FAR_SPAN) == &joiner, "the joiner heads the parked list");
+    CHECK(joiner.next == &parked[1] && parked[1].previous == &joiner, "the parked list is linked");
+    for (int i = 0; i < 6; i++) {
+        CHECK(get_timed_out_session_list(&h, order[i]) != NULL, "every parked milestone is reachable");
+    }
+    CHECK(get_timed_out_session_list(&h, BASE + 4 * FAR_SPAN) == NULL, "an absent milestone is not found");
+
+    /* Range sweep (gap > ring capacity): only [BASE - FAR_SPAN, BASE + 3 * FAR_SPAN)
+     * is due — four milestones, ascending; the two outside stay parked. */
+    g_dispatch_n = 0;
+    timeout_expire_milestones_range(&h, BASE - FAR_SPAN, BASE + 3 * FAR_SPAN, record_milestone);
+    CHECK(g_dispatch_n == 4, "the sweep dispatches the four due milestones");
+    const uint32_t swept[4] = { BASE - FAR_SPAN, BASE, BASE + FAR_SPAN, BASE + 2 * FAR_SPAN };
+    for (int i = 0; i < 4 && i < g_dispatch_n; i++) {
+        CHECK(g_dispatched[i] == swept[i], "the sweep dispatches in ascending milestone order");
+    }
+    CHECK(get_timed_out_session_list(&h, BASE) == NULL, "a swept ring milestone is gone");
+    CHECK(get_timed_out_session_list(&h, BASE + FAR_SPAN) == NULL, "a swept parked milestone is gone");
+    CHECK(get_timed_out_session_list(&h, BASE - 2 * FAR_SPAN) == &parked[4], "below the range stays parked");
+    CHECK(get_timed_out_session_list(&h, BASE + 3 * FAR_SPAN) == &parked[0], "the range end is exclusive");
+
+    /* Drain: everything left, ascending. */
+    g_dispatch_n = 0;
+    CHECK(timeout_drain_milestones(&h, record_milestone) == 3, "drain dispatches the three left");
+    const uint32_t drained[3] = { BASE - 2 * FAR_SPAN, BASE + 3 * FAR_SPAN, BASE + 5 * FAR_SPAN };
+    for (int i = 0; i < 3 && i < g_dispatch_n; i++) {
+        CHECK(g_dispatched[i] == drained[i], "drain dispatches in ascending milestone order");
+    }
+    CHECK(timeout_drain_milestones(&h, record_milestone) == 0, "a drained index is empty");
+
+    clear_timeout_milestones(&h);
+}
+
+static void test_parked_index_nomem(void) {
+    fprintf(stderr, "  test: parked-index and drain allocation failures (#539)\n");
+    mmt_handler_t h;
+    memset(&h, 0, sizeof(h));
+    h.timeout_milestones_map = init_timeout_milestones_index();
+    CHECK(h.timeout_milestones_map != NULL, "init_timeout_milestones_index");
+    if (h.timeout_milestones_map == NULL) return;
+
+    mmt_session_t ring, outlier, outlier2, parked[5];
+    CHECK(arm(&h, &ring, BASE) == MMT_TIMEOUT_INSERTED, "ring milestone");
+
+    /* The parked index has never been allocated: its first entry fails. */
+    g_malloc_budget = 0;
+    CHECK(arm(&h, &outlier, BASE + FAR_SPAN) == MMT_TIMEOUT_NOMEM,
+          "a parked-index allocation failure is MMT_TIMEOUT_NOMEM");
+    g_malloc_budget = -1;
+    CHECK(get_timed_out_session_list(&h, BASE + FAR_SPAN) == NULL, "the failed park left no entry");
+    CHECK(get_timed_out_session_list(&h, BASE) == &ring, "the ring milestone is untouched");
+
+    /* Fill the first parked block, then fail its growth: the index keeps
+     * every entry it had. */
+    for (int i = 0; i < 4; i++) {
+        CHECK(arm(&h, &parked[i], BASE + (uint32_t) (i + 1) * FAR_SPAN) == MMT_TIMEOUT_PARKED, "parked");
+    }
+    g_malloc_budget = 0;
+    CHECK(arm(&h, &outlier2, BASE - FAR_SPAN) == MMT_TIMEOUT_NOMEM, "a failed parked-index growth is NOMEM");
+    g_malloc_budget = -1;
+    for (int i = 0; i < 4; i++) {
+        CHECK(get_timed_out_session_list(&h, BASE + (uint32_t) (i + 1) * FAR_SPAN) == &parked[i],
+              "a failed growth keeps the parked entries");
+    }
+    CHECK(arm(&h, &parked[4], BASE - FAR_SPAN) == MMT_TIMEOUT_PARKED, "the retry parks");
+
+    /* Drain cannot snapshot: nothing is dispatched and nothing detached. */
+    g_dispatch_n = 0;
+    g_malloc_budget = 0;
+    CHECK(timeout_drain_milestones(&h, record_milestone) == 0, "a drain without memory dispatches nothing");
+    g_malloc_budget = -1;
+    CHECK(g_dispatch_n == 0, "no callback ran");
+    CHECK(get_timed_out_session_list(&h, BASE) == &ring, "the ring milestone survives the failed drain");
+    CHECK(get_timed_out_session_list(&h, BASE - FAR_SPAN) == &parked[4], "parked milestones survive it");
+    CHECK(timeout_drain_milestones(&h, record_milestone) == 6, "the next drain dispatches all six");
+    CHECK(g_dispatch_n == 6 && g_dispatched[0] == BASE - FAR_SPAN && g_dispatched[1] == BASE,
+          "in ascending order");
+
+    clear_timeout_milestones(&h);
+}
+
 int main(void) {
     fprintf(stderr, "Session table test suite\n");
 
@@ -209,6 +350,8 @@ int main(void) {
     test_dead_table_early_outs();
     test_milestone_unlink_null_previous();
     test_session_iteration();
+    test_parked_index_order();
+    test_parked_index_nomem();
 
     if (g_failures == 0) {
         fprintf(stderr, "ALL CHECKS PASSED\n");

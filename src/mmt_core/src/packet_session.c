@@ -28,7 +28,7 @@ void cleanup_timedout_sessions(mmt_session_t * timed_out_session) {
     for (; i < path_len; i++) {
         protocol_t *cleanup_proto = get_protocol_struct_by_id(timed_out_session->proto_path.proto_path[i]);
         if (cleanup_proto != NULL && cleanup_proto->session_data_cleanup != NULL) {
-            ((generic_session_data_cleanup_function) cleanup_proto->session_data_cleanup)(timed_out_session, i);
+            cleanup_proto->session_data_cleanup(timed_out_session, i);
         }
     }
 
@@ -40,7 +40,7 @@ void cleanup_timedout_sessions(mmt_session_t * timed_out_session) {
     // context itself may be unset; never invoke through a NULL pointer.
     protocol_instance_t * container = (protocol_instance_t *) timed_out_session->protocol_container_context;
     if (container != NULL && container->protocol != NULL && container->protocol->session_context_cleanup != NULL) {
-        ((generic_session_context_cleanup_function) container->protocol->session_context_cleanup)(container,
+        container->protocol->session_context_cleanup(container,
                 timed_out_session, NULL);
     }
 }
@@ -431,7 +431,7 @@ static int setup_new_session(ipacket_t * ipacket, protocol_instance_t * configur
                 mmt_debug_log( "[error] setup_new_session - delete_session_from_protocol_context failed during double-OOM rollback\n");
             }
             if (configured_protocol->protocol->session_data_cleanup)
-                ((generic_session_data_cleanup_function)configured_protocol->protocol->session_data_cleanup)(session, session->session_protocol_index);
+                configured_protocol->protocol->session_data_cleanup(session, session->session_protocol_index);
             mmt_handler->active_sessions_count--;
             mmt_handler->sessions_count--;
             if (session->parent_session != NULL) {
@@ -469,7 +469,7 @@ static int setup_new_session(ipacket_t * ipacket, protocol_instance_t * configur
     //Initialize its session data if such initialization function exists
     if (configured_protocol->protocol->session_data_init != NULL) {
         // debug("[PACKET_PROCESS-]> session_data_init - 0 : %"PRIu64" %p",ipacket->packet_id,(generic_session_data_initialization_function) configured_protocol->protocol->session_data_init);
-        ((generic_session_data_initialization_function) configured_protocol->protocol->session_data_init)(ipacket, index);
+        configured_protocol->protocol->session_data_init(ipacket, index);
     }
     //Mark this protocol as done with the classification process
     ipacket->proto_classif_status->proto_path[index] = PROTO_CLASSIFICATION_DONE;
@@ -495,7 +495,7 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
      * parent's per-index session data. */
     mmt_session_t * session = ipacket->session;
     if (configured_protocol->protocol->has_session) { // Sessionize packet only if such a function exists!
-        session = (mmt_session_t *) ((generic_sessionizer_function) configured_protocol->protocol->sessionize)(configured_protocol, ipacket, index, & is_new_session);
+        session = (mmt_session_t *) configured_protocol->protocol->sessionize(configured_protocol, ipacket, index, & is_new_session);
         /*
          * When a protocol has a session context it is not always necessary that the packet being processed
          * will be put into a corresponding session. This is the case when IP fragmentation is encountered.
@@ -609,7 +609,7 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
             //Initialize its session data if such initialization function exists
             if (configured_protocol->protocol->session_data_init != NULL) {
                 // debug("[PACKET_PROCESS-]> session_data_init - 1 : %"PRIu64" %p",ipacket->packet_id,(generic_session_data_initialization_function) configured_protocol->protocol->session_data_init);
-                ((generic_session_data_initialization_function) configured_protocol->protocol->session_data_init)(ipacket, index);
+                configured_protocol->protocol->session_data_init(ipacket, index);
             }
             is_new_session = NEW_PROTO_IN_SESSION; //This is not a new session, rather a new protocol in the session
         }

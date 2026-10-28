@@ -17,7 +17,7 @@
  * Fisher-Yates), so which ones the budget stop leaves behind is not simply
  * the tail of the id range.
  *
- * The real packet_session.c / hash_utils.cpp run unmodified (linked from the
+ * The real packet_session.c / hash_utils.c run unmodified (linked from the
  * core sources by run_tests.sh); the handler is a zeroed struct carrying
  * only the timeout ring, the sessions a static array (no protocol context,
  * so cleanup releases nothing).

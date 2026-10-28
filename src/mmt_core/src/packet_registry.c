@@ -589,8 +589,8 @@ bool register_classification_function_full(protocol_t *proto, generic_classifica
 
 void register_sessionizer_function(protocol_t *proto, generic_sessionizer_function sessionizer_fct,
                                    generic_session_context_cleanup_function session_context_cleanup_fct, generic_comparison_fct session_keys_comparison_fct) {
-    proto->sessionize = (void *) sessionizer_fct;
-    proto->session_context_cleanup = (void *) session_context_cleanup_fct;
+    proto->sessionize = sessionizer_fct;
+    proto->session_context_cleanup = session_context_cleanup_fct;
     proto->has_session = HAS_SESSION_CONTEXT;
     proto->session_key_compare = session_keys_comparison_fct;
 }
@@ -605,17 +605,17 @@ void register_session_equal_function(protocol_t *proto, generic_equal_fct sessio
 
 void register_proto_context_init_cleanup_function(protocol_t *proto, generic_proto_context_init_function context_init_fct,
         generic_proto_context_cleanup_function context_cleanup_fct, void * args) {
-    proto->protocol_context_init = (void *) context_init_fct;
-    proto->protocol_context_cleanup = (void *) context_cleanup_fct;
+    proto->protocol_context_init = context_init_fct;
+    proto->protocol_context_cleanup = context_cleanup_fct;
     proto->protocol_context_args = args;
 }
 
 void register_session_data_initialization_function(protocol_t *proto, generic_session_data_initialization_function session_data_init_fct) {
-    proto->session_data_init = (void *) session_data_init_fct;
+    proto->session_data_init = session_data_init_fct;
 }
 
 void register_session_data_cleanup_function(protocol_t *proto, generic_session_data_cleanup_function session_data_cleanup_fct) {
-    proto->session_data_cleanup = (void *) session_data_cleanup_fct;
+    proto->session_data_cleanup = session_data_cleanup_fct;
 }
 
 int register_data_analysis_function_internal(protocol_t * proto, generic_session_data_analysis_function analysis_fct, int weight) {
@@ -869,7 +869,7 @@ void free_protocols_contexts(mmt_handler_t *mmt_handler) {
 
                 //Cleanup the protocol context if such a function is registered
                 if (mmt_handler->configured_protocols[i].protocol->protocol_context_cleanup != NULL) {
-                    ((generic_proto_context_cleanup_function) mmt_handler->configured_protocols[i].protocol->protocol_context_cleanup)(&mmt_handler->configured_protocols[i], mmt_handler->configured_protocols[i].protocol->protocol_context_args);
+                    mmt_handler->configured_protocols[i].protocol->protocol_context_cleanup(&mmt_handler->configured_protocols[i], mmt_handler->configured_protocols[i].protocol->protocol_context_args);
                 }
             }
         }
@@ -1057,7 +1057,7 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
         // Initialize the protocol context if the protocol has such context
         if (new_handler->configured_protocols[i].protocol->protocol_context_init != NULL) {
             new_handler->configured_protocols[i].args =
-                (void *) ((generic_proto_context_init_function) new_handler->configured_protocols[i].protocol->protocol_context_init)((void *) &new_handler->configured_protocols[i], new_handler->configured_protocols[i].protocol->protocol_context_args);
+                new_handler->configured_protocols[i].protocol->protocol_context_init(&new_handler->configured_protocols[i], new_handler->configured_protocols[i].protocol->protocol_context_args);
         }
         new_handler->proto_registered_attributes[i] = NULL;
         new_handler->proto_registered_attribute_handlers[i] = NULL;

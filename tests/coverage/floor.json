@@ -3,7 +3,7 @@
   "instrumented_files": 42,
   "required_instrumented_files": [
     "src/mmt_core/src/packet_processing.c",
-    "src/mmt_core/src/hash_utils.cpp",
+    "src/mmt_core/src/hash_utils.c",
     "src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c",
     "src/mmt_business_app/mmt_business_app.c",
     "src/mmt_business_app/proto_ips_data.c"
@@ -33,7 +33,7 @@
         "src/mmt_core/src/dpi_profiles.c",
         "src/mmt_core/src/extraction_lib.c",
         "src/mmt_core/src/hashmap.c",
-        "src/mmt_core/src/hash_utils.cpp",
+        "src/mmt_core/src/hash_utils.c",
         "src/mmt_core/src/hexdump.c",
         "src/mmt_core/src/memory.c",
         "src/mmt_core/src/mmt_data.c",

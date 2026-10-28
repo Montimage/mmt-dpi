@@ -66,8 +66,10 @@ libstdc++6 ≥ 11 — the oldest toolchain the release matrix
 Rocky 9 / CentOS Stream 9 and Ubuntu 22.04. The constants live in
 `rules/common.mk` (`MMT_GCC_MIN`, `MMT_GLIBC_MIN`, `MMT_LIBSTDCXX_MIN`):
 `rules/arch-linux.mk` fails the build below GCC 11 with a message naming
-the detected compiler, the generated `.deb` declares the same glibc and
-libstdc++ floors in its `Depends:` line (`sdk/Makefile` `deb` target), and
+the detected compiler, the generated `.deb` declares the same glibc floor
+in its `Depends:` line (`sdk/Makefile` `deb` target) — and the libstdc++
+one only for a shipped library that NEEDs libstdc++, which none does since
+issue #539 ported the SDK's last C++ source to C — and
 the `toolchain-floor` job in `c-cpp.yml` builds the SDK and runs the full
 suite, unprivileged, in a digest-pinned `ubuntu:22.04` container (GCC 11.4)
 on an `ubuntu-24.04` runner, so the floor is exercised, not just asserted.
@@ -98,8 +100,10 @@ the `.rpm` `Requires:` are not hand-maintained lists (the `.rpm`
 `BuildRequires:` is a literal list, checked against `tools/ci/build-deps.txt`
 by `tools/ci/check-dependency-lists.sh` — issue #495) —
 `tools/ci/shlib-deps.sh` derives them at package-build time from the NEEDED
-entries `objdump -p` reports for the shipped `.so` files (the floors above
-survive as the `libc6`/`glibc` and `libstdc++6`/`libstdc++` entries).
+entries `objdump -p` reports for the shipped `.so` files (the glibc floor
+above survives as the `libc6`/`glibc` entry; a `libstdc++6`/`libstdc++`
+entry would carry the libstdc++ floor, but no shipped library NEEDs
+libstdc++ since issue #539).
 `tools/ci/build-package.sh` builds with `ENABLESEC=1` and verifies each
 artifact with `tools/ci/check-package-deps.sh --verify-package`, which
 compares `dpkg-deb -f` / `rpm -qp` output against the derived set and fails
@@ -135,8 +139,11 @@ Notes:
 
 - Clang is available via `make ARCH=linux-clang`; icc via `ARCH=linux-icc`
   (rule files in `rules/arch-*.mk`). GCC is the default and best-tested path.
-- A C++ compiler (`g++`, pulled in by `build-essential`) is required because
-  shared libraries are linked with `$(CXX)` (`rules/common-linux.mk:271`).
+- The SDK is plain C: the shared libraries are linked with `$(CC)`
+  (`rules/common-linux.mk:271`), so no library NEEDs libstdc++ (issue #539).
+  `g++` (pulled in by `build-essential`) stays in the toolchain line for
+  the tooling that still compiles C++ — the pinned cppcheck build and the
+  hardening self-test's `CXX` case.
 - `cppcheck` is not in the toolchain line: only the `lint` job needs it.
   `tools/ci/run-cppcheck.sh` pins the release its findings ratchet
   (`tools/ci/cppcheck-ratchet.txt`) was measured with —
@@ -279,9 +286,11 @@ test-map checker `tools/ci/check-test-map.sh`, the public-API contract
 checker self-test `test-api-contracts.sh` and the ABI-diff self-test
 `test-abi-diff.sh`, issue #525, and the plugin export-gate self-test
 `test-exported-symbols.sh`, issue #534, the phase0 harness-shard self-test
-`test-harness-shards.sh`, issue #655, and the shared-build self-test
+`test-harness-shards.sh`, issue #655, the shared-build self-test
 `test-shared-sdk-build.sh`, issue #654, which drives a copy of the runner
-over fake suites with a stub `make`) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
+over fake suites with a stub `make`, and the weak-type ratchet self-test
+`test-weak-types.sh`, issue #539, which proves the `opaque` metric of
+`tools/ci/count-weak-types.sh` fails on fixture headers) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
 #387); the first three build nothing, `sdk_coverage` builds its own
 `BUILD=coverage` SDK whatever the mode and cleans `sdk/` afterwards. `installed_consumer` (issue #374) drives the
 other
@@ -632,8 +641,10 @@ symbols are intentionally left undefined (`rules/common-linux.mk:236-248`).
 In a release build the block is keyed on the compiler's identity, read from
 its preprocessor macros, so `CC=/usr/bin/gcc` or `CC=gcc-13` is hardened like
 `CC=gcc`; a `$(CC)` identified as neither GCC nor Clang skips it with a build
-`$(warning)`, and LTO needs `$(CC)` and `$(CXX)` to be the same GCC release
-(issue #508). `bash tools/ci/check-hardening-flags.sh --built [DIR...]`
+`$(warning)`, and LTO needs only `$(CC)` to be GCC: the libraries are
+compiled and linked by `$(CC)` since issue #539 (issue #508 had required
+`$(CC)` and `$(CXX)` to be the same GCC release while the link ran through
+`$(CXX)`). `bash tools/ci/check-hardening-flags.sh --built [DIR...]`
 checks built libraries (default `sdk/lib/`); the release workflow runs it
 on the installed packages.
 

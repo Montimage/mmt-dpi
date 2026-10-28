@@ -10,4 +10,4 @@
 # Issue #306 — mutated golden pcaps stall the classifier: FIXED. The
 # attacker-controlled timestamp gap that made process_timedout_sessions()
 # step billions of seconds is now bounded inside the timeout ring
-# (hash_utils.cpp, mmt_ring_expire_range), so all five mutants run again.
+# (hash_utils.c, mmt_ring_expire_range), so all five mutants run again.

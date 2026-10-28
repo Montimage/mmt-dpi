@@ -75,9 +75,9 @@ mmt_cc_probe = $(shell echo | $(1) -dM -E -x $(2) - 2>/dev/null | \
     sed -n -E 's/^#define (__INTEL_COMPILER|__clang__|__GNUC__|__GNUC_MINOR__|__GNUC_PATCHLEVEL__) +([0-9]+).*/\1=\2/p')
 mmt_cc_id = $(if $(filter __INTEL_COMPILER=%,$(1)),icc,$(if $(filter __clang__=%,$(1)),clang,$(if $(filter __GNUC__=%,$(1)),gcc)))
 MMT_CC_MACROS  := $(call mmt_cc_probe,$(CC),c)
-MMT_CXX_MACROS := $(call mmt_cc_probe,$(CXX),c++)
 MMT_CC_ID      := $(call mmt_cc_id,$(MMT_CC_MACROS))
-MMT_CXX_ID     := $(call mmt_cc_id,$(MMT_CXX_MACROS))
+# Issue #539: $(CXX) is not probed — no SDK library is linked with it any
+# more, so the LTO gate below depends on $(CC) alone.
 # Goals that compile (or install) something: the default goal or any goal
 # but the cleaning ones. The hardening warnings below fire only for these.
 MMT_BUILD_GOALS := $(if $(MAKECMDGOALS),$(filter-out clean dist-clean uninstall,$(MAKECMDGOALS)),default)
@@ -144,9 +144,9 @@ MMT_HARDEN_CFLAGS := \
     $(MMT_CF_PROTECTION) \
     -fstack-protector-strong -fstack-clash-protection
 
-# Link-time flags. The .so recipes in this file link with $(CXXFLAGS) - the same
-# convention the BUILD=asan path relies on - so these are appended to CXXFLAGS
-# (below) to reach every shared-library link line without editing each recipe.
+# Link-time flags. The .so recipes link with $(CC) $(CXXFLAGS) - CXXFLAGS is the
+# link-flag carrier the BUILD=asan path relies on (issue #539 kept it) - so these
+# are appended to CXXFLAGS (below) to reach every shared-library link line.
 MMT_HARDEN_LDFLAGS := \
     -Wl,--gc-sections \
     -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack
@@ -160,19 +160,19 @@ MMT_HARDEN_LDFLAGS := \
 # The protection is therefore in the codegen, not the merged ELF note.
 
 # LTO must be present at BOTH compile and link; -flto=auto is GCC-only. The
-# objects are compiled by $(CC) and the libraries linked by $(CXX), and LTO
-# bytecode does not cross GCC releases, so both must be the same GCC release
-# (issue #508) — otherwise LTO alone is dropped, with a warning below.
-ifeq ($(MMT_CC_ID)/$(MMT_CXX_ID),gcc/gcc)
-ifeq ($(sort $(filter __GNUC%,$(MMT_CC_MACROS))),$(sort $(filter __GNUC%,$(MMT_CXX_MACROS))))
+# objects are compiled and the libraries linked by the one $(CC) driver
+# (issue #539: the SDK's last C++ TU is gone, so no recipe links with $(CXX)),
+# so LTO bytecode never crosses compilers. Issue #508 required $(CC) and
+# $(CXX) to be the same GCC release only because the link used to run through
+# $(CXX); that check and its "LTO SKIPPED" warning went with the $(CXX) link.
+# A Clang $(CC) keeps the rest of the hardening set without LTO, as before.
+ifeq ($(MMT_CC_ID),gcc)
 MMT_HARDEN_CFLAGS  += -flto=auto
 MMT_HARDEN_LDFLAGS += -flto=auto
-else
-MMT_HARDEN_SKIPPED_LTO := 1
 endif
-else ifeq ($(MMT_CC_ID),gcc)
-MMT_HARDEN_SKIPPED_LTO := 1
-endif
+# $(CXX) compiles no SDK object and links no SDK library; a $(CXX) of another
+# GCC release than $(CC) therefore changes nothing here.
+
 
 # TUNE=native (opt-in, NEVER the default - B5). When explicitly requested on the
 # command line (make TUNE=native ...) the build targets the CPU of the build
@@ -199,7 +199,7 @@ endif   # release builds only
 # configuration is exactly the failure mode the finding reports, so the switch
 # is loud. The warning is a BUILD warning: goals that never compile (clean,
 # dist-clean) keep quiet. Issue #508: a release build whose $(CC) is not
-# identified as GCC or Clang, or whose LTO is dropped, says so too.
+# identified as GCC or Clang says so too.
 ifneq (,$(MMT_BUILD_GOALS))
 ifeq (,$(MMT_RELEASE_BUILD))
 $(warning MMT-DPI: release hardening DISABLED for this build (DEBUG/VALGRIND/BUILD=$(BUILD)) - the libraries get no _FORTIFY_SOURCE, stack protector, -fcf-protection or LTO; do not ship this build)
@@ -207,9 +207,9 @@ endif
 ifdef MMT_HARDEN_SKIPPED
 $(warning MMT-DPI: release hardening SKIPPED - CC=$(CC) is not identified as GCC or Clang (preprocessor probe: $(or $(MMT_CC_ID),unknown)) - the libraries get no _FORTIFY_SOURCE, stack protector, -fcf-protection, full RELRO or LTO; do not ship this build)
 endif
-ifdef MMT_HARDEN_SKIPPED_LTO
-$(warning MMT-DPI: LTO SKIPPED - CC=$(CC) and CXX=$(CXX) are not the same GCC release (LTO bytecode does not cross releases); the rest of the hardening set still applies)
-endif
+# Issue #539: no "LTO SKIPPED" warning any more — LTO depends on $(CC) alone
+# (see the LTO block above), and an unidentified $(CC) is the SKIPPED case
+# just above.
 endif
 
 #  - - - - - - - - - - - - - - -
@@ -268,7 +268,7 @@ $(SDKLIB)/$(LIBCORE).so: $(SDKLIB)/$(LIBCORE).so.$(VERSION)
 
 $(SDKLIB)/$(LIBCORE).so.$(VERSION): $(SDKLIB)/$(LIBCORE).a
 	@echo "[LIBRARY] $(notdir $@)"
-	$(QUIET) $(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBCORE).so $(LDLIBS)
+	$(QUIET) $(CC) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBCORE).so $(LDLIBS)
 
 # TCP/IP
 
@@ -276,7 +276,7 @@ $(SDKLIB)/$(LIBTCPIP).so: $(SDKLIB)/$(LIBTCPIP).so.$(VERSION)
 
 $(SDKLIB)/$(LIBTCPIP).so.$(VERSION): $(SDKLIB)/$(LIBTCPIP).a
 	@echo "[LIBRARY] $(notdir $@)"
-	$(QUIET) $(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBTCPIP).so $(LDLIBS)
+	$(QUIET) $(CC) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBTCPIP).so $(LDLIBS)
 
 $(SDKLIB)/$(LIBTCPIP).so: $(SDKLIB)/$(LIBTCPIP).so.$(VERSION)
 
@@ -285,14 +285,14 @@ $(SDKLIB)/$(LIBMOBILE).so: $(SDKLIB)/$(LIBMOBILE).so.$(VERSION)
 
 $(SDKLIB)/$(LIBMOBILE).so.$(VERSION): $(SDKLIB)/$(LIBMOBILE).a
 	@echo "[LIBRARY] $(notdir $@)"
-	$(QUIET) $(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBMOBILE).so $(LDLIBS)
+	$(QUIET) $(CC) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBMOBILE).so $(LDLIBS)
 
 # BUSINESS APP/PROTOCOLS
 $(SDKLIB)/$(LIBBAPP).so: $(SDKLIB)/$(LIBBAPP).so.$(VERSION)
 
 $(SDKLIB)/$(LIBBAPP).so.$(VERSION): $(SDKLIB)/$(LIBBAPP).a
 	@echo "[LIBRARY] $(notdir $@)"
-	$(QUIET) $(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBBAPP).so $(LDLIBS)
+	$(QUIET) $(CC) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBBAPP).so $(LDLIBS)
 
 ifdef ENABLESEC
 # FUZZ
@@ -301,7 +301,7 @@ $(SDKLIB)/$(LIBFUZZ).so: $(SDKLIB)/$(LIBFUZZ).so.$(VERSION)
 
 $(SDKLIB)/$(LIBFUZZ).so.$(VERSION): $(SDKLIB)/$(LIBFUZZ).a
 	@echo "[LIBRARY] $(notdir $@)"
-	$(QUIET) $(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBFUZZ).so $(LDLIBS)
+	$(QUIET) $(CC) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBFUZZ).so $(LDLIBS)
 
 # SECURITY
 
@@ -309,7 +309,7 @@ $(SDKLIB)/$(LIBSECURITY).so: $(SDKLIB)/$(LIBSECURITY).so.$(VERSION)
 
 $(SDKLIB)/$(LIBSECURITY).so.$(VERSION): $(SDKLIB)/$(LIBSECURITY).a
 	@echo "[LIBRARY] $(notdir $@)"
-	$(QUIET) $(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBSECURITY).so $(LDLIBS)
+	$(QUIET) $(CC) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBSECURITY).so $(LDLIBS)
 endif
 
 # DICOM
@@ -317,4 +317,4 @@ $(SDKLIB)/$(LIBDICOM).so: $(SDKLIB)/$(LIBDICOM).so.$(VERSION)
 
 $(SDKLIB)/$(LIBDICOM).so.$(VERSION): $(SDKLIB)/$(LIBDICOM).a
 	@echo "[LIBRARY] $(notdir $@)"
-	$(QUIET) $(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBDICOM).so $(LDLIBS)
+	$(QUIET) $(CC) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBDICOM).so $(LDLIBS)

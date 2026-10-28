@@ -51,7 +51,7 @@ title: ".deb Package Build & apt Repository Setup Checklist"
 ### Pre-Installation Checks
 
 - [ ] Verify system architecture compatibility (aarch64 vs x86_64)
-- [ ] Ensure `libc6 >= 2.34` and `libstdc++6 >= 11` are available: `dpkg -l libc6 libstdc++6`
+- [ ] Ensure `libc6 >= 2.34` is available: `dpkg -l libc6` (no shipped library NEEDs `libstdc++6` since issue #539)
 - [ ] Check available disk space in `/opt/mmt` (requires ~50MB)
 
 ### Installation Testing

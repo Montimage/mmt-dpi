@@ -20,7 +20,7 @@
 #
 # mmt_static_core_link LIBDIR fills the global array MMT_STATIC_CORE_LDFLAGS
 # with the whole-archive link of LIBDIR/libmmt_core.a, the runtimes the core
-# needs (-lstdc++ for hash_utils.cpp, -ldl, -lpthread, -lm) and the flags of
+# needs (-ldl, -lpthread, -lm; no -lstdc++ since issue #539) and the flags of
 # the profile the archive was built with, read from the runtime symbols its
 # objects reference: __asan_ adds -fsanitize=address, __ubsan_
 # -fsanitize=undefined, __tsan_ -fsanitize=thread and __gcov_ --coverage. A
@@ -80,7 +80,7 @@ mmt_static_core_link() {
     fi
     _mmt_static_profile_flags "${archive}"
     MMT_STATIC_CORE_LDFLAGS=("-Wl,--whole-archive" "${archive}" "-Wl,--no-whole-archive"
-                             -rdynamic -lstdc++ -ldl -lpthread -lm
+                             -rdynamic -ldl -lpthread -lm
                              ${_MMT_STATIC_PROFILE_FLAGS[@]+"${_MMT_STATIC_PROFILE_FLAGS[@]}"})
     return 0
 }

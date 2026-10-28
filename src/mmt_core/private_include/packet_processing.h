@@ -165,10 +165,11 @@ struct mmt_segblk_s; /* tcp_segment.h — plugin-owned bump block chain */
  * pending bytes (`pending_len`), so a drain never needs storage the budget
  * cannot give. This struct itself is per-flow metadata outside the budget.
  */
+struct tcp_seg_struct; /* tcp_seg_t, defined in src/mmt_tcpip/lib/tcp_segment.h */
 typedef struct mmt_tcp_reasm_s {
-    void *seg_head[2];            /* pending tcp_seg_t list head, seq-sorted */
-    void *seg_tail[2];            /* pending list tail — O(1) in-order append */
-    void *seg_root[2];            /* AVL index over the pending list (#382) */
+    struct tcp_seg_struct *seg_head[2]; /* pending tcp_seg_t list head, seq-sorted */
+    struct tcp_seg_struct *seg_tail[2]; /* pending list tail — O(1) in-order append */
+    struct tcp_seg_struct *seg_root[2]; /* AVL index over the pending list (#382) */
     uint8_t *image[2];            /* flattened stream image (was session_payload) */
     uint32_t image_len[2];        /* valid bytes in image (was session_payload_len) */
     uint32_t image_cap[2];        /* allocated capacity of image */
@@ -501,13 +502,13 @@ struct protocol_struct {
     void * attributes_names_map; /**< For internal use. MUST not be changed. */
     //void * sessions_map; /**< For internal use. MUST not be changed. */
     //void * classify_next; /**< For internal use. MUST not be changed. */
-    void * sessionize; /**< For internal use. MUST not be changed. */
-    void * session_data_init; /**< For internal use. Must not be chagned.*/
-    void * session_data_cleanup; /**< For internal use. Must not be changed. */
+    generic_sessionizer_function sessionize; /**< For internal use. MUST not be changed. */
+    generic_session_data_initialization_function session_data_init; /**< For internal use. Must not be chagned.*/
+    generic_session_data_cleanup_function session_data_cleanup; /**< For internal use. Must not be changed. */
     //void * session_data_analysis; /**< For internal use. Must not be chagned.*/
-    void * session_context_cleanup; /**< For internal use. Must not be changed. */
-    void * protocol_context_init; /**< For internal use. Must not be changed. */
-    void * protocol_context_cleanup; /**< For internal use. Must not be changed. */
+    generic_session_context_cleanup_function session_context_cleanup; /**< For internal use. Must not be changed. */
+    generic_proto_context_init_function protocol_context_init; /**< For internal use. Must not be changed. */
+    generic_proto_context_cleanup_function protocol_context_cleanup; /**< For internal use. Must not be changed. */
     void * protocol_context_args; /**< For internal use. Must not be changed. Pointer to the protocol's context argument.
                                    * Will be passed when calling protocol_context_init and protocol_context_cleanup. */
     //void * args; /**< For internal use. MUST not be changed. */

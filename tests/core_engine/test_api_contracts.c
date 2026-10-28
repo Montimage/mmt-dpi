@@ -2581,7 +2581,7 @@ static void b_register_sessionizer_function(void) {
     CHECK(p != NULL, "scratch protocol struct");
     if (p == NULL) return;
     register_sessionizer_function(p, ac_sessionize, ac_session_ctx_cleanup, ac_key_comp);
-    CHECK(p->sessionize == (void *) ac_sessionize && p->session_context_cleanup == (void *) ac_session_ctx_cleanup &&
+    CHECK(p->sessionize == ac_sessionize && p->session_context_cleanup == ac_session_ctx_cleanup &&
           p->session_key_compare == ac_key_comp && p->has_session == HAS_SESSION_CONTEXT,
           "sessionizer wired and the protocol marked session-bearing");
 }
@@ -2600,7 +2600,7 @@ static void ctx_cleanup(void *c, void *a) { (void) c; (void) a; }
 static void b_register_proto_context_init_cleanup_function(void) {
     int tag;
     register_proto_context_init_cleanup_function(g_pc, ctx_init, ctx_cleanup, &tag);
-    CHECK(g_pc->protocol_context_init == (void *) ctx_init && g_pc->protocol_context_cleanup == (void *) ctx_cleanup &&
+    CHECK(g_pc->protocol_context_init == ctx_init && g_pc->protocol_context_cleanup == ctx_cleanup &&
           g_pc->protocol_context_args == &tag, "init/cleanup and argument stored");
     register_proto_context_init_cleanup_function(g_pc, NULL, NULL, NULL);
 }
@@ -2609,11 +2609,11 @@ static void sd_init(ipacket_t *p, unsigned i) { (void) p; (void) i; }
 static void sd_cleanup(mmt_session_t *s, unsigned i) { (void) s; (void) i; }
 static void b_register_session_data_initialization_function(void) {
     register_session_data_initialization_function(g_pc, sd_init);
-    CHECK(g_pc->session_data_init == (void *) sd_init, "stored");
+    CHECK(g_pc->session_data_init == sd_init, "stored");
 }
 static void b_register_session_data_cleanup_function(void) {
     register_session_data_cleanup_function(g_pc, sd_cleanup);
-    CHECK(g_pc->session_data_cleanup == (void *) sd_cleanup, "stored");
+    CHECK(g_pc->session_data_cleanup == sd_cleanup, "stored");
 }
 
 static void b_register_session_data_analysis_function_with_protocol(void) {

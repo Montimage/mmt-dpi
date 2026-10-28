@@ -75,6 +75,10 @@
 # (issue #654), which drives a copy of the real runner over fake suites with
 # a stub make on PATH (one build per group, the incremental ENABLESEC=1
 # build, the prefixes handed to consumers, a failed build; no SDK build).
+# It also runs the weak-type ratchet self-test beside
+# tools/ci/count-weak-types.sh (issue #539), which drives the real counter on
+# fixture headers to prove its `opaque` metric fails on a non-allowlisted or
+# unnamed mmt_opaque_t parameter (no SDK build).
 set -e
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/ci/tests"
 python3 "${TESTS_DIR}/test-release-gates.py" "$@"
@@ -97,3 +101,4 @@ bash "${TESTS_DIR}/test-abi-diff.sh"
 bash "${TESTS_DIR}/test-exported-symbols.sh"
 bash "${TESTS_DIR}/test-harness-shards.sh"
 bash "${TESTS_DIR}/test-shared-sdk-build.sh"
+bash "${TESTS_DIR}/test-weak-types.sh"

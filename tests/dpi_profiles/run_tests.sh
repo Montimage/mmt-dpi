@@ -8,7 +8,7 @@
 # The suite source-compiles the mmt_core objects the engine needs
 # (packet_registry, packet_pipeline, packet_session, packet_stats, memory,
 # hashmap, mmt_data, mmt_inet_ntop, proto_meta, plugins_engine,
-# extraction_lib, mmt_init) plus dpi_profiles.c and hash_utils.cpp — the
+# extraction_lib, mmt_init) plus dpi_profiles.c and hash_utils.c — the
 # same recipe as tests/core_engine — so gcov records them under --coverage
 # and ASan/UBSan instrument them under SANITIZE=*.
 set -e
@@ -21,7 +21,6 @@ CORE_PRIVATE_INC="$PROJECT_DIR/src/mmt_core/private_include"
 CORE_PUBLIC_INC="$PROJECT_DIR/src/mmt_core/public_include"
 
 CC="${CC:-gcc}"
-CXX="${CXX:-g++}"
 read -r -a extra_cflags <<< "${EXTRA_CFLAGS:-}"
 
 INCS=(-I"$CORE_PRIVATE_INC" -I"$CORE_PUBLIC_INC" -I"$PROJECT_DIR/src/mmt_tcpip/lib")
@@ -32,7 +31,7 @@ C_SOURCES="packet_processing.c packet_registry.c packet_pipeline.c \
 packet_session.c packet_stats.c memory.c \
 hashmap.c mmt_data.c mmt_inet_ntop.c \
 proto_meta.c plugins_engine.c extraction_lib.c mmt_init.c \
-dpi_profiles.c"
+dpi_profiles.c hash_utils.c"
 
 objects=()
 for src in $C_SOURCES; do
@@ -42,15 +41,11 @@ for src in $C_SOURCES; do
     objects+=("$obj")
 done
 
-"$CXX" "${extra_cflags[@]}" -Wall -Wextra -std=c++11 "${INCS[@]}" \
-    -c "$CORE_SRC/hash_utils.cpp" -o "$SCRIPT_DIR/hash_utils.o"
-objects+=("$SCRIPT_DIR/hash_utils.o")
-
 "$CC" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${INCS[@]}" \
     -c "$SCRIPT_DIR/test_dpi_profiles.c" -o "$SCRIPT_DIR/test_dpi_profiles.o"
 objects+=("$SCRIPT_DIR/test_dpi_profiles.o")
 
-"$CXX" "${extra_cflags[@]}" \
+"$CC" "${extra_cflags[@]}" \
     -o "$SCRIPT_DIR/test_dpi_profiles" "${objects[@]}" -lm -lpthread -ldl
 
 # Run from a scratch directory: load_plugins() scans ./plugins first, and an

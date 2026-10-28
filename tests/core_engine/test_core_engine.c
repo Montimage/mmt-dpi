@@ -15,9 +15,9 @@
  *   src/mmt_core/src/packet_stats.c — protocol statistics;
  *   src/mmt_core/src/packet_processing.c — the attribute accessors and
  *     formatting tail — including the OOM cleanup branches under
- *     deterministic malloc/calloc/operator-new failure injection.
+ *     deterministic malloc/calloc failure injection.
  *
- *   src/mmt_core/src/hash_utils.cpp — the session store and the
+ *   src/mmt_core/src/hash_utils.c — the session store and the
  *     timeout-milestone maps as exercised through the engine (the hashmap
  *     suite already covers the table internals).
  *
@@ -42,10 +42,9 @@
  *
  * Failure injection: the binary is linked with -Wl,--wrap=malloc
  * -Wl,--wrap=calloc; every libc allocation in the linked library objects is
- * routed through the budget counters below. test_core_engine_new.cpp still
- * interposes C++ operator new (ce_set_new_budget) for any std:: allocations
- * left in the engine (the iteration snapshot vectors in hash_utils.cpp), but
- * every store there is now plain calloc/malloc — the double-OOM session
+ * routed through the budget counters below. Since issue #539 that is every
+ * allocation the engine makes — hash_utils.c is C, its iteration snapshots
+ * and parked-milestone index are plain malloc — the double-OOM session
  * destroy branch (F-BUG-023) is driven by a calloc budget against the
  * timeout-ring growth, and the timeout_milestones_map == NULL branch in
  * mmt_init_handler() by calloc budget 0.
@@ -120,9 +119,6 @@ void *__wrap_realloc(void *ptr, size_t size) {
     g_realloc_last_size = size;
     return __real_realloc(ptr, size);
 }
-
-/* C++ operator new interposer lives in test_core_engine_new.cpp. */
-extern void ce_set_new_budget(long budget);
 
 /* Internal entry points with no public prototype — exercised for coverage. */
 int mmt_attr_snprintf(char *buff, int len, attribute_t *a);

@@ -52,7 +52,7 @@ static uint64_t ipv6_addr_hash(void * ip) {
      * independent multiplies plus a one-step finalizer, the same shape as
      * ipv6_session_hash(); equal addresses still hash equal, as
      * ipv6_addr_comp's memcmp equivalence requires. The table's per-map
-     * seed (mmt_oa_table.seed in hash_utils.cpp) keys the final slot choice
+     * seed (mmt_oa_table.seed in hash_utils.c) keys the final slot choice
      * per handler, so a collision set built for one map does not transfer
      * to another handler's. */
     uint64_t h = w[0] * 0x9E3779B97F4A7C15ULL

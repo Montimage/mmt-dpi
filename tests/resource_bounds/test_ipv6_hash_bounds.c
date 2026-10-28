@@ -1,9 +1,9 @@
 /*
- * test_ipv6_hash_bounds.cpp — issue #379 (F-PERF-001) acceptance harness for
+ * test_ipv6_hash_bounds.c — issue #379 (F-PERF-001) acceptance harness for
  * the interned-IPv6-address store (ips_map, keyed by ipv6_addr_comp /
- * ipv6_addr_hash over the open-addressing table in hash_utils.cpp).
+ * ipv6_addr_hash over the open-addressing table in hash_utils.c).
  *
- * hash_utils.cpp is included directly so the harness reads table internals
+ * hash_utils.c is included directly so the harness reads table internals
  * (mmt_oa_table.seed, .cap) without adding test-only exports — and so the
  * stats tripwires (mmt_oa_comp_call_count) are armed: this TU never defines
  * NDEBUG. The address functions under test come from ipv6_addr_fns.c, which
@@ -30,12 +30,12 @@
  *            an insert into a slot-saturated table fails bounded instead of
  *            scanning the ring forever.
  */
-#include <cstdint>
-#include <cstdio>
-#include <cstring>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 #include <inttypes.h>
 
-extern "C" {
 /* real functions under test (tests/resource_bounds/ipv6_addr_fns.c) */
 uint64_t test_ipv6_addr_hash(void *ip);
 bool     test_ipv6_addr_comp(void *a, void *b);
@@ -43,10 +43,9 @@ void    *test_ipv6_ctx_new(void);
 void    *test_ipv6_get_id(void *ctx, void *ip, uint32_t *is_new);
 void    *test_ipv6_find_id(void *ctx, void *ip);
 void     test_ipv6_ctx_destroy(void *ctx);
-}
 
 /* The production table, same TU — internals (seed, cap, counters) visible. */
-#include "../../src/mmt_core/src/hash_utils.cpp"
+#include "../../src/mmt_core/src/hash_utils.c"
 
 #include "rb_result.h"
 #define RB "ipv6-hash"   /* issue #394: results.json fixture id */

@@ -14,7 +14,7 @@
 #                              test_udp_bounds_unit.c convention), plus thin
 #                              wrappers over setup_ipv6_internal_context /
 #                              get_ip6_id / findID6.
-#   test_ipv6_hash_bounds.cpp — includes hash_utils.cpp so the harness reads
+#   test_ipv6_hash_bounds.c — includes hash_utils.c so the harness reads
 #                              table internals (seed, cap) and the armed
 #                              comparator counters without new exports.
 #
@@ -56,7 +56,7 @@
 # dropping the rest of the list it stopped in — every remaining session
 # stays linked and expires exactly once on the regular expiry pass.
 #
-#   test_timeout_sweep.c — links the real packet_session.c / hash_utils.cpp
+#   test_timeout_sweep.c — links the real packet_session.c / hash_utils.c
 #                          and the core objects they need (the core_engine
 #                          suite's source set).
 #
@@ -132,7 +132,6 @@ fi
 CHECKER="${REPO_ROOT}/tools/ci/check-resource-budgets.py"
 
 CC="${CC:-gcc}"
-CXX="${CXX:-g++}"
 
 # Honor a direct SANITIZE=asan|tsan invocation (the issue's verify command)
 # by composing the same flag set tests/run_all_tests.sh derives; when the
@@ -164,20 +163,19 @@ trap 'rm -rf "${WORK}"' EXIT
 
 build_ipv6_hash_bounds() {
     # The C TU wraps the real ipv6 address functions. No -D'u_char=...' here —
-    # unlike the hashmap suite's -std=c11, gnu11/gnu++11 keep _DEFAULT_SOURCE /
-    # _GNU_SOURCE so <sys/types.h> already provides the type.
+    # gnu11 keeps _DEFAULT_SOURCE so <sys/types.h> already provides the type.
     "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 \
         "${INCS[@]}" -c "${SCRIPT_DIR}/ipv6_addr_fns.c" -o "${SCRIPT_DIR}/ipv6_addr_fns.o"
 
-    # The C++ harness includes hash_utils.cpp (stats counters armed: no NDEBUG).
-    "${CXX}" "${extra_cflags[@]}" -Wall -Wextra -std=c++11 \
-        "${INCS[@]}" -c "${SCRIPT_DIR}/test_ipv6_hash_bounds.cpp" -o "${SCRIPT_DIR}/test_ipv6_hash_bounds.o"
+    # The harness includes hash_utils.c (stats counters armed: no NDEBUG).
+    "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 \
+        "${INCS[@]}" -c "${SCRIPT_DIR}/test_ipv6_hash_bounds.c" -o "${SCRIPT_DIR}/test_ipv6_hash_bounds.o"
 
     # mmt_malloc/mmt_free come from the real allocator.
     "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 \
         "${INCS[@]}" -c "${REPO_ROOT}/src/mmt_core/src/memory.c" -o "${SCRIPT_DIR}/memory.o"
 
-    "${CXX}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_ipv6_hash_bounds" \
+    "${CC}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_ipv6_hash_bounds" \
         "${SCRIPT_DIR}/test_ipv6_hash_bounds.o" "${SCRIPT_DIR}/ipv6_addr_fns.o" "${SCRIPT_DIR}/memory.o"
 }
 
@@ -243,17 +241,15 @@ build_timeout_sweep() {
     for src in packet_processing.c packet_registry.c packet_pipeline.c \
                packet_session.c packet_stats.c memory.c hashmap.c mmt_data.c \
                mmt_inet_ntop.c proto_meta.c plugins_engine.c extraction_lib.c \
-               mmt_init.c dpi_profiles.c; do
+               mmt_init.c dpi_profiles.c hash_utils.c; do
         "${CC}" "${extra_cflags[@]}" -std=gnu11 "${INCS[@]}" \
             -c "${core}/${src}" -o "${SCRIPT_DIR}/ts_${src%.c}.o"
         objs+=("${SCRIPT_DIR}/ts_${src%.c}.o")
     done
-    "${CXX}" "${extra_cflags[@]}" -std=c++11 "${INCS[@]}" \
-        -c "${core}/hash_utils.cpp" -o "${SCRIPT_DIR}/ts_hash_utils.o"
     "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${INCS[@]}" \
         -c "${SCRIPT_DIR}/test_timeout_sweep.c" -o "${SCRIPT_DIR}/test_timeout_sweep.o"
-    "${CXX}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_timeout_sweep" \
-        "${SCRIPT_DIR}/test_timeout_sweep.o" "${objs[@]}" "${SCRIPT_DIR}/ts_hash_utils.o" -lm -lpthread -ldl
+    "${CC}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_timeout_sweep" \
+        "${SCRIPT_DIR}/test_timeout_sweep.o" "${objs[@]}" -lm -lpthread -ldl
 }
 
 echo "  [1/3] compiling ..."

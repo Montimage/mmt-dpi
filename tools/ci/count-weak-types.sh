@@ -22,6 +22,18 @@
 #                struct fields are not parameters and are not counted.
 #                Use mmt_opaque_t / mmt_const_opaque_t instead.
 #
+#   opaque       mmt_opaque_t / mmt_const_opaque_t parameters (issue #539).
+#                The aliases are `void *` underneath, so void_star alone
+#                read 0 whatever they carried. A parameter of either alias,
+#                in the same parenthesised positions void_star scans, counts
+#                unless its NAME is on OPAQUE_PARAM_ALLOWLIST below — the
+#                roles that are genuinely opaque to the SDK (caller-owned
+#                user context, generic map keys/values, raw memory, a
+#                handle the plugin hands back to the core). An unnamed
+#                opaque parameter always counts: it states no role. A new
+#                opaque parameter therefore needs a typed handle or an
+#                allowlisted role justified in docs/DECISIONS.md.
+#
 #   int_bool     public function declarations returning `int` that are not
 #                on the explicit allowlist below — every boolean-semantic
 #                function must return `bool` (stdbool.h). The allowlist
@@ -90,6 +102,68 @@ void_star_count="$(awk '
 END { print count + 0 }
 ' src/mmt_core/public_include/*.h)"
 
+# --- opaque -----------------------------------------------------------------
+# Parameter names whose mmt_opaque_t / mmt_const_opaque_t type is a genuine
+# opaque role (issue #539, justified per role in docs/DECISIONS.md):
+#   user user_args user_data args data   caller-owned callback context
+#   handler_condition proto_data         caller-owned, passed back untouched
+#   key key_1 key_2 value                generic map / scratch-slot payloads
+#   x y                                  mmt_realloc/mmt_free/mmt_memcmp memory
+#   src                                  mmt_inet_ntop (inet_ntop contract)
+#   protocol_context                     the core's protocol_instance_t *,
+#                                        opaque to the plugins it is passed to
+#   stack_internal_context               plugin-owned per-stack state
+OPAQUE_PARAM_ALLOWLIST=" user user_args user_data args data handler_condition proto_data key key_1 key_2 value x y src protocol_context stack_internal_context "
+opaque_offenders="$(awk -v allow="${OPAQUE_PARAM_ALLOWLIST}" '
+function isid(c) { return c ~ /[A-Za-z0-9_]/ }
+{
+  line = $0; out = ""; i = 1; n = length(line)
+  while (i <= n) {
+    c2 = substr(line, i, 2)
+    if (inblock) { if (c2 == "*/") { inblock = 0; i += 2 } else i++; continue }
+    if (c2 == "/*") { inblock = 1; i += 2; continue }
+    if (c2 == "//") break
+    out = out substr(line, i, 1); i++
+  }
+  m = length(out); j = 1
+  while (j <= m) {
+    ch = substr(out, j, 1)
+    if (ch == "(") { depth++; j++; continue }
+    if (ch == ")") { if (depth > 0) depth--; j++; continue }
+    if (isid(ch)) {
+      k = j
+      while (k <= m && isid(substr(out, k, 1))) k++
+      tok = substr(out, j, k - j)
+      if (depth >= 1 && (tok == "mmt_opaque_t" || tok == "mmt_const_opaque_t")) {
+        while (k <= m && substr(out, k, 1) ~ /[ \t*]/) k++
+        p = k
+        while (p <= m && isid(substr(out, p, 1))) p++
+        name = substr(out, k, p - k)
+        if (name == "const") {          # mmt_opaque_t const name
+          k = p
+          while (k <= m && substr(out, k, 1) ~ /[ \t*]/) k++
+          p = k
+          while (p <= m && isid(substr(out, p, 1))) p++
+          name = substr(out, k, p - k)
+        }
+        if (name == "" || index(allow, " " name " ") == 0) {
+          printf "%s:%d: %s %s\n", FILENAME, FNR, tok, (name == "" ? "<unnamed>" : name)
+        }
+        k = p
+      }
+      j = k
+      continue
+    }
+    j++
+  }
+}
+' src/mmt_core/public_include/*.h)"
+if [ -n "${opaque_offenders}" ]; then
+    opaque_count="$(printf '%s\n' "${opaque_offenders}" | wc -l | tr -d ' ')"
+else
+    opaque_count=0
+fi
+
 # --- int_bool ---------------------------------------------------------------
 # Names of public functions allowed to keep an `int` return (see header).
 read -r -d '' INT_RETURN_ALLOWLIST <<'EOF' || true
@@ -149,11 +223,15 @@ int_bool_count="$(
 
 echo "    raw-integer protocol-id parameters: $proto_id_count"
 echo "    raw void * parameters:              $void_star_count"
+echo "    unjustified opaque parameters:      $opaque_count"
+if [ "$opaque_count" -ne 0 ]; then
+    printf '%s\n' "${opaque_offenders}" | sed 's/^/      /'
+fi
 echo "    int-as-boolean returns:             $int_bool_count"
 
 if [ "$STRICT" -eq 1 ]; then
     fails=0
-    for pair in "raw-integer protocol-id parameter:$proto_id_count" "raw void * parameter:$void_star_count" "int-as-boolean return:$int_bool_count"; do
+    for pair in "raw-integer protocol-id parameter:$proto_id_count" "raw void * parameter:$void_star_count" "unjustified opaque parameter:$opaque_count" "int-as-boolean return:$int_bool_count"; do
         label="${pair%%:*}"; n="${pair##*:}"
         if [ "$n" -ne 0 ]; then
             echo "✗ $n ${label}(s) remain — Task 5.7 requires 0" >&2
@@ -177,6 +255,7 @@ baseline_for() {
 fails=0
 for triple in "proto_id:$proto_id_count:raw-integer protocol-id parameters" \
               "void_star:$void_star_count:raw void * parameters" \
+              "opaque:$opaque_count:unjustified opaque parameters" \
               "int_bool:$int_bool_count:int-as-boolean returns"; do
     key="${triple%%:*}"; rest="${triple#*:}"
     count="${rest%%:*}"; label="${rest#*:}"

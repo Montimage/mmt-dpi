@@ -7,6 +7,8 @@
 # Metrics:
 #   proto_id   raw-integer protocol-id parameters (task 5.6 / #230)
 #   void_star  raw `void *` parameters (task 5.7 / #231)
+#   opaque     mmt_opaque_t / mmt_const_opaque_t parameters whose name is not
+#              an allowlisted opaque role in count-weak-types.sh (#539)
 #   int_bool   public functions returning `int` outside the int-return
 #              allowlist in count-weak-types.sh (task 5.7 / #231)
 #
@@ -21,4 +23,5 @@
 #       explicitly allowlisted).
 proto_id  0
 void_star 0
+opaque    0
 int_bool  0

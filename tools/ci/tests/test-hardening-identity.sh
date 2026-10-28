@@ -12,8 +12,9 @@
 #   CC=$(command -v gcc)           -> same (was: whole block silently skipped)
 #   CC=<wrapper exec'ing gcc>      -> same
 #   CC=<not GCC/Clang>             -> no hardening flags + SKIPPED $(warning)
-#   CXX=<g++ reporting another     -> hardening kept, LTO dropped + warning
-#        GCC minor release>
+#   CXX=<g++ reporting another     -> full hardening set, LTO kept, no LTO
+#        GCC minor release>           warning (issue #539: libraries link
+#                                     with $(CC), $(CXX) has no say)
 #   BUILD=asan / tsan / coverage   -> no hardening flags + DISABLED warning
 #   clean goal                     -> no hardening warning
 #   default / CC=<absolute gcc>    -> last C -std is gnu17, none in CXXFLAGS
@@ -122,8 +123,8 @@ expect_unhardened "an unidentified CC skips the block with a warning" \
     "$(eval_make mmt-print-hardening CC="${WORK}/not-gcc")" \
     "release hardening SKIPPED"
 o="$(eval_make mmt-print-hardening CC="${GCC}" CXX="${WORK}/gxx-other")"
-expect_hardened "a CXX of another GCC release keeps hardening but not LTO" "$o" nolto
-if has "$o" "LTO SKIPPED"; then pass "the dropped LTO is announced"; else fail "the dropped LTO is announced"; fi
+expect_hardened "a CXX of another GCC release keeps the full set, LTO included (#539)" "$o" lto
+if has "$o" "LTO SKIPPED"; then fail "no LTO warning names CXX any more"; else pass "no LTO warning names CXX any more"; fi
 
 echo "-- sanitizer/coverage profiles keep hardening off --"
 for b in asan tsan coverage; do
