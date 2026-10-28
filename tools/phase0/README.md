@@ -124,7 +124,10 @@ What each gate asserts:
   which builds+installs the library, classifies a small **self-contained** pcap
   subset (vendored under `ci/pcaps/`, ~0.6 MB, no dependency on the mmt-test
   repo) and diffs the fingerprint against the committed
-  `ci/baseline/classification.txt`. Any diff fails the job.
+  `ci/baseline/classification.txt`. Any diff fails the job. It exports
+  `MMT_DETERMINISTIC_SEED=1`, as `check_precision.sh` does: hash-table seeds
+  are random per process since issue #551, and the variable restores the
+  fixed legacy seed sequence (`src/mmt_core/src/hash_utils.c`).
 - **`precision-gate`** — runs `tools/phase0/ci/check_precision.sh`, which runs
   the labelled-pcap precision/recall harness (`phase0_precision`) over the
   labelled subset (`ci/labels.txt`), folds the retained predicted labels into

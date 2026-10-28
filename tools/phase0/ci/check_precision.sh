@@ -39,6 +39,9 @@ set -euo pipefail
 # (which uses '.') would fail spuriously — the metric must be reproducible
 # regardless of host locale.
 export LC_ALL=C
+# Issue #551: fixed legacy hash-table seeds (hash_utils.c), as the golden
+# classification gate — the metrics are compared with a committed baseline.
+export MMT_DETERMINISTIC_SEED=1
 
 CI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PHASE0_DIR="$(cd "${CI_DIR}/.." && pwd)"

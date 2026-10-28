@@ -169,27 +169,56 @@ The NAS decoders under `src/mmt_mobile/nas/` keep no global state: each one
 returns its error code (issue #507 removed the process-global
 `errorCodeDecoder` every decoding thread wrote; see `src/mmt_mobile/nas/util/decoder.h`).
 
-### Exception: the security rule engine — one engine per process
+### The security rule engine — one engine per handler
 
 The optional rule engine (`libmmt_security`, built with `ENABLESEC=1`) keeps
-its whole state in process globals: the rule list `top_rule`, the options
-`op`, the loader's father stack and the reaction counter
-(`src/mmt_security/tips_internal.h`). So a process runs **one** engine, on
-**one** handler:
+its state per engine, and an engine belongs to one handler (issue #551; until
+then the rule list `top_rule`, the options `op` and the loader's father stack
+were process globals and #512 allowed one engine per process). The state is a
+`mmt_sec_engine_t` (`src/mmt_security/tips_internal.h`): the options, the rule
+list with its rule instances, the packet counter, the XML loader's stacks and
+the corrupted-message count. Every engine entry point binds its engine to the
+calling thread for its own duration through the thread-local `sec_cur`
+(`sec_bind()` in `src/mmt_security/tips.c`) — the load in `init_sec_lib()`,
+the packet handler `analyse_incoming_packet()`, `close_sec_lib()` and the
+summaries — so two engines never see each other's state:
 
-- `init_sec_lib()` loads the rule file and registers the engine's packet
-  handler on the `mmt_handler_t` it is given. It succeeds at most once per
-  process: a second call returns `-1` ("Error 105") without allocating
-  anything or touching the loaded rules (issue #512,
-  `engine_state` and `init_sec_lib()` in `src/mmt_security/tips.c`). The
-  engine is claimed with an atomic compare-and-swap, so of two threads that
-  race to initialise it exactly one wins.
+- `init_sec_lib(mmt, …)` loads the rule file into a new engine and registers
+  its packet handler on `mmt`. Several handlers of one process may each load
+  their own engine, with different rule files; each one reports only its own
+  rules' verdicts, to its own callback and `user_args`
+  (`tests/rule_engine/test_rule_eval.c`, `two-engines`).
+- A handler runs at most one engine: a second `init_sec_lib()` on the same
+  handler returns `-1` ("Error 105") without touching the loaded rules (the
+  engine it allocated for the attempt is freed). The handler is claimed under the engine registry's mutex
+  (`sec_engines_lock`), so of two threads that race to load an engine on one
+  handler exactly one wins.
 - A load that fails — unreadable or malformed rule file, missing embedded
-  function — returns `-1`, frees everything it built and releases the claim,
-  so the process may call `init_sec_lib()` again.
-- Packets reach the engine through that one handler, so the "one handler per
-  worker" rule makes the engine single-threaded: feed the handler from one
-  thread only. There is no unload; the engine lives until the process exits.
+  function — returns `-1`, frees everything it built and releases the
+  handler, so `init_sec_lib()` may be called on it again.
+- The engine is the handler's packet handler 1: `init_sec_lib()` refuses a
+  handler whose packet handler 1 is already registered ("Error 42").
+- `close_sec_lib(mmt)` unregisters the engine's packet handler and frees its
+  rule list, live rule instances and options; call it before
+  `mmt_close_handler(mmt)`, from the thread that feeds `mmt` — not from the
+  engine's own result callback, where it returns `-1`. Afterwards the
+  handler may load a new engine. An engine whose handler was closed without
+  it stays allocated until a later handler gets the same address; it never
+  answers for, or blocks, that handler (`find_engine_locked()` in
+  `src/mmt_security/tips.c` drops it when the live handler's packet handler 1
+  is not the engine's).
+- Packets reach an engine only through its handler, so the "one handler per
+  worker" rule makes each engine single-threaded: feed each handler from one
+  thread. Engines on different handlers may run on different threads at once.
+- `print_summary()` and `xml_summary()` take no engine argument: they report
+  the engine bound on the calling thread (from inside a result callback),
+  otherwise the most recently loaded live engine.
+
+Shared by every engine of the process, by design: the `detection_<n>.data`
+counter (numbers files in one reaction folder; claimed atomically,
+`open_detection_file()` in `src/mmt_security/tips_report.c`) and the
+embedded-function library handle (opened once under a mutex,
+`embedded_funct_resolve()` in `src/mmt_security/tips_extract.c`).
 
 ## Per-handler state (not shared)
 

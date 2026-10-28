@@ -43,6 +43,10 @@ extern "C" {
     // constant hash is used as a fallback).
     void * init_session_map_space(generic_comparison_fct comp_fct, generic_hash_fct hash_fct, generic_equal_fct equal_fct);
     void delete_session_map_space(void * sessionmap);
+    // Issue #551: the per-table hash seed of a session/key map (random per
+    // process; MMT_DETERMINISTIC_SEED=1 restores the fixed sequence). For the
+    // hashmap suite only — not MMTAPI, so libmmt_core does not export it.
+    uint64_t mmt_oa_table_seed(const void * map);
 
     // Generic void*-keyed map — the same open-addressing table as the session
     // store (issue #254): hash_fct must be consistent with comp_fct equality

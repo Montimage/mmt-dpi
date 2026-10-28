@@ -84,16 +84,9 @@
 #define _STDC_FORMAT_MARCROS
 #include <inttypes.h>
 
-    static rule *bot_rule = NULL;
-    static rule *root_rule;
-
-    static father *top_father = NULL;
-    static father *bot_father = NULL;
-
-    /* The node whose boolean_expression create_boolean_expression() is
-     * compiling: the parser may climb back to it but never above it (#512). */
-    static rule *expr_root = NULL;
-    static const char *expr_text = NULL;
+/* The loader's state — the rule list's tail, the property being loaded, the
+ * father stack and the expression being compiled — lives in the engine being
+ * loaded (sec_cur, tips_internal.h; issue #551). */
 
 rule * create_rule()
 {
@@ -152,22 +145,22 @@ rule * create_rule()
 
 int create_father(rule *a_rule, short depth, enum_clean clean)
 {
-    father *temp = top_father;
+    father *temp = sec_cur->top_father;
     if (clean == CLEAN) {
         while (temp) {
-            top_father = temp->next;
+            sec_cur->top_father = temp->next;
             xfree(temp);
-            temp = top_father;
+            temp = sec_cur->top_father;
         }
     }
-    if (top_father == NULL) {
-        top_father = (father *) xmalloc(sizeof (father));
-        if(top_father == NULL) return -1;
-        top_father->node = a_rule;
-        top_father->depth = depth;
-        top_father->next = NULL;
-        top_father->prev = NULL;
-        bot_father = top_father;
+    if (sec_cur->top_father == NULL) {
+        sec_cur->top_father = (father *) xmalloc(sizeof (father));
+        if(sec_cur->top_father == NULL) return -1;
+        sec_cur->top_father->node = a_rule;
+        sec_cur->top_father->depth = depth;
+        sec_cur->top_father->next = NULL;
+        sec_cur->top_father->prev = NULL;
+        sec_cur->bot_father = sec_cur->top_father;
     } else {
         temp = (father *) xmalloc(sizeof (father));
         if (temp == NULL)
@@ -175,26 +168,26 @@ int create_father(rule *a_rule, short depth, enum_clean clean)
         temp->node = a_rule;
         temp->depth = depth;
         temp->next = NULL;
-        temp->prev = bot_father;
-        bot_father->next = temp;
-        bot_father = temp;
+        temp->prev = sec_cur->bot_father;
+        sec_cur->bot_father->next = temp;
+        sec_cur->bot_father = temp;
     }
     return 0;
 }
 
 void eliminate_bot_father()
 {
-    if (bot_father == NULL) return;
-    if (bot_father->prev == NULL) {
-        xfree(bot_father);
-        bot_father = NULL;
-        top_father = NULL;
+    if (sec_cur->bot_father == NULL) return;
+    if (sec_cur->bot_father->prev == NULL) {
+        xfree(sec_cur->bot_father);
+        sec_cur->bot_father = NULL;
+        sec_cur->top_father = NULL;
         return;
     }
-    father *temp = bot_father->prev;
+    father *temp = sec_cur->bot_father->prev;
     temp->next = NULL;
-    xfree(bot_father);
-    bot_father = temp;
+    xfree(sec_cur->bot_father);
+    sec_cur->bot_father = temp;
 }
 
 const char cSep = ':'; //Bytes separator in MAC address string like 00-aa-bb-cc-dd-ee
@@ -490,7 +483,7 @@ void add_tuple_to_list_of_tuples(tuple *a_tuple)
         b_tuple->valid = NOT_YET; //set to valid when new values arrive, else set to NOT_YET
         b_tuple->data = NULL;
         b_tuple->next = NULL;
-        tuple *temp_tuple = root_rule->list_of_tuples; //add it to the ROOT (i.e. root_rule)
+        tuple *temp_tuple = sec_cur->root_rule->list_of_tuples; //add it to the ROOT (i.e. sec_cur->root_rule)
         int found = NO;
         while (temp_tuple != NULL) {
             if (b_tuple->protocol_id == temp_tuple->protocol_id && b_tuple->field_id == temp_tuple->field_id
@@ -502,11 +495,11 @@ void add_tuple_to_list_of_tuples(tuple *a_tuple)
             temp_tuple = temp_tuple->next;
         }
         if (found == NO) {
-            if (root_rule->list_of_tuples == NULL) {
-                root_rule->list_of_tuples = b_tuple;
+            if (sec_cur->root_rule->list_of_tuples == NULL) {
+                sec_cur->root_rule->list_of_tuples = b_tuple;
             } else {
-                b_tuple->next = root_rule->list_of_tuples;
-                root_rule->list_of_tuples = b_tuple;
+                b_tuple->next = sec_cur->root_rule->list_of_tuples;
+                sec_cur->root_rule->list_of_tuples = b_tuple;
             }
         }
     }
@@ -608,11 +601,11 @@ int funct_get_info_param( mmt_handler_t *mmt, enum_yes reg_tuple, char * input, 
     if (isalpha(*start)) {
         //PROTO.FIELD or PROTO.FIELD.EVENT
         ref = 0;
-        if (tokenize(start, &token2, &token3, &ref) == NULL) return -1;
-        a_tuple->protocol_id = get_protocol_id_by_name(token2);
-        a_tuple->field_id = get_attribute_id_by_protocol_id_and_attribute_name(a_tuple->protocol_id, token3);
+        if (tokenize(start, &sec_cur->token2, &sec_cur->token3, &ref) == NULL) return -1;
+        a_tuple->protocol_id = get_protocol_id_by_name(sec_cur->token2);
+        a_tuple->field_id = get_attribute_id_by_protocol_id_and_attribute_name(a_tuple->protocol_id, sec_cur->token3);
         if (a_tuple->protocol_id <= 0 || a_tuple->field_id <= 0) {
-            (void)fprintf(stderr, "Error 9a: Unknown attribute %s.%s\n", token2, token3);
+            (void)fprintf(stderr, "Error 9a: Unknown attribute %s.%s\n", sec_cur->token2, sec_cur->token3);
             return -1;
         }
         a_tuple->data_type_id = mmt_attribute_get_data_type_typed(a_tuple->protocol_id, a_tuple->field_id);
@@ -687,8 +680,8 @@ static int create_boolean_expression(mmt_handler_t *mmt, enum_yes first_time, ru
  * rewrite the enclosing operator). value < 0 climbs without setting. */
 static int climb_with_operator(mmt_handler_t *mmt, rule *a_rule, short value, char *rest)
 {
-    if (a_rule == expr_root || a_rule->father == NULL) {
-        (void)fprintf(stderr, "Error 37b: Unbalanced boolean expression: %s\n", expr_text);
+    if (a_rule == sec_cur->expr_root || a_rule->father == NULL) {
+        (void)fprintf(stderr, "Error 37b: Unbalanced boolean expression: %s\n", sec_cur->expr_text);
         return -1;
     }
     if (value >= 0) a_rule->father->value = value;
@@ -728,7 +721,7 @@ static int create_boolean_expression(mmt_handler_t *mmt, enum_yes first_time, ru
     } else if (*temp == ')') {
         //go up one; a surplus ')' that ends the expression is tolerated, as
         //it always was (the old parser stopped on the empty rest)
-        if (a_rule == expr_root || a_rule->father == NULL) {
+        if (a_rule == sec_cur->expr_root || a_rule->father == NULL) {
             char *rest = temp + 1;
             while (isspace(*rest)) rest++;
             if (*rest == '\0') return 0;
@@ -801,18 +794,18 @@ static int create_boolean_expression(mmt_handler_t *mmt, enum_yes first_time, ru
         return create_boolean_expression(mmt, NO, new_rule, temp2);
     } else if (isalpha(*temp) || *temp == '_') {
         //PROTO.FIELD.EVENT
-        temp2 = tokenize(temp, &token2, &token3, &ref);
+        temp2 = tokenize(temp, &sec_cur->token2, &sec_cur->token3, &ref);
         if (temp2 == NULL) return -1;
         //create new_rule
         new_rule = create_rule();
         if (new_rule == NULL) return -1;
         new_rule->type = LEAF;
         new_rule->value = XVAR;
-        new_rule->t.protocol_id = get_protocol_id_by_name(token2);
-        new_rule->t.field_id = get_attribute_id_by_protocol_id_and_attribute_name(new_rule->t.protocol_id, token3);
+        new_rule->t.protocol_id = get_protocol_id_by_name(sec_cur->token2);
+        new_rule->t.field_id = get_attribute_id_by_protocol_id_and_attribute_name(new_rule->t.protocol_id, sec_cur->token3);
         append_son(a_rule, new_rule);
         if (new_rule->t.protocol_id <= 0 || new_rule->t.field_id <= 0) {
-            (void)fprintf(stderr, "Error 9a: Unknown attribute %s.%s in boolean expression: %s\n", token2, token3, expression);
+            (void)fprintf(stderr, "Error 9a: Unknown attribute %s.%s in boolean expression: %s\n", sec_cur->token2, sec_cur->token3, expression);
             return -1;
         }
         new_rule->t.data_type_id = mmt_attribute_get_data_type_typed(new_rule->t.protocol_id, new_rule->t.field_id);
@@ -838,7 +831,7 @@ static int create_boolean_expression(mmt_handler_t *mmt, enum_yes first_time, ru
             a_tuple->valid = NOT_YET; //set to valid when new values arrive, else set to NOT_YET
             a_tuple->data = NULL;
             a_tuple->next = NULL;
-            tuple *temp_tuple = top_rule->list_of_tuples;
+            tuple *temp_tuple = sec_cur->top_rule->list_of_tuples;
             int found = NO;
             while (temp_tuple != NULL) {
                 if (a_tuple->protocol_id == temp_tuple->protocol_id && a_tuple->field_id == temp_tuple->field_id
@@ -850,11 +843,11 @@ static int create_boolean_expression(mmt_handler_t *mmt, enum_yes first_time, ru
                 temp_tuple = temp_tuple->next;
             }
             if (found == NO) {
-                if (root_rule->list_of_tuples == NULL) {
-                    root_rule->list_of_tuples = a_tuple;
+                if (sec_cur->root_rule->list_of_tuples == NULL) {
+                    sec_cur->root_rule->list_of_tuples = a_tuple;
                 } else {
-                    a_tuple->next = root_rule->list_of_tuples;
-                    root_rule->list_of_tuples = a_tuple;
+                    a_tuple->next = sec_cur->root_rule->list_of_tuples;
+                    sec_cur->root_rule->list_of_tuples = a_tuple;
                 }
             }
         }
@@ -1055,18 +1048,18 @@ static void free_rule_tree(rule *r)
 
 void free_rules( void )
 {
-    rule *r = top_rule, *n;
+    rule *r = sec_cur->top_rule, *n;
     while (r != NULL) {
         n = r->next;
         free_rule_tree(r);
         r = n;
     }
-    top_rule = NULL;
-    bot_rule = NULL;
-    root_rule = NULL;
-    while (bot_father != NULL) eliminate_bot_father();
-    expr_root = NULL;
-    expr_text = NULL;
+    sec_cur->top_rule = NULL;
+    sec_cur->bot_rule = NULL;
+    sec_cur->root_rule = NULL;
+    while (sec_cur->bot_father != NULL) eliminate_bot_father();
+    sec_cur->expr_root = NULL;
+    sec_cur->expr_text = NULL;
 }
 
 /* A #function(...) reaction is checked at load like an expression leaf
@@ -1118,8 +1111,8 @@ static int apply_attribute(mmt_handler_t *mmt, rule *a_rule, const xmlChar *attr
     } else if (xmlStrcmp(attribute_name, (const xmlChar*)"keep_state") == 0) {
         a_rule->keep_state = strdup((const char*)v);
     } else if (xmlStrcmp(attribute_name, (const xmlChar*)"boolean_expression") == 0) {
-        expr_root = a_rule;
-        expr_text = (const char *) v;
+        sec_cur->expr_root = a_rule;
+        sec_cur->expr_text = (const char *) v;
         return create_boolean_expression(mmt, YES, a_rule, (char *) v);
     } else if (xmlStrcmp(attribute_name, (const xmlChar*)"delay_units") == 0) {
         a_rule->delay_units = strdup((const char*)v); //Y,M,D,H,m,s(default),ms,mms
@@ -1160,19 +1153,19 @@ static int apply_attribute(mmt_handler_t *mmt, rule *a_rule, const xmlChar *attr
 static int attach_to_father(rule *a_rule, short depth)
 {
     rule *los = NULL;
-    if (bot_father == NULL) {
+    if (sec_cur->bot_father == NULL) {
         los = NULL;
-    } else if (bot_father->depth < depth) {
-        los = bot_father->node;
+    } else if (sec_cur->bot_father->depth < depth) {
+        los = sec_cur->bot_father->node;
         if (create_father(a_rule, depth, DONT_CLEAN) != 0) return -1;
-    } else if (bot_father->depth == depth) {
-        if (bot_father->prev != NULL) {
-            los = bot_father->prev->node;
-            bot_father->node = a_rule;
+    } else if (sec_cur->bot_father->depth == depth) {
+        if (sec_cur->bot_father->prev != NULL) {
+            los = sec_cur->bot_father->prev->node;
+            sec_cur->bot_father->node = a_rule;
         }
-    } else if (bot_father->prev != NULL && bot_father->prev->prev != NULL) {
-        los = bot_father->prev->prev->node;
-        bot_father->prev->node = a_rule;
+    } else if (sec_cur->bot_father->prev != NULL && sec_cur->bot_father->prev->prev != NULL) {
+        los = sec_cur->bot_father->prev->prev->node;
+        sec_cur->bot_father->prev->node = a_rule;
         eliminate_bot_father();
     }
     if (los == NULL) {
@@ -1200,7 +1193,7 @@ static int processNode( mmt_handler_t *mmt, xmlTextReaderPtr reader)
     ret = xmlTextReaderNodeType(reader);
     depth = xmlTextReaderDepth(reader);
     if (ret == XML_READER_TYPE_END_ELEMENT) {
-        while (bot_father != NULL && bot_father->depth >= depth) eliminate_bot_father();
+        while (sec_cur->bot_father != NULL && sec_cur->bot_father->depth >= depth) eliminate_bot_father();
         return 0;
     }
     if (ret != XML_READER_TYPE_ELEMENT) return 0;
@@ -1212,15 +1205,15 @@ static int processNode( mmt_handler_t *mmt, xmlTextReaderPtr reader)
             return -1;
         }
         a_rule->type = ROOT;
-        if (top_rule == NULL) {
-            top_rule = a_rule;
-            bot_rule = a_rule;
+        if (sec_cur->top_rule == NULL) {
+            sec_cur->top_rule = a_rule;
+            sec_cur->bot_rule = a_rule;
         } else {
-            bot_rule->next = a_rule;
-            a_rule->prev = bot_rule;
-            bot_rule = a_rule;
+            sec_cur->bot_rule->next = a_rule;
+            a_rule->prev = sec_cur->bot_rule;
+            sec_cur->bot_rule = a_rule;
         }
-        root_rule = a_rule;
+        sec_cur->root_rule = a_rule;
         state = ROOT;
         if (create_father(a_rule, depth, CLEAN) != 0) return -1;
     } else if (xmlStrcmp(name, (const xmlChar*)"operator") == 0) {
@@ -1243,8 +1236,8 @@ static int processNode( mmt_handler_t *mmt, xmlTextReaderPtr reader)
         (void)fprintf(stderr, "Error 12a: Unknown element <%s>.\n", (const char *) name);
         return -1;
     }
-    if (state != ROOT && root_rule == NULL) {
-        /* expressions file their event references in root_rule */
+    if (state != ROOT && sec_cur->root_rule == NULL) {
+        /* expressions file their event references in sec_cur->root_rule */
         (void)fprintf(stderr, "Error 12c: <%s> outside a <property>.\n", (const char *) name);
         free_rule_tree(a_rule);
         return -1;
@@ -1262,8 +1255,8 @@ static int processNode( mmt_handler_t *mmt, xmlTextReaderPtr reader)
         if (attribute_name == NULL || attribute_value[i] == NULL) continue;
         err = apply_attribute(mmt, a_rule, attribute_name, attribute_value[i]);
     }
-    expr_root = NULL;
-    expr_text = NULL;
+    sec_cur->expr_root = NULL;
+    sec_cur->expr_text = NULL;
     for (i = 0; i < count && i < 100; i++) {
         if (attribute_value[i] != NULL) {
             xfree((char *) attribute_value[i]);
@@ -1359,21 +1352,21 @@ int read_rules( mmt_handler_t *mmt )
     int invalid = 0;
     rule * temp;
 
-    op->timestamp_proto_id = p_meta;
-    op->timestamp_field_id = a_utime;
+    sec_cur->op->timestamp_proto_id = sec_cur->p_meta;
+    sec_cur->op->timestamp_field_id = sec_cur->a_utime;
 
     /* every verdict is stamped from META.UTIME — registered on this handler
      * (it used to be registered once per process, from the first
      * expression, through a function-static flag) */
-    if (is_registered_attribute(mmt, p_meta, a_utime) != 1 &&
-            register_extraction_attribute(mmt, p_meta, a_utime) <= 0) {
+    if (is_registered_attribute(mmt, sec_cur->p_meta, sec_cur->a_utime) != 1 &&
+            register_extraction_attribute(mmt, sec_cur->p_meta, sec_cur->a_utime) <= 0) {
         (void)fprintf(stderr, "Error 8: in register_extraction_attribute proto=META, field=UTIME. Timestamp not available.\n");
         return -1;
     }
 
-    reader = xmlReaderForFile(op->RuleFileName, NULL, 0);
+    reader = xmlReaderForFile(sec_cur->op->RuleFileName, NULL, 0);
     if (reader == NULL) {
-        (void)fprintf(stderr, "Error 14: Unable to open the XML properties file: %s.\n", op->RuleFileName);
+        (void)fprintf(stderr, "Error 14: Unable to open the XML properties file: %s.\n", sec_cur->op->RuleFileName);
         return -1;
     }
     ret = xmlTextReaderRead(reader);
@@ -1386,24 +1379,24 @@ int read_rules( mmt_handler_t *mmt )
     }
     xmlFreeTextReader(reader);
     if (invalid) {
-        (void)fprintf(stderr, "Error 13b: in XML properties file: %s. Invalid rule.\n", op->RuleFileName);
+        (void)fprintf(stderr, "Error 13b: in XML properties file: %s. Invalid rule.\n", sec_cur->op->RuleFileName);
         free_rules();
         return -1;
     }
     if (ret != 0) {
-        (void)fprintf(stderr, "Error 13: in XML properties file: %s. Parsing failed.\n", op->RuleFileName);
+        (void)fprintf(stderr, "Error 13: in XML properties file: %s. Parsing failed.\n", sec_cur->op->RuleFileName);
         free_rules();
         return -1;
     }
-    for (temp = top_rule; temp != NULL; temp = temp->next) {
+    for (temp = sec_cur->top_rule; temp != NULL; temp = temp->next) {
         if (validate_rule_tree(temp, temp->property_id) != 0) {
-            (void)fprintf(stderr, "Error 13b: in XML properties file: %s. Invalid rule.\n", op->RuleFileName);
+            (void)fprintf(stderr, "Error 13b: in XML properties file: %s. Invalid rule.\n", sec_cur->op->RuleFileName);
             free_rules();
             return -1;
         }
     }
     //Need to recuperate what attributes will need to be printed out (<proto_id, field_id, data_type_id>)
-    temp = top_rule;
+    temp = sec_cur->top_rule;
     while (temp) {
         recuperate_attributes(temp, temp);
         temp = temp->next;

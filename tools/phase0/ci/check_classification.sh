@@ -16,6 +16,10 @@
 # which CI uploads as an artifact, so refreshing the baseline is a copy away.
 #
 set -euo pipefail
+# Issue #551: hash-table seeds are random per process; the golden run keeps
+# the fixed legacy seed sequence so the fingerprint is reproducible by
+# construction (hash_utils.c, MMT_DETERMINISTIC_SEED).
+export MMT_DETERMINISTIC_SEED=1
 
 CI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PHASE0_DIR="$(cd "${CI_DIR}/.." && pwd)"

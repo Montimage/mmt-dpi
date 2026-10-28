@@ -55,6 +55,35 @@ else
     exit 1
 fi
 
+# Issue #551 (F-BUG-011): the table seeds are drawn per process, so two runs
+# print different seeds; MMT_DETERMINISTIC_SEED=1 restores the fixed legacy
+# sequence (asserted inside the binary), identical across runs.
+echo "Checking table seeds across runs..."
+seed_run() { # [VAR=value ...]: the seeds one `seed` run prints; fails with it
+    local out
+    if ! out="$(env -u MMT_DETERMINISTIC_SEED "$@" "$SCRIPT_DIR/test_session_table" seed)"; then
+        echo "✗ test_session_table seed failed ($*)" >&2
+        return 1
+    fi
+    printf '%s\n' "$out" | sed -n 's/^table seed: //p'
+}
+# A failing run (e.g. MMT_DETERMINISTIC_SEED=1 not giving the legacy seeds,
+# asserted inside the binary) fails the assignment, so set -e stops here.
+seed1="$(seed_run)"
+seed2="$(seed_run)"
+det1="$(seed_run MMT_DETERMINISTIC_SEED=1)"
+det2="$(seed_run MMT_DETERMINISTIC_SEED=1)"
+echo "  run 1: ${seed1:-?}"
+echo "  run 2: ${seed2:-?}"
+echo "  MMT_DETERMINISTIC_SEED=1: ${det1:-?} / ${det2:-?}"
+if [ -z "$seed1" ] || [ -z "$seed2" ] || [ "$seed1" = "$seed2" ]; then
+    echo "✗ two runs printed the same (or no) table seeds" >&2; exit 1
+fi
+if [ -z "$det1" ] || [ "$det1" != "$det2" ]; then
+    echo "✗ MMT_DETERMINISTIC_SEED=1 runs printed different (or no) table seeds" >&2; exit 1
+fi
+echo "Table seeds: PASSED (random per run, fixed under MMT_DETERMINISTIC_SEED=1)"
+
 # --- double init_extraction regression (issue #200, F-BUG-005) -------------
 # A second init_extraction() in one process used to dereference the global
 # protocol-stack map after close_extraction() deleted it without NULLing it.

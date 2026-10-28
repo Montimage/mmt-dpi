@@ -16,9 +16,11 @@
  *   - verify the error paths for a missing rule file and malformed XML;
  *   - #511/#512: a malformed or unloadable rule file makes init_sec_lib()
  *     return an error — it used to exit() or crash — and frees what it
- *     built (`load-error`, run under LSan); a second init_sec_lib() is
- *     refused without leaking or touching the loaded rules (`reinit`), also
- *     when two threads race for the engine (`race`, run under TSan).
+ *     built (`load-error`, run under LSan); a second init_sec_lib() on
+ *     the same handler is refused without leaking or touching the loaded
+ *     rules (`reinit`, which since #551 also closes the engine with
+ *     close_sec_lib() and loads a new one), also when two threads race for
+ *     one handler's engine (`race`, run under TSan).
  *
  * Rule-file XML schema is derived from processNode()/read_rules() in
  * src/mmt_security/tips_xml.c; see tests/rule_engine/rules_minimal.xml.
@@ -94,15 +96,16 @@ static int run_parse(const char *rule_file) {
                     get_attribute_id_by_protocol_id_and_attribute_name(meta, "packet_index")),
             "attribute 'packet_index' registered via rule expression");
 
+    CHECK(close_sec_lib(mmt) == 0, "close_sec_lib() frees the engine");
     mmt_close_handler(mmt);
     close_extraction();
     return failures;
 }
 
-static int count_properties(void) {
+static int count_properties(const mmt_sec_engine_t *e) {
     int n = 0;
     const rule *r;
-    for (r = top_rule; r != NULL; r = r->next) n++;
+    for (r = e != NULL ? e->top_rule : NULL; r != NULL; r = r->next) n++;
     return n;
 }
 
@@ -119,16 +122,19 @@ static int run_load_error(const char *rule_file) {
 
     CHECK(init_sec_lib(mmt, (char *) rule_file, BOTH, NULL, NULL) != 0,
           "init_sec_lib() returns an error for the invalid rule file");
-    CHECK(top_rule == NULL, "the failed load leaves no rule behind");
-    CHECK(op == NULL, "the failed load frees the engine options");
+    /* #551: the engine (rule list and options) is freed and unregistered */
+    CHECK(mmt_sec_engine_of(mmt) == NULL, "the failed load leaves no engine, rule or options behind");
+    CHECK(close_sec_lib(mmt) == -1, "the handler has no engine to close");
 
     mmt_close_handler(mmt);
     close_extraction();
     return failures;
 }
 
-/* #512: one engine per process — a second init_sec_lib() returns an error,
- * leaks nothing (LSan) and leaves the loaded rule set as it was. */
+/* #512, #551: one engine per handler — a second init_sec_lib() on the same
+ * handler returns an error, leaks nothing (LSan) and leaves the loaded rule
+ * set as it was; close_sec_lib() frees the engine and the handler can load
+ * a new one. */
 static int run_reinit(const char *rule_file) {
     char errbuf[MMT_ERRBUF_SIZE];
     memset(errbuf, 0, sizeof (errbuf));
@@ -138,13 +144,20 @@ static int run_reinit(const char *rule_file) {
     if (mmt == NULL) return 1;
 
     CHECK(init_sec_lib(mmt, (char *) rule_file, BOTH, NULL, NULL) == 0, "first init_sec_lib() loads the rules");
-    const rule *first = top_rule;
-    const OPTIONS_struct *first_op = op;
-    int n = count_properties();
+    const mmt_sec_engine_t *e = mmt_sec_engine_of(mmt);
+    CHECK(e != NULL && e->mmt == mmt, "the engine is registered on its handler");
+    const rule *first = e != NULL ? e->top_rule : NULL;
+    const OPTIONS_struct *first_op = e != NULL ? e->op : NULL;
+    int n = count_properties(e);
     CHECK(n > 0, "the first load built the rule list");
     CHECK(init_sec_lib(mmt, (char *) rule_file, BOTH, NULL, NULL) != 0, "second init_sec_lib() returns an error");
-    CHECK(top_rule == first && count_properties() == n, "the second call appends no duplicate rule set");
-    CHECK(op == first_op, "the second call keeps the engine options");
+    CHECK(mmt_sec_engine_of(mmt) == e && e->top_rule == first && count_properties(e) == n,
+          "the second call appends no duplicate rule set");
+    CHECK(e->op == first_op, "the second call keeps the engine options");
+    CHECK(close_sec_lib(mmt) == 0 && mmt_sec_engine_of(mmt) == NULL, "close_sec_lib() frees the handler's engine");
+    CHECK(init_sec_lib(mmt, (char *) rule_file, BOTH, NULL, NULL) == 0 && mmt_sec_engine_of(mmt) != NULL,
+          "the handler loads a new engine after close_sec_lib()");
+    CHECK(close_sec_lib(mmt) == 0, "close_sec_lib() frees the second engine");
 
     mmt_close_handler(mmt);
     close_extraction();
@@ -163,8 +176,8 @@ static void *race_init(void *p) {
     return NULL;
 }
 
-/* #512: two threads race for the engine — exactly one wins; under TSan the
- * claim must not race. */
+/* #512, #551: two threads race for one handler's engine — exactly one wins;
+ * under TSan the claim must not race. */
 static int run_race(const char *rule_file) {
     char errbuf[MMT_ERRBUF_SIZE];
     pthread_t t[2];
@@ -185,6 +198,7 @@ static int run_race(const char *rule_file) {
     CHECK((a[0].ret == 0) != (a[1].ret == 0) && (a[0].ret == 0 || a[0].ret == -1) &&
           (a[1].ret == 0 || a[1].ret == -1),
           "exactly one of two concurrent init_sec_lib() calls loads the engine");
+    CHECK(close_sec_lib(mmt) == 0, "close_sec_lib() frees the winner's engine");
     mmt_close_handler(mmt);
     close_extraction();
     return failures;

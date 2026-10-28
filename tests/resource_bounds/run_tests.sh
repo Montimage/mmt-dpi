@@ -92,6 +92,9 @@
 #   no arguments (or "all") runs every fixture; "ipv6-hash" / "tcp-memory" /
 #   "tcp-order" / "fragment-eviction" / "timeout-sweep" select one.
 set -euo pipefail
+# Issue #551: the budgets are fixed-seed counts, and the ipv6-hash fixture
+# reports its table seeds — keep the legacy fixed seed sequence (hash_utils.c).
+export MMT_DETERMINISTIC_SEED=1
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"

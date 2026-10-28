@@ -483,8 +483,6 @@ int eliminate_instance(rule **r, rule **i, char *type)
     return OK;
 }
 
-static int temptemp = 0;
-
 int verify_segment( verify_ctx_t *ctx, rule *c )
 {
     short result = 0;
@@ -584,7 +582,6 @@ int verify_segment( verify_ctx_t *ctx, rule *c )
                     return NOT_VALID;
                 }
             }
-            temptemp++;
             result = get_data_from_pcap( ctx, COMPUTE, &result_value, c->value, temp1, temp2 );
             if (result_value == NULL) {
                 //changed so that considered as a violated property (corrupted message):
@@ -652,7 +649,7 @@ int timeval_control(double delay_max, double delay_min, struct timeval start, st
     double lapsed_dd=(double)((curr.tv_sec - start.tv_sec) + ((double)curr.tv_usec - start.tv_usec)/1000000);
 
     if (lapsed.tv_sec < 0) {
-        (void)fprintf(stderr, "Error 23: Problem in trace file. Should be ordered in time (line: %lld).\n", packet_count);
+        (void)fprintf(stderr, "Error 23: Problem in trace file. Should be ordered in time (line: %lld).\n", sec_cur->packet_count);
         //exit(-1);
     }
     if (delay_max >= 0 && delay_min >= 0) {
@@ -903,10 +900,10 @@ int verify_left( verify_ctx_t *ctx, rule *r )
             return result;
             break;
         default:
-            (void)fprintf(stderr, "Error xx39: Should be a event. XML properties file: %s might be incorrect.\n", op->RuleFileName);
+            (void)fprintf(stderr, "Error xx39: Should be a event. XML properties file: %s might be incorrect.\n", sec_cur->op->RuleFileName);
             break;
     }//end of switch THEN
-    (void)fprintf(stderr, "Error xx40: Possible error in the XML properties file: %s.\n", op->RuleFileName);
+    (void)fprintf(stderr, "Error xx40: Possible error in the XML properties file: %s.\n", sec_cur->op->RuleFileName);
 
     return NOT_VALID;
 }
@@ -915,7 +912,7 @@ int verify_left( verify_ctx_t *ctx, rule *r )
 //malformed-tree diagnostic plus the NOT_VALID verdict the switch produced.
 static int verify_malformed_rule( void )
 {
-    (void)fprintf(stderr, "Error 40: Possible error in the XML properties file: %s.\n", op->RuleFileName);
+    (void)fprintf(stderr, "Error 40: Possible error in the XML properties file: %s.\n", sec_cur->op->RuleFileName);
     return NOT_VALID;
 }
 
@@ -1428,7 +1425,7 @@ int verify( verify_ctx_t *ctx, enum_operation_type context, rule *r )
         case DIV:
             return verify_leaf( ctx, context, r );
         default:
-            (void)fprintf(stderr, "Error 39: Should be a event. XML properties file: %s might be incorrect.\n", op->RuleFileName);
+            (void)fprintf(stderr, "Error 39: Should be a event. XML properties file: %s might be incorrect.\n", sec_cur->op->RuleFileName);
             break;
     }//end of switch THEN/OR/AND/NOT/REPEAT
     return verify_malformed_rule();

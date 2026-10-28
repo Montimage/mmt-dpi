@@ -20,10 +20,19 @@
  *     allocations (malloc fault injected via -Wl,--wrap=malloc): a failure
  *     returns MMT_TIMEOUT_NOMEM / dispatches nothing, and leaves every live
  *     milestone in place.
+ *
+ * Issue #551 coverage (F-BUG-011):
+ *   - the per-table hash seeds start from a per-process random base: the
+ *     first tables' seeds are printed ("table seed: 0x...") and must not be
+ *     the legacy fixed sequence; run_tests.sh runs `test_session_table seed`
+ *     twice and requires different seeds;
+ *   - MMT_DETERMINISTIC_SEED=1 restores the legacy sequence exactly
+ *     (fmix64(0x243F6A8885A308D3 + k * 0x9E3779B97F4A7C15), k = 1, 2, ...).
  */
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "hash_utils.h" /* pulls packet_processing.h: protocol_instance_t, mmt_handler_t, mmt_session_t */
@@ -61,6 +70,44 @@ static protocol_instance_t make_proto_ctx(void *sessions_map) {
     memset(&pc, 0, sizeof(pc));
     pc.sessions_map = sessions_map;
     return pc;
+}
+
+/* ---- issue #551: random per-process table seeds, deterministic override -- */
+static uint64_t legacy_mix64(uint64_t h) { /* hash_utils.c's mmt_mix64 */
+    h ^= h >> 33;
+    h *= 0xff51afd7ed558ccdULL;
+    h ^= h >> 33;
+    h *= 0xc4ceb9fe1a85ec53ULL;
+    h ^= h >> 33;
+    return h;
+}
+
+/* Must run before any other table is created: it checks the first two seeds
+ * of the process. */
+static void test_table_seeds(void) {
+    const char *env = getenv("MMT_DETERMINISTIC_SEED");
+    bool deterministic = env != NULL && env[0] != '\0' && strcmp(env, "0") != 0;
+    uint64_t legacy1 = legacy_mix64(0x243F6A8885A308D3ULL + 0x9E3779B97F4A7C15ULL);
+    uint64_t legacy2 = legacy_mix64(0x243F6A8885A308D3ULL + 2 * 0x9E3779B97F4A7C15ULL);
+    fprintf(stderr, "  test: table seeds (%s)\n", deterministic ? "MMT_DETERMINISTIC_SEED" : "random");
+    void *a = init_session_map_space(int_key_comp, int_key_hash, NULL);
+    void *b = init_map_space(int_key_comp, int_key_hash);
+    CHECK(a != NULL && b != NULL, "init_*_map_space should succeed");
+    if (a == NULL || b == NULL) { delete_session_map_space(a); delete_map_space(b); return; }
+    uint64_t sa = mmt_oa_table_seed(a), sb = mmt_oa_table_seed(b);
+    printf("table seed: 0x%016llx 0x%016llx\n", (unsigned long long) sa, (unsigned long long) sb);
+    fflush(stdout);
+    CHECK(sa != sb, "two tables are keyed with different seeds");
+    if (deterministic) {
+        CHECK(sa == legacy1 && sb == legacy2,
+              "MMT_DETERMINISTIC_SEED restores the legacy fixed seed sequence");
+    } else {
+        CHECK(sa != legacy1 && sb != legacy2,
+              "without MMT_DETERMINISTIC_SEED the seeds are not the legacy fixed sequence");
+    }
+    CHECK(mmt_oa_table_seed(NULL) == 0, "a NULL table has no seed");
+    delete_session_map_space(a);
+    delete_map_space(b);
 }
 
 /* ---- basic insert / lookup / delete on the session table ------------------ */
@@ -342,9 +389,16 @@ static void test_parked_index_nomem(void) {
     clear_timeout_milestones(&h);
 }
 
-int main(void) {
+int main(int argc, char **argv) {
+    /* `seed` mode: print the process's first table seeds only (run_tests.sh
+     * compares two runs). */
+    if (argc > 1 && strcmp(argv[1], "seed") == 0) {
+        test_table_seeds();
+        return g_failures == 0 ? 0 : 1;
+    }
     fprintf(stderr, "Session table test suite\n");
 
+    test_table_seeds();
     test_session_table_basics();
     test_resize_failure_preserves_table();
     test_dead_table_early_outs();

@@ -1,7 +1,11 @@
 #include "hash_utils.h"
+#include <pthread.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <sys/auxv.h>
+#include <sys/random.h>
+#include <time.h>
 
 //////////////// Stores
 //
@@ -205,13 +209,54 @@ static void mmt_oa_reset(mmt_oa_table * t) {
 /* Issue #379 (F-PERF-001): per-table seed supply. Every created table draws
  * the next step of a process-local counter decorrelated through fmix64, so
  * two maps are keyed independently — a forced-collision key set computed
- * for one handler's table does not transfer to another's. The counter keeps
- * seeds deterministic across runs (tables are created in a fixed order),
- * which the golden classification fingerprint and reproducible tests rely
- * on; the bound that actually caps adversarial work is the per-operation
- * probe ceiling documented at mmt_oa_insert — the seed is the mitigation,
- * the bound is the guarantee. */
-static uint64_t mmt_oa_seed_supply = 0x243F6A8885A308D3ULL;
+ * for one handler's table does not transfer to another's. The bound that
+ * actually caps adversarial work is the per-operation probe ceiling
+ * documented at mmt_oa_insert — the seed is the mitigation, the bound is the
+ * guarantee.
+ *
+ * Issue #551 (F-BUG-011): the counter used to start at a fixed constant, so
+ * every process derived the same, predictable seeds. Its start is now drawn
+ * once per process, on the first table creation, from getrandom(); a
+ * process without entropy (GRND_NONBLOCK fails early at boot) falls back to
+ * a clock/pid/address mix. MMT_DETERMINISTIC_SEED=1 (any non-empty value but
+ * "0") keeps the legacy constant, so the per-table sequence is exactly the
+ * pre-#551 one: the golden classification gate, the precision gate and the
+ * fixed-seed resource budgets set it. A set-uid/set-gid process (AT_SECURE)
+ * ignores the variable — the environment of such a process is untrusted. */
+#define MMT_OA_SEED_LEGACY 0x243F6A8885A308D3ULL
+#define MMT_OA_SEED_STEP   0x9E3779B97F4A7C15ULL
+static uint64_t mmt_oa_seed_supply = MMT_OA_SEED_LEGACY;
+static pthread_once_t mmt_oa_seed_once = PTHREAD_ONCE_INIT;
+
+static bool mmt_oa_seed_deterministic(void) {
+    const char * v = getenv("MMT_DETERMINISTIC_SEED");
+    if (v == NULL || v[0] == '\0' || strcmp(v, "0") == 0) return false;
+    return getauxval(AT_SECURE) == 0;
+}
+
+static void mmt_oa_seed_init(void) {
+    uint64_t base = MMT_OA_SEED_LEGACY;
+    if (!mmt_oa_seed_deterministic() &&
+            getrandom(&base, sizeof base, GRND_NONBLOCK) != (ssize_t) sizeof base) {
+        uintptr_t aslr = (uintptr_t) &base;
+        base = mmt_mix64((uint64_t) time(NULL) ^ ((uint64_t) getpid() << 32)
+                         ^ (uint64_t) aslr ^ (uint64_t) clock());
+    }
+    __atomic_store_n(&mmt_oa_seed_supply, base, __ATOMIC_RELAXED);
+}
+
+static uint64_t mmt_oa_next_seed(void) {
+    (void) pthread_once(&mmt_oa_seed_once, mmt_oa_seed_init);
+    return mmt_mix64(__atomic_add_fetch(&mmt_oa_seed_supply, MMT_OA_SEED_STEP,
+                                        __ATOMIC_RELAXED));
+}
+
+/* Issue #551: a table's seed, for the hashmap suite (test_session_table.c
+ * links this file directly). Not MMTAPI: the core is built
+ * -fvisibility=hidden, so libmmt_core does not export it. */
+uint64_t mmt_oa_table_seed(const void * map) {
+    return map != NULL ? ((const mmt_oa_table *) map)->seed : 0;
+}
 
 static void * mmt_oa_create(generic_comparison_fct comp_fct, generic_hash_fct hash_fct, generic_equal_fct equal_fct) {
     mmt_oa_table * t = (mmt_oa_table *) malloc(sizeof(mmt_oa_table));
@@ -221,9 +266,7 @@ static void * mmt_oa_create(generic_comparison_fct comp_fct, generic_hash_fct ha
     t->comp = comp_fct;
     t->hash = hash_fct;
     t->equal = equal_fct;
-    t->seed = mmt_mix64(__atomic_add_fetch(&mmt_oa_seed_supply,
-                                           0x9E3779B97F4A7C15ULL,
-                                           __ATOMIC_RELAXED));
+    t->seed = mmt_oa_next_seed();
     mmt_oa_alloc_slots(t, MMT_OA_INITIAL_CAP);
     if (t->slots == NULL) { free(t); return NULL; }
     return t;

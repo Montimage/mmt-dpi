@@ -18,19 +18,23 @@
  * from the rule's plain reading say so in their comment.
  *
  * Oracles, per scenario:
- *   - the ROOT rule's nb_satisfied / nb_not_satisfied counters (top_rule,
- *     tips_internal.h), incremented by analyse_incoming_packet() for every
- *     verdict whatever the print option;
+ *   - the ROOT rule's nb_satisfied / nb_not_satisfied counters (the
+ *     engine's top_rule, tips_internal.h), incremented by
+ *     analyse_incoming_packet() for every verdict whatever the print option;
  *   - the result callback given to init_sec_lib(): every reported verdict
  *     string ("respected" / "not_respected") with its property id, and its
  *     JSON history, which must carry no raw control byte (#510). With
  *     RULE_EVAL_HISTORY_LOG set, each history is appended to that file, one
  *     per line, for run_tests.sh to parse with jq.
  *
- * The engine keeps its rule list in process globals (top_rule, the static
- * XML-loader state) and has no unload entry point, so every scenario runs
- * in a forked child: the parent never initialises the engine. A child that
- * crashes or hangs (alarm) fails its scenario instead of the whole run.
+ * Every scenario runs in a forked child, so a child that crashes or hangs
+ * (alarm) fails its scenario instead of the whole run.
+ *
+ * Issue #551 adds the `two-engines` check: two handlers of one process load
+ * different rule files and are fed the same frames — interleaved on one
+ * thread, then each from its own thread — and each engine reports only its
+ * own rule's verdicts (counters, property id, callback user_args). The
+ * `engine-lifecycle` check covers close_sec_lib() and handler reuse.
  *
  * Packet script: each frame is UDP to dest_port `port`, `len` bytes on the
  * wire, timestamped `ms` milliseconds after a fixed epoch. The fixtures
@@ -38,10 +42,13 @@
  *   A = 1001, B = 1002, C = 1003, X = 9999 (matches no event).
  *
  * Usage: test_rule_eval <dir-with-eval-fixtures>
+ *        test_rule_eval two-engines <dir-with-eval-fixtures>
+ *        test_rule_eval engine-lifecycle <dir-with-eval-fixtures>
  *        test_rule_eval probe <rule.xml> <port>:<len>@<ms> ...
  * The probe form replays an ad-hoc script and prints the verdict counts
  * without asserting — for deriving the expectation of a new case.
  */
+#include <pthread.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -53,8 +60,9 @@
 
 #include "mmt_core.h"
 
-/* init_sec_lib(), top_rule and the rule layout come from the internal
- * header (not installed; the suite adds -I src/mmt_security). */
+/* init_sec_lib(), the engine (mmt_sec_engine_of) and the rule layout come
+ * from the internal header (not installed; the suite adds -I
+ * src/mmt_security). */
 #include "tips_internal.h"
 
 #define PORT_A 1001
@@ -370,6 +378,7 @@ static void run_scenario(const scenario_t *s, const char *dir)
         printf("FAIL - %s: init_sec_lib() rejected %s\n", s->name, s->fixture);
         exit(3);
     }
+    const rule *top_rule = mmt_sec_engine_of(mmt) != NULL ? mmt_sec_engine_of(mmt)->top_rule : NULL;
     if (top_rule == NULL || top_rule->next != NULL) {
         printf("FAIL - %s: %s must load exactly one property\n", s->name, s->fixture);
         exit(3);
@@ -422,12 +431,225 @@ static void run_scenario(const scenario_t *s, const char *dir)
         printf("ok - %s (satisfied=%ld not_satisfied=%ld)\n", s->name, sat, not_sat);
     }
     fflush(stdout);
+    if (close_sec_lib(mmt) != 0) {
+        printf("FAIL - %s: close_sec_lib() found no engine\n", s->name);
+        bad = 1;
+    }
     mmt_close_handler(mmt);
     close_extraction();
     /* exit(), not _exit(): gcov counters are flushed at exit. An asserted
      * mismatch (already reported above) exits 3, so the parent only adds a
      * line for an exit the engine itself took. */
     exit(bad ? 3 : 0);
+}
+
+/* ---- #551: two engines, two handlers, one process ----------------------
+ * then_same.xml (property 1) is satisfied by a long A frame, or_expression.xml
+ * (property 11) by a long or a short one: on A120, A60, A80 the first
+ * reports 1 satisfied / 2 not satisfied and the second 2 / 1 — the counts
+ * each fixture's own scenarios above pin. A shared rule list, options or
+ * callback would mix them. */
+typedef struct {
+    const char *fixture;
+    int prop;                 /* the fixture's property_id */
+    long exp_sat, exp_not_sat;
+    /* written by on_engine_verdict through user_args */
+    int respected, not_respected, wrong_prop;
+} engine_obs_t;
+
+static void on_engine_verdict(int prop_id, char *verdict, char *type, char *cause,
+                              char *history, struct timeval ts, void *user_args)
+{
+    engine_obs_t *o = (engine_obs_t *) user_args;
+    (void)type; (void)cause; (void)history; (void)ts;
+    if (prop_id != o->prop) o->wrong_prop++;
+    if (verdict != NULL && strcmp(verdict, "respected") == 0) o->respected++;
+    else if (verdict != NULL && strcmp(verdict, "not_respected") == 0) o->not_respected++;
+    else o->wrong_prop++;
+}
+
+static const frame_t two_engine_frames[] = { F(PORT_A, 120, 0), F(PORT_A, 60, 100), F(PORT_A, 80, 200) };
+#define N_TWO_ENGINE_FRAMES ((int) (sizeof two_engine_frames / sizeof two_engine_frames[0]))
+
+static void feed(mmt_handler_t *mmt, const frame_t *f)
+{
+    uint8_t buf[256];
+    struct pkthdr hdr;
+    memset(&hdr, 0, sizeof hdr);
+    build_frame(buf, f);
+    hdr.ts.tv_sec = EPOCH_S + f->ms / 1000;
+    hdr.ts.tv_usec = (f->ms % 1000) * 1000;
+    hdr.caplen = hdr.len = f->len;
+    packet_process(mmt, &hdr, buf);
+}
+
+/* Loads o->fixture on a new handler; NULL (with a FAIL line) on error. */
+static mmt_handler_t *engine_handler(const char *dir, engine_obs_t *o, const char *phase)
+{
+    char path[4096], errbuf[MMT_ERRBUF_SIZE];
+    memset(errbuf, 0, sizeof errbuf);
+    snprintf(path, sizeof path, "%s/%s", dir, o->fixture);
+    mmt_handler_t *mmt = mmt_init_handler(DLT_EN10MB, 0, errbuf);
+    if (mmt == NULL || init_sec_lib(mmt, path, BOTH, on_engine_verdict, o) != 0) {
+        printf("FAIL - two engines (%s): loading %s\n", phase, o->fixture);
+        return NULL;
+    }
+    return mmt;
+}
+
+/* One engine's verdicts: its own rule only, with the fixture's counts. */
+static int check_engine(mmt_handler_t *mmt, const engine_obs_t *o, const char *phase)
+{
+    const mmt_sec_engine_t *e = mmt_sec_engine_of(mmt);
+    const rule *r = e != NULL ? e->top_rule : NULL;
+    if (r == NULL || r->next != NULL || r->property_id != o->prop ||
+        r->nb_satisfied != o->exp_sat || r->nb_not_satisfied != o->exp_not_sat ||
+        o->respected != o->exp_sat || o->not_respected != o->exp_not_sat || o->wrong_prop != 0) {
+        printf("FAIL - two engines (%s): %s: property %d satisfied=%ld not_satisfied=%ld "
+               "(expected %d: %ld/%ld); callback respected=%d not_respected=%d wrong=%d\n",
+               phase, o->fixture, r != NULL ? r->property_id : -1,
+               r != NULL ? r->nb_satisfied : -1L, r != NULL ? r->nb_not_satisfied : -1L,
+               o->prop, o->exp_sat, o->exp_not_sat, o->respected, o->not_respected, o->wrong_prop);
+        return 1;
+    }
+    printf("ok - two engines (%s): %s reports only its own verdicts (satisfied=%ld not_satisfied=%ld)\n",
+           phase, o->fixture, r->nb_satisfied, r->nb_not_satisfied);
+    return 0;
+}
+
+static void *feed_thread(void *p)
+{
+    mmt_handler_t *mmt = (mmt_handler_t *) p;
+    int i;
+    for (i = 0; i < N_TWO_ENGINE_FRAMES; i++) feed(mmt, &two_engine_frames[i]);
+    return NULL;
+}
+
+static int run_two_engines(const char *dir)
+{
+    static const engine_obs_t proto[2] = {
+        { "then_same.xml", 1, 1, 2, 0, 0, 0 },
+        { "or_expression.xml", 11, 2, 1, 0, 0, 0 },
+    };
+    engine_obs_t obs[2];
+    mmt_handler_t *h[2];
+    pthread_t t[2];
+    int i, k, bad = 0;
+
+    alarm(SCENARIO_TIMEOUT_S);
+    if (!init_extraction()) { printf("FAIL - two engines: init_extraction\n"); return 1; }
+
+    /* phase 1: both engines fed from this thread, frame by frame in turn */
+    memcpy(obs, proto, sizeof obs);
+    for (i = 0; i < 2; i++)
+        if ((h[i] = engine_handler(dir, &obs[i], "one thread")) == NULL) return 1;
+    if (mmt_sec_engine_of(h[0]) == mmt_sec_engine_of(h[1])) {
+        printf("FAIL - two engines: both handlers report the same engine\n");
+        return 1;
+    }
+    for (k = 0; k < N_TWO_ENGINE_FRAMES; k++)
+        for (i = 0; i < 2; i++) feed(h[i], &two_engine_frames[k]);
+    for (i = 0; i < 2; i++) {
+        bad |= check_engine(h[i], &obs[i], "one thread");
+        if (close_sec_lib(h[i]) != 0) { printf("FAIL - two engines: close_sec_lib\n"); bad = 1; }
+        mmt_close_handler(h[i]);
+    }
+
+    /* phase 2: each engine fed from its own thread, concurrently */
+    memcpy(obs, proto, sizeof obs);
+    for (i = 0; i < 2; i++)
+        if ((h[i] = engine_handler(dir, &obs[i], "two threads")) == NULL) return 1;
+    for (i = 0; i < 2; i++)
+        if (pthread_create(&t[i], NULL, feed_thread, h[i]) != 0) { perror("pthread_create"); return 1; }
+    for (i = 0; i < 2; i++) pthread_join(t[i], NULL);
+    for (i = 0; i < 2; i++) {
+        bad |= check_engine(h[i], &obs[i], "two threads");
+        if (close_sec_lib(h[i]) != 0) { printf("FAIL - two engines: close_sec_lib\n"); bad = 1; }
+        mmt_close_handler(h[i]);
+    }
+    close_extraction();
+    fflush(stdout);
+    return bad;
+}
+
+static int noop_packet_handler(const ipacket_t *ipacket, void *args)
+{
+    (void)ipacket; (void)args;
+    return 0;
+}
+
+/* ---- #551: the engine lifecycle on one handler ---------------------------
+ * close_sec_lib() frees an engine with live rule instances (run under LSan)
+ * and the handler then loads a fresh one; an engine whose handler was closed
+ * without close_sec_lib() never answers for, or blocks, a later handler; an
+ * application's own packet handler 1 is refused instead of silently starving
+ * the engine, and close_sec_lib() then leaves it registered. */
+static int run_engine_lifecycle(const char *dir)
+{
+    char path[4096], errbuf[MMT_ERRBUF_SIZE];
+    int bad = 0;
+#define LCHECK(cond, msg) do { if (cond) printf("ok - engine lifecycle: %s\n", (msg)); \
+        else { printf("FAIL - engine lifecycle: %s\n", (msg)); bad = 1; } } while (0)
+
+    alarm(SCENARIO_TIMEOUT_S);
+    memset(errbuf, 0, sizeof errbuf);
+    snprintf(path, sizeof path, "%s/then_after.xml", dir);
+    if (!init_extraction()) { printf("FAIL - engine lifecycle: init_extraction\n"); return 1; }
+
+    /* close with a live instance, then reload on the same handler */
+    mmt_handler_t *h = mmt_init_handler(DLT_EN10MB, 0, errbuf);
+    if (h == NULL || init_sec_lib(h, path, BOTH, NULL, NULL) != 0) {
+        printf("FAIL - engine lifecycle: loading then_after.xml\n");
+        return 1;
+    }
+    const frame_t a = F(PORT_A, 60, 0);
+    feed(h, &a);
+    const mmt_sec_engine_t *e = mmt_sec_engine_of(h);
+    LCHECK(e != NULL && e->top_rule != NULL && e->top_rule->list_of_instances != NULL,
+           "an A frame leaves a live instance waiting for B");
+    LCHECK(close_sec_lib(h) == 0 && mmt_sec_engine_of(h) == NULL,
+           "close_sec_lib() frees the engine and its live instance");
+    LCHECK(!is_registered_packet_handler(h, 1), "close_sec_lib() unregisters the engine's packet handler");
+    LCHECK(close_sec_lib(h) == -1, "a second close_sec_lib() finds no engine");
+    LCHECK(init_sec_lib(h, path, BOTH, NULL, NULL) == 0, "the handler loads a new engine after close_sec_lib()");
+    e = mmt_sec_engine_of(h);
+    LCHECK(e != NULL && e->top_rule != NULL && e->top_rule->list_of_instances == NULL &&
+           e->top_rule->nb_satisfied == 0 && e->packet_count == 0,
+           "the new engine starts from a fresh rule list");
+    LCHECK(close_sec_lib(h) == 0, "close_sec_lib() frees the new engine");
+    mmt_close_handler(h);
+
+    /* a handler closed without close_sec_lib(): a later handler, even at
+     * the same address, loads its own engine */
+    mmt_handler_t *old = mmt_init_handler(DLT_EN10MB, 0, errbuf);
+    if (old == NULL || init_sec_lib(old, path, BOTH, NULL, NULL) != 0) {
+        printf("FAIL - engine lifecycle: loading on the handler to abandon\n");
+        return 1;
+    }
+    uintptr_t old_addr = (uintptr_t) old;
+    mmt_close_handler(old);
+    h = mmt_init_handler(DLT_EN10MB, 0, errbuf);
+    if (h == NULL) { printf("FAIL - engine lifecycle: mmt_init_handler\n"); return 1; }
+    printf("    (the new handler %s the closed one's address)\n",
+           (uintptr_t) h == old_addr ? "reuses" : "does not reuse");
+    LCHECK(init_sec_lib(h, path, BOTH, NULL, NULL) == 0,
+           "init_sec_lib() loads on a new handler after another was closed without close_sec_lib()");
+    e = mmt_sec_engine_of(h);
+    LCHECK(e != NULL && e->mmt == h && is_registered_packet_handler(h, 1),
+           "the new handler's engine is its own, not the abandoned one");
+    LCHECK(close_sec_lib(h) == 0, "close_sec_lib() frees it");
+
+    /* an application's own packet handler 1 */
+    LCHECK(register_packet_handler(h, 1, noop_packet_handler, NULL) == 1, "the application registers packet handler 1");
+    LCHECK(init_sec_lib(h, path, BOTH, NULL, NULL) == -1 && mmt_sec_engine_of(h) == NULL,
+           "init_sec_lib() refuses a handler whose packet handler 1 is taken");
+    LCHECK(close_sec_lib(h) == -1 && is_registered_packet_handler(h, 1),
+           "close_sec_lib() leaves the application's packet handler registered");
+    mmt_close_handler(h);
+    close_extraction();
+    fflush(stdout);
+#undef LCHECK
+    return bad;
 }
 
 int main(int argc, char **argv)
@@ -461,8 +683,12 @@ int main(int argc, char **argv)
         }
         run_scenario(&p, NULL);
     }
+    if (argc == 3 && strcmp(argv[1], "two-engines") == 0)
+        return run_two_engines(argv[2]);
+    if (argc == 3 && strcmp(argv[1], "engine-lifecycle") == 0)
+        return run_engine_lifecycle(argv[2]);
     if (argc != 2) {
-        fprintf(stderr, "usage: %s <fixture-dir> | probe <rule.xml> <port>:<len>@<ms> ...\n", argv[0]);
+        fprintf(stderr, "usage: %s <fixture-dir> | two-engines|engine-lifecycle <fixture-dir> | probe <rule.xml> <port>:<len>@<ms> ...\n", argv[0]);
         return 2;
     }
     for (i = 0; i < sizeof scenarios / sizeof scenarios[0]; i++) {

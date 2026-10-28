@@ -52,24 +52,55 @@ typedef void *(*embedded_funct_t)(void);
 #endif
 
 /* ===== Engine state =======================================================
- * One definition site each — all in tips.c. The writer set spans every
- * unit, so file-local `static` is not an option: op is set by
- * init_sec_lib() (tips.c) and read by loaders, evaluators and reporters;
- * top_rule is the rule list the XML loader builds and the driver and the
- * reporters walk; token2/token3 are the scratch token buffers init_options
- * allocates for the XML-side parsers; packet_count/p_meta/a_utime are the
- * packet clock state. bot_rule/root_rule and the father stack are written
- * and read only inside tips_xml.c, so they stay file-local there; the same
- * applies to corr_mess (tips_report.c), temptemp (tips_eval.c) and
- * counter_detection (tips_report.c). */
+ * Issue #551 (F-BUG-215, part 2 of 2): the engine state is per engine, and
+ * an engine belongs to one mmt handler. It used to be a set of process
+ * globals (op, top_rule, packet_count, p_meta/a_utime, token2/token3 in
+ * tips.c; the loader's rule and father stacks in tips_xml.c; corr_mess in
+ * tips_report.c), which is why #512 allowed one engine per process.
+ *
+ * The units reach the state through sec_cur, a thread-local pointer to the
+ * engine that is running on this thread. Every engine entry point binds it
+ * for its own duration and restores the previous value on return — the
+ * load in init_sec_lib(), the packet handler analyse_incoming_packet()
+ * (whose packet-handler argument is the engine), close_sec_lib() and the
+ * summaries — so two handlers' engines on two threads, or interleaved on
+ * one, never see each other's state. Outside any entry point sec_cur points
+ * to a zeroed, never-registered engine, so an internal function called
+ * directly (the suites do) behaves as it did on the zeroed globals.
+ *
+ * Process-wide by design, not per engine: the detection-file counter
+ * (tips_report.c — it numbers files in one shared reaction folder; atomic),
+ * the embedded-function library handle (tips_extract.c — one dlopen per
+ * process, initialised under a mutex) and the allocation statistic
+ * (tips.c; atomic). */
+typedef struct mmt_sec_engine {
+    OPTIONS_struct *op;          /* options given to init_sec_lib() */
+    rule *top_rule;              /* the rule list the loader built */
+    mmt_handler_t *mmt;          /* the handler the engine is registered on */
+    long long packet_count;      /* packets this engine has analysed */
+    short p_meta;                /* META protocol id */
+    short a_utime;               /* META.UTIME attribute id */
+    char *token2;                /* the XML-side parsers' scratch tokens */
+    char *token3;
+    long long corr_mess;         /* corrupted-message verdicts (tips_report.c) */
+    /* XML loader state (tips_xml.c), live only while the rules load */
+    rule *bot_rule;
+    rule *root_rule;
+    father *top_father;
+    father *bot_father;
+    /* the node whose boolean_expression create_boolean_expression() is
+     * compiling: the parser may climb back to it but never above it (#512) */
+    rule *expr_root;
+    const char *expr_text;
+    int loaded;                  /* set once the load succeeded (registry lock) */
+    struct mmt_sec_engine *next; /* the live-engine registry (tips.c) */
+} mmt_sec_engine_t;
 
-extern OPTIONS_struct *op;
-extern rule *top_rule;
-extern long long packet_count;
-extern short p_meta;
-extern short a_utime;
-extern char *token2;
-extern char *token3;
+extern __thread mmt_sec_engine_t *sec_cur;
+
+/* Binds e as this thread's current engine; returns the previous binding,
+ * to be restored with sec_bind(prev) when the entry point returns. */
+mmt_sec_engine_t *sec_bind( mmt_sec_engine_t *e );
 
 //Invariant arguments threaded through one verify() traversal: the packet
 //under test, the rule the instance belongs to, the instance's tuple list,
@@ -99,12 +130,24 @@ void * xcalloc(unsigned long num, unsigned long size);
 void * xmalloc(unsigned long size);
 void xfree(void *freeable);
 void close_file(FILE *file);
-/* Loads the rule file and registers the packet handler on mmt. Returns 0, or
- * -1 with the reason on stderr — a malformed rule file, a missing embedded
- * function, a failed registration, or a second call: the engine state is
- * process-global, so a process runs at most one engine (docs/THREADING.md).
- * A failed load frees what it built and leaves the engine uninitialised. */
+/* Loads the rule file into a new engine and registers its packet handler on
+ * mmt. Returns 0, or -1 with the reason on stderr — a malformed rule file, a
+ * missing embedded function, a failed registration, or a handler that
+ * already runs an engine ("Error 105": one engine per handler; several
+ * handlers of one process each run their own, docs/THREADING.md). A failed
+ * load frees what it built and leaves the handler without an engine. */
 int init_sec_lib( mmt_handler_t *mmt, char *property_file, enum_print print_option, result_callback cont_funct, void *user_args );
+/* The engine init_sec_lib() loaded on mmt, or NULL — also while a load is
+ * still running (issue #551). */
+mmt_sec_engine_t *mmt_sec_engine_of( const mmt_handler_t *mmt );
+/* Unregisters and frees the engine running on mmt: its packet handler, rule
+ * list, live rule instances and options (issue #551). Call it before
+ * mmt_close_handler(mmt), from the thread that feeds mmt; afterwards
+ * init_sec_lib() may load a new engine on mmt. Returns 0, or -1 when mmt
+ * runs no engine or when called from that engine's own result callback. An engine whose handler was closed without it is dropped
+ * when a later handler reuses that address (its packet handler is not the
+ * engine's): it never blocks or answers for the new handler. */
+int close_sec_lib( mmt_handler_t *mmt );
 
 /* ===== tips_xml.c — XML loading, called by tips.c and the others =========*/
 
@@ -140,6 +183,10 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
 void store_tuples( verify_ctx_t *ctx, enum_operation_type context, rule *curr_rule, short event_id, char *cause );
 void detected_corrupted_message( verify_ctx_t *ctx, rule *r, char *cause, enum_print state );
 void rule_is_satisfied_or_not( verify_ctx_t *ctx, rule *r, enum_print state );
+/* The bodies of print_summary()/xml_summary() (tips.c), over the bound engine. */
+void print_engine_summary( void );
+char * xml_engine_summary( void );
+char * xml_summary( void );
 
 #ifdef __cplusplus
 }

@@ -166,10 +166,8 @@ typedef struct REFERENCE_NAME_struct{
 }reference_name;
 
 /* The engine state formerly declared here (`static` in a header => one copy
- * per translation unit) moved with the tips.c split (issue #235): top_rule
- * is now defined once in tips.c and declared extern in tips_internal.h;
- * bot_rule/root_rule and the father stack are used only by the XML loader
- * and are file-local in tips_xml.c. */
+ * per translation unit) moved with the tips.c split (issue #235), and since
+ * issue #551 lives per engine in mmt_sec_engine_t (tips_internal.h). */
 
 #define MTU_BIG               (16*1024)
 

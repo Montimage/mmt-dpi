@@ -86,7 +86,6 @@
 #include <inttypes.h>
 #include <math.h>
 
-    static long long corr_mess = 0;
 
 /* F-BUG-092 (#209): control bytes escape as \u + 4 hex digits — up to 6
  * output bytes per input byte — so the destination needs size*6+1 bytes.
@@ -712,11 +711,11 @@ void detected_corrupted_message( verify_ctx_t *ctx, rule *r, char *cause, enum_p
     char *history = NULL;
     char *str = NULL;
 
-    if(op->callback_funct != NULL){
+    if(sec_cur->op->callback_funct != NULL){
     	char *verdict = NULL, *type = NULL;
-    	get_verdict( ATTACK, op->Print, state, &verdict, &type );
+    	get_verdict( ATTACK, sec_cur->op->Print, state, &verdict, &type );
 
-        //char * xml_string = xml_message(ATTACK, op->Print, state, 0, cause);
+        //char * xml_string = xml_message(ATTACK, sec_cur->op->Print, state, 0, cause);
       	if ( verdict == NULL) {
             if (type != NULL)
                 free(type);
@@ -728,7 +727,7 @@ void detected_corrupted_message( verify_ctx_t *ctx, rule *r, char *cause, enum_p
       	if (temp != NULL && temp->json_history != NULL)
       		history = temp->json_history;
 
-      	corr_mess++;
+      	sec_cur->corr_mess++;
 
         if(history != NULL){
       	  //remove the last comma — an empty history has no last char (F-BUG-103)
@@ -743,7 +742,7 @@ void detected_corrupted_message( verify_ctx_t *ctx, rule *r, char *cause, enum_p
                 return;
             }
       	  snprintf( str, strlen( history ) + 3, "{%s}", history );
-      	  ((op->callback_funct))( 0, verdict, type, cause, str, ctx->pkt->p_hdr->ts,(void *) op->user_args);
+      	  ((sec_cur->op->callback_funct))( 0, verdict, type, cause, str, ctx->pkt->p_hdr->ts,(void *) sec_cur->op->user_args);
           xfree( str );
         }
       	xfree( verdict );
@@ -818,6 +817,8 @@ void print_nothing(enum_print print_option, rule *curr_root, rule *r, char *caus
     //(void)fprintf(stderr, "nothing\n");
 }
 
+/* Numbers the detection_<n>.data files of the one reaction folder, so it
+ * is shared by every engine of the process and claimed atomically (#551). */
 static long counter_detection = 0;
 
 /*
@@ -906,13 +907,14 @@ static const char *reaction_dir(void)
  * O_CREAT|O_EXCL|O_NOFOLLOW and mode 0600, so an existing file or a planted
  * symlink is never truncated or followed: its number is skipped (#512 — the
  * predictable name used to be fopen'ed "w+"). The path is left in path. */
-static FILE *open_detection_file(const char *dir, char *path, size_t cap)
+static FILE *open_detection_file(const char *dir, char *path, size_t cap, long *number)
 {
     int i;
     for (i = 0; i < DETECTION_FILE_TRIES; i++) {
         int fd;
-        counter_detection++;
-        if (snprintf(path, cap, "%s/detection_%ld.data", dir, counter_detection) >= (int) cap) {
+        long n = __atomic_add_fetch(&counter_detection, 1, __ATOMIC_RELAXED);
+        *number = n;
+        if (snprintf(path, cap, "%s/detection_%ld.data", dir, n) >= (int) cap) {
             (void)fprintf(stderr, "Error 22d: Reaction directory path too long: %s\n", dir);
             return NULL;
         }
@@ -941,6 +943,7 @@ char *generate_command( const ipacket_t *pkt, rule *r, char * input )
     char * output = NULL;
     char * tempi = NULL;
     char numbuf[40];
+    long detection_number = 0;
     size_t out_cap = 0, out_len = 0;
     int oom = 0;
     tuple *list_of_tuples = r->list_of_tuples;
@@ -990,9 +993,9 @@ char *generate_command( const ipacket_t *pkt, rule *r, char * input )
     //we have: "script_name "
     //Put data in file with name: detection_<counter_detection>.data
     //Will be used by python script
-    pythonDataFile = open_detection_file(dir, pythonDataFileName, sizeof pythonDataFileName);
+    pythonDataFile = open_detection_file(dir, pythonDataFileName, sizeof pythonDataFileName, &detection_number);
     if (pythonDataFile == NULL) goto fail;
-    snprintf(numbuf, sizeof(numbuf), "%ld ", counter_detection);
+    snprintf(numbuf, sizeof(numbuf), "%ld ", detection_number);
     oom |= gc_append(&output, &out_cap, &out_len, numbuf, strlen(numbuf));
 
     while (*tempi == ' ') tempi++;
@@ -1143,13 +1146,13 @@ void rule_is_satisfied_or_not( verify_ctx_t *ctx, rule *r, enum_print state ) {
         r = r->root;
     }
 
-    if(op->callback_funct != NULL){
+    if(sec_cur->op->callback_funct != NULL){
 		char *verdict = NULL, *type = NULL;
 		char *history;
 		int prop_id = ctx->curr_root->property_id;
 		char *des   = r->description;
 
-		get_verdict( ctx->curr_root->type_rule, op->Print, state, &verdict, &type );
+		get_verdict( ctx->curr_root->type_rule, sec_cur->op->Print, state, &verdict, &type );
 		if( verdict == NULL) {
             if(type!=NULL) free(type);
             return;
@@ -1164,7 +1167,7 @@ void rule_is_satisfied_or_not( verify_ctx_t *ctx, rule *r, enum_print state ) {
             char *temp = xmalloc(strlen(history) + 3);
             if(temp != NULL){
                 snprintf(temp, strlen(history) + 3, "{%s}", history);
-                ((op->callback_funct))(prop_id, verdict, type, des, temp, ctx->pkt->p_hdr->ts, (void *)op->user_args);
+                ((sec_cur->op->callback_funct))(prop_id, verdict, type, des, temp, ctx->pkt->p_hdr->ts, (void *)sec_cur->op->user_args);
                 xfree(temp);
             }
            
@@ -1271,9 +1274,9 @@ void rule_is_satisfied_or_not( verify_ctx_t *ctx, rule *r, enum_print state ) {
     return;
 }
 
-void print_summary()
+void print_engine_summary( void )
 {
-    rule *temp = top_rule;
+    rule *temp = sec_cur->top_rule;
     while (temp != NULL) {
         (void)fprintf(stderr, "\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --\n");
         (void)print_message(temp->type_rule, BOTH, NEITHER, temp->property_id, temp->description);
@@ -1322,18 +1325,18 @@ static int xml_appendf(char **buf, size_t *cap, const char *fmt, ...) {
     return 0;
 }
 
-char * xml_summary()
+char * xml_engine_summary( void )
 {
     //if used in the main.c needs to be freed
     int sp = 0;
     int spb = 0;
-    rule *temp = top_rule;
+    rule *temp = sec_cur->top_rule;
     size_t xml_cap = 1024;
     char *xml_string = xcalloc(1, xml_cap);
     if(xml_string == NULL) return NULL;
     xml_appendf(&xml_string, &xml_cap, "</detail>\n");
     xml_appendf(&xml_string, &xml_cap, "<summary>\n");
-    if (corr_mess != 0) {
+    if (sec_cur->corr_mess != 0) {
         spb = 1;
         xml_appendf(&xml_string, &xml_cap,
                 "  <spb>\n"
@@ -1341,7 +1344,7 @@ char * xml_summary()
                 "   <description>ATTACK: Corrupted messages: due to an attack, evasion or error.</description>\n"
                 "   <detected>%lld</detected>\n"
                 "   <not_detected>N&#47;A</not_detected>\n"
-                "  </spb>\n", corr_mess);
+                "  </spb>\n", sec_cur->corr_mess);
     }
     while (temp != NULL) {
         const char *descr = temp->description ? temp->description : "";

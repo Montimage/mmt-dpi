@@ -72,6 +72,7 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <dlfcn.h>
+#include <pthread.h>
 
 #include <libxml2/libxml/xmlreader.h>
 #include "tips_internal.h"
@@ -410,24 +411,30 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
 }
 
 /* The embedded-function library is opened once, on first use — at load
- * time, by the rule loader — and stays open for the process, like the one
- * engine it serves (#511: it was dlopen'ed, and leaked on the SKIP path,
- * once per evaluated leaf). */
+ * time, by the rule loader — and stays open for the process, shared by every
+ * engine (#511: it was dlopen'ed, and leaked on the SKIP path, once per
+ * evaluated leaf). Engines on several handlers may load at once, so the
+ * first open is serialised (#551). */
 static void *embedded_lib = NULL;
+static pthread_mutex_t embedded_lib_lock = PTHREAD_MUTEX_INITIALIZER;
 
 embedded_funct_t embedded_funct_resolve( const char *funct_name )
 {
     embedded_funct_t f;
-    void *sym;
+    void *sym, *lib;
+    pthread_mutex_lock(&embedded_lib_lock);
     if (embedded_lib == NULL) {
         embedded_lib = dlopen(LIB_NAME, RTLD_NOW);
         if (embedded_lib == NULL) {
             (void)fprintf(stderr, "Error 3h: Cannot load %s for embedded function %s: %s\n", LIB_NAME, funct_name, dlerror());
+            pthread_mutex_unlock(&embedded_lib_lock);
             return NULL;
         }
     }
+    lib = embedded_lib;
+    pthread_mutex_unlock(&embedded_lib_lock);
     (void)dlerror();
-    sym = dlsym(embedded_lib, funct_name);
+    sym = dlsym(lib, funct_name);
     if (sym == NULL) {
         (void)fprintf(stderr, "Error 3h: Embedded function %s not found in %s\n", funct_name, LIB_NAME);
         return NULL;
@@ -519,7 +526,7 @@ long get_seconds( const ipacket_t *pkt )
     struct timeval *t;
     void *data = NULL;
     long l = 0;
-    data = get_attribute_extracted_data( pkt, op->timestamp_proto_id, op->timestamp_field_id);
+    data = get_attribute_extracted_data( pkt, sec_cur->op->timestamp_proto_id, sec_cur->op->timestamp_field_id);
     if (data == NULL) {
         data = get_attribute_extracted_data_by_name( pkt, "THALES_META", "TIME_SLOT");
         if (data == NULL) {
@@ -544,7 +551,7 @@ long get_seconds( const ipacket_t *pkt )
 {
     struct timeval *t;
     void *data = NULL;
-    data = get_attribute_extracted_data( pkt, op->timestamp_proto_id, op->timestamp_field_id);
+    data = get_attribute_extracted_data( pkt, sec_cur->op->timestamp_proto_id, sec_cur->op->timestamp_field_id);
     if (data == NULL) {
         (void)fprintf(stderr, "Error 17: in attribute extraction of timestamp. Data is not available.\n");
         exit(-1);
@@ -562,7 +569,7 @@ long get_useconds( const ipacket_t *pkt )
 {
     struct timeval *t;
     void *data = NULL;
-    data = get_attribute_extracted_data( pkt, op->timestamp_proto_id, op->timestamp_field_id );
+    data = get_attribute_extracted_data( pkt, sec_cur->op->timestamp_proto_id, sec_cur->op->timestamp_field_id );
     if (data == NULL) {
         return 0;
     }
