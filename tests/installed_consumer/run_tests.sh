@@ -34,10 +34,22 @@ else
 fi
 WORK="$(mktemp -d)"
 BUILD_LOG="${WORK}/build.log"
+# Put back what the failure legs move out of the prefix, even when a leg
+# aborts: a shared prefix (MMT_SDK_PREBUILT=1, issue #654) outlives this
+# suite. Runs before WORK, which holds the moved engine, is removed.
+restore_prefix() {
+    local f
+    if [ -e "${PREFIX}/plugins/libmmt_tdicom.so.bak" ]; then
+        mv "${PREFIX}/plugins/libmmt_tdicom.so.bak" "${PREFIX}/plugins/libmmt_tdicom.so"
+    fi
+    for f in "${WORK}/"libmmt_security.so.*; do
+        [ ! -e "$f" ] || mv "$f" "${PREFIX}/dpi/lib/"
+    done
+}
 if [ -n "${PREFIX_CREATED:-}" ]; then
-    trap 'rm -rf "${WORK}" "${PREFIX}"' EXIT
+    trap 'restore_prefix; rm -rf "${WORK}" "${PREFIX}"' EXIT
 else
-    trap 'rm -rf "${WORK}"' EXIT
+    trap 'restore_prefix; rm -rf "${WORK}"' EXIT
 fi
 
 JOBS="${JOBS:-$(nproc 2>/dev/null || echo 2)}"
@@ -68,13 +80,19 @@ echo "=== installed-consumer suite (issue #374) ==="
 echo "  install prefix : ${PREFIX}"
 
 # --- 1. build + install the packaged configuration ----------------------------
-echo "  [1/4] building + installing SDK (ENABLESEC=1) ..."
-make -C "${REPO_ROOT}/sdk" clean >/dev/null 2>&1 || true
-if ! make -C "${REPO_ROOT}/sdk" "${SDK_MAKE_ARGS[@]}" ENABLESEC=1 -j"${JOBS}" MMT_BASE="${PREFIX}" >"${BUILD_LOG}" 2>&1; then
-    echo "✗ ENABLESEC SDK build failed — last lines:" >&2; tail -20 "${BUILD_LOG}" >&2; exit 1
-fi
-if ! make -C "${REPO_ROOT}/sdk" "${SDK_MAKE_ARGS[@]}" ENABLESEC=1 MMT_BASE="${PREFIX}" install >>"${BUILD_LOG}" 2>&1; then
-    echo "✗ SDK install failed — last lines:" >&2; tail -20 "${BUILD_LOG}" >&2; exit 1
+if [ "${MMT_SDK_PREBUILT:-0}" = "1" ]; then
+    # tests/run_all_tests.sh built and installed it once (issue #654).
+    [ -e "${PREFIX}/dpi/lib/libmmt_security.so" ] || { echo "✗ MMT_SDK_PREBUILT=1 but MMT_PREFIX='${MMT_PREFIX:-}' holds no installed ENABLESEC=1 SDK" >&2; exit 1; }
+    echo "  [1/4] reusing the prebuilt SDK (ENABLESEC=1, MMT_SDK_PREBUILT=1) ..."
+else
+    echo "  [1/4] building + installing SDK (ENABLESEC=1) ..."
+    make -C "${REPO_ROOT}/sdk" clean >/dev/null 2>&1 || true
+    if ! make -C "${REPO_ROOT}/sdk" "${SDK_MAKE_ARGS[@]}" ENABLESEC=1 -j"${JOBS}" MMT_BASE="${PREFIX}" >"${BUILD_LOG}" 2>&1; then
+        echo "✗ ENABLESEC SDK build failed — last lines:" >&2; tail -20 "${BUILD_LOG}" >&2; exit 1
+    fi
+    if ! make -C "${REPO_ROOT}/sdk" "${SDK_MAKE_ARGS[@]}" ENABLESEC=1 MMT_BASE="${PREFIX}" install >>"${BUILD_LOG}" 2>&1; then
+        echo "✗ SDK install failed — last lines:" >&2; tail -20 "${BUILD_LOG}" >&2; exit 1
+    fi
 fi
 
 # --- 2. happy path --------------------------------------------------------------

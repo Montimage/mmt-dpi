@@ -96,13 +96,19 @@ if ! python3 "${ASN1C_DIR}/delta-inventory.py" --check \
 fi
 
 # --- 1. build + install the SDK to the isolated prefix ---------------------
-echo "  [1/3] building + installing SDK ..."
-make -C "${REPO_ROOT}/sdk" clean >/dev/null 2>&1 || true
-if ! make -C "${REPO_ROOT}/sdk" "$@" -j"${JOBS}" MMT_BASE="${PREFIX}" >"${BUILD_LOG}" 2>&1; then
-    echo "✗ SDK build failed — last lines:" >&2; tail -20 "${BUILD_LOG}" >&2; exit 1
-fi
-if ! make -C "${REPO_ROOT}/sdk" "$@" MMT_BASE="${PREFIX}" install >>"${BUILD_LOG}" 2>&1; then
-    echo "✗ SDK install failed — last lines:" >&2; tail -20 "${BUILD_LOG}" >&2; exit 1
+if [ "${MMT_SDK_PREBUILT:-0}" = "1" ]; then
+    # tests/run_all_tests.sh built and installed it once (issue #654).
+    [ -e "${PREFIX}/dpi/lib/libmmt_core.so" ] || { echo "✗ MMT_SDK_PREBUILT=1 but MMT_PREFIX='${MMT_PREFIX:-}' holds no installed SDK" >&2; exit 1; }
+    echo "  [1/3] reusing the prebuilt SDK (MMT_SDK_PREBUILT=1) ..."
+else
+    echo "  [1/3] building + installing SDK ..."
+    make -C "${REPO_ROOT}/sdk" clean >/dev/null 2>&1 || true
+    if ! make -C "${REPO_ROOT}/sdk" "$@" -j"${JOBS}" MMT_BASE="${PREFIX}" >"${BUILD_LOG}" 2>&1; then
+        echo "✗ SDK build failed — last lines:" >&2; tail -20 "${BUILD_LOG}" >&2; exit 1
+    fi
+    if ! make -C "${REPO_ROOT}/sdk" "$@" MMT_BASE="${PREFIX}" install >>"${BUILD_LOG}" 2>&1; then
+        echo "✗ SDK install failed — last lines:" >&2; tail -20 "${BUILD_LOG}" >&2; exit 1
+    fi
 fi
 
 INC="${PREFIX}/dpi/include"
@@ -150,14 +156,23 @@ echo "  [3/3] running tests ..."
 # library (a host linking its own asn1c runtime must not interpose them, nor
 # decode through the host's asn_OP_ANY), while the plugin entry points and the
 # header-declared functions still are (issue #534). The asn1c symbol set is
-# read from the in-tree objects the build just produced.
+# read from the asn1c members of the installed static archive — the objects
+# that went into this .so — so it holds whatever later cleaned the in-tree
+# objects (a shared prebuilt SDK, issue #654). Members are named by source
+# basename, which is unique across src/mmt_mobile.
 MOBILE_SO="${LIB}/libmmt_tmobile.so"
 ASN1C_SYMS="${WORK}/asn1c.syms"
+ASN1C_MEMBERS="${WORK}/asn1c.members"
 EXPORTED_SYMS="${WORK}/exported.syms"
 # gcc-nm reads the slim LTO objects of the release profile (plain nm cannot).
 NM_OBJ="$(command -v gcc-nm || command -v nm)"
-find "${REPO_ROOT}/src/mmt_mobile/asn1c" -name '*.o' -exec "${NM_OBJ}" -g --defined-only {} + 2>/dev/null \
-    | awk 'NF == 3 { print $3 }' | sort -u > "${ASN1C_SYMS}"
+find "${ASN1C_DIR}" -mindepth 2 -maxdepth 2 -name '*.c' -printf '%f\n' \
+    | sed 's/\.c$/.o/' | sort -u > "${ASN1C_MEMBERS}"
+"${NM_OBJ}" -g --defined-only "${LIB}/libmmt_tmobile.a" 2>/dev/null \
+    | awk -v members="${ASN1C_MEMBERS}" '
+        BEGIN { while ((getline m < members) > 0) asn1c[m] = 1 }
+        NF == 1 && /:$/ { member = substr($0, 1, length($0) - 1); next }
+        NF == 3 && (member in asn1c) { print $3 }' | sort -u > "${ASN1C_SYMS}"
 nm -D --defined-only "${MOBILE_SO}" | awk 'NF == 3 { print $3 }' | sort -u > "${EXPORTED_SYMS}"
 if ! grep -qx 'asn_OP_ANY' "${ASN1C_SYMS}"; then
     echo "✗ asn1c symbol list looks wrong (no asn_OP_ANY in the asn1c objects)" >&2; exit 1

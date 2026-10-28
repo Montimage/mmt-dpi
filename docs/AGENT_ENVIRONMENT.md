@@ -85,8 +85,8 @@ Both apply to C only (C++ keeps `CXX`/`CXXFLAGS`) and to the GCC toolchain
 only (`ARCH=linux-clang`/`linux-icc` are unchanged). The `toolchain-ceiling`
 job in `c-cpp.yml` runs on `ubuntu-26.04` (GCC ≥ 15, a GitHub preview runner
 label) with `MMT_EXTRA_CFLAGS=-std=gnu23`: it builds the SDK with
-`ENABLESEC=1` and runs the full suite, whose SDK-building suites inherit the
-variable and build the SDK as C23; the suites' own test programs keep the
+`ENABLESEC=1` and runs the full suite, whose SDK builds (the runner's shared
+ones and the suites' own) inherit the variable and build the SDK as C23; the suites' own test programs keep the
 `-std` their `run_tests.sh` pins (GCC 15's C23 default where none is
 pinned). The floor job above is unchanged.
 
@@ -184,7 +184,7 @@ separate deployment-time renderer; `docs/_config.yml` declares the Pages
 No application `.env` file is required: this is a Make-built SDK, configured
 through make variables (`sdk/Makefile:8-12`, `rules/common.mk:3-8`), and the
 test runner takes shell variables such as `SANITIZE`
-(`tests/run_all_tests.sh:8-104`). No application service setup is needed for
+(`tests/run_all_tests.sh:8-118`). No application service setup is needed for
 the build/test commands below.
 
 ## 2. Building
@@ -238,14 +238,14 @@ here for the expected result.
 bash tests/run_all_tests.sh
 ```
 
-Expected result: **30/30 suites pass**, total runtime roughly **90–360 s** on
-a typical development machine (measured: 135 s for the full run) — the wall
-clock is dominated by the suites
-that build+install the SDK internally (`rule_engine`, `installer`,
-`installed_consumer`, …), not by the assertions. Exit code `0` on
+Expected result: **30/30 suites pass**, total runtime roughly **60–240 s** on
+a typical development machine (measured: 103 s for the full run, against
+201 s on the same machine before the shared builds of issue #654) — the wall
+clock is dominated by SDK builds (the shared ones below, plus the own builds
+of `installer` and `sdk_coverage`), not by the assertions. Exit code `0` on
 success, `1` on any failure. The runner has no `-j` option: the 30 suites run
 sequentially. The suite list lives in `DEFAULT_SUITES`
-(`tests/run_all_tests.sh:198-229`)
+(`tests/run_all_tests.sh:245-276`)
 (`tests/run_all_tests.sh`):
 `hashmap`, `memory`, `fault_injection`, `core_engine`, `hexdump`, `mmt_utils`,
 `mmt_inet_ntop`,
@@ -274,7 +274,10 @@ without compiling, and the path-to-test selection self-test
 test-map checker `tools/ci/check-test-map.sh`, the public-API contract
 checker self-test `test-api-contracts.sh` and the ABI-diff self-test
 `test-abi-diff.sh`, issue #525, and the plugin export-gate self-test
-`test-exported-symbols.sh`, issue #534, and the phase0 harness-shard self-test `test-harness-shards.sh`, issue #655) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
+`test-exported-symbols.sh`, issue #534, the phase0 harness-shard self-test
+`test-harness-shards.sh`, issue #655, and the shared-build self-test
+`test-shared-sdk-build.sh`, issue #654, which drives a copy of the runner
+over fake suites with a stub `make`) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
 #387); the first three build nothing, `sdk_coverage` builds its own
 `BUILD=coverage` SDK whatever the mode and cleans `sdk/` afterwards. `installed_consumer` (issue #374) drives the
 other
@@ -301,9 +304,29 @@ directly against sources under `src/` with plain `gcc`; suites that need the
 built SDK (`hashmap`, `citrix_ica_detection`, `http_header_case`,
 `s1ap_ngap_decode`, `rule_engine`, `radius_hardening`, `nas_ies_tail`, `installer`,
 `installed_consumer`, `parser_boundaries`, `sdk_coverage`, `docs_lifecycle`, `docs_onboarding`, and the engine
-leg of `fault_injection`, `tests/fault_injection/run_tests.sh:110-112`) run `make -C sdk clean` and build
-it themselves into a throwaway prefix, so running them discards an existing
-`sdk/` build. You
+leg of `fault_injection`, `tests/fault_injection/run_tests.sh:115-117`) run `make -C sdk clean` and build
+it themselves into a throwaway prefix when run on their own
+(`bash tests/<suite>/run_tests.sh`), so running them discards an existing
+`sdk/` build.
+
+**Shared SDK builds (issue #654).** Under the runner, the suites that only
+consume an installed SDK do not build it. Before the first suite, the runner
+builds each group the selected suites need once, into its own throwaway
+prefix (`tests/run_all_tests.sh:285-335`): `default` for `hashmap`,
+`fault_injection` (not under `SANITIZE`, which skips its engine leg),
+`citrix_ica_detection`, `http_header_case`, `s1ap_ngap_decode`,
+`radius_hardening`, `nas_ies_tail`, `parser_boundaries`, `docs_lifecycle` and
+`docs_onboarding`; `enablesec` (`ENABLESEC=1`) for `rule_engine` and
+`installed_consumer` — incremental on top of `default` when both are needed,
+since `ENABLESEC=1` only adds the engine objects (`tests/run_all_tests.sh:174-186`).
+Each build is logged as `sdk_build <n>: group=<g> profile=<p>`, followed by
+`sdk_builds=<n>` and a `Shared SDK builds:` line in the result table; a full
+run makes 2. A failed shared build fails the run before any suite. Each
+consumer runs with `MMT_SDK_PREBUILT=1` and `MMT_PREFIX` (`MMT_FI_PREFIX` for
+`fault_injection`) naming its group's prefix, and refuses to run when that
+prefix holds no installed SDK. `installer` and `sdk_coverage` test the build
+and install themselves and keep their own builds, so a run still discards an
+existing `sdk/` build. You
 can run one suite by passing its directory name:
 
 ```bash
@@ -331,34 +354,38 @@ and a fetched `v1.9.1` tag: `bash tools/ci/abi-diff.sh --report abi.txt`.
 
 ### Suite modes: sanitizers and coverage
 
-`tests/run_all_tests.sh` has two opt-in modes (`tests/run_all_tests.sh:8-104`):
+`tests/run_all_tests.sh` has two opt-in modes (`tests/run_all_tests.sh:8-118`):
 
 - `SANITIZE=asan bash tests/run_all_tests.sh` — compiles every suite with
   ASan + UBSan (same flag set as the SDK's `BUILD=asan`,
   `rules/common.mk:120-127`) and sets `ASAN_OPTIONS=detect_leaks=0`
-  (leak detection stays with Valgrind). The SDK-building suites inherit `BUILD=asan` for their internal SDK
-  build, except `fault_injection`: its engine leg is skipped under sanitizers
+  (leak detection stays with Valgrind). The shared builds and the SDK-building suites inherit `BUILD=asan` for their
+  SDK build, except `fault_injection`: its engine leg is skipped under sanitizers
   while its unit leg still runs (`tests/fault_injection/run_tests.sh:97-102`).
 - `SANITIZE=tsan bash tests/run_all_tests.sh` — same with TSan
   (`rules/common.mk:150-157`). On kernels with high-entropy ASLR the runner
   re-execs itself once under `setarch -R`
-  (`tests/run_all_tests.sh:92-95`).
+  (`tests/run_all_tests.sh:106-109`).
 - `bash tests/run_all_tests.sh --coverage` — instruments the suites with gcov,
   aggregates all `.gcda`, and writes an lcov-format tracefile of **library
   (`src/`) sources only** to `tests/coverage/coverage.info` plus the library
   line percentage, instrumented-file count/list and
   `tests/coverage/summary.json` in stdout
-  (`tests/run_all_tests.sh:274-400`). Requires `gcov` (shipped with
+  (`tests/run_all_tests.sh:373-499`). Requires `gcov` (shipped with
   gcc) and `jq`; no lcov install needed. The coverage CI job enforces the
   committed floor `tests/coverage/floor.json` — both counters plus the
   required sources it names — via `tools/ci/check-coverage-floor.sh`.
   The mode also exports `SDK_BUILD_PROFILE=coverage`
-  (`tests/run_all_tests.sh:106-115`), so every SDK-building suite builds the
-  `BUILD=coverage` profile (§5). Their consumers write counters next to the
-  in-tree objects under `src/`, which survive the throwaway prefix's
-  deletion; the runner harvests them with `tools/ci/sdk-coverage.sh`
-  after each suite, before the next suite's SDK rebuild would delete them
-  (`tests/run_all_tests.sh:175-186`). `summary.json` then gains a `cohorts`
+  (`tests/run_all_tests.sh:120-129`), so the shared builds and every
+  SDK-building suite build the `BUILD=coverage` profile (§5). Their consumers
+  write counters next to the in-tree objects under `src/`, which survive the
+  throwaway prefix's deletion; the runner harvests them with
+  `tools/ci/sdk-coverage.sh` after each suite, before the next suite's SDK
+  rebuild would delete them (`tests/run_all_tests.sh:213-232`). Right after
+  each shared build the runner copies the `.gcno` notes it left under `src/`,
+  then deletes them from `src/`; a consumer's counters are harvested against a
+  fresh copy of its group's notes, so its per-suite record is the one its own
+  build gave before issue #654. `summary.json` then gains a `cohorts`
   object and `tests/coverage/coverage-combined.info` is written; the
   top-level keys and `coverage.info` stay unit-only. The harvest also reads
   the `.gcno` of every object that wrote no `.gcda` (compiled, never loaded)
@@ -369,7 +396,7 @@ and a fetched `v1.9.1` tag: `bash tools/ci/abi-diff.sh --report abi.txt`.
   `BUILD=coverage` SDK — `tools/phase0/run_all_harnesses.sh --profile
   coverage`, which skips the four harnesses of its `COVERAGE_SKIP` list
   (reasons in `tools/phase0/README.md`) — and harvests that build once into
-  the `harness` cohort (`tests/run_all_tests.sh:242-272`, issue #524). The
+  the `harness` cohort (`tests/run_all_tests.sh:341-371`, issue #524). The
   arm counts as one extra entry in the result table (31 under `--coverage`)
   and its failure fails the run. `--coverage` cannot be
   combined with `SANITIZE` (exit 2): both select the SDK profile.
@@ -377,7 +404,7 @@ and a fetched `v1.9.1` tag: `bash tools/ci/abi-diff.sh --report abi.txt`.
   every phase0 harness (`tools/phase0/tests/run_*.sh`) via the aggregate
   runner `tools/phase0/run_all_harnesses.sh`, which builds the SDK once per
   required profile (asan / tsan / default) into a shared prefix and replays
-  all harnesses against it (`tests/run_all_tests.sh:402-418`). The arm counts
+  all harnesses against it (`tests/run_all_tests.sh:501-517`). The arm counts
   as one extra entry in the result table; any harness failure fails the
   invocation. Runtime is minutes, not seconds — the suites build nothing for
   it, the runner's shared builds dominate.
@@ -388,10 +415,10 @@ The 2026-09-22 audit at commit `2ab7b73516113009622cb3d32194d20121457010`
 reported 82.9% (5,660/6,831 lines) over those 30 files; this is historical
 evidence, not a new measurement (provenance recorded in [DECISIONS.md](https://github.com/montimage-projects/mmt-dpi/blob/main/docs/DECISIONS.md)).
 Coverage includes only the `src/` files represented in emitted gcov data
-(`tests/run_all_tests.sh:298-302`); its percentage uses the lines in that
+(`tests/run_all_tests.sh:397-401`); its percentage uses the lines in that
 subset, so it must not be reported as whole-library coverage. The current
 run's exact scope is `instrumented_sources` and `instrumented_files` in
-`summary.json` (`tests/run_all_tests.sh:359-373`). The committed minimum is
+`summary.json` (`tests/run_all_tests.sh:458-472`). The committed minimum is
 **42 instrumented files**, alongside a **73.7%** line floor and required
 source names (`tests/coverage/floor.json:2-10`); the 30-file audit cohort
 does not change that floor. Consult a fresh summary for the current count.
@@ -403,7 +430,7 @@ whole-SDK coverage is reported separately below:
 | Cohort | Denominator |
 |--------|-------------|
 | `unit` | `src/` lines recorded by the unit-suite binaries — the records the top-level keys and the floor measure |
-| `sdk_integration` | `src/` lines of the `BUILD=coverage` SDK builds the SDK-building suites made — lines their consumers ran plus zero-hit objects at count 0 — with a per-suite breakdown in `suites` |
+| `sdk_integration` | `src/` lines of the `BUILD=coverage` SDK builds the SDK-building suites used (shared or their own) — lines their consumers ran plus zero-hit objects at count 0 — with a per-suite breakdown in `suites` |
 | `harness` | `src/` lines of the one `BUILD=coverage` SDK build the phase0 harnesses ran against (`run_all_harnesses.sh --profile coverage`), harvested once after the arm — lines they ran plus zero-hit objects at count 0 |
 | `combined` | the union of the three above, one record per repo-relative path and line (logical and physical checkout paths are merged), counts summed |
 | `generated_asn1c` | lines under `src/mmt_mobile/asn1c/` from any cohort, excluded from the four above |
@@ -648,7 +675,7 @@ Run this after setting up a fresh environment; all four commands must succeed:
 
 ```bash
 make -C sdk -j$(nproc)          # exit 0, green build (seconds to ~2 min depending on machine)
-bash tests/run_all_tests.sh     # 30/30 suites PASSED, exit 0 (90–360 s)
+bash tests/run_all_tests.sh     # 30/30 suites PASSED, exit 0 (60–240 s)
 make -C sdk ENABLESEC=1 -j$(nproc)   # exit 0 (optional engines build)
 make -C sdk clean && make -C sdk BUILD=asan -j$(nproc)   # exit 0 (sanitizer profile)
 ```

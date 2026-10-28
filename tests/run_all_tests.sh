@@ -29,6 +29,17 @@
 #                   (tools/phase0/tests/run_*.sh) via the aggregate runner
 #                   tools/phase0/run_all_harnesses.sh — one shared SDK build
 #                   per sanitizer profile, not one per harness (issue #183).
+#
+# Shared SDK builds (issue #654): the suites that only consume an installed
+# SDK do not build it themselves. Before the first suite the runner builds
+# each group the selected suites need, once, into its own throwaway prefix
+# (`default`, then `enablesec` = ENABLESEC=1, incremental on top of
+# `default` when both are needed), logs `sdk_build <n>: group=...` per build
+# and `sdk_builds=<n>`, and runs each consumer with MMT_SDK_PREBUILT=1 and
+# MMT_PREFIX (MMT_FI_PREFIX for fault_injection) naming its group's prefix.
+# installer and sdk_coverage test the build/install itself and keep their
+# own. A consumer run directly (bash tests/<suite>/run_tests.sh) still
+# builds its own SDK.
 
 set -e
 
@@ -38,6 +49,9 @@ COVERAGE_DIR="$SCRIPT_DIR/coverage"
 PASS=0
 FAIL=0
 TOTAL=0
+# Scratch directories removed on exit (one trap for every mode).
+RUNNER_TMP=()
+trap '[ "${#RUNNER_TMP[@]}" -eq 0 ] || rm -rf -- "${RUNNER_TMP[@]}"' EXIT
 
 echo "============================================"
 echo "  MMT-DPI Test Suite Runner"
@@ -147,12 +161,29 @@ if [ "$COVERAGE" -eq 1 ]; then
     # an sdk_integration suite to `sdk-coverage.sh report`), harness/ the
     # harness arm's harvest, unit.tsv the unit rows.
     SDK_COV_DIR="$(mktemp -d)"
-    trap 'rm -rf "$SDK_COV_DIR"' EXIT
+    RUNNER_TMP+=("$SDK_COV_DIR")
     mkdir -p "$SDK_COV_DIR/suites"
     HARNESS_COV_DIR=""
     echo "Mode: coverage report -> ${COVERAGE_DIR#"$REPO_ROOT"/}/coverage.info"
 fi
 echo ""
+
+# sdk_group_of <suite> — the shared SDK build a suite consumes (issue #654):
+# `default`, `enablesec` (ENABLESEC=1), or nothing for a suite that builds no
+# SDK or tests the build/install itself (installer, sdk_coverage).
+sdk_group_of() {
+    case "$1" in
+        hashmap|citrix_ica_detection|http_header_case|s1ap_ngap_decode|\
+        radius_hardening|nas_ies_tail|parser_boundaries|docs_lifecycle|docs_onboarding)
+            echo default ;;
+        fault_injection)
+            # Its engine leg, the only SDK consumer in it, is skipped under
+            # the sanitizer profiles (tests/fault_injection/run_tests.sh).
+            case "${SDK_BUILD_PROFILE:-}" in asan|tsan) ;; *) echo default ;; esac ;;
+        rule_engine|installed_consumer)
+            echo enablesec ;;
+    esac
+}
 
 run_test_suite() {
     local suite_name=$1
@@ -170,20 +201,36 @@ run_test_suite() {
     fi
 
     echo "--- Running: $suite_name ---"
-    local ok=1
-    bash "$test_script" 2>&1 || ok=0
+    local ok=1 group suite_env=(-u MMT_SDK_PREBUILT)
+    group="$(sdk_group_of "$suite_name")"
+    if [ -n "$group" ]; then
+        # A consumer of a shared build (issue #654): it skips its own build.
+        suite_env=(MMT_SDK_PREBUILT=1 "MMT_PREFIX=$SDK_SHARED_ROOT/$group")
+        [ "$suite_name" != fault_injection ] \
+            || suite_env+=("MMT_FI_PREFIX=$SDK_SHARED_ROOT/$group")
+    fi
+    env "${suite_env[@]}" bash "$test_script" 2>&1 || ok=0
     # Harvest this suite's SDK counters before the next suite's SDK rebuild
     # deletes them (issue #387); --consume keeps them from being counted twice.
     # --unexecuted adds the objects no consumer loaded at count 0 (issue #388).
+    # A consumer of a shared build pairs its counters with a copy of the
+    # notes that build left (issue #654), so its record is the one its own
+    # build used to give: its counters plus that build's zero-hit objects.
+    local gcno_root="${REPO_ROOT_PHYS:-}"
+    if [ "$COVERAGE" -eq 1 ] && [ -n "$group" ]; then
+        gcno_root="$SDK_SHARED_ROOT/gcno-run"
+        rm -rf "$gcno_root" && cp -R "$SDK_SHARED_ROOT/gcno/$group" "$gcno_root"
+    fi
     if [ "$COVERAGE" -eq 1 ] && [ -n "$(find "$REPO_ROOT_PHYS/src" -name '*.gcno' -print -quit)" ]; then
         SDK_COV_BUILT=1
     fi
     if [ "$COVERAGE" -eq 1 ] && ! bash "$REPO_ROOT/tools/ci/sdk-coverage.sh" harvest \
-            --gcda-root "$REPO_ROOT_PHYS" --gcno-root "$REPO_ROOT_PHYS" \
+            --gcda-root "$REPO_ROOT_PHYS" --gcno-root "$gcno_root" \
             --repo-root "$REPO_ROOT" --out "$SDK_COV_DIR/suites/$suite_name" --consume --unexecuted; then
         echo "  ✗ $suite_name: SDK coverage harvest failed"
         ok=0
     fi
+    [ "$gcno_root" = "${REPO_ROOT_PHYS:-}" ] || rm -rf "$gcno_root"
     if [ "$ok" -eq 1 ]; then
         echo "  ✓ $suite_name: PASSED"
         PASS=$((PASS + 1))
@@ -233,6 +280,58 @@ if [ "${#SUITES[@]}" -gt 0 ]; then
     SUITES_LIST=("${SUITES[@]}")
 else
     SUITES_LIST=("${DEFAULT_SUITES[@]}")
+fi
+
+# --- shared SDK builds (issue #654) --------------------------------------------
+# Each needed group is built and installed once, before the first suite, into
+# $SDK_SHARED_ROOT/<group>; a failed build fails the run before any suite.
+# --coverage snapshots the notes (.gcno) each build leaves under src/, then
+# removes them so the suites that build nothing still harvest nothing.
+SDK_BUILDS=0
+need_groups=""
+for suite in "${SUITES_LIST[@]}"; do
+    group="$(sdk_group_of "$suite")"
+    [ -z "$group" ] || need_groups="$need_groups $group "
+done
+if [ -n "$need_groups" ]; then
+    SDK_SHARED_ROOT="$(mktemp -d)"
+    RUNNER_TMP+=("$SDK_SHARED_ROOT")
+    SDK_BUILD_LOG="$SDK_SHARED_ROOT/build.log"
+    built_default=0
+    for group in default enablesec; do
+        case "$need_groups" in *" $group "*) ;; *) continue ;; esac
+        prefix="$SDK_SHARED_ROOT/$group"
+        make_args=()
+        [ -z "${SDK_BUILD_PROFILE:-}" ] || make_args+=("BUILD=${SDK_BUILD_PROFILE}")
+        [ "$group" = default ] || make_args+=(ENABLESEC=1)
+        # ENABLESEC=1 only adds the engine objects (and recompiles the two
+        # that bake MMT_BASE in), so it builds on top of the default tree.
+        incremental=""
+        [ "$group" = default ] || [ "$built_default" -eq 0 ] || incremental=" incremental"
+        SDK_BUILDS=$((SDK_BUILDS + 1))
+        echo "sdk_build ${SDK_BUILDS}: group=${group} profile=${SDK_BUILD_PROFILE:-default}${incremental} prefix=${prefix}"
+        [ -n "$incremental" ] || make -C "$REPO_ROOT/sdk" clean >>"$SDK_BUILD_LOG" 2>&1 || true
+        if ! make -C "$REPO_ROOT/sdk" "${make_args[@]}" -j"${JOBS:-$(nproc 2>/dev/null || echo 2)}" \
+                MMT_BASE="$prefix" >>"$SDK_BUILD_LOG" 2>&1 \
+           || ! make -C "$REPO_ROOT/sdk" "${make_args[@]}" MMT_BASE="$prefix" install \
+                >>"$SDK_BUILD_LOG" 2>&1; then
+            echo "✗ shared SDK build failed (group=${group}) — last lines:" >&2
+            tail -20 "$SDK_BUILD_LOG" >&2
+            exit 1
+        fi
+        [ "$group" != default ] || built_default=1
+        if [ "$COVERAGE" -eq 1 ]; then
+            SDK_COV_BUILT=1
+            mkdir -p "$SDK_SHARED_ROOT/gcno/$group"
+            (cd "$REPO_ROOT_PHYS" && find src -name '*.gcno' -print0 \
+                | xargs -0 -r cp --parents -t "$SDK_SHARED_ROOT/gcno/$group")
+        fi
+    done
+    if [ "$COVERAGE" -eq 1 ]; then
+        find "$REPO_ROOT_PHYS/src" \( -name '*.gcda' -o -name '*.gcno' \) -delete
+    fi
+    echo "sdk_builds=${SDK_BUILDS}"
+    echo ""
 fi
 
 for suite in "${SUITES_LIST[@]}"; do
@@ -423,6 +522,7 @@ echo "============================================"
 echo "  Total:  $TOTAL"
 echo "  Passed: $PASS"
 echo "  Failed: $FAIL"
+echo "  Shared SDK builds: $SDK_BUILDS"
 if [ "$COVERAGE" -eq 1 ]; then
     echo "  Coverage report: ${COVERAGE_DIR#"$REPO_ROOT"/}/coverage.info"
 fi

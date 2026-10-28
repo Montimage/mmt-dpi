@@ -107,9 +107,15 @@ if [ -z "${MMT_FI_PREFIX:-}" ]; then
     trap 'rm -rf "${PREFIX}"' EXIT
 fi
 
-make -C "${REPO_ROOT}/sdk" ${SDK_BUILD_PROFILE:+"BUILD=${SDK_BUILD_PROFILE}"} clean >/dev/null
-make -C "${REPO_ROOT}/sdk" ${SDK_BUILD_PROFILE:+"BUILD=${SDK_BUILD_PROFILE}"} MMT_BASE="${PREFIX}" -j"${JOBS}" >/dev/null
-make -C "${REPO_ROOT}/sdk" ${SDK_BUILD_PROFILE:+"BUILD=${SDK_BUILD_PROFILE}"} MMT_BASE="${PREFIX}" install >/dev/null
+if [ "${MMT_SDK_PREBUILT:-0}" = "1" ]; then
+    # tests/run_all_tests.sh built and installed it once (issue #654).
+    [ -e "${PREFIX}/dpi/lib/libmmt_core.so" ] || { echo "✗ MMT_SDK_PREBUILT=1 but MMT_FI_PREFIX='${MMT_FI_PREFIX:-}' holds no installed SDK" >&2; exit 1; }
+    echo "  reusing the prebuilt SDK in ${PREFIX} (MMT_SDK_PREBUILT=1)"
+else
+    make -C "${REPO_ROOT}/sdk" ${SDK_BUILD_PROFILE:+"BUILD=${SDK_BUILD_PROFILE}"} clean >/dev/null
+    make -C "${REPO_ROOT}/sdk" ${SDK_BUILD_PROFILE:+"BUILD=${SDK_BUILD_PROFILE}"} MMT_BASE="${PREFIX}" -j"${JOBS}" >/dev/null
+    make -C "${REPO_ROOT}/sdk" ${SDK_BUILD_PROFILE:+"BUILD=${SDK_BUILD_PROFILE}"} MMT_BASE="${PREFIX}" install >/dev/null
+fi
 
 "${CC}" -Wall -Wextra -std=c11 -g -O1 -fPIC -shared \
     -DFI_INTERPOSE -I"${SCRIPT_DIR}" \

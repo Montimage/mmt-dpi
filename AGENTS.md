@@ -8,7 +8,7 @@ the toolchain line, the `MMT_BASE` prefix contract and the sanitizer rules.
 ## Commands
 
 - Build (there is no top-level Makefile): `make -C sdk -j$(nproc)` — exit 0 = green; warnings are informational (never `-Werror`)
-- Test: `bash tests/run_all_tests.sh` — 30/30 suites pass; standalone (no prior build or install); the SDK-building suites run `make -C sdk clean` first, so a run discards an existing `sdk/` build. Count, runtime band and exit codes: [docs/AGENT_ENVIRONMENT.md §3](docs/AGENT_ENVIRONMENT.md#3-testing)
+- Test: `bash tests/run_all_tests.sh` — 30/30 suites pass; standalone (no prior build or install); the runner runs `make -C sdk clean` and builds the SDK once per group for the suites that consume it (`installer` and `sdk_coverage` build their own), so a run discards an existing `sdk/` build. Count, runtime band and exit codes: [docs/AGENT_ENVIRONMENT.md §3](docs/AGENT_ENVIRONMENT.md#3-testing)
 - One suite or a subset: `bash tests/run_all_tests.sh hashmap memory`
 - Sanitized suites: `SANITIZE=asan|tsan bash tests/run_all_tests.sh` (mirrors `BUILD=asan`/`BUILD=tsan`; tsan re-execs under `setarch -R`)
 - Coverage: `bash tests/run_all_tests.sh --coverage` — line coverage of the instrumented `src/` subset, not the whole SDK; whole-SDK per-family numbers: `bash tools/ci/check-sdk-coverage.sh` after that run

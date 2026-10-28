@@ -61,25 +61,33 @@ fi
 # the real init_extraction()/plugin-registration path; under
 # SANITIZE=asan|tsan the SDK is built with the matching profile via
 # SDK_BUILD_PROFILE and the use-after-free is caught.
-echo "Building SDK for double-init test..."
-PREFIX="$(mktemp -d)"
 WORK="$(mktemp -d)"
 BUILD_LOG="$WORK/build.log"
-trap 'rm -rf "$PREFIX" "$WORK"' EXIT
+if [ "${MMT_SDK_PREBUILT:-0}" = "1" ]; then
+    # tests/run_all_tests.sh built and installed it once (issue #654).
+    PREFIX="${MMT_PREFIX:-}"
+    trap 'rm -rf "$WORK"' EXIT
+    [ -e "$PREFIX/dpi/lib/libmmt_core.so" ] || { echo "✗ MMT_SDK_PREBUILT=1 but MMT_PREFIX='$PREFIX' holds no installed SDK" >&2; exit 1; }
+    echo "Reusing the prebuilt SDK for double-init test (MMT_SDK_PREBUILT=1)..."
+else
+    echo "Building SDK for double-init test..."
+    PREFIX="$(mktemp -d)"
+    trap 'rm -rf "$PREFIX" "$WORK"' EXIT
 
-SDK_MAKE_ARGS=()
-if [ -n "${SDK_BUILD_PROFILE:-}" ]; then
-    SDK_MAKE_ARGS=("BUILD=${SDK_BUILD_PROFILE}")
-fi
+    SDK_MAKE_ARGS=()
+    if [ -n "${SDK_BUILD_PROFILE:-}" ]; then
+        SDK_MAKE_ARGS=("BUILD=${SDK_BUILD_PROFILE}")
+    fi
 
-make -C "$PROJECT_DIR/sdk" clean >/dev/null 2>&1 || true
-if ! make -C "$PROJECT_DIR/sdk" "${SDK_MAKE_ARGS[@]}" -j"$(nproc 2>/dev/null || echo 2)" \
-        MMT_BASE="$PREFIX" >"$BUILD_LOG" 2>&1; then
-    echo "✗ SDK build failed — last lines:" >&2; tail -20 "$BUILD_LOG" >&2; exit 1
-fi
-if ! make -C "$PROJECT_DIR/sdk" "${SDK_MAKE_ARGS[@]}" MMT_BASE="$PREFIX" install \
-        >>"$BUILD_LOG" 2>&1; then
-    echo "✗ SDK install failed — last lines:" >&2; tail -20 "$BUILD_LOG" >&2; exit 1
+    make -C "$PROJECT_DIR/sdk" clean >/dev/null 2>&1 || true
+    if ! make -C "$PROJECT_DIR/sdk" "${SDK_MAKE_ARGS[@]}" -j"$(nproc 2>/dev/null || echo 2)" \
+            MMT_BASE="$PREFIX" >"$BUILD_LOG" 2>&1; then
+        echo "✗ SDK build failed — last lines:" >&2; tail -20 "$BUILD_LOG" >&2; exit 1
+    fi
+    if ! make -C "$PROJECT_DIR/sdk" "${SDK_MAKE_ARGS[@]}" MMT_BASE="$PREFIX" install \
+            >>"$BUILD_LOG" 2>&1; then
+        echo "✗ SDK install failed — last lines:" >&2; tail -20 "$BUILD_LOG" >&2; exit 1
+    fi
 fi
 
 INC="$PREFIX/dpi/include"

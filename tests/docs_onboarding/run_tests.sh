@@ -50,8 +50,14 @@ for tool in python3 curl; do
 done
 
 WORK="$(mktemp -d)"
-PREFIX="$(mktemp -d)"
-trap 'rm -rf "${WORK}" "${PREFIX}"' EXIT
+if [ "${MMT_SDK_PREBUILT:-0}" = "1" ]; then
+    # tests/run_all_tests.sh built and installed it once (issue #654).
+    PREFIX="${MMT_PREFIX:-}"
+    trap 'rm -rf "${WORK}"' EXIT
+else
+    PREFIX="$(mktemp -d)"
+    trap 'rm -rf "${WORK}" "${PREFIX}"' EXIT
+fi
 
 # Split the fragment's fenced blocks: <lang>.block files in ${WORK}/blocks.
 mkdir -p "${WORK}/blocks"
@@ -196,13 +202,18 @@ if [ -n "${SDK_BUILD_PROFILE:-}" ]; then
 else
     set --
 fi
-echo "  [3/5] building + installing SDK into ${PREFIX} ..."
-make -C "${REPO_ROOT}/sdk" clean >/dev/null 2>&1 || true
-if ! make -C "${REPO_ROOT}/sdk" "$@" -j"${JOBS}" MMT_BASE="${PREFIX}" >"${BUILD_LOG}" 2>&1; then
-    echo "✗ SDK build failed — last lines:" >&2; tail -20 "${BUILD_LOG}" >&2; exit 1
-fi
-if ! make -C "${REPO_ROOT}/sdk" "$@" MMT_BASE="${PREFIX}" install >>"${BUILD_LOG}" 2>&1; then
-    echo "✗ SDK install failed — last lines:" >&2; tail -20 "${BUILD_LOG}" >&2; exit 1
+if [ "${MMT_SDK_PREBUILT:-0}" = "1" ]; then
+    [ -e "${PREFIX}/dpi/lib/libmmt_core.so" ] || { echo "✗ MMT_SDK_PREBUILT=1 but MMT_PREFIX='${PREFIX}' holds no installed SDK" >&2; exit 1; }
+    echo "  [3/5] reusing the prebuilt SDK in ${PREFIX} (MMT_SDK_PREBUILT=1) ..."
+else
+    echo "  [3/5] building + installing SDK into ${PREFIX} ..."
+    make -C "${REPO_ROOT}/sdk" clean >/dev/null 2>&1 || true
+    if ! make -C "${REPO_ROOT}/sdk" "$@" -j"${JOBS}" MMT_BASE="${PREFIX}" >"${BUILD_LOG}" 2>&1; then
+        echo "✗ SDK build failed — last lines:" >&2; tail -20 "${BUILD_LOG}" >&2; exit 1
+    fi
+    if ! make -C "${REPO_ROOT}/sdk" "$@" MMT_BASE="${PREFIX}" install >>"${BUILD_LOG}" 2>&1; then
+        echo "✗ SDK install failed — last lines:" >&2; tail -20 "${BUILD_LOG}" >&2; exit 1
+    fi
 fi
 
 # ---------------------------------------------------------------------------

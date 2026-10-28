@@ -71,6 +71,10 @@
 # pins that the phase0-baseline.yml harness legs cover every harness once.
 # Its wiring half skips without PyYAML; verify-helpers runs it with PyYAML
 # required.
+# It also runs the shared-build self-test beside tests/run_all_tests.sh
+# (issue #654), which drives a copy of the real runner over fake suites with
+# a stub make on PATH (one build per group, the incremental ENABLESEC=1
+# build, the prefixes handed to consumers, a failed build; no SDK build).
 set -e
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/ci/tests"
 python3 "${TESTS_DIR}/test-release-gates.py" "$@"
@@ -92,3 +96,4 @@ bash "${TESTS_DIR}/test-api-contracts.sh"
 bash "${TESTS_DIR}/test-abi-diff.sh"
 bash "${TESTS_DIR}/test-exported-symbols.sh"
 bash "${TESTS_DIR}/test-harness-shards.sh"
+bash "${TESTS_DIR}/test-shared-sdk-build.sh"
