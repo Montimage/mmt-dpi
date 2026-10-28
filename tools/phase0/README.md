@@ -22,7 +22,7 @@ Phase 0 changes **no production code** — it adds tooling and captured baseline
 | `baseline/classification/` | Per-pcap fingerprints (one file each), for granular diffs. |
 | `baseline/throughput.txt` | Throughput reference snapshot (environment-dependent — compare relative deltas). |
 | `baseline/perf/throughput.txt` | Same-machine throughput + RSS reference for the `throughput_pcaps.txt` benchmark set (issue #251). |
-| `ci/accuracy/` | Reviewed accuracy corpus (F-TEST-003): DNS/TLS/QUIC/HTTP-2 (issue #389), S1AP/NGAP/NAS and unknown/malformed traffic (issue #390). Synthetic captures plus `corpus.json`, which records per capture the family, the case (positive / negative / ambiguous, or `unknown` in the abstention family), the expected per-packet handling, the sha256 of the reviewed bytes, redistribution provenance and review notes. Checked by `tools/ci/tests/check-accuracy-corpus.py`; deliberately **not** in `ci/golden_pcaps.txt`, so the golden fingerprint's input set is unchanged. Regenerate with `gen_tcpip_pcap.py --out-dir ci/accuracy --accuracy` and `gen_mobile_pcap.py --out-dir ci/accuracy --accuracy`. |
+| `ci/accuracy/` | Reviewed accuracy corpus (F-TEST-003): DNS/TLS/QUIC/HTTP-2 (issue #389), S1AP/NGAP/NAS and unknown/malformed traffic (issue #390), and a positive and a negative case per classifier of the default TCP/UDP chains (issue #527). Synthetic captures plus `corpus.json`, which records per capture the family, the case (positive / negative / ambiguous, or `unknown` in the abstention family), the default-chain classifiers it exercises (`classifiers`), the expected per-packet handling, the sha256 of the reviewed bytes, redistribution provenance and review notes. `coverage-pending.txt` lists, each with its reason, the chain classifiers still owed a case pair; the list only shrinks (enforced against the base commit by `--base`). Checked by `tools/ci/tests/check-accuracy-corpus.py`; deliberately **not** in `ci/golden_pcaps.txt`, so the golden fingerprint's input set is unchanged. Regenerate with `gen_tcpip_pcap.py --out-dir ci/accuracy --accuracy` and `gen_mobile_pcap.py --out-dir ci/accuracy --accuracy`. |
 | `ci/baseline/memory.txt` | The M4 library-RSS ceiling (KiB), enforced by `tests/run_memory_ceiling_test.sh` in the CI `harness-default` leg (issue #251). |
 | `baseline/valgrind.txt` | Valgrind leak baseline, or a SKIPPED note + exact command when valgrind is absent. |
 
@@ -132,6 +132,14 @@ What each gate asserts:
   #373: a wrong prediction is an FN of the actual class and an FP of the
   predicted class; an abstention is an FN of the actual class only), and diffs
   the resulting metrics against the committed `ci/baseline/precision.txt`.
+  It then regenerates the seeded random-payload **abstention set**
+  (`gen_tcpip_pcap.py --abstention`: 12 payload lengths from 1 to 1400 bytes,
+  TCP and UDP, 8 flows each, bytes, ports and server addresses all derived
+  from a fixed seed — issue #527), runs the same harness over it and renders
+  its own section after the labelled metrics: per capture and overall, the
+  packets still given an application verdict and the **unknown rate**
+  (abstained / total). The section never enters the labelled confusion
+  matrix, and a change in it fails the gate like any other metric change.
   Missing pcaps, empty harness output and malformed rows **fail** the gate —
   labelled examples are never silently dropped. Enforces the Phase 7 (M9,
   issue #74) acceptance criterion that precision/recall **holds or improves**.
@@ -142,7 +150,17 @@ What each gate asserts:
   vice versa — but every corrected baseline carries its explanation in the PR
   body (issue #373, F-TEST-002).
   The same job then runs `tools/ci/tests/check-accuracy-corpus.py` against
-  the SDK it just installed (issues #389 and #390, F-TEST-003). The oracle runs
+  the SDK it just installed (issues #389 and #390, F-TEST-003). The oracle
+  first checks classifier coverage (issue #527): it reads every
+  `MMT_INTER_PROTO(PROTO_TCP|PROTO_UDP, …)` registration of
+  `src/mmt_tcpip/lib/inter_proto_classif_list.def` and fails when a
+  registered classifier has no positive and negative/ambiguous case naming it
+  and no `ci/accuracy/coverage-pending.txt` entry, when a pending entry is
+  already covered or no longer registered, or when a case names a classifier
+  the chains do not register. CI passes `--base HEAD^1`, so the list only
+  shrinks: an entry the base commit's list lacks for a classifier the base
+  already registers fails (a REF without the pending file skips this check
+  with a note; one that does not resolve exits 2). It then runs
   every capture listed in `ci/accuracy/corpus.json` and fails on a missing
   capture, an unlabelled one, a missing label/provenance/review field, a
   sha256 or generator-reproducibility mismatch, a family without both a
@@ -152,7 +170,10 @@ What each gate asserts:
   get no application verdict and which are still attributed —
   `acc_malformed_s1ap` and `acc_malformed_ngap_ppid60` record known false
   accepts (S1AP and NGAP are trusted on SCTP PPID 18 / 60 alone), so fixing
-  them means updating those expectations. Its report
+  them means updating those expectations, as do `acc_unknown_mqtt_port`
+  (MQTT is accepted on TCP/1883 for any plain-text payload) and the
+  `ambiguous` cases recording known false negatives
+  (`acc_bittorrent_dht_ambiguous`, `acc_mysql8_ambiguous`). Its report
   gives per-family support, wire-protocol hits, abstentions and false accepts,
   an unknown/malformed abstention table, and lists heuristic application
   attribution (e.g. `ssl.google` derived from a TLS SNI) **separately** —
@@ -164,7 +185,7 @@ What each gate asserts:
   prefix locally (running `make -C sdk clean` before and after, so an in-tree
   `sdk/` build is discarded, not left pointing at the deleted prefix);
   `--prefix P --no-build` reuses an installed SDK and `--offline` checks the
-  manifest only. When a classifier change intentionally alters a case's
+  manifest and the classifier coverage only. When a classifier change intentionally alters a case's
   handling, update that case's `expected` block and review notes in the same
   PR.
 - **`harness-*` legs / `harness-gate`** — five legs (issue #655), each

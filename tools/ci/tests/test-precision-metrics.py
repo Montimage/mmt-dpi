@@ -11,7 +11,10 @@ raw TSV and asserts the confusion-matrix accounting exactly:
   - precision/recall are exact for correct, incorrect, abstained and
     zero-support (predicted-only / never-predicted) classes;
   - malformed or empty harness output exits non-zero instead of silently
-    dropping examples.
+    dropping examples;
+  - the seeded abstention set (issue #527) renders its unknown rate exactly,
+    in its own section after the labelled metrics, without touching them,
+    and a mislabelled or malformed abstention row fails.
 
 Usage: python3 tools/ci/tests/test-precision-metrics.py
 Exit: 0 = all checks passed, 1 = at least one failed, 2 = self-test broke.
@@ -185,6 +188,70 @@ rc1, p1, _ = run_render("b.pcap\thttp\t10\t9\t1\t0\thttp:9,ftp:1\n"
 rc2, p2, _ = run_render("b.pcap\thttp\t10\t9\t1\t0\thttp:9,ftp:1\n"
                         "a.pcap\tftp\t10\t8\t2\t0\tftp:8,http:2\n")
 check("same input -> identical metrics", rc1 == 0 and p1 == p2)
+
+# --- 9. abstention set (issue #527): unknown rate in its own section ---------
+LABELLED = "a.pcap\tftp\t10\t9\t0\t1\tftp:9\n"
+ABSTAIN = ("abstain_tcp_0016.pcap\t<abstain>\t40\t0\t2\t38\tdicom:2\n"
+           "abstain_udp_0016.pcap\t<abstain>\t16\t0\t0\t16\t-\n")
+
+
+def render_pair(labelled, abstain, *flags):
+    """Run the renderer on a labelled TSV plus an --abstention TSV."""
+    paths = []
+    try:
+        for text in (labelled, abstain):
+            with tempfile.NamedTemporaryFile("w", suffix=".tsv",
+                                             delete=False) as f:
+                f.write(text)
+                paths.append(f.name)
+        proc = subprocess.run([sys.executable, RENDER, *flags, paths[0],
+                               "--abstention", paths[1]],
+                              capture_output=True, text=True)
+        return proc.returncode, proc.stdout, proc.stderr
+    finally:
+        for path in paths:
+            os.unlink(path)
+
+
+rc, out, err = render_pair(LABELLED, ABSTAIN, "--json")
+try:
+    ab = json.loads(out)["abstention"] if rc == 0 else None
+except (ValueError, KeyError):
+    ab = None
+check("abstention renders (rc 0)", rc == 0 and ab is not None, err.strip())
+check("abstention: total=56 abstained=54 accepted=2",
+      ab and ab["total"] == 56 and ab["abstained"] == 54
+      and ab["accepted"] == 2, ab)
+check("abstention: unknown_rate=54/56",
+      ab and close(ab["unknown_rate"], 54 / 56), ab)
+rc_l, p_l, _ = run_render(LABELLED)
+check("abstention never enters the labelled confusion matrix",
+      rc == 0 and json.loads(out)["confusion"] == p_l["confusion"]
+      and json.loads(out)["overall"] == p_l["overall"], out)
+rc, text, err = render_pair(LABELLED, ABSTAIN)
+plain = subprocess.run([sys.executable, RENDER, "/dev/stdin"],
+                       input=LABELLED, capture_output=True, text=True).stdout
+check("text: labelled report is a prefix, abstention section follows",
+      rc == 0 and text.startswith(plain)
+      and "# --- abstention set" in text[len(plain):], text)
+check("text: overall abstention line carries the unknown rate",
+      "abstention total=56     abstain=54     accepted=2      "
+      "unknown_rate=0.9643" in text, text)
+check("text: per-capture row names the accepted protocol",
+      any(ln.startswith("abstain_tcp_0016.pcap") and ln.endswith("dicom:2")
+          for ln in text.splitlines()), text)
+rc, _, err = render_pair(LABELLED,
+                         "abstain_tcp_0001.pcap\tftp\t4\t4\t0\t0\tftp:4\n")
+check("abstention row with a real label -> rc 2", rc == 2, err.strip())
+rc, _, err = render_pair(LABELLED, "")
+check("empty abstention input -> rc 2", rc == 2, err.strip())
+rc, _, err = render_pair(LABELLED,
+                         "abstain_tcp_0001.pcap\t<abstain>\t4\t0\t1\t2\t-\n")
+check("inconsistent abstention row -> rc 2", rc == 2, err.strip())
+proc = subprocess.run([sys.executable, RENDER, "/dev/null", "--abstention"],
+                      capture_output=True, text=True)
+check("--abstention without a file -> rc 2", proc.returncode == 2,
+      proc.stderr.strip())
 
 print()
 print("precision-metrics self-test: %d passed, %d failed (%d checks)"

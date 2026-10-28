@@ -225,14 +225,17 @@ jobs:
       MMT_PREFIX: /tmp/mmt-phase0
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
       - uses: ./.github/actions/bootstrap-deps
       - name: Check precision/recall against the committed baseline
         run: tools/phase0/ci/check_precision.sh
       # Reviewed DNS/TLS/QUIC/HTTP-2 (issue #389) and S1AP/NGAP/NAS plus
       # unknown/malformed (issue #390) cases, F-TEST-003; reuses the SDK
       # check_precision.sh installed under $MMT_PREFIX.
+      # --base HEAD^1 (the base tip): coverage-pending.txt only shrinks (#527).
       - name: Check the accuracy corpus against its reviewed expectations
-        run: python3 tools/ci/tests/check-accuracy-corpus.py --prefix "$MMT_PREFIX" --no-build
+        run: python3 tools/ci/tests/check-accuracy-corpus.py --prefix "$MMT_PREFIX" --no-build --base HEAD^1
       - name: Upload freshly captured metrics on mismatch
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

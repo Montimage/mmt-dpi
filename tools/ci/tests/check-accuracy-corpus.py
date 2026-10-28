@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """check-accuracy-corpus.py -- oracle for the reviewed accuracy corpus:
 DNS/TLS/QUIC/HTTP-2 (issue #389), S1AP/NGAP/NAS and unknown/malformed traffic
-(issue #390), F-TEST-003.
+(issue #390), F-TEST-003; per-classifier coverage of the default TCP/UDP
+chains (issue #527, F-BUG-313).
 
 The corpus lives in tools/phase0/ci/accuracy/: one synthetic capture per case
 plus corpus.json, which records for every capture its protocol family, whether
@@ -15,7 +16,24 @@ Protocol families need both a positive and a negative/ambiguous case. The
 malformed inputs: its cases are of kind "unknown" and state explicitly how many
 packets the SDK abstains on and which (if any) it still attributes.
 
+Classifier coverage (issue #527): a case may name, in "classifiers", the
+mmt_check_* functions of the default TCP/UDP chains it exercises. Every
+classifier registered in src/mmt_tcpip/lib/inter_proto_classif_list.def
+(commented-out registrations excluded) needs a positive case and a
+negative/ambiguous case naming it, or an entry in coverage-pending.txt next to
+corpus.json. The pending list only shrinks: an entry for a covered or no
+longer registered classifier fails, as does a case naming a classifier the
+chains do not register. With --base REF the oracle also reads
+tools/phase0/ci/accuracy/coverage-pending.txt and the chain definition at REF
+(`git show`) and fails on a pending entry that REF's list lacks although REF's
+chains already register it -- a covered classifier cannot move back to
+pending; only a newly registered one may enter. A REF that does not resolve,
+or lacks the chain file, is an environment error; a REF without the pending
+file (it predates issue #527) skips this ratchet with a note.
+
 The oracle:
+  0. checks classifier coverage against the chains and the pending list
+     (and, with --base, the pending list against the base commit's);
   1. validates the manifest strictly -- a missing capture, a capture on disk
      that has no manifest entry, a missing label/provenance/review field, a
      sha256 mismatch, a generator that no longer reproduces the committed
@@ -47,7 +65,11 @@ Usage:
   check-accuracy-corpus.py --prefix P --no-build   # reuse an installed prefix
   check-accuracy-corpus.py --classify-bin BIN  # use a prebuilt phase0_classify
   check-accuracy-corpus.py --offline           # manifest + reproducibility only
-  options: --corpus DIR (default tools/phase0/ci/accuracy), --json
+  options: --corpus DIR (default tools/phase0/ci/accuracy), --json,
+           --chain FILE (default src/mmt_tcpip/lib/inter_proto_classif_list.def),
+           --base REF (shrink-only ratchet against the pending list at REF;
+           CI passes HEAD^1), --base-repo DIR (git repository REF is read
+           from, default this checkout)
 
 Exit: 0 = pass, 1 = corpus/expectation failure, 2 = usage or environment error.
 """
@@ -56,6 +78,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -65,6 +88,13 @@ SELF_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.abspath(os.path.join(SELF_DIR, "..", "..", ".."))
 DEFAULT_CORPUS = os.path.join(REPO_ROOT, "tools", "phase0", "ci", "accuracy")
 CLASSIFY_SRC = os.path.join(REPO_ROOT, "tools", "phase0", "phase0_classify.c")
+CHAIN_DEF = os.path.join(REPO_ROOT, "src", "mmt_tcpip", "lib",
+                         "inter_proto_classif_list.def")
+PENDING_FILE = "coverage-pending.txt"
+# Canonical repo-relative paths read at the --base REF.
+BASE_PENDING = "tools/phase0/ci/accuracy/" + PENDING_FILE
+BASE_CHAIN = "src/mmt_tcpip/lib/inter_proto_classif_list.def"
+CLASSIFIER_RE = re.compile(r"^mmt_check_[a-z0-9_]+$")
 
 CASE_KINDS = ("positive", "negative", "ambiguous", "unknown")
 # Families issues #389 and #390 require; dropping one is a failure.
@@ -183,6 +213,16 @@ def load_manifest(corpus_dir):
             raise CorpusError("%s: case 'unknown' belongs to the abstention "
                               "family and only there (family %s, case %s)"
                               % (where, fam, kind))
+        classifiers = c.get("classifiers", [])
+        if (not isinstance(classifiers, list)
+                or not all(isinstance(x, str) and CLASSIFIER_RE.match(x)
+                           for x in classifiers)
+                or len(set(classifiers)) != len(classifiers)):
+            raise CorpusError("%s: classifiers must be a list of distinct "
+                              "mmt_check_* names" % where)
+        if classifiers and kind == "unknown":
+            raise CorpusError("%s: an unknown case exercises no classifier"
+                              % where)
         _need(c, "description", str, where)
         digest = _need(c, "sha256", str, where)
         if len(digest) != 64 or any(ch not in "0123456789abcdef"
@@ -240,6 +280,156 @@ def load_manifest(corpus_dir):
     return man
 
 
+# --------------------------------------------------------------------------
+# classifier coverage (issue #527)
+# --------------------------------------------------------------------------
+
+def load_chain(path):
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            text = fh.read()
+    except OSError as e:
+        raise EnvError("cannot read classifier chain %s: %s" % (path, e))
+    return parse_chain(text, path)
+
+
+def parse_chain(text, path):
+    """Ordered distinct classifiers registered in the default TCP/UDP chains:
+    every MMT_INTER_PROTO(PROTO_TCP|PROTO_UDP, fn, weight) row outside a
+    comment."""
+    text = re.sub(r"/\*.*?\*/", " ", text, flags=re.S)
+    text = re.sub(r"//[^\n]*", " ", text)
+    rows = re.findall(r"\bMMT_INTER_PROTO\s*\(\s*PROTO_(TCP|UDP)\s*,"
+                      r"\s*(\w+)\s*,\s*\d+\s*\)", text)
+    chain = {}
+    for transport, fn in rows:
+        chain.setdefault(fn, []).append(transport.lower())
+    if not chain:
+        raise EnvError("no MMT_INTER_PROTO(PROTO_TCP|PROTO_UDP, ...) row in %s"
+                       % path)
+    return chain
+
+
+def load_pending(corpus_dir):
+    path = os.path.join(corpus_dir, PENDING_FILE)
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            text = fh.read()
+    except OSError as e:
+        raise CorpusError("cannot read %s: %s" % (PENDING_FILE, e))
+    return parse_pending(text, PENDING_FILE)
+
+
+def parse_pending(text, name):
+    pending = {}
+    for lineno, line in enumerate(text.splitlines(), 1):
+        body, _, reason = line.partition("#")
+        body = body.strip()
+        if not body:
+            continue
+        where = "%s:%d" % (name, lineno)
+        if not CLASSIFIER_RE.match(body):
+            raise CorpusError("%s: %r is not an mmt_check_* name" % (where,
+                                                                     body))
+        if not reason.strip():
+            raise CorpusError("%s: %s needs a '# reason'" % (where, body))
+        if body in pending:
+            raise CorpusError("%s: %s listed twice" % (where, body))
+        pending[body] = reason.strip()
+    return pending
+
+
+def check_coverage(man, chain, pending):
+    """Require a positive and a negative/ambiguous case per chain
+    classifier, unless it is pending; the pending list only shrinks."""
+    positive, negative = set(), set()
+    for c in man["cases"]:
+        for fn in c.get("classifiers", []):
+            if fn not in chain:
+                raise CorpusError("case %s: classifier %s is not registered "
+                                  "in the default TCP/UDP chains"
+                                  % (c["pcap"], fn))
+            (positive if c["case"] == "positive" else negative).add(fn)
+    covered = [fn for fn in chain if fn in positive and fn in negative]
+    stale = sorted(fn for fn in pending if fn not in chain)
+    if stale:
+        raise CorpusError("%s lists classifier(s) the default chains no "
+                          "longer register: %s -- remove them"
+                          % (PENDING_FILE, ", ".join(stale)))
+    done = [fn for fn in covered if fn in pending]
+    if done:
+        raise CorpusError("%s lists classifier(s) that now have a positive "
+                          "and a negative case: %s -- remove them (the list "
+                          "only shrinks)" % (PENDING_FILE, ", ".join(done)))
+    missing = []
+    for fn in chain:
+        if fn in covered or fn in pending:
+            continue
+        lacks = [k for k, s in (("positive", positive),
+                                ("negative/ambiguous", negative))
+                 if fn not in s]
+        missing.append("%s (no %s case)" % (fn, " or ".join(lacks)))
+    if missing:
+        raise CorpusError("default-chain classifier(s) without a positive and "
+                          "a negative case and not in %s: %s"
+                          % (PENDING_FILE, "; ".join(missing)))
+    return {"classifiers": len(chain), "covered": len(covered),
+            "pending": len(pending),
+            "covered_classifiers": covered,
+            "pending_classifiers": [fn for fn in chain if fn in pending]}
+
+
+def _git_show(repo, ref, path):
+    """Text of `path` at `ref`, or None when `ref` lacks it. A `ref` that
+    does not resolve to a commit is an environment error."""
+    try:
+        rev = subprocess.run(["git", "-C", repo, "rev-parse", "--verify",
+                              "--quiet", ref + "^{commit}"],
+                             capture_output=True, text=True)
+        if rev.returncode != 0:
+            raise EnvError("--base %s does not resolve to a commit in %s "
+                           "(fetch it, e.g. checkout fetch-depth: 2)"
+                           % (ref, repo))
+        commit = rev.stdout.strip()
+        if subprocess.run(["git", "-C", repo, "cat-file", "-e",
+                           "%s:%s" % (commit, path)],
+                          capture_output=True).returncode != 0:
+            return None
+        show = subprocess.run(["git", "-C", repo, "show",
+                               "%s:%s" % (commit, path)],
+                              capture_output=True, text=True)
+    except OSError as e:
+        raise EnvError("cannot run git for --base %s: %s" % (ref, e))
+    if show.returncode != 0:
+        raise EnvError("git show %s:%s failed: %s"
+                       % (ref, path, show.stderr.strip()))
+    return show.stdout
+
+
+def check_base_ratchet(pending, ref, repo):
+    """The pending list only shrinks: an entry REF's list lacks is allowed
+    only for a classifier REF's chains do not register yet. Returns a status
+    line, or None when REF predates the pending list."""
+    chain_text = _git_show(repo, ref, BASE_CHAIN)
+    if chain_text is None:
+        raise EnvError("--base %s has no %s" % (ref, BASE_CHAIN))
+    base_chain = parse_chain(chain_text, "%s:%s" % (ref, BASE_CHAIN))
+    pending_text = _git_show(repo, ref, BASE_PENDING)
+    if pending_text is None:
+        return None
+    base_pending = parse_pending(pending_text, "%s:%s" % (ref, BASE_PENDING))
+    added = [fn for fn in pending
+             if fn not in base_pending and fn in base_chain]
+    if added:
+        raise CorpusError("%s adds classifier(s) the base %s already "
+                          "registered: %s -- the list only shrinks; add their "
+                          "cases instead" % (PENDING_FILE, ref,
+                                             ", ".join(sorted(added))))
+    return ("✓ ratchet: %s adds no classifier registered at the base %s "
+            "(%d pending there, %d now)" % (PENDING_FILE, ref,
+                                            len(base_pending), len(pending)))
+
+
 def check_files(man, corpus_dir):
     listed = {c["pcap"] for c in man["cases"]}
     on_disk = {n for n in os.listdir(corpus_dir) if n.endswith(".pcap")}
@@ -263,31 +453,38 @@ def check_files(man, corpus_dir):
 
 def check_reproducible(man, corpus_dir):
     """Regenerate every synthetic capture and require byte identity, so the
-    recorded provenance (generator + constants in the tree) is verifiable."""
+    recorded provenance (generator + constants in the tree) is verifiable.
+    One generator run per script (`--pcap NAME...`) regenerates its cases."""
     tmp = tempfile.mkdtemp(prefix="acc-regen.")
     try:
+        by_script = {}
         for c in man["cases"]:
             prov = c["provenance"]
             if prov["origin"] != "synthetic":
                 continue
-            gen = prov["generator"]
-            script = os.path.join(REPO_ROOT, gen["script"])
+            by_script.setdefault(prov["generator"]["script"], []).append(c)
+        for rel, cases in sorted(by_script.items()):
+            script = os.path.join(REPO_ROOT, rel)
             if not os.path.isfile(script):
                 raise CorpusError("%s: generator %s not found"
-                                  % (c["pcap"], gen["script"]))
+                                  % (cases[0]["pcap"], rel))
+            names = [c["provenance"]["generator"]["pcap"] for c in cases]
             proc = subprocess.run(
-                [sys.executable, script, "--out-dir", tmp, "--pcap", gen["pcap"]],
+                [sys.executable, script, "--out-dir", tmp, "--pcap", *names],
                 capture_output=True, text=True)
-            out = os.path.join(tmp, gen["pcap"] + ".pcap")
-            if proc.returncode != 0 or not os.path.isfile(out):
-                raise CorpusError("%s: generator failed: %s"
-                                  % (c["pcap"], proc.stderr.strip()))
-            with open(out, "rb") as a, \
-                    open(os.path.join(corpus_dir, c["pcap"]), "rb") as b:
-                if a.read() != b.read():
-                    raise CorpusError("%s: committed capture differs from its "
-                                      "generator output (%s --pcap %s)"
-                                      % (c["pcap"], gen["script"], gen["pcap"]))
+            for c in cases:
+                gen = c["provenance"]["generator"]
+                out = os.path.join(tmp, gen["pcap"] + ".pcap")
+                if proc.returncode != 0 or not os.path.isfile(out):
+                    raise CorpusError("%s: generator failed: %s"
+                                      % (c["pcap"], proc.stderr.strip()))
+                with open(out, "rb") as a, \
+                        open(os.path.join(corpus_dir, c["pcap"]), "rb") as b:
+                    if a.read() != b.read():
+                        raise CorpusError("%s: committed capture differs from "
+                                          "its generator output (%s --pcap %s)"
+                                          % (c["pcap"], gen["script"],
+                                             gen["pcap"]))
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
@@ -469,24 +666,24 @@ def _is_unknown(f):
 def render(results, fams, attribution):
     out = ["# per capture (packets: wire / abstain / other; attribution "
            "reported separately)",
-           "%-30s %-7s %-9s %-7s %-5s %-7s %s"
+           "%-34s %-10s %-9s %-7s %-5s %-7s %s"
            % ("capture", "family", "case", "packets", "wire", "abstain",
               "other")]
     for c, obs in results:
         other = ",".join("%s:%d" % (k, obs["other"][k])
                          for k in sorted(obs["other"])) or "-"
-        out.append("%-30s %-7s %-9s %-7d %-5d %-7d %s"
+        out.append("%-34s %-10s %-9s %-7d %-5d %-7d %s"
                    % (c["pcap"], c["family"], c["case"], obs["packets"],
                       obs["wire"], obs["abstain"], other))
     out += ["", "# per family -- wire-protocol accuracy (support and abstain "
             "include payload-less packets such as TCP SYN/ACK)",
-            "%-6s %-9s %-7s %-5s %-7s %-6s | %-9s %-7s %-12s %-7s %s"
+            "%-10s %-9s %-7s %-5s %-7s %-6s | %-9s %-7s %-12s %-7s %s"
             % ("family", "positive", "support", "wire", "abstain", "other",
                "neg+amb", "packets", "false_accept", "abstain", "other")]
     for name, f in fams.items():
         if _is_unknown(f):
             continue
-        out.append("%-6s %-9d %-7d %-5d %-7d %-6d | %-9d %-7d %-12d %-7d %d"
+        out.append("%-10s %-9d %-7d %-5d %-7d %-6d | %-9d %-7d %-12d %-7d %d"
                    % (name, f["positive_cases"], f["support"], f["wire"],
                       f["abstain"], f["misattributed"],
                       f["negative_cases"] + f["ambiguous_cases"],
@@ -494,21 +691,21 @@ def render(results, fams, attribution):
                       f["neg_other"]))
     out += ["", "# unknown / malformed inputs -- explicit abstention "
             "expectations (accepted = still given an application verdict)",
-            "%-30s %-7s %-7s %s" % ("capture", "packets", "abstain",
+            "%-34s %-7s %-7s %s" % ("capture", "packets", "abstain",
                                     "accepted")]
     for c, obs in results:
         if c["case"] == "unknown":
             accepted = ",".join("%s:%d" % (k, obs["other"][k])
                                 for k in sorted(obs["other"])) or "-"
-            out.append("%-30s %-7d %-7d %s" % (c["pcap"], obs["packets"],
+            out.append("%-34s %-7d %-7d %s" % (c["pcap"], obs["packets"],
                                                obs["abstain"], accepted))
     out += ["", "# heuristic application attribution (beneath the wire label;"
             " not wire-protocol accuracy)"]
     if attribution:
-        out.append("%-6s %-30s %-12s %s" % ("family", "capture", "application",
+        out.append("%-10s %-34s %-12s %s" % ("family", "capture", "application",
                                             "packets"))
         for fam, pcap, name, n in attribution:
-            out.append("%-6s %-30s %-12s %d" % (fam, pcap, name, n))
+            out.append("%-10s %-34s %-12s %d" % (fam, pcap, name, n))
     else:
         out.append("(none)")
     return "\n".join(out) + "\n"
@@ -517,6 +714,14 @@ def render(results, fams, attribution):
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--corpus", default=DEFAULT_CORPUS)
+    ap.add_argument("--chain", default=CHAIN_DEF,
+                    help="classifier chain definition (default: %(default)s)")
+    ap.add_argument("--base", metavar="REF",
+                    help="fail on a pending entry REF's list lacks for a "
+                         "classifier REF already registers (shrink-only)")
+    ap.add_argument("--base-repo", metavar="DIR", default=REPO_ROOT,
+                    help="git repository --base is read from "
+                         "(default: %(default)s)")
     ap.add_argument("--prefix", help="SDK install prefix (default: a temp dir)")
     ap.add_argument("--no-build", action="store_true",
                     help="reuse the SDK already installed under --prefix")
@@ -531,11 +736,24 @@ def main(argv):
     corpus = os.path.abspath(args.corpus)
     try:
         man = load_manifest(corpus)
+        pending = load_pending(corpus)
+        coverage = check_coverage(man, load_chain(args.chain), pending)
+        ratchet = (check_base_ratchet(pending, args.base, args.base_repo)
+                   if args.base else "")
         check_files(man, corpus)
         check_reproducible(man, corpus)
         print("✓ manifest: %d cases, %d families; files, labels, provenance, "
               "review and reproducibility OK"
               % (len(man["cases"]), len(man["families"])), flush=True)
+        print("✓ coverage: %d/%d default-chain classifiers have a positive "
+              "and a negative case; %d pending (%s)"
+              % (coverage["covered"], coverage["classifiers"],
+                 coverage["pending"], PENDING_FILE), flush=True)
+        if ratchet is None:
+            print("note: shrink-only ratchet skipped: %s has no %s"
+                  % (args.base, BASE_PENDING), flush=True)
+        elif ratchet:
+            print(ratchet, flush=True)
         if args.offline:
             return 0
         workdir = tempfile.mkdtemp(prefix="acc-oracle.")
@@ -550,6 +768,7 @@ def main(argv):
                                       case=c["case"], observed=o)
                                  for c, o in results],
                        "families": fams,
+                       "coverage": coverage,
                        "attribution": [dict(family=a, pcap=b, application=n,
                                             packets=k)
                                        for a, b, n, k in attribution]},

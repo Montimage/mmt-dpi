@@ -711,7 +711,8 @@ def main():
                     help="output directory (default: /tmp/mobile-pcaps)")
     sel = ap.add_mutually_exclusive_group()
     sel.add_argument("--pcap", choices=list(GENS.keys()) + list(ACC_GENS.keys()),
-                     default=None, help="generate only this pcap type")
+                     nargs="+", default=None,
+                     help="generate only these pcap types")
     sel.add_argument("--accuracy", action="store_true",
                      help="generate every mobile accuracy-corpus capture "
                           "(issue #390) instead of the default harness set")
@@ -720,7 +721,7 @@ def main():
     os.makedirs(args.out_dir, exist_ok=True)
     gens = dict(GENS, **ACC_GENS)
     if args.pcap:
-        targets = [args.pcap]
+        targets = args.pcap
     elif args.accuracy:
         targets = sorted(ACC_GENS.keys())
     else:

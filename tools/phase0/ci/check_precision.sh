@@ -14,6 +14,12 @@
 # holds"). If the change is an intentional improvement, refresh the baseline
 # in the same PR.
 #
+# It then runs the seeded random-payload abstention set (issue #527): captures
+# regenerated at gate time by `gen_tcpip_pcap.py --abstention` from a fixed
+# seed, carrying no application protocol, so the baseline records the share of
+# packets the classifiers still label (the unknown rate) in its own section,
+# after -- and separate from -- the labelled metrics.
+#
 # Fail-fast (F-TEST-002): a missing pcap, an empty harness run, or a malformed
 # metric row FAILS the gate — silently dropping labelled examples would let
 # accuracy regressions hide inside a smaller corpus.
@@ -65,7 +71,7 @@ if ! command -v python3 >/dev/null 2>&1; then
 fi
 
 # --- build + install the library -------------------------------------------
-echo "[1/3] building + installing library -> ${PREFIX}"
+echo "[1/4] building + installing library -> ${PREFIX}"
 make -C "${REPO_ROOT}/sdk" -j"$(nproc 2>/dev/null || echo 4)" MMT_BASE="${PREFIX}" \
     >"${BUILD_DIR}/build.log" 2>&1 || {
         echo "✗ library build failed — last lines:" >&2
@@ -78,11 +84,11 @@ INC="${PREFIX}/dpi/include"
 LIB="${PREFIX}/dpi/lib"
 export LD_LIBRARY_PATH="${LIB}:${LD_LIBRARY_PATH:-}"
 
-echo "[2/3] compiling phase0_precision"
+echo "[2/4] compiling phase0_precision"
 gcc -O2 -Wall -o "${BUILD_DIR}/phase0_precision" \
     "${PHASE0_DIR}/phase0_precision.c" -I "${INC}" -L "${LIB}" -lmmt_core -ldl -lpcap
 
-echo "[3/3] running the precision/recall harness over the labelled set"
+echo "[3/4] running the precision/recall harness over the labelled set"
 RAW="${BUILD_DIR}/raw.tsv"
 : > "${RAW}"
 # Run the harness from a neutral dir so the SDK's CWD-relative "plugins/" lookup
@@ -110,11 +116,33 @@ while IFS= read -r line; do
     printf '%s\t%s\n' "${rel}" "${out}" >> "${RAW}"
 done < "${LABELS}"
 
+echo "[4/4] running the harness over the seeded abstention set"
+ABSTAIN_DIR="${BUILD_DIR}/abstention"
+ABSTAIN_RAW="${BUILD_DIR}/abstention.tsv"
+python3 "${PHASE0_DIR}/gen_tcpip_pcap.py" --out-dir "${ABSTAIN_DIR}" --abstention \
+    >/dev/null
+: > "${ABSTAIN_RAW}"
+for pcap in "${ABSTAIN_DIR}"/abstain_*.pcap; do
+    if [ ! -f "${pcap}" ]; then
+        echo "✗ the abstention generator produced no capture" >&2
+        exit 1
+    fi
+    # '<abstain>' is a label no protocol carries: every verdict is an accept.
+    out="$(cd "${BUILD_DIR}" && "${BUILD_DIR}/phase0_precision" "${pcap}" "<abstain>" 2>/dev/null)" || out=""
+    if [ -z "${out}" ]; then
+        echo "✗ harness produced no output for: $(basename "${pcap}")" >&2
+        exit 1
+    fi
+    printf '%s\t%s\n' "$(basename "${pcap}")" "${out}" >> "${ABSTAIN_RAW}"
+done
+
 # --- render the deterministic metrics file ---------------------------------
-# Per-pcap rows + confusion matrix + per-class and overall micro-averages.
+# Per-pcap rows + confusion matrix + per-class and overall micro-averages,
+# then the abstention section (unknown rate of the seeded random payloads).
 # render_precision.py validates every raw row and exits non-zero on malformed
 # input, so a broken harness can never render a partial metric set.
-python3 "${CI_DIR}/render_precision.py" "${RAW}" > "${BUILD_DIR}/precision.txt"
+python3 "${CI_DIR}/render_precision.py" "${RAW}" --abstention "${ABSTAIN_RAW}" \
+    > "${BUILD_DIR}/precision.txt"
 
 if [ ! -f "${EXPECTED}" ]; then
     cp "${BUILD_DIR}/precision.txt" "${EXPECTED}"
