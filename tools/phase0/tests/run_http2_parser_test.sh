@@ -37,6 +37,7 @@ echo "[2/3] compiling http2_parser_test (ASan/UBSan)"
 gcc -g -O1 -fsanitize=address,undefined -fno-sanitize-recover=all \
     -o "${BIN}" "${TEST_DIR}/http2_parser_test.c" \
     -I"${PREFIX}/dpi/include" \
+    -I"${REPO_ROOT}/src/mmt_core/private_include" \
     -L"${PREFIX}/dpi/lib" "${MMT_STATIC_PLUGIN_LDFLAGS[@]}" -lmmt_core -ldl -lpthread -lm
 
 echo "[3/3] running http2_parser_test under ASan/UBSan"

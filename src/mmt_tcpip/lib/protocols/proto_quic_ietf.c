@@ -381,7 +381,7 @@ static void _quic_ietf_drop_chained_layers(ipacket_t *ipacket, unsigned index) {
 		ipacket->proto_headers_offset->len = path->len;
 	if( ipacket->proto_classif_status != NULL )
 		ipacket->proto_classif_status->len = path->len;
-	ipacket->internal_cumulative_offset_valid = 0;
+	ipacket_internal(ipacket)->internal_cumulative_offset_valid = 0;
 }
 
 /* A QUIC checker that found no QUIC on a flow already classified as QUIC

@@ -109,7 +109,7 @@ static uint8_t g_copy_scratch[256];
  * proto_headers_offset (per-layer header sizes — get_packet_offset_at_index()
  * sums them), proto_hierarchy and a zeroed mmt_handler for the success path. */
 typedef struct {
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     proto_hierarchy_t offsets;
     proto_hierarchy_t hier;
     pkthdr_t hdr;
@@ -170,7 +170,7 @@ static void make_byte_copy_attr(struct attribute_internal_struct *a,
 static int run_case(fixture_t *f, struct attribute_internal_struct *a,
         unsigned index, int *extractor_ran) {
     int before = g_extract_calls;
-    int r = internal_extract_attribute(&f->pkt, a, index);
+    int r = internal_extract_attribute(&f->pkt.pub, a, index);
     *extractor_ran = (g_extract_calls != before);
     return r;
 }

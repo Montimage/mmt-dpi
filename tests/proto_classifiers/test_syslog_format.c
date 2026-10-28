@@ -72,7 +72,7 @@ void mmt_internal_add_connection(ipacket_t *ipacket,
 /* ---- packet fixture ---- */
 
 struct test_pkt {
-	ipacket_t ipacket;
+	ipacket_internal_t ipacket;
 	struct mmt_tcpip_internal_packet_struct ip;
 	struct mmt_internal_tcpip_session_struct flow;
 	struct udphdr udp;
@@ -113,7 +113,7 @@ static void free_pkt(struct test_pkt *t) {
 static int run_syslog(const char *msg, int use_udp514) {
 	struct test_pkt *t = pkt_syslog(msg, use_udp514);
 	g_last_detected = 0;
-	int r = mmt_check_syslog(&t->ipacket, 0);
+	int r = mmt_check_syslog(&t->ipacket.pub, 0);
 	int detected = (g_last_detected == PROTO_SYSLOG
 			&& t->flow.detected_protocol_stack[0] == PROTO_SYSLOG);
 	free_pkt(t);

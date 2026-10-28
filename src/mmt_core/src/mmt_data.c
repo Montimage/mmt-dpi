@@ -11,7 +11,7 @@ int get_packet_offset_at_index(const ipacket_t * ipacket, unsigned index) {
     // and is invalidated by set_classified_proto() and every reassignment of
     // proto_headers_offset, so the value returned is byte-identical to the old
     // re-summation for the current offset state.
-    ipacket_t * pkt = (ipacket_t *) ipacket; // mutable memoization cache only
+    ipacket_internal_t * pkt = ipacket_internal(ipacket); // mutable memoization cache only (issue #535: private extension)
     if (index >= (unsigned) PROTO_PATH_SIZE) {
         index = PROTO_PATH_SIZE - 1;
     }
@@ -33,6 +33,12 @@ int get_packet_offset_at_index(const ipacket_t * ipacket, unsigned index) {
         pkt->internal_cumulative_offset_hwm = (int) index;
     }
     return pkt->internal_cumulative_offset[index];
+}
+
+void invalidate_packet_offset_cache(ipacket_t * ipacket) {
+    if (ipacket != NULL) {
+        ipacket_internal(ipacket)->internal_cumulative_offset_valid = 0;
+    }
 }
 
 unsigned get_protocol_index_by_id(const ipacket_t * ipacket, uint32_t proto_id) {

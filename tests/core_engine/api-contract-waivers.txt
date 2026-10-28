@@ -78,6 +78,7 @@ get_session_ul_packet_count
 get_user_session_context
 hex2int
 init_extraction
+invalidate_packet_offset_cache
 iterate_through_mmt_handlers
 iterate_through_protocols
 mmt_close_handler

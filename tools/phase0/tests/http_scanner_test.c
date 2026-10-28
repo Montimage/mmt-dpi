@@ -31,6 +31,7 @@
 #include <stdint.h>
 
 #include "mmt_core.h"
+#include "ipacket_internal.h" /* issue #535: ipacket_internal_t fixtures (private) */
 #include "mmt_tcpip_plugin_structs.h"   /* struct mmt_tcpip_internal_packet_struct */
 
 /* Bounded scanners (rfc2822utils.c) and the HTTP header-line parser under
@@ -69,12 +70,12 @@ run_line_info(const void *bytes, uint16_t len, uint8_t **out_payload)
     pkt->payload = payload;
     pkt->payload_packet_len = len;
 
-    ipacket_t ipacket;
+    ipacket_internal_t ipacket;
     memset(&ipacket, 0, sizeof(ipacket));
     ipacket.internal_packet = pkt;
     ipacket.packet_id = 1;
 
-    _mmt_parse_packet_line_info(&ipacket);
+    _mmt_parse_packet_line_info(&ipacket.pub);
 
     *out_payload = payload;
     return pkt;

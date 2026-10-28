@@ -42,7 +42,7 @@ src/mmt_core/src/packet_registry.c:650-651	^ *init_plugins\(\);	if \(!init_handl
 src/mmt_core/src/packet_registry_handler.c:408	mmt_configured_handlers_map = init_map_space
 src/mmt_core/src/packet_registry_handler.c:116	^mmt_handler_t \*mmt_init_handler\(
 src/mmt_core/src/packet_registry_handler.c:263	insert_key_value\(mmt_configured_handlers_map
-src/mmt_core/src/packet_pipeline.c:1502	^bool packet_process\(
+src/mmt_core/src/packet_pipeline.c:1506	^bool packet_process\(
 src/mmt_core/src/packet_registry_handler.c:296	^void mmt_close_handler\(mmt_handler_t
 src/mmt_core/src/packet_registry_handler.c:346	delete_key_value\(mmt_configured_handlers_map
 src/mmt_core/src/packet_registry.c:659	^void close_extraction\(\)

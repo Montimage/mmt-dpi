@@ -228,14 +228,14 @@ static int run_ipv6_session_key(uint8_t proto, unsigned l4_bytes,
     ph.caplen = hdr + l4_bytes;
     ph.len = hdr + l4_bytes;
 
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     memset(&pkt, 0, sizeof(pkt));
     pkt.data = buf;
     pkt.p_hdr = &ph;
 
     mmt_session_key_t k;
     memset(&k, 0, sizeof(k));
-    build_ipv6_session_key(&pkt, 0, &k);
+    build_ipv6_session_key(&pkt.pub, 0, &k);
     *out_lower = k.lower_ip_port;
     *out_higher = k.higher_ip_port;
     free(buf);

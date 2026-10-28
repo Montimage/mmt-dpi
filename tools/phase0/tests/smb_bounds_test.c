@@ -38,6 +38,7 @@
 #include <pcap.h>            /* DLT_EN10MB */
 
 #include "mmt_core.h"
+#include "ipacket_internal.h" /* issue #535: ipacket_internal_t fixtures (private) */
 #include "tcpip/mmt_tcpip.h"                 /* PROTO_SMB */
 #include "mmt_tcpip_plugin_structs.h"
 #include "internal_decls.h"
@@ -87,7 +88,7 @@ static void make_smb_ipacket(ipacket_t *pkt,
                              uint8_t *data, uint32_t caplen,
                              uint32_t payload_len)
 {
-    memset(pkt, 0, sizeof(*pkt));
+    memset(ipacket_internal(pkt), 0, sizeof(ipacket_internal_t)); /* issue #535: the private extension too */
     memset(ip, 0, sizeof(*ip));
     memset(hier, 0, sizeof(*hier));
     memset(offs, 0, sizeof(*offs));
@@ -102,7 +103,7 @@ static void make_smb_ipacket(ipacket_t *pkt,
     offs->proto_path[2] = 20;
     offs->len = 4;
     pkt->proto_headers_offset = offs;
-    pkt->internal_cumulative_offset_valid = 0;
+    ipacket_internal(pkt)->internal_cumulative_offset_valid = 0;
 
     p_hdr->caplen = caplen;
     p_hdr->len    = caplen;
@@ -160,14 +161,14 @@ int main(void)
         uint8_t *frame = make_buf(SMB_OFFSET + 96);
         uint32_t smb_len = put_smb_nt_create(frame, 0xffff);
 
-        ipacket_t pkt;
+        ipacket_internal_t pkt;
         struct mmt_tcpip_internal_packet_struct ip;
         proto_hierarchy_t hier, offs;
         pkthdr_t p_hdr;
-        make_smb_ipacket(&pkt, &ip, &hier, &offs, &p_hdr, session, h,
+        make_smb_ipacket(&pkt.pub, &ip, &hier, &offs, &p_hdr, session, h,
                          frame, SMB_OFFSET + smb_len, smb_len);
 
-        int r = smb_session_data_analysis(&pkt, SMB_INDEX);
+        int r = smb_session_data_analysis(&pkt.pub, SMB_INDEX);
         CHECK(r == MMT_CONTINUE,
               "NT_CREATE with file_path_len=65535 survives under ASan");
         free(frame);
@@ -178,14 +179,14 @@ int main(void)
      * out of bounds. */
     {
         uint8_t *frame = make_buf(SMB_OFFSET + 2);
-        ipacket_t pkt;
+        ipacket_internal_t pkt;
         struct mmt_tcpip_internal_packet_struct ip;
         proto_hierarchy_t hier, offs;
         pkthdr_t p_hdr;
-        make_smb_ipacket(&pkt, &ip, &hier, &offs, &p_hdr, session, h,
+        make_smb_ipacket(&pkt.pub, &ip, &hier, &offs, &p_hdr, session, h,
                          frame, SMB_OFFSET + 2, 2);
 
-        const uint8_t *r = get_smb_payload(&pkt, SMB_INDEX);
+        const uint8_t *r = get_smb_payload(&pkt.pub, SMB_INDEX);
         CHECK(r == NULL, "get_smb_payload rejects a caplen-truncated record");
         free(frame);
     }
@@ -203,14 +204,14 @@ int main(void)
         p[4] = 0xff; p[5] = 'S'; p[6] = 'M'; p[7] = 'B';
         p[8] = 0xa2;
 
-        ipacket_t pkt;
+        ipacket_internal_t pkt;
         struct mmt_tcpip_internal_packet_struct ip;
         proto_hierarchy_t hier, offs;
         pkthdr_t p_hdr;
-        make_smb_ipacket(&pkt, &ip, &hier, &offs, &p_hdr, session, h,
+        make_smb_ipacket(&pkt.pub, &ip, &hier, &offs, &p_hdr, session, h,
                          frame, SMB_OFFSET + 4 + 32 + 6, 4 + 32 + 6);
 
-        int r = smb_session_data_analysis(&pkt, SMB_INDEX);
+        int r = smb_session_data_analysis(&pkt.pub, SMB_INDEX);
         CHECK(r == MMT_CONTINUE,
               "truncated NT_CREATE (no room for file_path_len) survives");
         free(frame);

@@ -1,6 +1,12 @@
 RELEASE NOTES
 ---
 
+Unreleased
+---
+
+### ABI changes (libmmt_core — the SONAME/SOVERSION bump is #536)
+- move the engine-internal packet fields behind a private extension and pin the public packet layout (#535): `struct ipacket_struct` (`ipacket_t`, `data_defs.h`) keeps only its 19 public fields — `internal_proto_hierarchy`, `internal_proto_headers_offset`, `internal_proto_classif_status`, `internal_p_hdr`, `original_data`, `internal_cumulative_offset`, `internal_cumulative_offset_valid`, `internal_cumulative_offset_hwm`, `proto_headers_offset_owned`, `mmt_current_classifier` and `mmt_classifier_claim` now live in the engine-private `ipacket_internal_t` that embeds it. `sizeof(ipacket_t)` drops from 704 to 344 bytes on amd64/arm64; `packet_id` … `nb_reassembled_packets` keep their offsets, while `proto_hierarchy`, `proto_headers_offset`, `proto_classif_status`, `session`, `internal_packet`, `mmt_handler`, `p_hdr` and `data` move (to 280, 288, 296, 304, 312, 320, 328, 336). A consumer that only reads fields through the `ipacket_t *` it receives needs a rebuild, not a source change (`docs/first-run/hello_packet.c` builds unchanged); one that allocated, copied or embedded an `ipacket_t`, or read a removed field, must stop. An out-of-tree protocol plugin must be rebuilt too: one built against the old header has the old inline `invalidate_packet_offset_cache()` compiled in, which writes at the old offset into the new layout. `_Static_assert`s in `data_defs.h` pin every public offset and the size on LP64. `invalidate_packet_offset_cache()` is now an exported `libmmt_core` function instead of a header inline (same signature, NULL ignored). The engine hands `attribute_t *` out as a member of its internal attribute record instead of casting the whole record (`attribute_t` is unchanged)
+
 Version 1.9.1 (21 October 2026)
 ---
 

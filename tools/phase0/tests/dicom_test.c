@@ -592,7 +592,7 @@ static void test_full_path(void) {
 /* ------------------------------------------------------------------ */
 
 typedef struct {
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     proto_hierarchy_t offsets;
     proto_hierarchy_t hier;
     pkthdr_t hdr;
@@ -652,11 +652,11 @@ static void test_fixture_extraction(void) {
     dicom_fixture_t f;
     dicom_fixture_init(&f, h, pdu, (unsigned)plen);
     struct attribute_internal_struct *attr =
-        get_registered_attribute_internal_struct(&f.pkt, PROTO_DICOM,
+        get_registered_attribute_internal_struct(&f.pkt.pub, PROTO_DICOM,
                 DICOM_CALLED_AE_TITLE, 4);
     CHECK(attr != NULL, "registered CALLED_AE_TITLE attr found");
     if (attr) {
-        int r = internal_extract_attribute(&f.pkt, attr, 4);
+        int r = internal_extract_attribute(&f.pkt.pub, attr, 4);
         CHECK(r == 1 && attr->status == ATTRIBUTE_SET,
                 "fixture AE-title extraction succeeds");
         if (r == 1) {
@@ -674,7 +674,7 @@ static void test_fixture_extraction(void) {
      * title even though 54+10+68 > 100 — refused centrally pre-#376. */
     dicom_fixture_init(&f, h, pdu, 46);
     if (attr) {
-        int r = internal_extract_attribute(&f.pkt, attr, 4);
+        int r = internal_extract_attribute(&f.pkt.pub, attr, 4);
         CHECK(r == 1, "caplen 100: AE-title extracts — capacity is not the wire extent");
     }
     dicom_fixture_free(&f);
@@ -684,7 +684,7 @@ static void test_fixture_extraction(void) {
      * byte of the 64..79 window, so _extraction_att() returns 0. */
     dicom_fixture_init(&f, h, pdu, 25);
     if (attr) {
-        int r = internal_extract_attribute(&f.pkt, attr, 4);
+        int r = internal_extract_attribute(&f.pkt.pub, attr, 4);
         CHECK(r == 0, "caplen 79: AE-title refused — 16-byte extent truncated");
     }
     dicom_fixture_free(&f);
@@ -692,10 +692,10 @@ static void test_fixture_extraction(void) {
     /* zero-captured-payload boundary: caplen == dicom_offset -> the
      * extractor's `caplen - dicom_offset == 0` early return. */
     dicom_fixture_init(&f, h, pdu, 0);
-    attr = get_registered_attribute_internal_struct(&f.pkt, PROTO_DICOM,
+    attr = get_registered_attribute_internal_struct(&f.pkt.pub, PROTO_DICOM,
             DICOM_PDU_TYPE, 4);
     if (attr) {
-        int r = internal_extract_attribute(&f.pkt, attr, 4);
+        int r = internal_extract_attribute(&f.pkt.pub, attr, 4);
         CHECK(r == 0, "caplen == dicom_offset: extraction refused");
     }
     dicom_fixture_free(&f);
@@ -706,10 +706,10 @@ static void test_fixture_extraction(void) {
     uint8_t edge[512];
     (void)build_assoc_edge(edge, 5);            /* 2-byte fragment after hdr */
     dicom_fixture_init(&f, h, edge, 76);        /* fragment inside capture */
-    attr = get_registered_attribute_internal_struct(&f.pkt, PROTO_DICOM,
+    attr = get_registered_attribute_internal_struct(&f.pkt.pub, PROTO_DICOM,
             DICOM_APPLICATION_CONTEXT, 4);
     if (attr) {
-        int r = internal_extract_attribute(&f.pkt, attr, 4);
+        int r = internal_extract_attribute(&f.pkt.pub, attr, 4);
         CHECK(r == 0, "item header fragment at end: app-ctx extraction refused");
     }
     dicom_fixture_free(&f);
@@ -754,17 +754,17 @@ static void test_pending_210(void) {
     f.pkt.mmt_handler = h;
 
     struct attribute_internal_struct *attr =
-        get_registered_attribute_internal_struct(&f.pkt, PROTO_DICOM,
+        get_registered_attribute_internal_struct(&f.pkt.pub, PROTO_DICOM,
                 DICOM_PDU_LEN, 4);
     if (attr) {
-        int r = internal_extract_attribute(&f.pkt, attr, 4);
+        int r = internal_extract_attribute(&f.pkt.pub, attr, 4);
         CHECK(r == 1 && *(uint32_t *)attr->data == (uint32_t)(plen - 6),
                 "pdu_len extracts at unaligned absolute offset");
     }
-    attr = get_registered_attribute_internal_struct(&f.pkt, PROTO_DICOM,
+    attr = get_registered_attribute_internal_struct(&f.pkt.pub, PROTO_DICOM,
             DICOM_MAX_PDU_LENGTH, 4);
     if (attr) {
-        int r = internal_extract_attribute(&f.pkt, attr, 4);
+        int r = internal_extract_attribute(&f.pkt.pub, attr, 4);
         CHECK(r == 1 && *(uint32_t *)attr->data == 16384,
                 "max-pdu u32 extracts at unaligned absolute offset");
     }
@@ -777,7 +777,7 @@ static void test_pending_210(void) {
     const int big[5] = { 0, 0, 14, 20, 60 };    /* offset(4) = 94 > caplen 40 */
     for (int i = 0; i < 5; i++) f.offsets.proto_path[i] = big[i];
     f.pkt.internal_cumulative_offset_valid = 0;
-    int rc = mmt_check_dicom_tcp(&f.pkt, 3);
+    int rc = mmt_check_dicom_tcp(&f.pkt.pub, 3);
     CHECK(rc == 0, "check_dicom_tcp offset>caplen refused cleanly");
     dicom_fixture_free(&f);
 
@@ -790,7 +790,7 @@ static void test_pending_210(void) {
  * is reachable and ASan/UBSan-instrumented in this TU.
  * -------------------------------------------------------------------- */
 typedef struct {
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     proto_hierarchy_t offsets;
     proto_hierarchy_t hier;
     proto_hierarchy_t classif;
@@ -854,21 +854,21 @@ static void test_210_offset_guards(void) {
      * minimum-length check passed trivially and hdr->pdu_type was read
      * out of bounds. Must now be refused before any subtraction. */
     fixture_init(&f, 60, 74);
-    r = mmt_check_dicom_tcp(&f.pkt, 0);
+    r = mmt_check_dicom_tcp(&f.pkt.pub, 0);
     CHECK(r == 0, "classify refuses dicom_offset past caplen");
     fixture_free(&f);
 
     /* dicom_offset == caplen: zero bytes of the header captured;
      * pre-fix read hdr->pdu_type one byte out of bounds. */
     fixture_init(&f, 60, 60);
-    r = mmt_check_dicom_tcp(&f.pkt, 0);
+    r = mmt_check_dicom_tcp(&f.pkt.pub, 0);
     CHECK(r == 0, "classify refuses dicom_offset == caplen");
     fixture_free(&f);
 
     /* dicom_offset inside the capture but without the 6-byte fixed
      * header: only 2 captured bytes remain. */
     fixture_init(&f, 60, 58);
-    r = mmt_check_dicom_tcp(&f.pkt, 0);
+    r = mmt_check_dicom_tcp(&f.pkt.pub, 0);
     CHECK(r == 0, "classify refuses a truncated fixed header");
     fixture_free(&f);
 
@@ -882,17 +882,17 @@ static void test_210_offset_guards(void) {
     attr.data = &out8;
 
     fixture_init(&f, 60, 74);
-    r = _extraction_att(&f.pkt, 1, &attr);
+    r = _extraction_att(&f.pkt.pub, 1, &attr);
     CHECK(r == 0, "extraction refuses dicom_offset past caplen");
     fixture_free(&f);
 
     fixture_init(&f, 60, 60);
-    r = _extraction_att(&f.pkt, 1, &attr);
+    r = _extraction_att(&f.pkt.pub, 1, &attr);
     CHECK(r == 0, "extraction refuses dicom_offset == caplen");
     fixture_free(&f);
 
     fixture_init(&f, 60, 58);
-    r = _extraction_att(&f.pkt, 1, &attr);
+    r = _extraction_att(&f.pkt.pub, 1, &attr);
     CHECK(r == 0, "extraction refuses a truncated fixed header");
     fixture_free(&f);
 
@@ -904,7 +904,7 @@ static void test_210_offset_guards(void) {
      * non-zero status. */
     fixture_init(&f, 74, 34);
     stamp_assoc_rq(&f, 34);
-    r = mmt_check_dicom_tcp(&f.pkt, 0);
+    r = mmt_check_dicom_tcp(&f.pkt.pub, 0);
     CHECK(r != 0, "classify accepts a valid A-ASSOCIATE-RQ PDU");
     CHECK(f.hier.proto_path[1] == PROTO_DICOM,
           "classified proto recorded in the hierarchy");
@@ -914,7 +914,7 @@ static void test_210_offset_guards(void) {
     fixture_init(&f, 74, 34);
     stamp_assoc_rq(&f, 34);
     out8 = 0xAA;
-    r = _extraction_att(&f.pkt, 1, &attr);
+    r = _extraction_att(&f.pkt.pub, 1, &attr);
     CHECK(r == 1 && out8 == 0x01,
           "extraction returns DICOM_PDU_TYPE from a valid PDU");
     fixture_free(&f);

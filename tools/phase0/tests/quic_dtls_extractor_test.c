@@ -67,13 +67,13 @@ static int g_checks = 0;
 
 /* ---------------------------------------------------------------- helpers */
 
-/* Drive _extraction_quic_ietf_att(&pkt, 0, &attr) on a buffer of exactly
+/* Drive _extraction_quic_ietf_att(&pkt.pub, 0, &attr) on a buffer of exactly
  * caplen bytes placed at packet offset 0. session_data[0] stays NULL so the
  * session-state block is skipped — this test exercises packet parsing only. */
 static int run_quic_attr(uint32_t field_id, void *out,
                          const uint8_t *buf, uint16_t caplen)
 {
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     proto_hierarchy_t headers_offset;
     pkthdr_t p_hdr;
     struct mmt_tcpip_internal_packet_struct ip;
@@ -102,15 +102,15 @@ static int run_quic_attr(uint32_t field_id, void *out,
     attr.data = out;
     attr.data_type = MMT_UNDEFINED_TYPE;
 
-    return _extraction_quic_ietf_att(&pkt, 0, &attr);
+    return _extraction_quic_ietf_att(&pkt.pub, 0, &attr);
 }
 
-/* Drive _dtls_extract_attribute(&pkt, 0, &attr) on a buffer of exactly caplen
+/* Drive _dtls_extract_attribute(&pkt.pub, 0, &attr) on a buffer of exactly caplen
  * bytes at packet offset 0. */
 static int run_dtls_attr(uint32_t field_id, void *out,
                          const uint8_t *buf, uint16_t caplen)
 {
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     proto_hierarchy_t headers_offset;
     pkthdr_t p_hdr;
     struct mmt_tcpip_internal_packet_struct ip;
@@ -136,7 +136,7 @@ static int run_dtls_attr(uint32_t field_id, void *out,
     attr.data = out;
     attr.data_type = MMT_UNDEFINED_TYPE;
 
-    return _dtls_extract_attribute(&pkt, 0, &attr);
+    return _dtls_extract_attribute(&pkt.pub, 0, &attr);
 }
 
 /* ------------------------------------------- QUIC long header (F-BUG-063) */

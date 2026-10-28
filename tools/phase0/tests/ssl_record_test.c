@@ -32,6 +32,7 @@
 #include <sys/types.h>
 
 #include "mmt_core.h"
+#include "ipacket_internal.h" /* issue #535: ipacket_internal_t fixtures (private) */
 /*
  * tls_get_number_records() reads ipacket->internal_packet->{payload,
  * payload_packet_len}. mmt_tcpip_internal_packet_t is opaque in the installed
@@ -127,14 +128,14 @@ static void test_record_header_min_len(void)
 static void run_number_records(const uint8_t *payload, int payload_len,
                                int expected, const char *msg)
 {
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     struct mmt_tcpip_internal_packet_struct ip;
     memset(&pkt, 0, sizeof(pkt));
     memset(&ip, 0, sizeof(ip));
     ip.payload = payload;
     ip.payload_packet_len = (uint16_t)payload_len;
     pkt.internal_packet = &ip;
-    int n = tls_get_number_records(&pkt);
+    int n = tls_get_number_records(&pkt.pub);
     CHECK(n == expected, msg);
 }
 

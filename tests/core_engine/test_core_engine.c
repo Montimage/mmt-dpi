@@ -1130,13 +1130,13 @@ static void test_analyse_verdict(void) {
     CHECK(register_session_data_analysis_function_with_protocol(TEST_PROTO_V, test_drop_analyse, 10) == 1,
           "dropping analyser at chain head");
 
-    ipacket_t ip;
+    ipacket_internal_t ip;
     memset(&ip, 0, sizeof(ip));
     ip.mmt_handler = h;
     int pre_before = g_pre_analyse_calls;
     int analyse_before = g_analyse_calls;
     int post_before = g_post_analyse_calls;
-    int ret = proto_packet_analyze(&ip, &h->configured_protocols[TEST_PROTO_V], 1);
+    int ret = proto_packet_analyze(&ip.pub, &h->configured_protocols[TEST_PROTO_V], 1);
     CHECK(ret == MMT_DROP, "first non-CONTINUE verdict propagated (not overwritten by a later CONTINUE)");
     CHECK(g_pre_analyse_calls == pre_before + 1, "pre-analysis ran");
     CHECK(g_drop_analyse_calls == 1, "dropping analyser ran");
@@ -1145,7 +1145,7 @@ static void test_analyse_verdict(void) {
 
     /* Disabled analysis short-circuits to MMT_CONTINUE. */
     disable_protocol_analysis(h, TEST_PROTO_V);
-    ret = proto_packet_analyze(&ip, &h->configured_protocols[TEST_PROTO_V], 1);
+    ret = proto_packet_analyze(&ip.pub, &h->configured_protocols[TEST_PROTO_V], 1);
     CHECK(ret == MMT_CONTINUE, "disabled analysis returns MMT_CONTINUE");
 
     mmt_close_handler(h);
@@ -1708,7 +1708,7 @@ static void test_iteration(void) {
  * ->internal_packet->{iph,iphv6}. */
 static void make_classif_packet(ipacket_t *pkt, mmt_session_t *sess,
                                 mmt_tcpip_internal_packet_t *internal) {
-    memset(pkt, 0, sizeof(*pkt));
+    memset(ipacket_internal(pkt), 0, sizeof(ipacket_internal_t)); /* issue #535: the private extension too */
     memset(sess, 0, sizeof(*sess));
     memset(internal, 0, sizeof(*internal));
     pkt->session = sess;
@@ -1717,10 +1717,10 @@ static void make_classif_packet(ipacket_t *pkt, mmt_session_t *sess,
 
 static void test_hostname_matching(void) {
     fprintf(stderr, "  test: hostname matching (reverse suffix + trie + linear)\n");
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     mmt_session_t sess;
     mmt_tcpip_internal_packet_t internal;
-    make_classif_packet(&pkt, &sess, &internal);
+    make_classif_packet(&pkt.pub, &sess, &internal);
 
     /* --- mmt_case_sensitive_reverse_hostname_matching --- */
     CHECK(mmt_case_sensitive_reverse_hostname_matching("www.google.com", ".google.com", 14, 11) == 1,
@@ -1744,49 +1744,49 @@ static void test_hostname_matching(void) {
 
     /* --- get_proto_id_by_hostname: reversed-name trie walk --- */
     char h_sub[] = "www.google.com";
-    CHECK(get_proto_id_by_hostname(&pkt, h_sub, 14) == PROTO_GOOGLE,
+    CHECK(get_proto_id_by_hostname(&pkt.pub, h_sub, 14) == PROTO_GOOGLE,
           "trie: subdomain of .google.com");
     char h_bare[] = "google.com";
-    CHECK(get_proto_id_by_hostname(&pkt, h_bare, 10) == PROTO_GOOGLE,
+    CHECK(get_proto_id_by_hostname(&pkt.pub, h_bare, 10) == PROTO_GOOGLE,
           "trie: bare domain via the '.'-child fallback");
     /* F-BUG-030 regression: an empty hostname must not fire the '.'
      * fallback on the trie root — it returns PROTO_UNKNOWN. */
     char h_empty[] = "";
-    CHECK(get_proto_id_by_hostname(&pkt, h_empty, 0) == PROTO_UNKNOWN,
+    CHECK(get_proto_id_by_hostname(&pkt.pub, h_empty, 0) == PROTO_UNKNOWN,
           "trie: empty hostname returns UNKNOWN");
     char h_bound[] = "xgoogle.com";
-    CHECK(get_proto_id_by_hostname(&pkt, h_bound, 11) == PROTO_UNKNOWN,
+    CHECK(get_proto_id_by_hostname(&pkt.pub, h_bound, 11) == PROTO_UNKNOWN,
           "trie: partial suffix without dot boundary is UNKNOWN");
     char h_tld[] = "nonexistent.invalidtld";
-    CHECK(get_proto_id_by_hostname(&pkt, h_tld, 22) == PROTO_UNKNOWN,
+    CHECK(get_proto_id_by_hostname(&pkt.pub, h_tld, 22) == PROTO_UNKNOWN,
           "trie: unknown suffix is UNKNOWN");
     /* akamai entries route through the fbcdn* prefix table; the content
      * flags land on the session. */
     char h_fbcdn[] = "fbcdn-video.akamai.net";
     sess.content_flags = 0;
-    CHECK(get_proto_id_by_hostname(&pkt, h_fbcdn, 22) == PROTO_FACEBOOK,
+    CHECK(get_proto_id_by_hostname(&pkt.pub, h_fbcdn, 22) == PROTO_FACEBOOK,
           "trie: akamai suffix resolved to facebook via fbcdn prefix");
     CHECK((sess.content_flags & (MMT_CONTENT_CDN | MMT_CONTENT_VIDEO)) ==
           (MMT_CONTENT_CDN | MMT_CONTENT_VIDEO),
           "trie: CDN|VIDEO content flags set on the session");
     char h_ak[] = "whatever.akamai.net";
     sess.content_flags = 0;
-    CHECK(get_proto_id_by_hostname(&pkt, h_ak, 19) == PROTO_AKAMAI,
+    CHECK(get_proto_id_by_hostname(&pkt.pub, h_ak, 19) == PROTO_AKAMAI,
           "trie: plain akamai hostname stays PROTO_AKAMAI");
 
     /* --- _get_proto_id_by_hostname: linear table scan --- */
     char l_yt[] = "www.youtube.com";
-    CHECK(_get_proto_id_by_hostname(&pkt, l_yt, 15) == PROTO_YOUTUBE,
+    CHECK(_get_proto_id_by_hostname(&pkt.pub, l_yt, 15) == PROTO_YOUTUBE,
           "linear: subdomain of .youtube.com");
     char l_bare[] = "google.com";
-    CHECK(_get_proto_id_by_hostname(&pkt, l_bare, 10) == PROTO_GOOGLE,
+    CHECK(_get_proto_id_by_hostname(&pkt.pub, l_bare, 10) == PROTO_GOOGLE,
           "linear: bare domain matches the doted entry");
     char l_empty[] = "";
-    CHECK(_get_proto_id_by_hostname(&pkt, l_empty, 0) == PROTO_UNKNOWN,
+    CHECK(_get_proto_id_by_hostname(&pkt.pub, l_empty, 0) == PROTO_UNKNOWN,
           "linear: empty hostname returns UNKNOWN");
     char l_fb[] = "fbcdn-profile.akamai.net";
     sess.content_flags = 0;
-    CHECK(_get_proto_id_by_hostname(&pkt, l_fb, 24) == PROTO_FACEBOOK,
+    CHECK(_get_proto_id_by_hostname(&pkt.pub, l_fb, 24) == PROTO_FACEBOOK,
           "linear: akamai suffix resolved via fbcdn prefix");
     CHECK((sess.content_flags & MMT_CONTENT_CDN) != 0,
           "linear: CDN content flag set on the session");
@@ -1796,45 +1796,45 @@ static void test_hostname_matching(void) {
      * scan folds both cursors, so any case variant of a listed suffix
      * classifies the same. SNI and HTTP Host on the wire vary in case. */
     char h_upper[] = "WWW.GOOGLE.COM";
-    CHECK(get_proto_id_by_hostname(&pkt, h_upper, 14) == PROTO_GOOGLE,
+    CHECK(get_proto_id_by_hostname(&pkt.pub, h_upper, 14) == PROTO_GOOGLE,
           "trie: all-caps subdomain of .google.com");
     char h_mixed[] = "WwW.YouTube.Com";
-    CHECK(get_proto_id_by_hostname(&pkt, h_mixed, 15) == PROTO_YOUTUBE,
+    CHECK(get_proto_id_by_hostname(&pkt.pub, h_mixed, 15) == PROTO_YOUTUBE,
           "trie: mixed-case subdomain of .youtube.com");
     char h_bare_up[] = "GOOGLE.COM";
-    CHECK(get_proto_id_by_hostname(&pkt, h_bare_up, 10) == PROTO_GOOGLE,
+    CHECK(get_proto_id_by_hostname(&pkt.pub, h_bare_up, 10) == PROTO_GOOGLE,
           "trie: all-caps bare domain via the '.'-child fallback");
     /* '.Doubleclick.net' was the one mixed-case table entry — unreachable
      * before; it is normalised away as a duplicate of '.doubleclick.net',
      * which now matches any case variant. */
     char h_dclk[] = "ads.DOUBLECLICK.net";
-    CHECK(get_proto_id_by_hostname(&pkt, h_dclk, 19) == PROTO_DOUBLECLICK,
+    CHECK(get_proto_id_by_hostname(&pkt.pub, h_dclk, 19) == PROTO_DOUBLECLICK,
           "trie: doubleclick.net matches under any case");
     char h_bound_up[] = "XGOOGLE.COM";
-    CHECK(get_proto_id_by_hostname(&pkt, h_bound_up, 11) == PROTO_UNKNOWN,
+    CHECK(get_proto_id_by_hostname(&pkt.pub, h_bound_up, 11) == PROTO_UNKNOWN,
           "trie: dot boundary still enforced under folding");
     char h_fbcdn_up[] = "FBCDN-video.AKAMAI.net";
     sess.content_flags = 0;
-    CHECK(get_proto_id_by_hostname(&pkt, h_fbcdn_up, 22) == PROTO_FACEBOOK,
+    CHECK(get_proto_id_by_hostname(&pkt.pub, h_fbcdn_up, 22) == PROTO_FACEBOOK,
           "trie: mixed-case fbcdn akamai host resolves to facebook");
     CHECK((sess.content_flags & (MMT_CONTENT_CDN | MMT_CONTENT_VIDEO)) ==
           (MMT_CONTENT_CDN | MMT_CONTENT_VIDEO),
           "trie: CDN|VIDEO content flags set under folding");
 
     char l_upper[] = "WWW.YOUTUBE.COM";
-    CHECK(_get_proto_id_by_hostname(&pkt, l_upper, 15) == PROTO_YOUTUBE,
+    CHECK(_get_proto_id_by_hostname(&pkt.pub, l_upper, 15) == PROTO_YOUTUBE,
           "linear: all-caps subdomain of .youtube.com");
     char l_dclk[] = "ads.DOUBLECLICK.net";
-    CHECK(_get_proto_id_by_hostname(&pkt, l_dclk, 19) == PROTO_DOUBLECLICK,
+    CHECK(_get_proto_id_by_hostname(&pkt.pub, l_dclk, 19) == PROTO_DOUBLECLICK,
           "linear: doubleclick.net matches under any case");
 }
 
 static void test_ip_attribution(void) {
     fprintf(stderr, "  test: CIDR attribution trees + external range loader\n");
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     mmt_session_t sess;
     mmt_tcpip_internal_packet_t internal;
-    make_classif_packet(&pkt, &sess, &internal);
+    make_classif_packet(&pkt.pub, &sess, &internal);
 
     /* --- compiled-in IPv4 table: 1.201.0.0/24 -> PROTO_KAKAO --- */
     CHECK(_find_proto_id_by_address(0x01C90007u, 0xC0000201u) == PROTO_KAKAO,
@@ -1845,14 +1845,14 @@ static void test_ip_attribution(void) {
           "builtin CIDR: no match returns -1 (192.0.2.0/24 is not in the table)");
 
     /* get_proto_id_from_address reads the network-order headers. */
-    CHECK(get_proto_id_from_address(&pkt) == PROTO_UNKNOWN,
+    CHECK(get_proto_id_from_address(&pkt.pub) == PROTO_UNKNOWN,
           "no iph/iphv6 -> UNKNOWN");
     struct iphdr ip4;
     memset(&ip4, 0, sizeof(ip4));
     ip4.saddr = htonl(0x01C90007u);
     ip4.daddr = htonl(0xC0000201u);
     internal.iph = (const mmt_una_iphdr_t *) &ip4;
-    CHECK(get_proto_id_from_address(&pkt) == PROTO_KAKAO,
+    CHECK(get_proto_id_from_address(&pkt.pub) == PROTO_KAKAO,
           "iph path returns the builtin attribution");
     internal.iph = NULL;
 
@@ -1870,7 +1870,7 @@ static void test_ip_attribution(void) {
     memcpy(ip6.saddr.mmt_v6_addr, v6_src, 16);
     memcpy(ip6.daddr.mmt_v6_addr, v6_dst, 16);
     internal.iphv6 = &ip6;
-    CHECK(get_proto_id_from_address(&pkt) == PROTO_UNKNOWN,
+    CHECK(get_proto_id_from_address(&pkt.pub) == PROTO_UNKNOWN,
           "iphv6 with no ranges -> UNKNOWN");
     internal.iphv6 = NULL;
 
@@ -1945,7 +1945,7 @@ static void test_ip_attribution(void) {
     memcpy(ip6.saddr.mmt_v6_addr, v6_src, 16);
     memcpy(ip6.daddr.mmt_v6_addr, &a6, 16);
     internal.iphv6 = &ip6;
-    CHECK(get_proto_id_from_address(&pkt) == 613,
+    CHECK(get_proto_id_from_address(&pkt.pub) == 613,
           "iphv6 path returns the external attribution");
     internal.iphv6 = NULL;
 
@@ -1970,7 +1970,7 @@ static void test_ip_attribution(void) {
 
 static void test_offset_memoization(void) {
     fprintf(stderr, "  test: memoized cumulative offsets (issue #19)\n");
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     memset(&pkt, 0, sizeof(pkt));
     pkt.proto_headers_offset = &pkt.internal_proto_headers_offset;
     pkt.proto_headers_offset->proto_path[0] = 14;
@@ -1980,27 +1980,27 @@ static void test_offset_memoization(void) {
     pkt.internal_cumulative_offset_valid = 0;
 
     /* lazy build: the first query sums proto_path[0..index] once. */
-    CHECK(get_packet_offset_at_index(&pkt, 2) == 42, "prefix sum 14+20+8");
+    CHECK(get_packet_offset_at_index(&pkt.pub, 2) == 42, "prefix sum 14+20+8");
     CHECK(pkt.internal_cumulative_offset_valid == 1 &&
           pkt.internal_cumulative_offset_hwm == 2, "cache valid, hwm == 2");
     /* cached reads: querying at/below the hwm does not resum. */
-    CHECK(get_packet_offset_at_index(&pkt, 1) == 34, "cached lower index");
+    CHECK(get_packet_offset_at_index(&pkt.pub, 1) == 34, "cached lower index");
     CHECK(pkt.internal_cumulative_offset_hwm == 2, "hwm unchanged by cached read");
     /* extending past the hwm resumes the sum from the hwm, not from 0. */
-    CHECK(get_packet_offset_at_index(&pkt, 4) == 46, "extension resumes at the hwm");
+    CHECK(get_packet_offset_at_index(&pkt.pub, 4) == 46, "extension resumes at the hwm");
     CHECK(pkt.internal_cumulative_offset_hwm == 4, "hwm advanced to 4");
     /* a mutated offset stays invisible until the cache is invalidated —
      * that staleness is exactly why set_classified_proto() and the session
      * offset swaps invalidate it. */
     pkt.proto_headers_offset->proto_path[1] = 40;
-    CHECK(get_packet_offset_at_index(&pkt, 2) == 42, "mutation invisible while cached");
-    invalidate_packet_offset_cache(&pkt);
+    CHECK(get_packet_offset_at_index(&pkt.pub, 2) == 42, "mutation invisible while cached");
+    invalidate_packet_offset_cache(&pkt.pub);
     CHECK(pkt.internal_cumulative_offset_valid == 0, "invalidation flag dropped");
-    CHECK(get_packet_offset_at_index(&pkt, 2) == 62, "rebuilt sum 14+40+8");
+    CHECK(get_packet_offset_at_index(&pkt.pub, 2) == 62, "rebuilt sum 14+40+8");
     invalidate_packet_offset_cache(NULL); /* NULL-safe helper */
     /* index clamp: anything >= PROTO_PATH_SIZE reads the last slot. */
-    CHECK(get_packet_offset_at_index(&pkt, PROTO_PATH_SIZE + 7) ==
-          get_packet_offset_at_index(&pkt, PROTO_PATH_SIZE - 1),
+    CHECK(get_packet_offset_at_index(&pkt.pub, PROTO_PATH_SIZE + 7) ==
+          get_packet_offset_at_index(&pkt.pub, PROTO_PATH_SIZE - 1),
           "index is clamped to PROTO_PATH_SIZE-1");
 }
 
@@ -2255,14 +2255,14 @@ static void test_attr_dispatch_safety(void) {
           "deferred frees flushed when dispatch ended");
 
     /* (2) event dispatch with stack-local payloads. */
-    ipacket_t ip;
+    ipacket_internal_t ip;
     memset(&ip, 0, sizeof(ip));
     ip.mmt_handler = h;
     CHECK(register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_EVT, ds_event, NULL, NULL) == 1,
           "register the event handler");
     attribute_internal_t *evt = get_registered_attribute(h, TEST_PROTO_A, DS_ATTR_EVT);
     CHECK(evt != NULL, "event attribute registered");
-    ds_fire_stack_event(&ip, DS_ATTR_EVT);
+    ds_fire_stack_event(&ip.pub, DS_ATTR_EVT);
     CHECK(g_ds_evt_calls == 1 && g_ds_evt_saw_payload == 1, "event handler saw the payload");
     CHECK(evt != NULL && evt->data == NULL, "attr->data is NULL after event dispatch");
     CHECK(evt != NULL && evt->status == ATTRIBUTE_CONSUMED, "event attribute consumed");
@@ -2273,7 +2273,7 @@ static void test_attr_dispatch_safety(void) {
     CHECK(unregister_attribute_handler(h, TEST_PROTO_A, DS_ATTR_EVT, ds_event) == 1,
           "leave the self-unregistering event handler alone");
     g_ds_evt_calls = 0;
-    ds_fire_stack_event(&ip, DS_ATTR_EVT);
+    ds_fire_stack_event(&ip.pub, DS_ATTR_EVT);
     CHECK(g_ds_evt_calls == 1, "self-unregistering event handler ran");
     CHECK(get_registered_attribute(h, TEST_PROTO_A, DS_ATTR_EVT) == NULL,
           "event attribute released after dispatch");
@@ -2285,7 +2285,7 @@ static void test_attr_dispatch_safety(void) {
     CHECK(register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_PKT, ds_other, NULL, NULL) == 1,
           "re-register the packet-scope handler");
     attribute_internal_t *pa = get_registered_attribute(h, TEST_PROTO_A, DS_ATTR_PKT);
-    ds_fire_stack_event(&ip, DS_ATTR_PKT);
+    ds_fire_stack_event(&ip.pub, DS_ATTR_PKT);
     CHECK(pa != NULL && pa->data == NULL, "attr->data is NULL after an event on a packet attribute");
     g_ds_other_value = 0;
     make_packet(&hdr, pkt, sizeof(pkt), 0xD8D8D8D8u, 3003, 0);
@@ -2354,7 +2354,7 @@ static void test_attr_dispatch_safety(void) {
           "register the swapping event handler");
     g_ds_swap_calls = 0;
     g_ds_evt_calls = 0;
-    ds_fire_stack_event(&ip, DS_ATTR_SW);
+    ds_fire_stack_event(&ip.pub, DS_ATTR_SW);
     CHECK(g_ds_swap_calls >= 1 && g_ds_swap_calls <= 2, "swapping handlers ran a bounded number of times");
     CHECK(g_ds_evt_calls == 1, "the bystander after the swapping handler ran");
     CHECK(h->attr_free_pending == NULL && h->attr_dispatch_depth == 0,
@@ -2399,7 +2399,7 @@ static void test_attr_dispatch_safety(void) {
           register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_AXB, ds_count, NULL, &n_a) == 1,
           "register [A, X, B]");
     g_ds_rereg_calls = 0;
-    ds_fire_stack_event(&ip, DS_ATTR_AXB);
+    ds_fire_stack_event(&ip.pub, DS_ATTR_AXB);
     CHECK(n_a == 1 && g_ds_rereg_calls == 1 && n_b == 1, "A, re-registering X and B each ran exactly once");
     CHECK(unregister_attribute_handler(h, TEST_PROTO_A, DS_ATTR_AXB, ds_count) == 1 &&
           unregister_attribute_handler(h, TEST_PROTO_A, DS_ATTR_AXB, ds_reregister) == 1 &&

@@ -58,6 +58,7 @@
 #include <arpa/inet.h>
 
 #include "mmt_core.h"
+#include "ipacket_internal.h" /* issue #535: ipacket_internal_t fixtures (private) */
 #include "mmt_tcpip_plugin_structs.h"
 #include "mmt_tcpip_internal_defs_macros.h"
 
@@ -131,7 +132,7 @@ static int run_classify_dtls(struct mmt_internal_tcpip_session_struct *flow,
                               uint16_t pre_detected_protocol,
                               const uint8_t *datagram, int len)
 {
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     struct mmt_tcpip_internal_packet_struct ip;
     proto_hierarchy_t headers_offset;
     pkthdr_t p_hdr;
@@ -157,7 +158,7 @@ static int run_classify_dtls(struct mmt_internal_tcpip_session_struct *flow,
 
     pkt.internal_packet = &ip;
 
-    return classify_dtls_from_udp(&pkt, 0);
+    return classify_dtls_from_udp(&pkt.pub, 0);
 }
 
 /* ---- an already-classified flow is not re-classified as DTLS (AC2) ---- */

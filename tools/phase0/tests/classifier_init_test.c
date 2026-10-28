@@ -125,22 +125,22 @@ static void test_hostname_trie_lookup(void)
     printf("[F-BUG-030] hostname trie lookup guards\n");
 
     mmt_session_t sess;
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     memset(&sess, 0, sizeof(sess));
     memset(&pkt, 0, sizeof(pkt));
     pkt.session = &sess;
 
     /* An empty hostname must not walk the trie nor hit the degenerate
      * "i == -1" fallback on the root — it resolves to PROTO_UNKNOWN. */
-    CHECK(get_proto_id_by_hostname(&pkt, "", 0) == PROTO_UNKNOWN,
+    CHECK(get_proto_id_by_hostname(&pkt.pub, "", 0) == PROTO_UNKNOWN,
           "empty hostname resolves to PROTO_UNKNOWN (no fallback)");
 
     /* ".google.com" is a compiled-in table entry (PROTO_GOOGLE). */
-    CHECK(get_proto_id_by_hostname(&pkt, "google.com", 10) == PROTO_GOOGLE,
+    CHECK(get_proto_id_by_hostname(&pkt.pub, "google.com", 10) == PROTO_GOOGLE,
           "google.com resolves to PROTO_GOOGLE via the '.google.com' entry");
-    CHECK(get_proto_id_by_hostname(&pkt, "www.google.com", 14) == PROTO_GOOGLE,
+    CHECK(get_proto_id_by_hostname(&pkt.pub, "www.google.com", 14) == PROTO_GOOGLE,
           "www.google.com resolves to PROTO_GOOGLE (longest suffix)");
-    CHECK(get_proto_id_by_hostname(&pkt, "no-such-host.invalid", 20)
+    CHECK(get_proto_id_by_hostname(&pkt.pub, "no-such-host.invalid", 20)
           == PROTO_UNKNOWN,
           "unlisted hostname resolves to PROTO_UNKNOWN");
 }

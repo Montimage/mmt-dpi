@@ -544,10 +544,10 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
             //Now update the packet structure to point to the flow and the protocol hierarchy info
             if(likely(!ipacket->mmt_handler->has_reassembly)){
                 ipacket->proto_headers_offset = &session->proto_headers_offset;
-                ipacket->proto_headers_offset_owned = 0; // embedded in the session — never freed
+                ipacket_internal(ipacket)->proto_headers_offset_owned = 0; // embedded in the session — never freed
                 // Issue #19: offset buffer swapped to the session's stored
                 // offsets — invalidate the memoized cumulative-offset cache.
-                ipacket->internal_cumulative_offset_valid = 0;
+                ipacket_internal(ipacket)->internal_cumulative_offset_valid = 0;
 
             }else{
                 /* Issue #245 (F-PERF-003): copy the session offsets into the
@@ -556,12 +556,12 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
                  * copy, with zero allocation. proto_session_management runs
                  * once per protocol layer (index+1 recursion); each embedded
                  * session layer refreshes the snapshot. */
-                ipacket->proto_headers_offset = &ipacket->internal_proto_headers_offset;
-                ipacket->proto_headers_offset_owned = 0; // embedded in the ipacket — never freed
+                ipacket->proto_headers_offset = &ipacket_internal(ipacket)->internal_proto_headers_offset;
+                ipacket_internal(ipacket)->proto_headers_offset_owned = 0; // embedded in the ipacket — never freed
                 memcpy(ipacket->proto_headers_offset,&session->proto_headers_offset,sizeof(proto_hierarchy_t));
                 // Issue #19: offset buffer replaced — invalidate the memoized
                 // cumulative-offset cache.
-                ipacket->internal_cumulative_offset_valid = 0;
+                ipacket_internal(ipacket)->internal_cumulative_offset_valid = 0;
             }
 
             ipacket->proto_hierarchy = &session->proto_path;

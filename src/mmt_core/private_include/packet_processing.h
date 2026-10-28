@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
 #include "data_defs.h"
+#include "ipacket_internal.h" /* issue #535: the private extension of ipacket_t */
 #include "mmt_core.h"
 #include "extraction_lib.h"
 #include "hash_utils.h"
@@ -354,15 +355,25 @@ struct attribute_handler_struct {
 };
 
 struct attribute_internal_struct {
-    unsigned protocol_index; /**< index of the protocol */
-    int status;              /**< status of the attribute. Indicates if it is unset, set or consumed. */
-    int data_type;           /**< the data type of the attribute */
-    int data_len;            /**< the data length of the attribute */
-    int position_in_packet;  /**< the position in the packet of the attribute. */
-    int scope;               /**< the scope of the attribute (packet, session, ...). */
-    uint32_t proto_id;    /**< identifier of the protocol */
-    uint32_t field_id;       /**< identifier of the attribute */
-    void *data;              /**< pointer to the attribute data */
+    /* Issue #535 (F-CLEAN-002): the attribute_t handed to extraction
+     * functions, attribute handlers and get_extracted_attribute*() callers is
+     * the pub member — never a cast of this whole structure. The anonymous
+     * struct names the same storage field for field (identical types, pinned
+     * below), so the engine keeps reading and writing attr->data & co. */
+    union {
+        attribute_t pub; /**< the public view of this attribute */
+        struct {
+            unsigned protocol_index; /**< index of the protocol */
+            int status;              /**< status of the attribute. Indicates if it is unset, set or consumed. */
+            enum data_types data_type; /**< the data type of the attribute */
+            int data_len;            /**< the data length of the attribute */
+            int position_in_packet;  /**< the position in the packet of the attribute. */
+            int scope;               /**< the scope of the attribute (packet, session, ...). */
+            mmt_proto_id_t proto_id; /**< identifier of the protocol */
+            mmt_attribute_id_t field_id; /**< identifier of the attribute */
+            void *data;              /**< pointer to the attribute data */
+        };
+    };
 
     int memsize; /**< indicates the memory size of the attribute including the memory pointed to by data */
     int registration_count; /**< Number of times this attributes has been registered */
@@ -383,6 +394,22 @@ struct attribute_internal_struct {
     attribute_handler_function extraction_owner;
     attribute_internal_t * next; /**< Issue #501: links the attributes in mmt_handler_t.attr_free_pending */
 };
+
+/* Issue #535: the anonymous struct above must stay the exact image of
+ * attribute_t — same member, same type, same offset — or pub would no longer
+ * alias it (MMT_PIN_MIRROR: ipacket_internal.h). */
+_Static_assert(offsetof(attribute_internal_t, pub) == 0, "attribute_internal_t: pub must stay first");
+MMT_PIN_MIRROR(attribute_internal_t, pub, attribute_t, protocol_index);
+MMT_PIN_MIRROR(attribute_internal_t, pub, attribute_t, status);
+MMT_PIN_MIRROR(attribute_internal_t, pub, attribute_t, data_type);
+MMT_PIN_MIRROR(attribute_internal_t, pub, attribute_t, data_len);
+MMT_PIN_MIRROR(attribute_internal_t, pub, attribute_t, position_in_packet);
+MMT_PIN_MIRROR(attribute_internal_t, pub, attribute_t, scope);
+MMT_PIN_MIRROR(attribute_internal_t, pub, attribute_t, proto_id);
+MMT_PIN_MIRROR(attribute_internal_t, pub, attribute_t, field_id);
+MMT_PIN_MIRROR(attribute_internal_t, pub, attribute_t, data);
+_Static_assert(offsetof(attribute_internal_t, memsize) == sizeof(attribute_t),
+               "attribute_internal_t: the mirror outgrew attribute_t");
 
 /**
  * Defines the attribute handler element structure
@@ -536,7 +563,7 @@ struct protocol_instance_struct {
  * its slot until mmt_drop_packet()/clean-up, which bounds the pool by the
  * number of concurrently held packets. */
 typedef struct mmt_ipacket_slot_s {
-    ipacket_t ipacket;                    /* MUST stay the first member */
+    ipacket_internal_t ipacket;           /* MUST stay the first member */
     struct mmt_ipacket_slot_s *next_free;
     uint8_t *data;                        /* owned copy of the packet bytes */
     uint32_t data_cap;                    /* allocated size of data */
@@ -567,7 +594,7 @@ struct mmt_handler_struct {
     session_timer_handler_t session_timer_handler;    // This is the function registered by user and will be call from function process_timer_handler()
 
     packet_info_t last_received_packet;
-    ipacket_t current_ipacket;
+    ipacket_internal_t current_ipacket;   /* Issue #535: &current_ipacket.pub is the ipacket_t handed out */
     generic_process_packet_fct process_packet;
     generic_clean_packet_fct clean_packet;
     // Evasion

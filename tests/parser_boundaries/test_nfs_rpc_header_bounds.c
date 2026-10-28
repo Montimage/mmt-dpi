@@ -62,7 +62,7 @@ static int g_checks = 0;
 #define NFS_OFF 54u
 
 typedef struct {
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     proto_hierarchy_t offsets;
     proto_hierarchy_t hier;
     pkthdr_t hdr;
@@ -154,7 +154,7 @@ static int run_tmpl(nfs_extractor_t fn, const uint8_t *tmpl, size_t tmpl_len,
     attr.data = scratch;
     attr.position_in_packet = position;
     fixture_init_from(&f, tmpl, tmpl_len, nfs_bytes);
-    int rc = fn(&f.pkt, 0, &attr);
+    int rc = fn(&f.pkt.pub, 0, &attr);
     /* A pointer result must lie inside the capture. */
     if (rc == 1 && attr_out && attr.data != scratch && attr.data_len > 0) {
         const u_char *p = (const u_char *)attr.data;
@@ -247,7 +247,7 @@ static int run(nfs_extractor_t fn, unsigned nfs_bytes, uint32_t msg_type,
                  || fn == nfs_procedure_extraction) ? (void *)&value
                                                     : (void *)scratch;
     fixture_init(&f, nfs_bytes, msg_type);
-    int rc = fn(&f.pkt, 0, &attr);
+    int rc = fn(&f.pkt.pub, 0, &attr);
     free(f.buf);
     if (out) *out = value;
     return rc;

@@ -33,6 +33,7 @@
 #include <pcap.h>            /* DLT_EN10MB */
 
 #include "mmt_core.h"
+#include "ipacket_internal.h" /* issue #535: ipacket_internal_t fixtures (private) */
 #include "tcpip/mmt_tcpip.h"                 /* PROTO_SIP */
 #include "mmt_tcpip_plugin_structs.h"
 #include "internal_decls.h"
@@ -69,7 +70,7 @@ static uint16_t run_sip(const uint8_t *payload, uint32_t payload_len)
     struct mmt_internal_tcpip_session_struct flow;
     struct mmt_tcpip_internal_packet_struct ip;
     proto_hierarchy_t offs;
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     pkthdr_t p_hdr;
 
     memset(&flow, 0, sizeof(flow));
@@ -95,7 +96,7 @@ static uint16_t run_sip(const uint8_t *payload, uint32_t payload_len)
     pkt.session = (mmt_session_t *)calloc(1, SESSION_BLOB_SIZE);
     pkt.mmt_handler = g_handler;
 
-    mmt_check_sip(&pkt, 0);
+    mmt_check_sip(&pkt.pub, 0);
 
     uint16_t detected = flow.detected_protocol_stack[0];
     free(pkt.session);

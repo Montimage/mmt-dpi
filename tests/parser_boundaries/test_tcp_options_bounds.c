@@ -54,7 +54,7 @@ static int g_checks = 0;
 #define TCP_OFF 34u
 
 typedef struct {
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     proto_hierarchy_t offsets;
     proto_hierarchy_t hier;
     pkthdr_t hdr;
@@ -113,7 +113,7 @@ static int run(tcp_extractor_t fn, int field_id, const uint8_t *tmpl,
     attr.field_id = field_id;
     attr.position_in_packet = -1;
     fixture_init(&f, tmpl, tmpl_len, tcp_bytes);
-    int rc = fn(&f.pkt, 0, &attr);
+    int rc = fn(&f.pkt.pub, 0, &attr);
     free(f.buf);
     if (value) {
         switch (field_id) {

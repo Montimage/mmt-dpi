@@ -64,7 +64,7 @@ static int g_checks = 0;
  * success-path bookkeeping.
  * ------------------------------------------------------------------------- */
 typedef struct {
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     proto_hierarchy_t offsets;
     proto_hierarchy_t hier;
     pkthdr_t hdr;
@@ -160,7 +160,7 @@ static int direct_extract(fixture_t *f, unsigned index, mmt_u16_array_t *out) {
     a.field_id = DTLS_CLIENT_HELLO_CIPHER_SUITE;
     a.data = out;
     memset(out, 0, sizeof(*out));
-    return _dtls_extract_attribute(&f->pkt, index, &a);
+    return _dtls_extract_attribute(&f->pkt.pub, index, &a);
 }
 
 int main(void) {
@@ -178,7 +178,7 @@ int main(void) {
     fixture_init(&f, 0, 67);
     build_dtls_hello(f.buf, 22 /* handshake */, 2, 2, 0x1301, 1);
     make_dtls_attr(&a, scratch);
-    r_central = internal_extract_attribute(&f.pkt, &a, 0);
+    r_central = internal_extract_attribute(&f.pkt.pub, &a, 0);
     r_direct = direct_extract(&f, 0, &direct_out);
     CHECK(r_central == 1 && a.status == ATTRIBUTE_SET,
           "67-byte ClientHello extracts through the central path despite 132-byte capacity");
@@ -201,7 +201,7 @@ int main(void) {
     }
     make_dtls_attr(&a, scratch);
     memset(scratch, 0, sizeof(*scratch));
-    r_central = internal_extract_attribute(&f.pkt, &a, 0);
+    r_central = internal_extract_attribute(&f.pkt.pub, &a, 0);
     r_direct = direct_extract(&f, 0, &direct_out);
     CHECK(r_central == 0 && r_direct == 0,
           "hello truncated inside the prefix rejects on both paths");
@@ -216,7 +216,7 @@ int main(void) {
     }
     make_dtls_attr(&a, scratch);
     memset(scratch, 0, sizeof(*scratch));
-    r_central = internal_extract_attribute(&f.pkt, &a, 0);
+    r_central = internal_extract_attribute(&f.pkt.pub, &a, 0);
     r_direct = direct_extract(&f, 0, &direct_out);
     CHECK(r_central == 1 && scratch->len == 5,
           "declared 100B cipher list over 10 captured bytes clamps to 5 suites");
@@ -233,7 +233,7 @@ int main(void) {
     }
     make_dtls_attr(&a, scratch);
     memset(scratch, 0, sizeof(*scratch));
-    r_central = internal_extract_attribute(&f.pkt, &a, 0);
+    r_central = internal_extract_attribute(&f.pkt.pub, &a, 0);
     r_direct = direct_extract(&f, 0, &direct_out);
     CHECK(r_central == 1 && scratch->len == BINARY_64DATA_LEN,
           "100-suite list clamps to the 64-entry output capacity");
@@ -252,7 +252,7 @@ int main(void) {
     }
     make_dtls_attr(&a, scratch);
     memset(scratch, 0, sizeof(*scratch));
-    r_central = internal_extract_attribute(&f.pkt, &a, 0);
+    r_central = internal_extract_attribute(&f.pkt.pub, &a, 0);
     r_direct = direct_extract(&f, 0, &direct_out);
     CHECK(r_central == 0 && r_direct == 0,
           "application-data record yields no cipher on either path");
@@ -262,7 +262,7 @@ int main(void) {
     fixture_init(&f, 70, 60); /* proto starts at 70, only 60 captured */
     make_dtls_attr(&a, scratch);
     memset(scratch, 0, sizeof(*scratch));
-    r_central = internal_extract_attribute(&f.pkt, &a, 0);
+    r_central = internal_extract_attribute(&f.pkt.pub, &a, 0);
     r_direct = direct_extract(&f, 0, &direct_out);
     CHECK(r_central == 0 && r_direct == 0,
           "protocol offset past caplen refuses on both paths");

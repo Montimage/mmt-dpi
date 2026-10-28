@@ -72,6 +72,7 @@
 #include <netinet/udp.h>
 
 #include "mmt_core.h"
+#include "ipacket_internal.h" /* issue #535: ipacket_internal_t fixtures (private) */
 /*
  * mmt_check_skype_tcp()/mmt_check_skype_udp() read
  * ipacket->internal_packet->{payload, payload_packet_len, tcp, udp, flow,
@@ -132,7 +133,7 @@ static int run_check_skype_tcp(struct mmt_internal_tcpip_session_struct *flow,
                                 uint16_t pre_detected_protocol,
                                 uint32_t payload_len)
 {
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     struct mmt_tcpip_internal_packet_struct ip;
     struct tcphdr tcp;
 
@@ -155,7 +156,7 @@ static int run_check_skype_tcp(struct mmt_internal_tcpip_session_struct *flow,
     memset(&ip.detection_bitmask, 0xFF, sizeof(ip.detection_bitmask));
 
     pkt.internal_packet = &ip;
-    return mmt_check_skype_tcp(&pkt, 0);
+    return mmt_check_skype_tcp(&pkt.pub, 0);
 }
 
 /* Same as run_check_skype_tcp(), for the UDP classifier. `payload` may be
@@ -166,7 +167,7 @@ static int run_check_skype_udp(struct mmt_internal_tcpip_session_struct *flow,
                                 uint16_t pre_detected_protocol,
                                 const uint8_t *payload, uint32_t payload_len)
 {
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     struct mmt_tcpip_internal_packet_struct ip;
     struct udphdr udp;
 
@@ -187,7 +188,7 @@ static int run_check_skype_udp(struct mmt_internal_tcpip_session_struct *flow,
     memset(&ip.detection_bitmask, 0xFF, sizeof(ip.detection_bitmask));
 
     pkt.internal_packet = &ip;
-    return mmt_check_skype_udp(&pkt, 0);
+    return mmt_check_skype_udp(&pkt.pub, 0);
 }
 
 /* ---- TCP: the old payload_len == 8 || payload_len == 3 shape match no

@@ -16,6 +16,7 @@ extern "C" {
 #include <stdio.h>
 #include <stdbool.h>
 #include <limits.h>     /* UINT_MAX: MMT_NO_PROTO_INDEX */
+#include <stddef.h>     /* offsetof: the ipacket_t layout pins */
 #include <sys/types.h>  /* u_char */
 #include "types_defs.h"
 #include "mmt_exports.h"
@@ -139,6 +140,16 @@ typedef struct proto_hierarchy_struct {
 
 /**
  * Defines a packet structure.
+ *
+ * Issue #535 (F-CLEAN-001): this is the public part of the packet only. The
+ * engine's internal per-packet state (embedded storage for the protocol path
+ * arrays and the packet meta-data, the original data pointer, the offset
+ * cache and the classifier-walk bookkeeping) lives in a private extension
+ * that embeds this structure, so it is no longer part of the ABI. A consumer
+ * only ever receives a pointer to a packet the library owns: never allocate,
+ * copy or embed an ipacket_t, and never rely on sizeof(ipacket_t).
+ * The offsets of the fields below are pinned by the _Static_asserts that
+ * follow the structure.
  */
 struct ipacket_struct {
     uint64_t packet_id;                       /**< identifier of the packet. */
@@ -153,39 +164,45 @@ struct ipacket_struct {
     uint16_t ipv6_outoforder[PROTO_PATH_SIZE]; /** IPv6 fragment header is out of order*/
     int last_callback_fct_id;                           /**< The extra field for tcp packet handler */
     unsigned nb_reassembled_packets[PROTO_PATH_SIZE];          /**< number of packets which are assembled to this packet */
-    proto_hierarchy_t internal_proto_hierarchy; /**< internal: - never modify it. the protocol layers corresponding to this packet */
-    proto_hierarchy_t internal_proto_headers_offset; /**< internal: - never modify it.  the offsets corresponding to the protocol layers of this packet */
-    proto_hierarchy_t internal_proto_classif_status; /**< internal: - never modify it.  the classification status of the protocols in the path */
     proto_hierarchy_t * proto_hierarchy;      /**< the protocol layers corresponding to this packet */
     proto_hierarchy_t * proto_headers_offset; /**< the offsets corresponding to the protocol layers of this packet */
     proto_hierarchy_t * proto_classif_status; /**< the classification status of the protocols in the path */
     mmt_session_t * session;                  /**< pointer to the session structure to which the packet belongs*/
     mmt_tcpip_internal_packet_t * internal_packet;  /**< pointer to opaque packet structure. for internal use only. Must never be changed */
     mmt_handler_t * mmt_handler;              /**< pointer to the mmt handler that processed this packet */
-    pkthdr_t internal_p_hdr;                         /**< internal: - never modify it. the meta-data of the packet */
     pkthdr_t * p_hdr;                         /**< the meta-data of the packet */
     const u_char * data;                      /**< pointer to the packet data */
-    const u_char * original_data;             /**< internal: - never modify it. pointer to the original packet data. It will be different than ipacket->data in case of IP assembled data*/
-    int internal_cumulative_offset[PROTO_PATH_SIZE]; /**< internal: - never modify it. Issue #19: memoized prefix-sum of proto_headers_offset->proto_path, so get_packet_offset_at_index() is amortized O(1) instead of re-summing (O(N^2) per packet). */
-    int internal_cumulative_offset_valid;     /**< internal: - never modify it. Issue #19: 0 when the cumulative-offset cache must be rebuilt. */
-    int internal_cumulative_offset_hwm;       /**< internal: - never modify it. Issue #19: highest index whose prefix sum is cached (the cache is extended on demand, never beyond what is queried). */
-    int proto_headers_offset_owned;           /**< internal: - never modify it. Issue #199 (F-BUG-002): 1 when proto_headers_offset points to a heap buffer owned by this packet (set at its single mmt_malloc site in proto_session_management), 0 when it aliases storage embedded in the handler or the session. clean_packet_with_reassembly() frees the buffer only when this flag is set. */
-    void * mmt_current_classifier;            /**< internal: - never modify it. Issue #252 (F-PERF-002): the checker node currently being probed by proto_packet_classify_next()'s chain walk (NULL outside walks). Read by plugin classification funnels to claim ownership. */
-    void * mmt_classifier_claim;              /**< internal: - never modify it. Issue #252 (F-PERF-002): the checker node that last claimed a classification this classify_next() round — written by plugin funnels (mmt_change_internal_flow_packet_protocol, set_classified_proto) copying mmt_current_classifier. */
 };
 
-/**
- * Issue #19: drop the memoized cumulative-offset cache used by
- * get_packet_offset_at_index(). Call this after ANY direct write to
- * ipacket->proto_headers_offset->proto_path[] that bypasses
- * set_classified_proto() (e.g. protocol plugins that set the next layer's header
- * length in place), so the next offset query rebuilds the prefix sum.
+/*
+ * Issue #535 (F-CLEAN-001): the public packet layout is pinned. A change to
+ * any offset below is an ABI break: it needs a new SONAME, not an edit of
+ * these numbers. The values are those of the shipped LP64 targets (amd64,
+ * arm64) with the default PROTO_PATH_SIZE; C++ and other targets skip them.
  */
-static inline void invalidate_packet_offset_cache(ipacket_t * ipacket) {
-    if (ipacket != NULL) {
-        ipacket->internal_cumulative_offset_valid = 0;
-    }
-}
+#if !defined(__cplusplus) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L \
+    && defined(__LP64__) && PROTO_PATH_SIZE == 16
+_Static_assert(offsetof(struct ipacket_struct, packet_id) == 0, "ipacket_t ABI: packet_id moved");
+_Static_assert(offsetof(struct ipacket_struct, total_caplen) == 8, "ipacket_t ABI: total_caplen moved");
+_Static_assert(offsetof(struct ipacket_struct, is_completed) == 16, "ipacket_t ABI: is_completed moved");
+_Static_assert(offsetof(struct ipacket_struct, is_fragment) == 32, "ipacket_t ABI: is_fragment moved");
+_Static_assert(offsetof(struct ipacket_struct, ipv6_ext_headers_path) == 48, "ipacket_t ABI: ipv6_ext_headers_path moved");
+_Static_assert(offsetof(struct ipacket_struct, ipv6_ext_headers_offset) == 80, "ipacket_t ABI: ipv6_ext_headers_offset moved");
+_Static_assert(offsetof(struct ipacket_struct, ipv6_ext_headers_len) == 144, "ipacket_t ABI: ipv6_ext_headers_len moved");
+_Static_assert(offsetof(struct ipacket_struct, ipv6_overlapping) == 146, "ipacket_t ABI: ipv6_overlapping moved");
+_Static_assert(offsetof(struct ipacket_struct, ipv6_outoforder) == 178, "ipacket_t ABI: ipv6_outoforder moved");
+_Static_assert(offsetof(struct ipacket_struct, last_callback_fct_id) == 212, "ipacket_t ABI: last_callback_fct_id moved");
+_Static_assert(offsetof(struct ipacket_struct, nb_reassembled_packets) == 216, "ipacket_t ABI: nb_reassembled_packets moved");
+_Static_assert(offsetof(struct ipacket_struct, proto_hierarchy) == 280, "ipacket_t ABI: proto_hierarchy moved");
+_Static_assert(offsetof(struct ipacket_struct, proto_headers_offset) == 288, "ipacket_t ABI: proto_headers_offset moved");
+_Static_assert(offsetof(struct ipacket_struct, proto_classif_status) == 296, "ipacket_t ABI: proto_classif_status moved");
+_Static_assert(offsetof(struct ipacket_struct, session) == 304, "ipacket_t ABI: session moved");
+_Static_assert(offsetof(struct ipacket_struct, internal_packet) == 312, "ipacket_t ABI: internal_packet moved");
+_Static_assert(offsetof(struct ipacket_struct, mmt_handler) == 320, "ipacket_t ABI: mmt_handler moved");
+_Static_assert(offsetof(struct ipacket_struct, p_hdr) == 328, "ipacket_t ABI: p_hdr moved");
+_Static_assert(offsetof(struct ipacket_struct, data) == 336, "ipacket_t ABI: data moved");
+_Static_assert(sizeof(struct ipacket_struct) == 344, "ipacket_t ABI: public part resized (a field was added or removed)");
+#endif
 
 /**
  * Defines the identification info of a protocol attribute. This identification is defined by the tuple: protocol id and attribute id.
@@ -308,6 +325,21 @@ MMTAPI const char* MMTCALL get_attribute_name_by_protocol_and_attribute_ids(
 MMTAPI int MMTCALL get_packet_offset_at_index(
     const ipacket_t *ipacket,
     unsigned index
+);
+
+/**
+ * Issue #19: drop the memoized cumulative-offset cache used by
+ * get_packet_offset_at_index(). Call this after ANY direct write to
+ * ipacket->proto_headers_offset->proto_path[] that bypasses
+ * set_classified_proto() (e.g. protocol plugins that set the next layer's header
+ * length in place), so the next offset query rebuilds the prefix sum.
+ * NULL is accepted and ignored.
+ * Issue #535: an exported function (it was a static inline writing a field
+ * that is no longer public); ipacket must be a packet the library handed out.
+ * @param ipacket the packet whose offset cache is dropped
+ */
+MMTAPI void MMTCALL invalidate_packet_offset_cache(
+    ipacket_t *ipacket
 );
 
 /*

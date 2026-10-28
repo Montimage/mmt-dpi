@@ -60,7 +60,7 @@ static int g_checks = 0;
 /* One fake session + one fake packet. The packet's proto path is a single
  * entry with offset 0 so get_packet_offset_at_index() lands on the payload. */
 typedef struct {
-    ipacket_t ip;
+    ipacket_internal_t ip;
     mmt_session_t *session;
     struct mmt_tcpip_internal_packet_struct *pkt;
     struct mmt_internal_tcpip_session_struct *flow;
@@ -137,7 +137,7 @@ static void test_session_leaks(mmt_handler_t *handler)
     printf("[204-S1] 10,000-request session leak harness (F-BUG-053)\n");
 
     fixture_init(&f, "GET /r0 HTTP/1.1\r\nHost: h0\r\n\r\n", handler);
-    http_session_data_init(&f.ip, SESSION_INDEX);
+    http_session_data_init(&f.ip.pub, SESSION_INDEX);
     CHECK(f.session->session_data[SESSION_INDEX] != NULL,
           "session data initialised");
 
@@ -149,7 +149,7 @@ static void test_session_leaks(mmt_handler_t *handler)
                  "Cookie: c=%d\r\n"
                  "Accept: */*\r\n\r\n", i, i, i, i);
         fixture_reset_payload(&f, req);
-        http_session_data_analysis(&f.ip, SESSION_INDEX);
+        http_session_data_analysis(&f.ip.pub, SESSION_INDEX);
     }
 
     /* Last request's state is intact and visible. */
@@ -197,7 +197,7 @@ static void test_direction_reset(mmt_handler_t *handler)
     /* Direction 0: a well-formed PARTIAL request — parser advances, no
      * error, message incomplete. */
     f.session->last_packet_direction = 0;
-    http_internal_session_data_analysis(&f.ip, SESSION_INDEX);
+    http_internal_session_data_analysis(&f.ip.pub, SESSION_INDEX);
     CHECK(p0->_current != fresh_state &&
           llhttp_get_errno(p0) == HPE_OK &&
           f.session->session_data[SESSION_INDEX] == sp,
@@ -210,7 +210,7 @@ static void test_direction_reset(mmt_handler_t *handler)
          * BOTH parsers and NULLed the session data. */
         f.session->last_packet_direction = 1;
         fixture_reset_payload(&f, "\x00\x01\x02 GARBAGE\x03\x04\r\n\r\n");
-        http_internal_session_data_analysis(&f.ip, SESSION_INDEX);
+        http_internal_session_data_analysis(&f.ip.pub, SESSION_INDEX);
 
         CHECK(f.session->session_data[SESSION_INDEX] == sp,
               "session data survives a one-direction parse error");
@@ -223,7 +223,7 @@ static void test_direction_reset(mmt_handler_t *handler)
     /* Direction 0 must still complete the in-flight message. */
     f.session->last_packet_direction = 0;
     fixture_reset_payload(&f, "mple.com\r\n\r\n");
-    http_internal_session_data_analysis(&f.ip, SESSION_INDEX);
+    http_internal_session_data_analysis(&f.ip.pub, SESSION_INDEX);
     CHECK(llhttp_get_errno(p0) == HPE_OK,
           "direction 0 message completes after the other direction's error");
 

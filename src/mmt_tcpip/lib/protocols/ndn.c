@@ -1977,7 +1977,12 @@ void ndn_process_timed_out_session(ipacket_t *ipacket, unsigned index, ndn_sessi
 
     // Update last ndn packet
     if(ndn_proto_context->dummy_packet == NULL){
-        ndn_proto_context->dummy_packet = mmt_malloc(sizeof(ipacket_t));
+        /* Issue #535: the dummy is handed to engine code as a packet, so it
+         * needs the private extension (pub is its first member, so
+         * mmt_free(dummy_packet) still frees the allocation). */
+        ipacket_internal_t * dummy = mmt_malloc(sizeof(ipacket_internal_t));
+        memset(dummy, 0, sizeof(*dummy)); /* no stale offset cache or classifier claim */
+        ndn_proto_context->dummy_packet = &dummy->pub;
         ndn_proto_context->dummy_packet->mmt_handler = ipacket->mmt_handler;
         ndn_proto_context->dummy_packet->data = NULL;
     }

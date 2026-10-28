@@ -37,6 +37,7 @@
 #include <stdint.h>
 
 #include "mmt_core.h"
+#include "ipacket_internal.h" /* issue #535: ipacket_internal_t fixtures (private) */
 #include "mmt_tcpip_plugin_structs.h"   /* struct mmt_tcpip_internal_packet_struct */
 
 /* Function under test — non-static (exported) in
@@ -73,12 +74,12 @@ static uint16_t run_offset(const char *bytes, uint16_t len)
     pkt->payload = payload;
     pkt->payload_packet_len = len;
 
-    ipacket_t ipacket;
+    ipacket_internal_t ipacket;
     memset(&ipacket, 0, sizeof(ipacket));
     ipacket.internal_packet = pkt;
     ipacket.packet_id = 1;
 
-    uint16_t off = http_request_url_offset(&ipacket);
+    uint16_t off = http_request_url_offset(&ipacket.pub);
 
     free(pkt);
     free(payload);

@@ -48,6 +48,12 @@ int get_packet_offset_at_index(const ipacket_t *ipacket, unsigned index) {
 	return off;
 }
 
+/* Issue #535: an exported core function now (it was a header inline); the
+ * stub above sums the offsets on every call, so there is no cache to drop. */
+void invalidate_packet_offset_cache(ipacket_t *ipacket) {
+	(void) ipacket;
+}
+
 int set_classified_proto(ipacket_t *ipacket, unsigned index,
 		classified_proto_t classified_proto) {
 	if (!ipacket || !ipacket->proto_hierarchy || index >= PROTO_PATH_SIZE)

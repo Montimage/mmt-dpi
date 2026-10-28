@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
 #include "mmt_core.h"
+#include "ipacket_internal.h" /* issue #535: ipacket_internal() in the classification claim funnel */
 #include "mmt_tcpip_internal_defs_macros.h"
 #include "mmt_tcpip_plugin_structs.h"
 #include "protocols/tcp.h"
@@ -173,8 +174,8 @@ mmt_change_internal_flow_packet_protocol(ipacket_t * ipacket, uint16_t detected_
      * record it so the pipeline can dispatch converged packets straight to
      * the owning engine. mmt_current_classifier is non-NULL only inside a
      * classify_me call. */
-    if (ipacket->mmt_current_classifier != NULL) {
-        ipacket->mmt_classifier_claim = ipacket->mmt_current_classifier;
+    if (ipacket_internal(ipacket)->mmt_current_classifier != NULL) {
+        ipacket_internal(ipacket)->mmt_classifier_claim = ipacket_internal(ipacket)->mmt_current_classifier;
     }
     mmt_change_internal_flow_protocol(ipacket, detected_protocol, protocol_type);
     mmt_change_internal_packet_protocol(ipacket, detected_protocol, protocol_type);

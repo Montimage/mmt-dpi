@@ -29,6 +29,7 @@
 #include <stdint.h>
 
 #include "mmt_core.h"
+#include "ipacket_internal.h" /* issue #535: ipacket_internal_t fixtures (private) */
 
 /* Mutation helpers under test — declared in the shared internal header
  * (issue #186 convention). PROTO_HTTP2 + the HTTP2_* attribute ids come from
@@ -55,12 +56,13 @@ static int g_checks = 0;
 static void make_ipacket(ipacket_t *ip, uint8_t *data, uint32_t caplen,
         int http2_offset)
 {
-    memset(ip, 0, sizeof(*ip));
+    ipacket_internal_t *pi = ipacket_internal(ip); /* issue #535: private extension */
+    memset(pi, 0, sizeof(*pi));
     ip->data = data;
-    ip->p_hdr = &ip->internal_p_hdr;
+    ip->p_hdr = &pi->internal_p_hdr;
     ip->p_hdr->caplen = caplen;
-    ip->proto_hierarchy = &ip->internal_proto_hierarchy;
-    ip->proto_headers_offset = &ip->internal_proto_headers_offset;
+    ip->proto_hierarchy = &pi->internal_proto_hierarchy;
+    ip->proto_headers_offset = &pi->internal_proto_headers_offset;
     ip->proto_hierarchy->len = 1;
     ip->proto_hierarchy->proto_path[0] = PROTO_HTTP2;
     /* get_packet_offset_at_index() sums proto_headers_offset->proto_path
@@ -199,7 +201,7 @@ static void test_inject_http2_packet(void)
 static void test_restore_http2_packet(void)
 {
     printf("[H2-4] restore_http2_packet bounds\n");
-    ipacket_t ip;
+    ipacket_internal_t ip;
 
     /* Frame length in the packet claims 0xFFFFFF bytes: both the read from
      * packet->data and the write into data_out must be refused. */
@@ -209,8 +211,8 @@ static void test_restore_http2_packet(void)
         memset(src, 0x55, 32); memset(dst, 0xAA, 32);
         src[0] = 0xFF; src[1] = 0xFF; src[2] = 0xFF; src[3] = 0x00;
         dst[0] = 0xFF; dst[1] = 0xFF; dst[2] = 0xFF; dst[3] = 0x00;
-        make_ipacket(&ip, src, 32, 1);
-        int r = restore_http2_packet(dst, &ip, 1, 32);
+        make_ipacket(&ip.pub, src, 32, 1);
+        int r = restore_http2_packet(dst, &ip.pub, 1, 32);
         CHECK(r == 0 && region_is(dst, 1, 31, 0xAA) == 0 || r == 0,
               "attacker 24-bit length restore is refused");
         CHECK(region_is(dst, 16, 16, 0xAA), "no tail bytes touched");
@@ -227,8 +229,8 @@ static void test_restore_http2_packet(void)
         /* 4-byte big-endian length field at [0..3]: 00 00 00 16 = 22 */
         src[0] = 0x00; src[1] = 0x00; src[2] = 0x00; src[3] = 0x16;
         dst[0] = 0x00; dst[1] = 0x00; dst[2] = 0x00; dst[3] = 0x16;
-        make_ipacket(&ip, src, 32, 1);
-        int r = restore_http2_packet(dst, &ip, 1, 32);
+        make_ipacket(&ip.pub, src, 32, 1);
+        int r = restore_http2_packet(dst, &ip.pub, 1, 32);
         CHECK(r == 0 && memcmp(dst + 1, src + 1, 31) == 0,
               "exact-fit restore copies the frame");
         free(src); free(dst);
@@ -239,8 +241,8 @@ static void test_restore_http2_packet(void)
         uint8_t *src = (uint8_t *) malloc(32);
         uint8_t *dst = (uint8_t *) malloc(32);
         memset(src, 0x55, 32); memset(dst, 0xAA, 32);
-        make_ipacket(&ip, src, 32, 0);
-        int r = restore_http2_packet(dst, &ip, 0, 32);
+        make_ipacket(&ip.pub, src, 32, 0);
+        int r = restore_http2_packet(dst, &ip.pub, 0, 32);
         CHECK(r == 0 && region_is(dst, 0, 32, 0xAA),
               "proto_offset 0 refuses the negative length read");
         free(src); free(dst);
@@ -278,17 +280,17 @@ static void test_modify_get(void)
 static void test_fuzz_payload(void)
 {
     printf("[H2-6] fuzz_payload bounds\n");
-    ipacket_t ip;
+    ipacket_internal_t ip;
 
     /* Attacker header+payload lengths point the fuzz window far past the
      * buffer: pre-fix wrote at data_out[~33 MB]. Must refuse. */
     {
         uint8_t *buf = (uint8_t *) malloc(64);
         memset(buf, 0xAA, 64);
-        make_ipacket(&ip, buf, 64, 4);
+        make_ipacket(&ip.pub, buf, 64, 4);
         buf[3] = 0x00; buf[4] = 0x00; buf[5] = 0x00; buf[6] = 0x00; /* header_length = 0 */
         buf[12] = 0x00; buf[13] = 0xFF; buf[14] = 0xFF; buf[15] = 0xFF; /* payload_length = 0x00FFFFFF */
-        int r = fuzz_payload(buf, &ip, 4, 64);
+        int r = fuzz_payload(buf, &ip.pub, 4, 64);
         CHECK(r == 0 && region_is(buf, 32, 32, 0xAA),
               "huge payload_length fuzz window is refused");
         free(buf);
@@ -298,8 +300,8 @@ static void test_fuzz_payload(void)
     {
         uint8_t *buf = (uint8_t *) malloc(64);
         memset(buf, 0xAA, 64);
-        make_ipacket(&ip, buf, 64, 0);
-        int r = fuzz_payload(buf, &ip, 0, 64);
+        make_ipacket(&ip.pub, buf, 64, 0);
+        int r = fuzz_payload(buf, &ip.pub, 0, 64);
         CHECK(r == 0 && region_is(buf, 0, 64, 0xAA),
               "proto_offset 0 refuses the negative length read");
         free(buf);
@@ -310,10 +312,10 @@ static void test_fuzz_payload(void)
     {
         uint8_t *buf = (uint8_t *) malloc(64);
         memset(buf, 0xAA, 64);
-        make_ipacket(&ip, buf, 64, 4);
+        make_ipacket(&ip.pub, buf, 64, 4);
         buf[3] = buf[4] = buf[5] = buf[6] = 0x00;
         buf[12] = 0x00; buf[13] = 0x00; buf[14] = 0x00; buf[15] = 0x10; /* payload_length = 16 */
-        int r = fuzz_payload(buf, &ip, 4, 64);
+        int r = fuzz_payload(buf, &ip.pub, 4, 64);
         CHECK(r == 0, "in-window fuzz completes");
         CHECK(!region_is(buf, 31, 8, 0xAA),
               "fuzz actually rewrote bytes in the window");
@@ -330,7 +332,7 @@ static void test_fuzz_payload(void)
 static void test_update_http2_data_dispatch(void)
 {
     printf("[H2-7] update_http2_data threads the size through\n");
-    ipacket_t ip;
+    ipacket_internal_t ip;
 
     /* HTTP2_HEADER_STREAM_ID at proto_offset 4 in a 16-byte buffer: the
      * stream-id write at 9..12 fits; the method-byte read at 13 must also
@@ -338,8 +340,8 @@ static void test_update_http2_data_dispatch(void)
     {
         uint8_t *buf = (uint8_t *) malloc(16);
         memset(buf, 0xAA, 16);
-        make_ipacket(&ip, buf, 16, 4);
-        int r = (int) update_http2_data((char *) buf, 16, &ip,
+        make_ipacket(&ip.pub, buf, 16, 4);
+        int r = (int) update_http2_data((char *) buf, 16, &ip.pub,
                                         PROTO_HTTP2, HTTP2_HEADER_STREAM_ID, 0x0BADC0DE);
         (void) r;
         CHECK(buf[9] == 0x0B && buf[10] == 0xAD && buf[11] == 0xC0 && buf[12] == 0xDE,
@@ -352,8 +354,8 @@ static void test_update_http2_data_dispatch(void)
     {
         uint8_t *buf = (uint8_t *) malloc(10);
         memset(buf, 0xAA, 10);
-        make_ipacket(&ip, buf, 10, 4);
-        int r = (int) update_http2_data((char *) buf, 10, &ip,
+        make_ipacket(&ip.pub, buf, 10, 4);
+        int r = (int) update_http2_data((char *) buf, 10, &ip.pub,
                                         PROTO_HTTP2, HTTP2_HEADER_STREAM_ID, 0x0BADC0DE);
         (void) r;
         CHECK(region_is(buf, 0, 10, 0xAA),

@@ -71,7 +71,7 @@ int main(void)
     printf("== hostname_trie_mem_test (issue #253, F-PERF-007) ==\n");
 
     mmt_session_t sess;
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     memset(&sess, 0, sizeof(sess));
     memset(&pkt, 0, sizeof(pkt));
     pkt.session = &sess;
@@ -86,7 +86,7 @@ int main(void)
     long rss0 = current_rss_kib();
 
     /* First hostname classification: the lazy build happens here. */
-    uint32_t p_bare = get_proto_id_by_hostname(&pkt, (char *) "google.com", 10);
+    uint32_t p_bare = get_proto_id_by_hostname(&pkt.pub, (char *) "google.com", 10);
     uint64_t bytes1 = mmt_hostname_trie_resident_bytes();
     printf("  info: resident_bytes at load = %llu, after first lookup = %llu\n",
            (unsigned long long) bytes0, (unsigned long long) bytes1);
@@ -94,21 +94,21 @@ int main(void)
     /* BEHAVIOUR — identical match semantics to the dense trie. */
     CHECK(p_bare == PROTO_GOOGLE,
           "google.com resolves to PROTO_GOOGLE via the '.google.com' entry");
-    CHECK(get_proto_id_by_hostname(&pkt, (char *) "www.google.com", 14)
+    CHECK(get_proto_id_by_hostname(&pkt.pub, (char *) "www.google.com", 14)
           == PROTO_GOOGLE,
           "www.google.com resolves to PROTO_GOOGLE (longest suffix)");
-    CHECK(get_proto_id_by_hostname(&pkt, (char *) "mail.google.com", 15)
+    CHECK(get_proto_id_by_hostname(&pkt.pub, (char *) "mail.google.com", 15)
           == PROTO_GMAIL,
           "mail.google.com resolves to PROTO_GMAIL (longest suffix wins)");
     /* Issue #105: matching is case-insensitive — edges store lowercase and
      * the lookup folds each wire byte. */
-    CHECK(get_proto_id_by_hostname(&pkt, (char *) "WWW.GOOGLE.COM", 14)
+    CHECK(get_proto_id_by_hostname(&pkt.pub, (char *) "WWW.GOOGLE.COM", 14)
           == PROTO_GOOGLE,
           "WWW.GOOGLE.COM resolves to PROTO_GOOGLE (case-insensitive)");
-    CHECK(get_proto_id_by_hostname(&pkt, (char *) "no-such-host.invalid", 20)
+    CHECK(get_proto_id_by_hostname(&pkt.pub, (char *) "no-such-host.invalid", 20)
           == PROTO_UNKNOWN,
           "unlisted hostname resolves to PROTO_UNKNOWN");
-    CHECK(get_proto_id_by_hostname(&pkt, (char *) "", 0) == PROTO_UNKNOWN,
+    CHECK(get_proto_id_by_hostname(&pkt.pub, (char *) "", 0) == PROTO_UNKNOWN,
           "empty hostname resolves to PROTO_UNKNOWN (no fallback)");
 
     long rss1 = current_rss_kib();

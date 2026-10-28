@@ -64,7 +64,7 @@ typedef struct {
 	mmt_tcpip_internal_packet_t internal;
 	proto_hierarchy_t offsets;
 	struct pkthdr hdr;
-	ipacket_t ipacket;
+	ipacket_internal_t ipacket;
 	uint8_t *frame;
 } fixture_t;
 
@@ -118,7 +118,7 @@ static void fixture_close(fixture_t *f) {
 static int run(pre_classify_fn fn, uint64_t n, uint32_t detected) {
 	fixture_t f;
 	fixture_open(&f, n, detected);
-	int rc = fn(&f.ipacket, 0);
+	int rc = fn(&f.ipacket.pub, 0);
 	fixture_close(&f);
 	return rc;
 }

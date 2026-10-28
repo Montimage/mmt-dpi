@@ -66,7 +66,7 @@ void mmt_internal_add_connection(ipacket_t *ipacket,
 /* ---- packet fixture ---- */
 
 struct test_pkt {
-	ipacket_t ipacket;
+	ipacket_internal_t ipacket;
 	struct mmt_tcpip_internal_packet_struct ip;
 	struct mmt_internal_tcpip_session_struct flow;
 	struct tcphdr tcp;
@@ -109,7 +109,7 @@ static int run_dcerpc(uint8_t pkt_type, uint8_t frag_attr, unsigned pl_len,
 	pl[1] = pkt_type;    /* pkt_type at offset 1 (the fix) */
 	pl[2] = frag_attr;   /* frag_attr — must NOT be consulted as pkt_type */
 	struct test_pkt *t = pkt_with_dcerpc(dport, pl, pl_len);
-	int r = mmt_check_dcerpc(&t->ipacket, 0);
+	int r = mmt_check_dcerpc(&t->ipacket.pub, 0);
 	int detected = (g_last_detected == PROTO_DCERPC
 			&& t->flow.detected_protocol_stack[0] == PROTO_DCERPC);
 	g_last_detected = 0;
@@ -146,7 +146,7 @@ int main(void) {
 		pl[0] = 0x05; pl[1] = 0x02; pl[2] = 0xFF;
 		struct test_pkt *t = pkt_with_dcerpc(0, pl, 32);
 		t->tcp.source = htons(135);
-		CHECK(mmt_check_dcerpc(&t->ipacket, 0) == 1
+		CHECK(mmt_check_dcerpc(&t->ipacket.pub, 0) == 1
 				&& t->flow.detected_protocol_stack[0] == PROTO_DCERPC,
 				"source port 135 classifies (either direction)");
 		free_pkt(t);
@@ -158,7 +158,7 @@ int main(void) {
 		memset(pl, 0, sizeof(pl));
 		pl[0] = 0x06; pl[1] = 0x00; pl[2] = 0x03; /* wrong version */
 		struct test_pkt *t = pkt_with_dcerpc(135, pl, 32);
-		CHECK(mmt_check_dcerpc(&t->ipacket, 0) == 0
+		CHECK(mmt_check_dcerpc(&t->ipacket.pub, 0) == 0
 				&& t->flow.detected_protocol_stack[0] != PROTO_DCERPC,
 				"non-0x05 version byte is not classified");
 		free_pkt(t);
@@ -168,7 +168,7 @@ int main(void) {
 		memset(pl, 0, sizeof(pl));
 		pl[0] = 0x05; pl[1] = 0x00; pl[2] = 0x03;
 		struct test_pkt *t = pkt_with_dcerpc(9999, pl, 32); /* wrong port */
-		CHECK(mmt_check_dcerpc(&t->ipacket, 0) == 0
+		CHECK(mmt_check_dcerpc(&t->ipacket.pub, 0) == 0
 				&& t->flow.detected_protocol_stack[0] != PROTO_DCERPC,
 				"non-135 port is not classified");
 		free_pkt(t);
@@ -178,7 +178,7 @@ int main(void) {
 		memset(pl, 0, sizeof(pl));
 		pl[0] = 0x05; pl[1] = 0x00; pl[2] = 0x03;
 		struct test_pkt *t = pkt_with_dcerpc(135, pl, 8); /* too short */
-		CHECK(mmt_check_dcerpc(&t->ipacket, 0) == 0,
+		CHECK(mmt_check_dcerpc(&t->ipacket.pub, 0) == 0,
 				"sub-16-byte payload is not classified");
 		free_pkt(t);
 	}

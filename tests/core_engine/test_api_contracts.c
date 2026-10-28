@@ -277,7 +277,7 @@ static int fixture_setup(void) {
 /* fabricated records                                                        */
 
 typedef struct {
-    ipacket_t ip;
+    ipacket_internal_t ip;
     pkthdr_t hdr;
     u_char buf[AC_PKT_LEN];
 } fake_packet_t;
@@ -302,7 +302,7 @@ static ipacket_t *fake_packet(fake_packet_t *f, unsigned n, const uint32_t *ids,
     f->hdr.ts.tv_sec = AC_SEC;
     f->ip.p_hdr = &f->hdr;
     f->ip.data = f->ip.original_data = f->buf;
-    return &f->ip;
+    return &f->ip.pub;
 }
 
 static const uint32_t k_path_ma[] = { PROTO_META, AC_PROTO_A };
@@ -512,6 +512,18 @@ static void e_get_packet_offset_at_index(void) {
     ipacket_t *p = fake_packet(&f, 3, ids, offs);
     CHECK(get_packet_offset_at_index(p, PROTO_PATH_SIZE + 5) == 34,
           "an index past PROTO_PATH_SIZE is clamped to the last slot");
+}
+
+static void b_invalidate_packet_offset_cache(void) {
+    static const uint32_t ids[] = { PROTO_META, AC_PROTO_A, AC_PROTO_C };
+    static const int offs[] = { 0, 14, 20 };
+    fake_packet_t f;
+    ipacket_t *p = fake_packet(&f, 3, ids, offs);
+    CHECK(get_packet_offset_at_index(p, 2) == 34, "offset cached as 0+14+20");
+    p->proto_headers_offset->proto_path[2] = 26; /* a plugin's in-place write */
+    invalidate_packet_offset_cache(p);
+    CHECK(get_packet_offset_at_index(p, 2) == 40, "dropped cache rebuilt: 0+14+26");
+    invalidate_packet_offset_cache(NULL); /* NULL is accepted and ignored */
 }
 
 static void b_get_protocol_id_at_index(void) {
@@ -1338,7 +1350,7 @@ static void b_mmt_drop_packet(void) {
     g_expiry_calls = 0;
     mmt_drop_packet(p);
     CHECK(g_expiry_calls == 1 && get_active_session_count(h) == 0, "timed-out session swept");
-    CHECK(p->data == p->original_data, "packet cleaned: owned data released");
+    CHECK(p->data == ipacket_internal(p)->original_data, "packet cleaned: owned data released");
     mmt_close_handler(h);
 }
 
@@ -2921,6 +2933,7 @@ static void e_is_valid_proto_attribute(void) {
 #define W_OOMONLY  "takes no input; its only failure value (0, mmt_core.h) is reached through allocation or plugin-init failure, which this binary cannot inject: it is linked without the --wrap allocator hooks"
 #define W_TOTAL    "total function over its argument domain: every input has a defined result, none is a failure"
 #define W_HANDLER  "takes a live handler and reports nothing: NULL or a closed handler is a dereferenced precondition violation"
+#define W_NOREPORT "returns nothing and rejects nothing: NULL is accepted and ignored, any packet the library handed out is valid"
 #define W_SETTER   "unconditional field store on a caller-owned record: no input is rejected and nothing is reported"
 
 AC_ALLOW_DEPRECATED_BEGIN /* the deprecated APIs are under contract too */
@@ -2930,6 +2943,7 @@ static const api_contract_t k_contracts[] = {
     CONTRACT(get_attribute_name_by_protocol_and_attribute_ids, b_get_attribute_name_by_protocol_and_attribute_ids,
              e_get_attribute_name_by_protocol_and_attribute_ids),
     CONTRACT(get_packet_offset_at_index, b_get_packet_offset_at_index, e_get_packet_offset_at_index),
+    NO_ERROR_PATH(invalidate_packet_offset_cache, b_invalidate_packet_offset_cache, W_NOREPORT),
     CONTRACT(get_protocol_id_at_index, b_get_protocol_id_at_index, e_get_protocol_id_at_index),
     CONTRACT(get_protocol_index_by_id, b_get_protocol_index_by_id, e_get_protocol_index_by_id),
     CONTRACT(get_protocol_index_by_name, b_get_protocol_index_by_name, e_get_protocol_index_by_name),

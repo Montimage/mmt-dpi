@@ -32,6 +32,7 @@
 #include <arpa/inet.h>
 
 #include "mmt_core.h"
+#include "ipacket_internal.h" /* issue #535: ipacket_internal_t fixtures (private) */
 #include "tcpip/mmt_tcpip.h"                 /* PROTO_RTP */
 #include "mmt_tcpip_plugin_structs.h"        /* struct mmt_tcpip_internal_packet_struct */
 #include "internal_decls.h"
@@ -72,7 +73,7 @@ static void make_rtp_ipacket(ipacket_t *pkt, proto_hierarchy_t *offs,
                              pkthdr_t *p_hdr, uint8_t *data, uint32_t caplen,
                              uint8_t cc)
 {
-    memset(pkt, 0, sizeof(*pkt));
+    memset(ipacket_internal(pkt), 0, sizeof(ipacket_internal_t)); /* issue #535: the private extension too */
     memset(offs, 0, sizeof(*offs));
     memset(p_hdr, 0, sizeof(*p_hdr));
 
@@ -81,7 +82,7 @@ static void make_rtp_ipacket(ipacket_t *pkt, proto_hierarchy_t *offs,
     offs->proto_path[2] = 8;
     offs->len = 4;
     pkt->proto_headers_offset = offs;
-    pkt->internal_cumulative_offset_valid = 0;
+    ipacket_internal(pkt)->internal_cumulative_offset_valid = 0;
 
     p_hdr->caplen = caplen;
     p_hdr->len    = caplen;
@@ -103,7 +104,7 @@ int main(void)
     {
         uint32_t caplen = RTP_OFFSET + 12 + 15 * 4;
         uint8_t *frame = make_buf(caplen);
-        ipacket_t pkt;
+        ipacket_internal_t pkt;
         proto_hierarchy_t offs;
         pkthdr_t p_hdr;
         attribute_t attr;
@@ -113,8 +114,8 @@ int main(void)
         attr.position_in_packet = 12;
         attr.data = abuf;
 
-        make_rtp_ipacket(&pkt, &offs, &p_hdr, frame, caplen, 15);
-        int r = rtp_csrc_list_extraction(&pkt, RTP_INDEX, &attr);
+        make_rtp_ipacket(&pkt.pub, &offs, &p_hdr, frame, caplen, 15);
+        int r = rtp_csrc_list_extraction(&pkt.pub, RTP_INDEX, &attr);
         CHECK(r == 1, "cc=15 CSRC extraction returns 1");
         CHECK(*(uint32_t *)abuf == 60, "cc=15 publishes cc*4 = 60 as the length");
         free(abuf);
@@ -126,7 +127,7 @@ int main(void)
     {
         uint32_t caplen = RTP_OFFSET + 12 + 8;
         uint8_t *frame = make_buf(caplen);
-        ipacket_t pkt;
+        ipacket_internal_t pkt;
         proto_hierarchy_t offs;
         pkthdr_t p_hdr;
         attribute_t attr;
@@ -136,8 +137,8 @@ int main(void)
         attr.position_in_packet = 12;
         attr.data = abuf;
 
-        make_rtp_ipacket(&pkt, &offs, &p_hdr, frame, caplen, 15);
-        int r = rtp_csrc_list_extraction(&pkt, RTP_INDEX, &attr);
+        make_rtp_ipacket(&pkt.pub, &offs, &p_hdr, frame, caplen, 15);
+        int r = rtp_csrc_list_extraction(&pkt.pub, RTP_INDEX, &attr);
         CHECK(r == 0, "truncated CSRC list (caplen short) is rejected");
         free(abuf);
         free(frame);
@@ -163,7 +164,7 @@ int main(void)
 
         struct mmt_internal_tcpip_session_struct flow;
         struct mmt_tcpip_internal_packet_struct ip;
-        ipacket_t pkt;
+        ipacket_internal_t pkt;
         uint8_t *payload = make_buf(1);      /* exactly 1 byte */
         payload[0] = 0;
 
@@ -178,7 +179,7 @@ int main(void)
         memset(&ip.detection_bitmask, 0xFF, sizeof(ip.detection_bitmask));
         pkt.internal_packet = &ip;
 
-        int r = mmt_check_rtp_udp(&pkt, 0);
+        int r = mmt_check_rtp_udp(&pkt.pub, 0);
         CHECK(r == 4, "mmt_check_rtp_udp returns on a 1-byte payload (no OOB)");
         free(payload);
     }

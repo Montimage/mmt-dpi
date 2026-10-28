@@ -462,7 +462,7 @@ static void test_extraction_payload(void) {
  * p_hdr, data, proto_headers_offset (per-layer sizes), proto_hierarchy,
  * internal_packet, mmt_handler (zeroed). */
 typedef struct {
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     proto_hierarchy_t offsets;
     proto_hierarchy_t hier;
     pkthdr_t hdr;
@@ -523,10 +523,10 @@ static void test_ipacket_extraction(void) {
 
     ndn_fixture_init(&f, layers, 3, frame, sizeof(frame));
     memset(&attr, 0, sizeof(attr)); attr.data = &u8v; u8v = 0;
-    CHECK(ndn_packet_type_extraction(&f.pkt, 2, &attr) == 1 && u8v == 5,
+    CHECK(ndn_packet_type_extraction(&f.pkt.pub, 2, &attr) == 1 && u8v == 5,
             "packet_type extraction (offset<=caplen) = Interest(5)");
     memset(&attr, 0, sizeof(attr)); attr.data = &u32v; u32v = 0;
-    CHECK(ndn_packet_length_extraction(&f.pkt, 2, &attr) == 1 && u32v == 14,
+    CHECK(ndn_packet_length_extraction(&f.pkt.pub, 2, &attr) == 1 && u32v == 14,
             "packet_length extraction = 14");
     ndn_fixture_free(&f);
 
@@ -535,16 +535,16 @@ static void test_ipacket_extraction(void) {
     int deep_layers[3] = { 0, 0, 4000 };
     ndn_fixture_init(&f, deep_layers, 3, frame, sizeof(frame));
     memset(&attr, 0, sizeof(attr)); attr.data = &u8v; u8v = 0;
-    CHECK(ndn_packet_type_extraction(&f.pkt, 2, &attr) == 0,
+    CHECK(ndn_packet_type_extraction(&f.pkt.pub, 2, &attr) == 0,
             "packet_type extraction (offset>caplen) refused -> 0");
     memset(&attr, 0, sizeof(attr)); attr.data = &u32v; u32v = 0;
-    CHECK(ndn_packet_length_extraction(&f.pkt, 2, &attr) == 0,
+    CHECK(ndn_packet_length_extraction(&f.pkt.pub, 2, &attr) == 0,
             "packet_length extraction (offset>caplen) refused -> 0");
     memset(&attr, 0, sizeof(attr)); attr.data = NULL;
-    CHECK(ndn_name_components_extraction(&f.pkt, 2, &attr) == 0,
+    CHECK(ndn_name_components_extraction(&f.pkt.pub, 2, &attr) == 0,
             "name_components extraction (offset>caplen) refused -> 0");
     memset(&attr, 0, sizeof(attr)); attr.data = &u32v; u32v = 0;
-    CHECK(ndn_interest_nonce_extraction(&f.pkt, 2, &attr) == 0,
+    CHECK(ndn_interest_nonce_extraction(&f.pkt.pub, 2, &attr) == 0,
             "nonce extraction (offset>caplen) refused -> 0");
     ndn_fixture_free(&f);
 }

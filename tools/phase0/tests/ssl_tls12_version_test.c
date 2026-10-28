@@ -41,6 +41,7 @@
 #include <netinet/tcp.h>
 
 #include "mmt_core.h"
+#include "ipacket_internal.h" /* issue #535: ipacket_internal_t fixtures (private) */
 /*
  * mmt_classify_ssl() reads ipacket->internal_packet->{payload,
  * payload_packet_len, tcp, iph, flow} plus ipacket->session. The internal
@@ -127,7 +128,7 @@ static uint8_t *make_tls_record(uint8_t content_type, uint8_t ver_minor,
 static int run_classify_ssl(struct mmt_internal_tcpip_session_struct *flow,
                             const uint8_t *payload, int payload_len)
 {
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     struct mmt_tcpip_internal_packet_struct ip;
     struct tcphdr tcp;
 
@@ -145,7 +146,7 @@ static int run_classify_ssl(struct mmt_internal_tcpip_session_struct *flow,
 
     pkt.internal_packet = &ip;
     pkt.session = g_session;
-    return mmt_classify_ssl(&pkt, 0);
+    return mmt_classify_ssl(&pkt.pub, 0);
 }
 
 /* ---- TLS 1.2 Application Data record advances the SSL stage (AC #1) ----

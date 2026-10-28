@@ -41,6 +41,7 @@ echo "[2/3] compiling http2_bounds_test (ASan/UBSan)"
 gcc -g -O1 -fsanitize=address,undefined -fno-sanitize-recover=all \
     -o "${BIN}" "${TEST_DIR}/http2_bounds_test.c" \
     -I"${PREFIX}/dpi/include" \
+    -I"${REPO_ROOT}/src/mmt_core/private_include" \
     -I"${REPO_ROOT}/src/mmt_tcpip/lib" \
     -I"${TEST_DIR}" \
     -L"${PREFIX}/dpi/lib" "${MMT_STATIC_PLUGIN_LDFLAGS[@]}" -lmmt_core -ldl -lpthread -lm

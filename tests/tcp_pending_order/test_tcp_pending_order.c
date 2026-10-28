@@ -553,7 +553,7 @@ static void test_option_not_found(void) {
 	pkthdr_t hdr;
 	memset(&hdr, 0, sizeof(hdr));
 	hdr.caplen = hdr.len = sizeof(buf);
-	ipacket_t pkt;
+	ipacket_internal_t pkt;
 	memset(&pkt, 0, sizeof(pkt));
 	pkt.p_hdr = &hdr;
 	pkt.data = buf;
@@ -574,7 +574,7 @@ static void test_option_not_found(void) {
 		memset(&attr, 0, sizeof(attr));
 		attr.field_id = attrs[i].field;
 		attr.data = scratch;
-		CHECK(tcp_option_extraction(&pkt, 0, &attr) == 0,
+		CHECK(tcp_option_extraction(&pkt.pub, 0, &attr) == 0,
 		      "option %s: absent option must not extract", attrs[i].name);
 		size_t z = 0, t = attrs[i].width;
 		while (z < t && scratch[z] == 0) z++;

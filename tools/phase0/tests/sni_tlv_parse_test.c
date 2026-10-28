@@ -45,6 +45,7 @@
 #include <netinet/tcp.h>
 
 #include "mmt_core.h"
+#include "ipacket_internal.h" /* issue #535: ipacket_internal_t fixtures (private) */
 /*
  * getServerNameFromClientHello() reads ipacket->internal_packet->{payload,
  * payload_packet_len, https_server_name, packet_id} and ipacket->packet_id.
@@ -173,7 +174,7 @@ static void fill_hostname(uint8_t *out, size_t len)
 static int run_client_hello(const uint8_t *payload, int payload_len,
                             char *buffer, int buffer_len, uint16_t *out_len)
 {
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     struct mmt_tcpip_internal_packet_struct ip;
 
     memset(&pkt, 0, sizeof(pkt));
@@ -183,7 +184,7 @@ static int run_client_hello(const uint8_t *payload, int payload_len,
     ip.payload_packet_len = (uint16_t)payload_len;
     pkt.internal_packet = &ip;
 
-    int rc = getServerNameFromClientHello(&pkt, buffer, buffer_len);
+    int rc = getServerNameFromClientHello(&pkt.pub, buffer, buffer_len);
     if (out_len) *out_len = ip.https_server_name.len;
     return rc;
 }

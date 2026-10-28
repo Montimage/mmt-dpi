@@ -40,6 +40,7 @@
 #include <unistd.h>
 
 #include "mmt_core.h"
+#include "ipacket_internal.h" /* issue #535: ipacket_internal_t fixtures (private) */
 #include "mmt_tcpip_plugin_structs.h"
 #include "mmt_tcpip_internal_defs_macros.h"
 #include "mmt_tcpip_protocols.h"      /* PROTO_TCP */
@@ -121,7 +122,7 @@ static uint8_t *build_hello_exts(const uint8_t *exts, size_t exts_bytes_present,
 static int run_client_hello(const uint8_t *payload, int payload_len,
                             char *buffer, int buffer_len)
 {
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     struct mmt_tcpip_internal_packet_struct ip;
 
     memset(&pkt, 0, sizeof(pkt));
@@ -131,7 +132,7 @@ static int run_client_hello(const uint8_t *payload, int payload_len,
     ip.payload_packet_len = (uint16_t)payload_len;
     pkt.internal_packet = &ip;
 
-    return getServerNameFromClientHello(&pkt, buffer, buffer_len);
+    return getServerNameFromClientHello(&pkt.pub, buffer, buffer_len);
 }
 
 /* A well-formed SNI extension body, same shape as sni_tlv_parse_test.c:
@@ -227,7 +228,7 @@ static int run_tls_extractor(int (*fn)(const ipacket_t *, unsigned, attribute_t 
                              uint16_t caplen, const uint8_t *buf,
                              int field_pos, void *out)
 {
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     proto_hierarchy_t hier, headers_offset;
     pkthdr_t p_hdr;
     struct mmt_tcpip_internal_packet_struct ip;
@@ -258,7 +259,7 @@ static int run_tls_extractor(int (*fn)(const ipacket_t *, unsigned, attribute_t 
     attr.position_in_packet = field_pos;
     attr.data = out;
 
-    return fn(&pkt, 1, &attr);
+    return fn(&pkt.pub, 1, &attr);
 }
 
 static void test_extractors_reject_bad_offsets(void)
@@ -297,7 +298,7 @@ static void test_extractors_reject_missing_tcp(void)
 
     /* No PROTO_TCP in proto_path -> get_protocol_index_by_id() returns -1;
      * the extractors must not turn that into a wild index. */
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     proto_hierarchy_t hier, headers_offset;
     pkthdr_t p_hdr;
     struct mmt_tcpip_internal_packet_struct ip;
@@ -324,7 +325,7 @@ static void test_extractors_reject_missing_tcp(void)
 
     uint8_t ct = 0;
     attr.field_id = 1; attr.data = &ct;
-    int rc = tls_content_type_extraction(&pkt, 1, &attr);
+    int rc = tls_content_type_extraction(&pkt.pub, 1, &attr);
     CHECK(rc == 0, "content_type extractor returns 0 with no TCP ancestor");
 }
 

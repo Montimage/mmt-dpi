@@ -49,6 +49,7 @@ echo "[2/3] compiling tls_ext_walk_test (ASan/UBSan)"
 gcc -g -O1 -fsanitize=address,undefined -fno-sanitize-recover=all \
     -o "${BIN}" "${TEST_DIR}/tls_ext_walk_test.c" \
     -I"${PREFIX}/dpi/include" \
+    -I"${REPO_ROOT}/src/mmt_core/private_include" \
     -I"${REPO_ROOT}/src/mmt_tcpip/lib" \
     -I"${REPO_ROOT}/src/mmt_tcpip/include" \
     -I"${REPO_ROOT}/src/mmt_core/public_include" \

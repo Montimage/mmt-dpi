@@ -47,32 +47,35 @@ struct ipacket_struct {
     uint8_t is_completed[PROTO_PATH_SIZE];    /**< 1 - yes, 0 - no */
     uint8_t is_fragment[PROTO_PATH_SIZE];     /**< 1 - yes, 0 - no */
     uint16_t ipv6_ext_headers_path[PROTO_PATH_SIZE];
-    uint16_t ipv6_ext_headers_offset[PROTO_PATH_SIZE];
+    uint32_t ipv6_ext_headers_offset[PROTO_PATH_SIZE];
     uint16_t ipv6_ext_headers_len;
     uint16_t ipv6_overlapping[PROTO_PATH_SIZE];
     uint16_t ipv6_outoforder[PROTO_PATH_SIZE];
     int last_callback_fct_id;
     unsigned nb_reassembled_packets[PROTO_PATH_SIZE];
-    proto_hierarchy_t internal_proto_hierarchy;
-    proto_hierarchy_t internal_proto_headers_offset;
-    proto_hierarchy_t internal_proto_classif_status;
     proto_hierarchy_t * proto_hierarchy;      /**< the protocol layers corresponding to this packet */
     proto_hierarchy_t * proto_headers_offset; /**< the offsets corresponding to the protocol layers of this packet */
     proto_hierarchy_t * proto_classif_status; /**< the classification status of the protocols in the path */
     mmt_session_t * session;                  /**< pointer to the session structure to which the packet belongs */
     mmt_tcpip_internal_packet_t * internal_packet;  /**< pointer to opaque packet structure. for internal use only. */
     mmt_handler_t * mmt_handler;              /**< pointer to the MMT handler that processed this packet */
-    pkthdr_t internal_p_hdr;
     pkthdr_t * p_hdr;                         /**< the meta-data of the packet */
     const u_char * data;                      /**< pointer to the packet data */
-    const u_char * original_data;             /**< pointer to the original packet data */
-    int internal_cumulative_offset[PROTO_PATH_SIZE];
-    int internal_cumulative_offset_valid;
-    int internal_cumulative_offset_hwm;
 };
 ```
 
-Structures from `sdk/include/data_defs.h:114-163`.
+Structures from `src/mmt_core/public_include/data_defs.h:122-175` (installed
+as `sdk/include/data_defs.h`). The structure holds the public fields only
+(issue #535): the engine's per-packet state — embedded storage for the path
+arrays and the meta-data, the original data pointer, the offset cache and the
+classifier-walk bookkeeping — lives in a private extension that embeds it
+(`src/mmt_core/private_include/ipacket_internal.h`). The library always owns
+the packet: a consumer receives an `ipacket_t *` and must never allocate, copy
+or embed an `ipacket_t`. The offsets of the public fields are pinned by
+`_Static_assert`s on the shipped LP64 targets
+(`src/mmt_core/public_include/data_defs.h:177-205`); after an in-place write
+to `proto_headers_offset->proto_path[]`, call the exported
+`invalidate_packet_offset_cache()`.
 ### User API ###
 
 ```c

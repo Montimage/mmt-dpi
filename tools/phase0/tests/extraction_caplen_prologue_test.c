@@ -82,7 +82,7 @@ static int g_checks = 0;
  * zeroed mmt_handler.
  * ------------------------------------------------------------------------- */
 typedef struct {
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     proto_hierarchy_t offsets;
     proto_hierarchy_t hier;
     pkthdr_t hdr;
@@ -149,41 +149,41 @@ static void test_ip_callbacks(void) {
     /* ip_version_extraction reads byte 0 of the IP header. */
     fixture_init(&f, layers, 2, 34, 60);
     a = mk_attr(0, 1);
-    CHECK(ip_version_extraction(&f.pkt, 1, &a) == 0,
+    CHECK(ip_version_extraction(&f.pkt.pub, 1, &a) == 0,
           "ip_version refused when the IP header is not captured");
     fixture_free(&f);
 
     fixture_init(&f, layers, 2, 54, 54);
     f.buf[34] = 0x45; /* version 4, ihl 5 */
     a = mk_attr(0, 1);
-    CHECK(ip_version_extraction(&f.pkt, 1, &a) == 1 && g_scratch[0] == 4,
+    CHECK(ip_version_extraction(&f.pkt.pub, 1, &a) == 1 && g_scratch[0] == 4,
           "ip_version extracted inside caplen");
-    CHECK(ip_ihl_extraction(&f.pkt, 1, &a) == 1 && g_scratch[0] == 20,
+    CHECK(ip_ihl_extraction(&f.pkt.pub, 1, &a) == 1 && g_scratch[0] == 20,
           "ip_ihl extracted inside caplen");
     fixture_free(&f);
 
     /* ip_rf/df/mf read the flags byte at position 6. */
     fixture_init(&f, layers, 2, 40, 60); /* 34 + 6 = 40: flag byte absent */
     a = mk_attr(6, 1);
-    CHECK(ip_rf_extraction(&f.pkt, 1, &a) == 0
-          && ip_df_extraction(&f.pkt, 1, &a) == 0
-          && ip_mf_extraction(&f.pkt, 1, &a) == 0,
+    CHECK(ip_rf_extraction(&f.pkt.pub, 1, &a) == 0
+          && ip_df_extraction(&f.pkt.pub, 1, &a) == 0
+          && ip_mf_extraction(&f.pkt.pub, 1, &a) == 0,
           "ip_{rf,df,mf} refused when the flags byte is not captured");
     fixture_free(&f);
 
     fixture_init(&f, layers, 2, 54, 54);
     f.buf[34 + 6] = 0xE0; /* RF|DF|MF all set */
     a = mk_attr(6, 1);
-    CHECK(ip_rf_extraction(&f.pkt, 1, &a) == 1 && g_scratch[0] == 1
-          && ip_df_extraction(&f.pkt, 1, &a) == 1 && g_scratch[0] == 1
-          && ip_mf_extraction(&f.pkt, 1, &a) == 1 && g_scratch[0] == 1,
+    CHECK(ip_rf_extraction(&f.pkt.pub, 1, &a) == 1 && g_scratch[0] == 1
+          && ip_df_extraction(&f.pkt.pub, 1, &a) == 1 && g_scratch[0] == 1
+          && ip_mf_extraction(&f.pkt.pub, 1, &a) == 1 && g_scratch[0] == 1,
           "ip_{rf,df,mf} extracted inside caplen");
     fixture_free(&f);
 
     /* ip_frag_offset reads two bytes at position 6. */
     fixture_init(&f, layers, 2, 41, 60); /* 34 + 6 + 1: half the field absent */
     a = mk_attr(6, 2);
-    CHECK(ip_frag_offset_extraction(&f.pkt, 1, &a) == 0,
+    CHECK(ip_frag_offset_extraction(&f.pkt.pub, 1, &a) == 0,
           "ip_frag_offset refused when the field is half captured");
     fixture_free(&f);
 
@@ -191,7 +191,7 @@ static void test_ip_callbacks(void) {
     f.buf[34 + 6] = 0x20;
     f.buf[34 + 7] = 0x01; /* frag field 0x2001 -> offset (0x2001 & 0x1fff) << 3 = 8 */
     a = mk_attr(6, 2);
-    CHECK(ip_frag_offset_extraction(&f.pkt, 1, &a) == 1
+    CHECK(ip_frag_offset_extraction(&f.pkt.pub, 1, &a) == 1
           && *(uint16_t *)g_scratch == 8,
           "ip_frag_offset extracted inside caplen");
     fixture_free(&f);
@@ -200,14 +200,14 @@ static void test_ip_callbacks(void) {
     fixture_init(&f, layers, 2, 57, 60); /* ihl = 6 but the 4 option bytes are cut */
     f.buf[34] = 0x46;
     a = mk_attr(-2, sizeof(void *));
-    CHECK(ip_options_extraction(&f.pkt, 1, &a) == 0 && a.data == NULL,
+    CHECK(ip_options_extraction(&f.pkt.pub, 1, &a) == 0 && a.data == NULL,
           "ip_options refused when the options area is truncated");
     fixture_free(&f);
 
     fixture_init(&f, layers, 2, 58, 58);
     f.buf[34] = 0x46;
     a = mk_attr(-2, sizeof(void *));
-    CHECK(ip_options_extraction(&f.pkt, 1, &a) == 1
+    CHECK(ip_options_extraction(&f.pkt.pub, 1, &a) == 1
           && a.data == &f.buf[34 + 20],
           "ip_options returns the captured options area");
     fixture_free(&f);
@@ -215,7 +215,7 @@ static void test_ip_callbacks(void) {
     /* ip_opts_type: reads ihl at byte 0, then the byte at position 20. */
     fixture_init(&f, layers, 2, 34, 60);
     a = mk_attr(20, 1);
-    CHECK(ip_opts_type_extraction(&f.pkt, 1, &a) == 0,
+    CHECK(ip_opts_type_extraction(&f.pkt.pub, 1, &a) == 0,
           "ip_opts_type refused when the IP header is not captured");
     fixture_free(&f);
 
@@ -223,7 +223,7 @@ static void test_ip_callbacks(void) {
     f.buf[34] = 0x46; /* ihl 6 -> options exist */
     f.buf[34 + 20] = 0x07;
     a = mk_attr(20, 1);
-    CHECK(ip_opts_type_extraction(&f.pkt, 1, &a) == 1 && g_scratch[0] == 0x07,
+    CHECK(ip_opts_type_extraction(&f.pkt.pub, 1, &a) == 1 && g_scratch[0] == 0x07,
           "ip_opts_type extracted inside caplen");
     fixture_free(&f);
 
@@ -231,7 +231,7 @@ static void test_ip_callbacks(void) {
      * padding reports 1; a header truncated inside the options refuses. */
     fixture_init(&f, layers, 2, 53, 60); /* shorter than a full IPv4 header */
     a = mk_attr(POSITION_NOT_KNOWN, 1);
-    CHECK(ip_padding_check_extraction(&f.pkt, 1, &a) == 0,
+    CHECK(ip_padding_check_extraction(&f.pkt.pub, 1, &a) == 0,
           "ip_padding_check refused when the IP header is truncated");
     fixture_free(&f);
 
@@ -240,7 +240,7 @@ static void test_ip_callbacks(void) {
     f.buf[54] = 0x00;      /* EOL */
     f.buf[55] = 0x07;      /* non-zero padding after EOL */
     a = mk_attr(POSITION_NOT_KNOWN, 1);
-    CHECK(ip_padding_check_extraction(&f.pkt, 1, &a) == 1 && g_scratch[0] == 1,
+    CHECK(ip_padding_check_extraction(&f.pkt.pub, 1, &a) == 1 && g_scratch[0] == 1,
           "ip_padding_check flags non-zero padding inside caplen");
     fixture_free(&f);
 }
@@ -255,39 +255,39 @@ static void test_tcp_callbacks(void) {
     /* tcp_data_offset reads the data-offset nibble at byte 12. */
     fixture_init(&f, layers, 3, 66, 80); /* 54 + 12 = 66: byte absent */
     a = mk_attr(12, 1);
-    CHECK(tcp_data_offset_extraction(&f.pkt, 2, &a) == 0,
+    CHECK(tcp_data_offset_extraction(&f.pkt.pub, 2, &a) == 0,
           "tcp_data_offset refused when byte 12 is not captured");
     fixture_free(&f);
 
     fixture_init(&f, layers, 3, 80, 80);
     f.buf[54 + 12] = 0x50; /* doff = 5 */
     a = mk_attr(12, 1);
-    CHECK(tcp_data_offset_extraction(&f.pkt, 2, &a) == 1 && g_scratch[0] == 5,
+    CHECK(tcp_data_offset_extraction(&f.pkt.pub, 2, &a) == 1 && g_scratch[0] == 5,
           "tcp_data_offset extracted inside caplen");
     fixture_free(&f);
 
     /* The flag extractors read the flags byte at offset 13. */
     fixture_init(&f, layers, 3, 67, 80); /* 54 + 13 = 67: flags byte absent */
     a = mk_attr(13, 1);
-    CHECK(tcp_fin_flag_extraction(&f.pkt, 2, &a) == 0
-          && tcp_syn_flag_extraction(&f.pkt, 2, &a) == 0
-          && tcp_rst_flag_extraction(&f.pkt, 2, &a) == 0
-          && tcp_psh_flag_extraction(&f.pkt, 2, &a) == 0
-          && tcp_ack_flag_extraction(&f.pkt, 2, &a) == 0
-          && tcp_urg_flag_extraction(&f.pkt, 2, &a) == 0
-          && tcp_ece_flag_extraction(&f.pkt, 2, &a) == 0
-          && tcp_cwr_flag_extraction(&f.pkt, 2, &a) == 0
-          && tcp_flags_extraction(&f.pkt, 2, &a) == 0,
+    CHECK(tcp_fin_flag_extraction(&f.pkt.pub, 2, &a) == 0
+          && tcp_syn_flag_extraction(&f.pkt.pub, 2, &a) == 0
+          && tcp_rst_flag_extraction(&f.pkt.pub, 2, &a) == 0
+          && tcp_psh_flag_extraction(&f.pkt.pub, 2, &a) == 0
+          && tcp_ack_flag_extraction(&f.pkt.pub, 2, &a) == 0
+          && tcp_urg_flag_extraction(&f.pkt.pub, 2, &a) == 0
+          && tcp_ece_flag_extraction(&f.pkt.pub, 2, &a) == 0
+          && tcp_cwr_flag_extraction(&f.pkt.pub, 2, &a) == 0
+          && tcp_flags_extraction(&f.pkt.pub, 2, &a) == 0,
           "tcp flag extractors refused when the flags byte is not captured");
     fixture_free(&f);
 
     fixture_init(&f, layers, 3, 80, 80);
     f.buf[54 + 13] = 0x3F; /* fin|syn|rst|psh|ack|urg */
     a = mk_attr(13, 1);
-    CHECK(tcp_fin_flag_extraction(&f.pkt, 2, &a) == 1 && g_scratch[0] == 1
-          && tcp_syn_flag_extraction(&f.pkt, 2, &a) == 1 && g_scratch[0] == 1
-          && tcp_ack_flag_extraction(&f.pkt, 2, &a) == 1 && g_scratch[0] == 1
-          && tcp_flags_extraction(&f.pkt, 2, &a) == 1 && g_scratch[0] == 0x3F,
+    CHECK(tcp_fin_flag_extraction(&f.pkt.pub, 2, &a) == 1 && g_scratch[0] == 1
+          && tcp_syn_flag_extraction(&f.pkt.pub, 2, &a) == 1 && g_scratch[0] == 1
+          && tcp_ack_flag_extraction(&f.pkt.pub, 2, &a) == 1 && g_scratch[0] == 1
+          && tcp_flags_extraction(&f.pkt.pub, 2, &a) == 1 && g_scratch[0] == 0x3F,
           "tcp flag extractors extracted inside caplen");
     fixture_free(&f);
 
@@ -298,7 +298,7 @@ static void test_tcp_callbacks(void) {
     f.buf[54 + 12] = 0x60; /* doff = 6 -> 24-byte header */
     a = mk_attr(POSITION_NOT_KNOWN, 4);
     a.field_id = TCP_TSVAL;
-    CHECK(tcp_option_extraction(&f.pkt, 2, &a) == 0,
+    CHECK(tcp_option_extraction(&f.pkt.pub, 2, &a) == 0,
           "tcp_option returns 0 when the header overruns caplen");
     fixture_free(&f);
 
@@ -309,7 +309,7 @@ static void test_tcp_callbacks(void) {
     f.buf[76] = 0xDE; f.buf[77] = 0xAD; f.buf[78] = 0xBE; f.buf[79] = 0xEF;
     a = mk_attr(POSITION_NOT_KNOWN, 4);
     a.field_id = TCP_TSVAL;
-    CHECK(tcp_option_extraction(&f.pkt, 2, &a) == 1
+    CHECK(tcp_option_extraction(&f.pkt.pub, 2, &a) == 1
           && *(uint32_t *)g_scratch == 0xDEADBEEFu,
           "tcp_option extracts the timestamp inside caplen");
     fixture_free(&f);
@@ -325,17 +325,17 @@ static void test_gre_callbacks(void) {
     /* The flag extractors read the flags/version half-word at offset 0. */
     fixture_init(&f, layers, 3, 39, 60); /* one byte of the flags word */
     a = mk_attr(0, 2);
-    CHECK(gre_c_flag_extraction(&f.pkt, 2, &a) == 0
-          && gre_k_flag_extraction(&f.pkt, 2, &a) == 0
-          && gre_s_flag_extraction(&f.pkt, 2, &a) == 0
-          && gre_version_extraction(&f.pkt, 2, &a) == 0,
+    CHECK(gre_c_flag_extraction(&f.pkt.pub, 2, &a) == 0
+          && gre_k_flag_extraction(&f.pkt.pub, 2, &a) == 0
+          && gre_s_flag_extraction(&f.pkt.pub, 2, &a) == 0
+          && gre_version_extraction(&f.pkt.pub, 2, &a) == 0,
           "gre flag extractors refused when the flags word is half captured");
     fixture_free(&f);
 
     fixture_init(&f, layers, 3, 60, 60);
     f.buf[38] = 0x20; /* key bit (little-endian bitfield, bit 5) */
     a = mk_attr(0, 2);
-    CHECK(gre_k_flag_extraction(&f.pkt, 2, &a) == 1 && g_scratch[0] != 0,
+    CHECK(gre_k_flag_extraction(&f.pkt.pub, 2, &a) == 1 && g_scratch[0] != 0,
           "gre_k_flag extracted inside caplen");
     fixture_free(&f);
 
@@ -344,7 +344,7 @@ static void test_gre_callbacks(void) {
     fixture_init(&f, layers, 3, 42, 60); /* byte at offset 4 (absolute 42) cut */
     f.buf[38] = 0x80; /* csum bit (bit 7) */
     a = mk_attr(4, 2);
-    CHECK(gre_csum_extraction(&f.pkt, 2, &a) == 0,
+    CHECK(gre_csum_extraction(&f.pkt.pub, 2, &a) == 0,
           "gre_csum refused when the checksum byte is truncated");
     fixture_free(&f);
 
@@ -352,7 +352,7 @@ static void test_gre_callbacks(void) {
     f.buf[38] = 0x80;
     f.buf[42] = 0x12;
     a = mk_attr(4, 2);
-    CHECK(gre_csum_extraction(&f.pkt, 2, &a) == 1
+    CHECK(gre_csum_extraction(&f.pkt.pub, 2, &a) == 1
           && *(uint16_t *)g_scratch == 0x1200,
           "gre_csum extracted inside caplen");
     fixture_free(&f);
@@ -361,7 +361,7 @@ static void test_gre_callbacks(void) {
     fixture_init(&f, layers, 3, 45, 60);
     f.buf[38] = 0x20;
     a = mk_attr(POSITION_NOT_KNOWN, 4);
-    CHECK(gre_key_extraction(&f.pkt, 2, &a) == 0,
+    CHECK(gre_key_extraction(&f.pkt.pub, 2, &a) == 0,
           "gre_key refused when the key field is truncated");
     fixture_free(&f);
 
@@ -369,7 +369,7 @@ static void test_gre_callbacks(void) {
     f.buf[38] = 0x20;
     f.buf[42] = 0xCA; f.buf[43] = 0xFE; f.buf[44] = 0xBA; f.buf[45] = 0xBE;
     a = mk_attr(POSITION_NOT_KNOWN, 4);
-    CHECK(gre_key_extraction(&f.pkt, 2, &a) == 1
+    CHECK(gre_key_extraction(&f.pkt.pub, 2, &a) == 1
           && *(uint32_t *)g_scratch == 0xCAFEBABEu,
           "gre_key extracted inside caplen");
     fixture_free(&f);
@@ -378,7 +378,7 @@ static void test_gre_callbacks(void) {
     fixture_init(&f, layers, 3, 49, 60);
     f.buf[38] = 0x30; /* seq | key */
     a = mk_attr(POSITION_NOT_KNOWN, 4);
-    CHECK(gre_seqnb_extraction(&f.pkt, 2, &a) == 0,
+    CHECK(gre_seqnb_extraction(&f.pkt.pub, 2, &a) == 0,
           "gre_seqnb refused when the sequence field is truncated");
     fixture_free(&f);
 
@@ -386,7 +386,7 @@ static void test_gre_callbacks(void) {
     f.buf[38] = 0x30;
     f.buf[46] = 0x01; f.buf[47] = 0x02; f.buf[48] = 0x03; f.buf[49] = 0x04;
     a = mk_attr(POSITION_NOT_KNOWN, 4);
-    CHECK(gre_seqnb_extraction(&f.pkt, 2, &a) == 1
+    CHECK(gre_seqnb_extraction(&f.pkt.pub, 2, &a) == 1
           && *(uint32_t *)g_scratch == 0x01020304u,
           "gre_seqnb extracted inside caplen");
     fixture_free(&f);
@@ -402,20 +402,20 @@ static void test_gtp_callbacks(void) {
     /* The flag extractors read the flags byte at offset 0. */
     fixture_init(&f, layers, 3, 42, 60); /* no GTP byte captured */
     a = mk_attr(0, 1);
-    CHECK(gtp_version_flag_extraction(&f.pkt, 2, &a) == 0
-          && gtp_protocol_type_flag_extraction(&f.pkt, 2, &a) == 0
-          && gtp_reserved_flag_extraction(&f.pkt, 2, &a) == 0
-          && gtp_extension_header_flag_extraction(&f.pkt, 2, &a) == 0
-          && gtp_seq_check_flag_extraction(&f.pkt, 2, &a) == 0
-          && gtp_npdu_number_flag_extraction(&f.pkt, 2, &a) == 0,
+    CHECK(gtp_version_flag_extraction(&f.pkt.pub, 2, &a) == 0
+          && gtp_protocol_type_flag_extraction(&f.pkt.pub, 2, &a) == 0
+          && gtp_reserved_flag_extraction(&f.pkt.pub, 2, &a) == 0
+          && gtp_extension_header_flag_extraction(&f.pkt.pub, 2, &a) == 0
+          && gtp_seq_check_flag_extraction(&f.pkt.pub, 2, &a) == 0
+          && gtp_npdu_number_flag_extraction(&f.pkt.pub, 2, &a) == 0,
           "gtp flag extractors refused when the flags byte is not captured");
     fixture_free(&f);
 
     fixture_init(&f, layers, 3, 60, 60);
     f.buf[42] = 0x34; /* version 1 | proto_type | extension_header */
     a = mk_attr(0, 1);
-    CHECK(gtp_version_flag_extraction(&f.pkt, 2, &a) == 1 && g_scratch[0] == 1
-          && gtp_extension_header_flag_extraction(&f.pkt, 2, &a) == 1
+    CHECK(gtp_version_flag_extraction(&f.pkt.pub, 2, &a) == 1 && g_scratch[0] == 1
+          && gtp_extension_header_flag_extraction(&f.pkt.pub, 2, &a) == 1
               && g_scratch[0] == 1,
           "gtp flag extractors extracted inside caplen");
     fixture_free(&f);
@@ -425,7 +425,7 @@ static void test_gtp_callbacks(void) {
     fixture_init(&f, layers, 3, 51, 60); /* seq field at 50..51 half captured */
     f.buf[43] = 0x10;
     a = mk_attr(8, 2);
-    CHECK(gtp_seq_num_extraction(&f.pkt, 2, &a) == 0,
+    CHECK(gtp_seq_num_extraction(&f.pkt.pub, 2, &a) == 0,
           "gtp_seq_num refused when the sequence field is truncated");
     fixture_free(&f);
 
@@ -433,7 +433,7 @@ static void test_gtp_callbacks(void) {
     f.buf[43] = 0x10;
     f.buf[50] = 0xAB; f.buf[51] = 0xCD;
     a = mk_attr(8, 2);
-    CHECK(gtp_seq_num_extraction(&f.pkt, 2, &a) == 1
+    CHECK(gtp_seq_num_extraction(&f.pkt.pub, 2, &a) == 1
           && *(uint16_t *)g_scratch == 0xABCDu,
           "gtp_seq_num extracted inside caplen");
     fixture_free(&f);
@@ -443,7 +443,7 @@ static void test_gtp_callbacks(void) {
     fixture_init(&f, layers, 3, 56, 60); /* field at 55..56 half captured */
     f.buf[43] = 0x10;
     a = mk_attr(13, 2);
-    CHECK(gtp_imsi_mmc_extraction(&f.pkt, 2, &a) == 0,
+    CHECK(gtp_imsi_mmc_extraction(&f.pkt.pub, 2, &a) == 0,
           "gtp_imsi_mmc refused when the field is truncated");
     fixture_free(&f);
 
@@ -451,7 +451,7 @@ static void test_gtp_callbacks(void) {
     f.buf[43] = 0x10;
     f.buf[55] = 0x02; f.buf[56] = 0x42;
     a = mk_attr(13, 2);
-    CHECK(gtp_imsi_mmc_extraction(&f.pkt, 2, &a) == 1
+    CHECK(gtp_imsi_mmc_extraction(&f.pkt.pub, 2, &a) == 1
           && *(uint16_t *)g_scratch == 0x0242u,
           "gtp_imsi_mmc extracted inside caplen");
     fixture_free(&f);
@@ -461,7 +461,7 @@ static void test_gtp_callbacks(void) {
     fixture_init(&f, layers, 3, 53, 60); /* byte at 53 cut */
     f.buf[42] = 0x04; /* extension_header bit */
     a = mk_attr(0, 1);
-    CHECK(_gtp_extract_next_extension_header_type(&f.pkt, 2, &a) == 0,
+    CHECK(_gtp_extract_next_extension_header_type(&f.pkt.pub, 2, &a) == 0,
           "gtp next-ext-header refused when the field byte is truncated");
     fixture_free(&f);
 
@@ -469,7 +469,7 @@ static void test_gtp_callbacks(void) {
     f.buf[42] = 0x04;
     f.buf[53] = 0x85;
     a = mk_attr(0, 1);
-    CHECK(_gtp_extract_next_extension_header_type(&f.pkt, 2, &a) == 1
+    CHECK(_gtp_extract_next_extension_header_type(&f.pkt.pub, 2, &a) == 1
           && g_scratch[0] == 0x85,
           "gtp next-ext-header extracted inside caplen");
     fixture_free(&f);
@@ -485,14 +485,14 @@ static void test_icmp_callbacks(void) {
     /* identifier/seq_nb reads the type byte then delegates at position 4. */
     fixture_init(&f, layers, 2, 34, 60); /* no ICMP byte captured */
     a = mk_attr(4, 2);
-    CHECK(icmp_identifier_and_seq_nb_extraction(&f.pkt, 1, &a) == 0,
+    CHECK(icmp_identifier_and_seq_nb_extraction(&f.pkt.pub, 1, &a) == 0,
           "icmp_identifier refused when the type byte is not captured");
     fixture_free(&f);
 
     fixture_init(&f, layers, 2, 39, 60); /* type captured, field cut */
     f.buf[34] = 8; /* ICMP_ECHO */
     a = mk_attr(4, 2);
-    CHECK(icmp_identifier_and_seq_nb_extraction(&f.pkt, 1, &a) == 0,
+    CHECK(icmp_identifier_and_seq_nb_extraction(&f.pkt.pub, 1, &a) == 0,
           "icmp_identifier refused when the field is truncated");
     fixture_free(&f);
 
@@ -500,7 +500,7 @@ static void test_icmp_callbacks(void) {
     f.buf[34] = 8;
     f.buf[38] = 0x12; f.buf[39] = 0x34;
     a = mk_attr(4, 2);
-    CHECK(icmp_identifier_and_seq_nb_extraction(&f.pkt, 1, &a) == 1
+    CHECK(icmp_identifier_and_seq_nb_extraction(&f.pkt.pub, 1, &a) == 1
           && *(uint16_t *)g_scratch == 0x1234u,
           "icmp_identifier extracted inside caplen");
     fixture_free(&f);
@@ -509,7 +509,7 @@ static void test_icmp_callbacks(void) {
     fixture_init(&f, layers, 2, 41, 60);
     f.buf[34] = 5; /* ICMP_REDIRECT */
     a = mk_attr(4, 4);
-    CHECK(icmp_gateway_extraction(&f.pkt, 1, &a) == 0,
+    CHECK(icmp_gateway_extraction(&f.pkt.pub, 1, &a) == 0,
           "icmp_gateway refused when the gateway field is truncated");
     fixture_free(&f);
 
@@ -517,7 +517,7 @@ static void test_icmp_callbacks(void) {
     f.buf[34] = 5;
     f.buf[38] = 192; f.buf[39] = 168; f.buf[40] = 0; f.buf[41] = 1;
     a = mk_attr(4, 4);
-    CHECK(icmp_gateway_extraction(&f.pkt, 1, &a) == 1,
+    CHECK(icmp_gateway_extraction(&f.pkt.pub, 1, &a) == 1,
           "icmp_gateway extracted inside caplen");
     fixture_free(&f);
 
@@ -531,7 +531,7 @@ static void test_icmp_callbacks(void) {
     f.buf[42] = 0xAA; f.buf[43] = 0xBB; f.buf[44] = 0xCC; f.buf[45] = 0xDD;
     memset(g_scratch, 0, sizeof(g_scratch));
     a = mk_attr(8, 1028);
-    CHECK(icmp_data_extraction(&f.pkt, 1, &a) == 1
+    CHECK(icmp_data_extraction(&f.pkt.pub, 1, &a) == 1
           && *(uint32_t *)g_scratch == 4
           && g_scratch[4] == 0xAA && g_scratch[7] == 0xDD,
           "icmp_data copies only the captured payload bytes, not the wire length");
@@ -553,30 +553,30 @@ static void test_ip6_callbacks(void) {
 
     fixture_init(&f, layers, 2, 14, 54); /* no IPv6 byte captured */
     a = mk_attr(0, 1);
-    CHECK(ip6_version_extraction(&f.pkt, 1, &a) == 0,
+    CHECK(ip6_version_extraction(&f.pkt.pub, 1, &a) == 0,
           "ip6_version refused when the IPv6 header is not captured");
     fixture_free(&f);
 
     fixture_init(&f, layers, 2, 15, 54); /* 1 byte: version only */
     f.buf[14] = 0x60;
     a = mk_attr(0, 1);
-    CHECK(ip6_version_extraction(&f.pkt, 1, &a) == 1 && g_scratch[0] == 6,
+    CHECK(ip6_version_extraction(&f.pkt.pub, 1, &a) == 1 && g_scratch[0] == 6,
           "ip6_version extracted from a 1-byte capture");
     a = mk_attr(0, 1);
-    CHECK(ip6_traffic_class_extraction(&f.pkt, 1, &a) == 0,
+    CHECK(ip6_traffic_class_extraction(&f.pkt.pub, 1, &a) == 0,
           "ip6_traffic_class refused when its 16-bit word is half captured");
     a = mk_attr(0, 4);
-    CHECK(ip6_flow_label_extraction(&f.pkt, 1, &a) == 0,
+    CHECK(ip6_flow_label_extraction(&f.pkt.pub, 1, &a) == 0,
           "ip6_flow_label refused when its 16-bit word is half captured");
     fixture_free(&f);
 
     fixture_init(&f, layers, 2, 20, 54); /* nexthdr (offset 6) cut */
     f.buf[14] = 0x60;
     a = mk_attr(-2, 1);
-    CHECK(ip6_traffic_class_extraction(&f.pkt, 1, &a) == 1,
+    CHECK(ip6_traffic_class_extraction(&f.pkt.pub, 1, &a) == 1,
           "ip6_traffic_class extracted inside caplen");
     a = mk_attr(-2, 1);
-    CHECK(ip6_next_proto_extraction(&f.pkt, 1, &a) == 0,
+    CHECK(ip6_next_proto_extraction(&f.pkt.pub, 1, &a) == 0,
           "ip6_next_proto refused when nexthdr is not captured");
     fixture_free(&f);
 
@@ -584,7 +584,7 @@ static void test_ip6_callbacks(void) {
     f.buf[14] = 0x60;
     f.buf[14 + 6] = 17; /* UDP */
     a = mk_attr(-2, 1);
-    CHECK(ip6_next_proto_extraction(&f.pkt, 1, &a) == 1 && g_scratch[0] == 17,
+    CHECK(ip6_next_proto_extraction(&f.pkt.pub, 1, &a) == 1 && g_scratch[0] == 17,
           "ip6_next_proto extracted when nexthdr is the last captured byte");
     fixture_free(&f);
 }
@@ -623,7 +623,7 @@ static void test_arp_callbacks(void) {
      * to read bytes 0..3 past the capture. */
     fixture_init(&f, layers, 2, O + 1, O + 28);
     a = mk_attr(-1, 6);
-    CHECK(sha(&f.pkt, 1, &a) == 0 && dst_proto(&f.pkt, 1, &a) == 0,
+    CHECK(sha(&f.pkt.pub, 1, &a) == 0 && dst_proto(&f.pkt.pub, 1, &a) == 0,
           "ARP extractors refused when the fixed header is not captured");
     fixture_free(&f);
 
@@ -634,10 +634,10 @@ static void test_arp_callbacks(void) {
     f.buf[O + 4] = 6; f.buf[O + 5] = 4;
     f.buf[O + 8] = 0xAA; f.buf[O + 13] = 0xBB;
     a = mk_attr(-1, 6);
-    CHECK(sha(&f.pkt, 1, &a) == 1 && g_scratch[0] == 0xAA && g_scratch[5] == 0xBB,
+    CHECK(sha(&f.pkt.pub, 1, &a) == 1 && g_scratch[0] == 0xAA && g_scratch[5] == 0xBB,
           "ARP SHA extracted inside caplen");
     a = mk_attr(-1, 4);
-    CHECK(sip(&f.pkt, 1, &a) == 0,
+    CHECK(sip(&f.pkt.pub, 1, &a) == 0,
           "ARP SIP refused when the sender IP is not captured");
     fixture_free(&f);
 
@@ -648,7 +648,7 @@ static void test_arp_callbacks(void) {
     f.buf[O + 2] = 0x08; f.buf[O + 3] = 0x00;
     f.buf[O + 4] = 200; f.buf[O + 5] = 4;
     a = mk_attr(-1, BINARY_64DATA_TYPE_LEN);
-    CHECK(src_hard(&f.pkt, 1, &a) == 0,
+    CHECK(src_hard(&f.pkt.pub, 1, &a) == 0,
           "ARP src_hard refused when ar_hln exceeds the binary scratch");
     fixture_free(&f);
 
@@ -659,7 +659,7 @@ static void test_arp_callbacks(void) {
     f.buf[O + 4] = 6; f.buf[O + 5] = 4;
     f.buf[O + 8] = 0xCC;
     a = mk_attr(-1, BINARY_64DATA_TYPE_LEN);
-    CHECK(src_hard(&f.pkt, 1, &a) == 1 && *(uint32_t *)g_scratch == 6
+    CHECK(src_hard(&f.pkt.pub, 1, &a) == 1 && *(uint32_t *)g_scratch == 6
           && g_scratch[4] == 0xCC,
           "ARP src_hard extracted inside caplen");
     fixture_free(&f);
@@ -670,7 +670,7 @@ static void test_arp_callbacks(void) {
     f.buf[O + 2] = 0x08; f.buf[O + 3] = 0x00;
     f.buf[O + 4] = 6; f.buf[O + 5] = 4;
     a = mk_attr(-1, BINARY_64DATA_TYPE_LEN);
-    CHECK(dst_proto(&f.pkt, 1, &a) == 0,
+    CHECK(dst_proto(&f.pkt.pub, 1, &a) == 0,
           "ARP dst_proto refused when the target address is cut");
     fixture_free(&f);
 }
@@ -801,7 +801,7 @@ static void test_sctp_chunk_chain(void) {
                 base[0] = 3; base[3] = CHUNK;
                 base[CHUNK] = 3; base[CHUNK + 3] = CHUNK;
             }
-            (void) c->classify_me(&f.pkt, PROTO_PATH_SIZE - 1);
+            (void) c->classify_me(&f.pkt.pub, PROTO_PATH_SIZE - 1);
             CHECK(f.hier.len <= PROTO_PATH_SIZE,
                   ids[k] == PROTO_SCTP
                   ? "SCTP classifier at index 15 keeps len within PROTO_PATH_SIZE"

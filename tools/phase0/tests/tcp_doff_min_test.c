@@ -43,6 +43,7 @@
 #include <sys/types.h>
 
 #include "mmt_core.h"
+#include "ipacket_internal.h" /* issue #535: ipacket_internal_t fixtures (private) */
 /*
  * The internal packet / session structs are opaque in the installed public
  * headers, so pull in their full definitions from the in-tree plugin header
@@ -88,7 +89,7 @@ static int g_checks = 0;
  */
 static int run_tcp_pre(unsigned doff, size_t len, int *payload_set)
 {
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     struct mmt_tcpip_internal_packet_struct ip;
     proto_hierarchy_t headers_offset;
 
@@ -119,7 +120,7 @@ static int run_tcp_pre(unsigned doff, size_t len, int *payload_set)
     ip.l4_packet_len = (uint16_t)len;
     ip.payload = NULL;
 
-    int rc = tcp_pre_classification_function(&pkt, 0);
+    int rc = tcp_pre_classification_function(&pkt.pub, 0);
     *payload_set = (ip.payload != NULL);
     free(buf);
     return rc;

@@ -118,7 +118,7 @@ static void test_append_gate(mmt_handler_t *h) {
     hier.proto_path[0] = PROTO_META;
     hier.proto_path[1] = TEST_PROTO_L1;
 
-    ipacket_t pkt;
+    ipacket_internal_t pkt;
     memset(&pkt, 0, sizeof(pkt));
     pkt.proto_hierarchy = &hier;
     pkt.proto_headers_offset = &off;
@@ -132,21 +132,21 @@ static void test_append_gate(mmt_handler_t *h) {
     r.proto_id = TEST_PROTO_L2;
 
     set_classification_max_depth(h, 1);
-    CHECK(set_classified_proto(&pkt, 2, r) == 0 && hier.len == 2,
+    CHECK(set_classified_proto(&pkt.pub, 2, r) == 0 && hier.len == 2,
           "append at index 2 refused under depth 1");
 
     set_classification_max_depth(h, 2);
-    CHECK(set_classified_proto(&pkt, 2, r) != 0 && hier.len == 3,
+    CHECK(set_classified_proto(&pkt.pub, 2, r) != 0 && hier.len == 3,
           "append at index 2 allowed under depth 2");
     CHECK(hier.proto_path[2] == TEST_PROTO_L2, "appended proto recorded");
 
     r.proto_id = TEST_PROTO_L3;
-    CHECK(set_classified_proto(&pkt, 3, r) == 0 && hier.len == 3,
+    CHECK(set_classified_proto(&pkt.pub, 3, r) == 0 && hier.len == 3,
           "append at index 3 refused under depth 2");
 
     /* reclassification of an existing in-bound slot is still allowed */
     r.proto_id = TEST_PROTO_L4;
-    CHECK(set_classified_proto(&pkt, 2, r) != 0 &&
+    CHECK(set_classified_proto(&pkt.pub, 2, r) != 0 &&
           hier.proto_path[2] == TEST_PROTO_L4,
           "reclassification inside the bound unaffected");
     set_classification_max_depth(h, DEPTH_UNLIMITED);
