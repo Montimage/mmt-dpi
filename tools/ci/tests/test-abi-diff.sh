@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# test-abi-diff.sh — self-test for tools/ci/abi-diff.sh (issue #525).
+# test-abi-diff.sh — self-test for tools/ci/abi-diff.sh (issues #525, #536).
 #
-# Drives the REAL script with stub tools (ABIDIFF, OBJCOPY, DPKG_DEB, MAKE)
+# Drives the REAL script with stub tools (ABIDIFF, READELF, OBJCOPY, DPKG_DEB, MAKE)
 # and dummy library files, so it builds nothing, needs no abigail-tools and no
 # network, and runs in about a second. The stub abidiff exits with the code a
 # map file assigns to each library (default 0).
@@ -13,6 +13,13 @@
 #   abidiff 8 and 12 (incompatible) under the same          -> 0 / 1 / 1, INCOMPATIBLE
 #   abidiff 1, 2, 3, 6, 9 (an error/usage bit), 16 (unknown) -> 2, ERROR
 #   a library missing on the head side                      -> INCOMPATIBLE, 0 / 1
+#   SOVERSION gate (#536), abidiff 8 under --fail-on incompatible:
+#     the same SONAME on both sides                         -> 1, INCOMPATIBLE
+#     a SONAME bump (libmmt_tcpip.so -> libmmt_tcpip.so.1)  -> 0, RECORDED
+#       (and 1 under --fail-on change)
+#     an unreadable SONAME on either side, a failing readelf -> 1, INCOMPATIBLE
+#     a SONAME bump with abidiff 4 (no break)               -> 0, CHANGED
+#     a nonexistent READELF                                 -> 2
 #   a library missing on both sides, two versions of one    -> 2
 #   nonexistent ABIDIFF, bad --fail-on, one prebuilt dir    -> 2
 #   --headers-dir1/2 reach abidiff; symlinks are skipped
@@ -89,6 +96,15 @@ for l in core tcpip tmobile business_app tdicom; do
 done
 echo '/* stub */' > "${dir}/include/mmt_core.h"
 EOF
+cat > "${STUBS}/readelf" <<'EOF2'
+#!/usr/bin/env bash
+# Stub readelf: `-d FILE` prints FILE's SONAME the way readelf does, taken
+# from a `soname=<name>` line of the dummy file (none: no SONAME line).
+[ "$1" = -d ] || exit 9
+so="$(sed -n 's/^soname=//p' "$2" | head -n 1)"
+echo "Dynamic section at offset 0x0 contains 1 entry:"
+[ -z "${so}" ] || echo " 0x000000000000000e (SONAME)             Library soname: [${so}]"
+EOF2
 chmod +x "${STUBS}"/*
 
 export STUB_LOG="${WORK}/stub.log" STUB_MAP="${WORK}/map.txt"
@@ -111,7 +127,7 @@ run() {
     while [ "$1" != -- ]; do envs+=("$1"); shift; done
     shift
     : > "${STUB_LOG}"
-    env ABIDIFF="${STUBS}/abidiff" OBJCOPY="${STUBS}/objcopy" \
+    env ABIDIFF="${STUBS}/abidiff" READELF="${STUBS}/readelf" OBJCOPY="${STUBS}/objcopy" \
         DPKG_DEB="${STUBS}/dpkg-deb" MAKE="${STUBS}/make" TMPDIR="${WORK}/tmp" \
         ${envs[@]+"${envs[@]}"} bash "${SCRIPT}" "$@" > "${OUT}" 2>&1
     RC=$?
@@ -134,7 +150,7 @@ run -- "${PRE[@]}"
 expect_rc 0 "all libraries unchanged"
 n="$(grep -c '^  libmmt_.*: NO CHANGE (abidiff exit 0)$' "${OUT}")"
 [ "$n" -eq 5 ] && ok "five NO CHANGE verdicts" || bad "NO CHANGE verdicts: $n, want 5"
-expect_out "Result: 0 incompatible, 0 changed (--fail-on none)" "result line"
+expect_out "Result: 0 incompatible, 0 recorded by a SONAME bump, 0 changed (--fail-on none)" "result line"
 calls="$(grep -c . "${STUB_LOG}")"
 [ "$calls" -eq 5 ] && ok "abidiff ran once per library (symlink skipped)" \
     || bad "abidiff calls: $calls, want 5"
@@ -186,6 +202,54 @@ run -- --baseline-dir "${OLD}"
 expect_rc 2 "prebuilt mode with one directory"
 run -- "${PRE[@]}" --keep-libs "${WORK}/kept"
 expect_rc 2 "--keep-libs outside build mode"
+run READELF="${WORK}/no-such-readelf" -- "${PRE[@]}"
+expect_rc 2 "nonexistent READELF"
+expect_out "readelf not found" "nonexistent READELF is named"
+
+echo "=== abi-diff self-test: SOVERSION gate (issue #536) ==="
+# sonamed <dir> <old soname> — dummy libraries whose tcpip SONAME is given.
+sonamed() {
+    mklibs "$1"
+    [ -z "$2" ] || printf 'tcpip\nsoname=%s\n' "$2" > "$1/libmmt_tcpip.so.1.9.1"
+}
+S_OLD="${WORK}/s-old"; S_SAME="${WORK}/s-same"; S_BUMP="${WORK}/s-bump"; S_NONE="${WORK}/s-none"
+sonamed "${S_OLD}" libmmt_tcpip.so
+sonamed "${S_SAME}" libmmt_tcpip.so
+sonamed "${S_BUMP}" libmmt_tcpip.so.1
+sonamed "${S_NONE}" ""
+setmap "libmmt_tcpip 12"
+run -- --baseline-dir "${S_OLD}" --head-dir "${S_SAME}" --fail-on incompatible --report "${WORK}/same.txt"
+expect_rc 1 "an incompatible change under an unchanged SONAME fails the gate"
+expect_out "libmmt_tcpip: INCOMPATIBLE (abidiff exit 12)" "unchanged SONAME -> INCOMPATIBLE"
+grep -qF "unrecorded: SONAME 'libmmt_tcpip.so' → 'libmmt_tcpip.so' did not move" "${WORK}/same.txt" \
+    && ok "the report says the SONAME did not move" || bad "no 'did not move' line in the report"
+run -- --baseline-dir "${S_OLD}" --head-dir "${S_BUMP}" --fail-on incompatible --report "${WORK}/bump.txt"
+expect_rc 0 "an incompatible change recorded by a SONAME bump passes the gate"
+expect_out "libmmt_tcpip: RECORDED (abidiff exit 12)" "SONAME bump -> RECORDED"
+expect_out "Result: 0 incompatible, 1 recorded by a SONAME bump, 0 changed (--fail-on incompatible)" "recorded result line"
+grep -qF "SONAME bump libmmt_tcpip.so → libmmt_tcpip.so.1 records this incompatible change" "${WORK}/bump.txt" \
+    && ok "the report names the SONAME bump" || bad "no SONAME bump line in the report"
+run -- --baseline-dir "${S_OLD}" --head-dir "${S_BUMP}" --fail-on change
+expect_rc 1 "a recorded break still counts under --fail-on change"
+run -- --baseline-dir "${S_OLD}" --head-dir "${S_NONE}" --fail-on incompatible
+expect_rc 1 "an unreadable head SONAME is unrecorded (fail-closed)"
+run -- --baseline-dir "${S_NONE}" --head-dir "${S_BUMP}" --fail-on incompatible
+expect_rc 1 "an unreadable baseline SONAME is unrecorded (fail-closed)"
+cat > "${WORK}/readelf-broken" <<'EOF2'
+#!/usr/bin/env bash
+# A readelf that cannot read its input: the SONAME is unreadable, never a crash.
+echo "readelf: Error: Not an ELF file" >&2
+exit 1
+EOF2
+chmod +x "${WORK}/readelf-broken"
+run READELF="${WORK}/readelf-broken" -- --baseline-dir "${S_OLD}" --head-dir "${S_BUMP}" --fail-on incompatible
+expect_rc 1 "a failing readelf leaves the break unrecorded"
+expect_out "Result: 1 incompatible, 0 recorded by a SONAME bump, 0 changed (--fail-on incompatible)" "a failing readelf still reaches the result line"
+setmap "libmmt_tcpip 4"
+run -- --baseline-dir "${S_OLD}" --head-dir "${S_BUMP}" --fail-on incompatible
+expect_rc 0 "a SONAME bump without an incompatible change"
+expect_out "libmmt_tcpip: CHANGED (abidiff exit 4)" "a compatible change stays CHANGED"
+setmap
 
 run -- "${PRE[@]}" --headers-dir1 "${WORK}/h1" --headers-dir2 "${WORK}/h2"
 grep -qF -- "--headers-dir1 ${WORK}/h1 --headers-dir2 ${WORK}/h2" "${STUB_LOG}" \

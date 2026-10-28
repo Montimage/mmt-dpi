@@ -20,6 +20,8 @@
 #   install.sh RELEASE_TAG names an unreleased entry   -> non-zero
 #   README 'Current release' differs from RELEASE_TAG  -> non-zero
 #   site hero version differs from RELEASE_TAG         -> non-zero
+#   abi-diff ABI_BASELINE differs from RELEASE_TAG     -> non-zero (#536)
+#   abi-diff.sh baseline_ref differs from RELEASE_TAG  -> non-zero (#536)
 #
 # Usage: bash tools/ci/tests/test-version-agreement.sh
 # Exit: 0 = all checks passed, 1 = at least one failed, 2 = self-test broke.
@@ -42,7 +44,7 @@ FILES="rules/common.mk src/mmt_core/public_include/mmt_core.h
 dist/ZIP/install.sh dist/ZIP/uninstall.sh dist/ZIP/mmt-install-common.sh
 install.sh README.md CHANGELOG.md docs/_includes/quick-start.md docs/index.html
 src/examples/google-fr.pcap .github/workflows/c-cpp.yml
-.github/workflows/release-packages.yml"
+.github/workflows/release-packages.yml tools/ci/abi-diff.sh"
 
 fresh() {
     rm -rf "${WORK}/tree"
@@ -115,6 +117,12 @@ expect fail "README 'Current release' disagrees with RELEASE_TAG" "Current relea
 
 fresh; edit docs/index.html 's/<\/span>v[0-9][^ ]* ·/<\/span>v0.0.1 ·/'
 expect fail "site hero version disagrees with RELEASE_TAG" "hero"
+
+fresh; edit .github/workflows/c-cpp.yml 's/^\([[:space:]]*ABI_BASELINE:\).*/\1 v0.0.1/'
+expect fail "abi-diff ABI_BASELINE disagrees with RELEASE_TAG" "ABI_BASELINE"
+
+fresh; edit tools/ci/abi-diff.sh 's/^baseline_ref=.*/baseline_ref=v0.0.1/'
+expect fail "abi-diff.sh baseline_ref disagrees with RELEASE_TAG" "baseline_ref"
 
 echo ""
 if [ "${FAILED}" -eq 0 ]; then

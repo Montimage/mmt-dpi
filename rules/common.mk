@@ -629,3 +629,21 @@ $(TCPIP_OBJECTS) $(LIBMOBILE_OBJECTS) $(LIBBAPP_OBJECTS) $(LIBDICOM_OBJECTS): CX
 # before the `nogit` package-revision fallback above, as the global define did.
 $(TOPDIR)/src/mmt_core/src/plugins_engine.o: CFLAGS += -DPLUGINS_REPOSITORY_OPT=\"$(MMT_PLUGINS)\"
 $(TOPDIR)/src/mmt_core/src/packet_processing.o: CFLAGS += -DGIT_VERSION=\"$(MMT_CFLAGS_GIT_VERSION)\"
+
+# Issue #536 (appended so no cited line range moves): the SOVERSION policy.
+# Every shared library is linked with SONAME lib<name>.so.$(SOVERSION)
+# (rules/common-linux.mk), and every install route — make install, the
+# .deb/.rpm staging, the offline ZIP — lays down the runtime link
+# lib<name>.so.$(SOVERSION) -> lib<name>.so.$(VERSION) beside the file; the
+# unversioned lib<name>.so is the development (link-time) link only. A
+# consumer records the SONAME at link time, so bump SOVERSION with any change
+# that breaks the binary interface of an installed library (a public struct
+# layout, a removed or re-typed export): the loader then refuses to pair a
+# consumer linked against an older SOVERSION with the new library instead of
+# corrupting memory (consumers linked before SOVERSION 1, against the
+# unversioned name, and dlopen'ed plugins are not refused — rebuild them). The
+# `abi-diff` job (tools/ci/abi-diff.sh --fail-on incompatible) fails on an
+# incompatible change against the last release tag unless the SONAME moved.
+# SOVERSION 1 is the first versioned SONAME (v1.9.1 and earlier linked the
+# unversioned lib<name>.so); it covers the v1.9.0 and #535 layout changes.
+SOVERSION := 1

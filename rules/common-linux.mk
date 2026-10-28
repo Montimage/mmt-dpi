@@ -268,7 +268,7 @@ $(SDKLIB)/$(LIBCORE).so: $(SDKLIB)/$(LIBCORE).so.$(VERSION)
 
 $(SDKLIB)/$(LIBCORE).so.$(VERSION): $(SDKLIB)/$(LIBCORE).a
 	@echo "[LIBRARY] $(notdir $@)"
-	$(QUIET) $(CC) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBCORE).so $(LDLIBS)
+	$(QUIET) $(CC) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBCORE).so.$(SOVERSION) $(LDLIBS)
 
 # TCP/IP
 
@@ -276,7 +276,7 @@ $(SDKLIB)/$(LIBTCPIP).so: $(SDKLIB)/$(LIBTCPIP).so.$(VERSION)
 
 $(SDKLIB)/$(LIBTCPIP).so.$(VERSION): $(SDKLIB)/$(LIBTCPIP).a
 	@echo "[LIBRARY] $(notdir $@)"
-	$(QUIET) $(CC) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBTCPIP).so $(LDLIBS)
+	$(QUIET) $(CC) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBTCPIP).so.$(SOVERSION) $(LDLIBS)
 
 $(SDKLIB)/$(LIBTCPIP).so: $(SDKLIB)/$(LIBTCPIP).so.$(VERSION)
 
@@ -285,14 +285,14 @@ $(SDKLIB)/$(LIBMOBILE).so: $(SDKLIB)/$(LIBMOBILE).so.$(VERSION)
 
 $(SDKLIB)/$(LIBMOBILE).so.$(VERSION): $(SDKLIB)/$(LIBMOBILE).a
 	@echo "[LIBRARY] $(notdir $@)"
-	$(QUIET) $(CC) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBMOBILE).so $(LDLIBS)
+	$(QUIET) $(CC) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBMOBILE).so.$(SOVERSION) $(LDLIBS)
 
 # BUSINESS APP/PROTOCOLS
 $(SDKLIB)/$(LIBBAPP).so: $(SDKLIB)/$(LIBBAPP).so.$(VERSION)
 
 $(SDKLIB)/$(LIBBAPP).so.$(VERSION): $(SDKLIB)/$(LIBBAPP).a
 	@echo "[LIBRARY] $(notdir $@)"
-	$(QUIET) $(CC) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBBAPP).so $(LDLIBS)
+	$(QUIET) $(CC) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBBAPP).so.$(SOVERSION) $(LDLIBS)
 
 ifdef ENABLESEC
 # FUZZ
@@ -301,7 +301,7 @@ $(SDKLIB)/$(LIBFUZZ).so: $(SDKLIB)/$(LIBFUZZ).so.$(VERSION)
 
 $(SDKLIB)/$(LIBFUZZ).so.$(VERSION): $(SDKLIB)/$(LIBFUZZ).a
 	@echo "[LIBRARY] $(notdir $@)"
-	$(QUIET) $(CC) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBFUZZ).so $(LDLIBS)
+	$(QUIET) $(CC) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBFUZZ).so.$(SOVERSION) $(LDLIBS)
 
 # SECURITY
 
@@ -309,7 +309,7 @@ $(SDKLIB)/$(LIBSECURITY).so: $(SDKLIB)/$(LIBSECURITY).so.$(VERSION)
 
 $(SDKLIB)/$(LIBSECURITY).so.$(VERSION): $(SDKLIB)/$(LIBSECURITY).a
 	@echo "[LIBRARY] $(notdir $@)"
-	$(QUIET) $(CC) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBSECURITY).so $(LDLIBS)
+	$(QUIET) $(CC) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBSECURITY).so.$(SOVERSION) $(LDLIBS)
 endif
 
 # DICOM
@@ -317,4 +317,4 @@ $(SDKLIB)/$(LIBDICOM).so: $(SDKLIB)/$(LIBDICOM).so.$(VERSION)
 
 $(SDKLIB)/$(LIBDICOM).so.$(VERSION): $(SDKLIB)/$(LIBDICOM).a
 	@echo "[LIBRARY] $(notdir $@)"
-	$(QUIET) $(CC) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBDICOM).so $(LDLIBS)
+	$(QUIET) $(CC) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBDICOM).so.$(SOVERSION) $(LDLIBS)

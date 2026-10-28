@@ -54,6 +54,18 @@ dated `CHANGELOG.md` entry:
 | `README.md` | `Current release: [vx.y.z]` and `` pinned release tag (`vx.y.z`) `` |
 | `docs/_includes/quick-start.md` | `` pinned release tag (`vx.y.z`) `` |
 | `docs/index.html` | the hero eyebrow `vx.y.z · Apache-2.0 · …` |
+| `.github/workflows/c-cpp.yml` | `ABI_BASELINE: vx.y.z` of the `abi-diff` job (issue #536) |
+| `tools/ci/abi-diff.sh` | `baseline_ref=vx.y.z`, the script's default baseline |
+
+**ABI and SOVERSION** (issue #536) — every shared library carries the
+SONAME `lib<name>.so.<SOVERSION>` (`SOVERSION` at the end of
+`rules/common.mk`), independent of `VERSION`. Bump `SOVERSION` in the pull
+request that makes an incompatible change to an installed library (a public
+struct layout, a removed or re-typed export), and record the break in the
+`CHANGELOG.md` section of the next version: the required `abi-diff` job
+compares the libraries with the `ABI_BASELINE` tag and fails on an
+incompatible change whose SONAME did not move. A compatible change (an
+added export) keeps `SOVERSION`.
 
 Release order:
 
@@ -68,7 +80,10 @@ Release order:
    follow-up PR: run `bash tools/ci/check-release-tag.sh --write-pin vx.y.z`,
    which writes `RELEASE_TAG` and `RELEASE_TAG_SHA` from the peeled tag
    (`git rev-parse vx.y.z^{commit}`, never the annotated tag object), then
-   update the README/site mentions.
+   update the README/site mentions and the ABI baseline (`ABI_BASELINE` of
+   the `abi-diff` job and `tools/ci/abi-diff.sh`'s `baseline_ref`; the job
+   downloads that tag's ubuntu-24.04 `.deb`) — `version-agreement` fails
+   until all of them name the same tag.
 4. Once that follow-up PR is merged, the published one-liner installs the
    new tag: run the **Install smoke** workflow
    (`.github/workflows/install-smoke.yml`, *Run workflow*, `source:

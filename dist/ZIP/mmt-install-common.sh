@@ -8,6 +8,9 @@
 # VERSION is stamped at `make zip` time from rules/common.mk (single source).
 # Fallback is kept for direct execution from the source tree without rebuilding.
 VERSION="${VERSION:-1.9.1}"
+# SOVERSION names the runtime (SONAME) link lib<name>.so.$SOVERSION install.sh
+# creates (issue #536); stamped by `make zip` from rules/common.mk like VERSION.
+SOVERSION="${SOVERSION:-1}"
 
 # Install prefix — honour MMT_BASE if the caller exported it (consistent with
 # sdk/Makefile and the root install.sh).

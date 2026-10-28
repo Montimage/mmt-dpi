@@ -362,9 +362,13 @@ until it has a contract. `tools/ci/abi-diff.sh` builds the v1.9.1 tag and
 `HEAD` in temporary git worktrees (release profile plus `-g`; the checkout's
 `sdk/` is untouched) and runs libabigail's `abidiff` per library; the
 `abi-diff` job in `c-cpp.yml` runs it, plus a symbol-level leg against the
-shipped v1.9.1 `.deb`, as a report-only check that is not a required
-context. Locally it needs `abigail-tools` (or `ABIDIFF=/path/to/abidiff`)
-and a fetched `v1.9.1` tag: `bash tools/ci/abi-diff.sh --report abi.txt`.
+shipped v1.9.1 `.deb`, both with `--fail-on incompatible`, as a required
+context (issue #536): an incompatible change fails unless the library's
+SONAME moved — every library is linked as `lib<name>.so.$(SOVERSION)`
+(`SOVERSION` at the end of `rules/common.mk`), and `make install` and the
+packages add the `lib<name>.so.$(SOVERSION)` runtime link. Locally it needs
+`abigail-tools` (or `ABIDIFF=/path/to/abidiff`) and a fetched `v1.9.1` tag:
+`bash tools/ci/abi-diff.sh --fail-on incompatible --report abi.txt`.
 
 ### Suite modes: sanitizers and coverage
 
@@ -499,7 +503,7 @@ documents link here.
   root install out; `LDCONF=1` forces registration; `LDCONF_DIR` and
   `LDCONFIG` relocate the drop-in and the command (the installer suite uses
   a staged directory and a fake `ldconfig`).
-- **`make -C sdk MMT_BASE=<prefix> uninstall`** (`sdk/Makefile:168-209`)
+- **`make -C sdk MMT_BASE=<prefix> uninstall`** (`sdk/Makefile:183-224`)
   removes exactly the entries `install` recorded in
   `<prefix>/.mmt-dpi-manifest` (one path per line, relative to the prefix,
   merged across reinstalls), then the SDK directories left empty (`rmdir`,
@@ -534,7 +538,7 @@ documents link here.
 
 ### The `make test` trap
 
-`sdk/Makefile`'s `test` target (`sdk/Makefile:597-602`) compiles the
+`sdk/Makefile`'s `test` target (`sdk/Makefile:621-626`) compiles the
 `proto_attributes_iterator` example **from the installed prefix**:
 
 ```
@@ -667,7 +671,7 @@ next build of any profile deletes them, so harvest them first with
 
 - Object/header selection: `rules/common.mk:201-203, 225-228, 310-313`
 - Link rules and libxml2 wiring: `rules/common-linux.mk:6-12, 249-252, 260-264, 297-313`
-- Install symlinks for both engines: `sdk/Makefile:89-90, 324-325`
+- Install symlinks for both engines: `sdk/Makefile:89-90, 341-342`
 
 Usage (requires `libxml2-dev`):
 

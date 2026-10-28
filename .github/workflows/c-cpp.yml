@@ -1098,9 +1098,9 @@ jobs:
       run: bash tests/run_all_tests.sh $SUITES
 
   abi-diff:
-    # Report-only ABI comparison against the last release (issue #525;
-    # issue #536 turns the verdict into a gate, issue #533 trims the exported
-    # symbol set it reports), both legs run by tools/ci/abi-diff.sh:
+    # ABI gate against the last release (issue #525 added the comparison,
+    # issue #536 the SOVERSION gate, issue #533 trims the exported symbol set
+    # it reports), both legs run by tools/ci/abi-diff.sh:
     #   - types and symbols: the ABI_BASELINE tag and this commit, each
     #     rebuilt in the release profile plus -g in a throwaway worktree
     #     (hence the full-history checkout), compared within their public
@@ -1110,9 +1110,14 @@ jobs:
     #     SHA256SUMS, against this commit's libraries, both sides stripped to
     #     their ELF symbols.
     # The compared HEAD build is held to the release hardening set, so the
-    # comparison is of the shipped profile. An ABI finding never fails the
-    # job (--fail-on none); a broken tool, build or download does. Not a
-    # required check (.github/required-checks.txt). Full tier only (#656).
+    # comparison is of the shipped profile. Both legs run --fail-on
+    # incompatible: an incompatible change fails the job unless the
+    # library's SONAME moved (bump SOVERSION in rules/common.mk, and record
+    # the break in CHANGELOG.md); a compatible change is only reported, and
+    # a broken tool, build or download fails it too. ABI_BASELINE moves to
+    # the new tag after each release (docs/Prepare-for-a-new-released-version.md).
+    # A required context (.github/required-checks.txt); full tier only (#656) — a
+    # skipped run reports success, and the merge queue always runs it.
     needs: changes
     if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.full != 'false' }}
     runs-on: ubuntu-24.04
@@ -1129,18 +1134,20 @@ jobs:
     - uses: ./.github/actions/bootstrap-deps
       with:
         extra-packages: abigail-tools
-    - name: ABI diff against the baseline tag (types and symbols, report-only)
+    - name: ABI gate against the baseline tag (types and symbols)
       run: |
         out="$RUNNER_TEMP/abi-diff"
         mkdir -p "$out"
         abidiff --version
+        rc=0
         bash tools/ci/abi-diff.sh --baseline-ref "$ABI_BASELINE" \
-          --keep-libs "$out/libs" \
-          --report "$out/tag-report.txt" --summary "$out/tag-summary.md"
-        cat "$out/tag-summary.md" >> "$GITHUB_STEP_SUMMARY"
+          --keep-libs "$out/libs" --fail-on incompatible \
+          --report "$out/tag-report.txt" --summary "$out/tag-summary.md" || rc=$?
+        if [ -f "$out/tag-summary.md" ]; then cat "$out/tag-summary.md" >> "$GITHUB_STEP_SUMMARY"; fi
+        exit "$rc"
     - name: The compared HEAD build kept the release hardening
       run: bash tools/ci/check-hardening-flags.sh --built "$RUNNER_TEMP/abi-diff/libs/head/lib"
-    - name: ABI diff against the shipped baseline package (symbols, report-only)
+    - name: ABI gate against the shipped baseline package (symbols)
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
@@ -1155,10 +1162,12 @@ jobs:
         test "${#debs[@]}" -eq 1 && test -f "${debs[0]}"
         deb="$(basename "${debs[0]}")"
         (cd "$out/release" && awk -v f="$deb" '$2 == f' SHA256SUMS | sha256sum -c -)
+        rc=0
         bash tools/ci/abi-diff.sh --release-deb "${debs[0]}" \
-          --head-dir "$out/libs/head/lib" \
-          --report "$out/release-report.txt" --summary "$out/release-summary.md"
-        cat "$out/release-summary.md" >> "$GITHUB_STEP_SUMMARY"
+          --head-dir "$out/libs/head/lib" --fail-on incompatible \
+          --report "$out/release-report.txt" --summary "$out/release-summary.md" || rc=$?
+        if [ -f "$out/release-summary.md" ]; then cat "$out/release-summary.md" >> "$GITHUB_STEP_SUMMARY"; fi
+        exit "$rc"
     - name: Upload the ABI reports
       if: success() || failure()
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

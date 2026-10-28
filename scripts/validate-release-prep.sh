@@ -107,6 +107,13 @@ else
             "$(first_match "$ROOT/docs/_includes/quick-start.md" 's/.*pinned release tag (`\(v[^`]*\)`).*/\1/p')"
         agree "docs/index.html hero version" "$RELEASE_TAG" \
             "$(first_match "$ROOT/docs/index.html" 's/.*<\/span>\(v[0-9][^ ]*\) ·.*/\1/p')"
+        # The ABI gate's baseline is the last published tag too (issue #536):
+        # the abi-diff job and the script's default move with the installer
+        # pin, so the gate never keeps comparing against a stale release.
+        agree ".github/workflows/c-cpp.yml abi-diff ABI_BASELINE" "$RELEASE_TAG" \
+            "$(first_match "$ROOT/.github/workflows/c-cpp.yml" 's/^[[:space:]]*ABI_BASELINE:[[:space:]]*\(v[^[:space:]]*\).*/\1/p')"
+        agree "tools/ci/abi-diff.sh default baseline_ref" "$RELEASE_TAG" \
+            "$(first_match "$ROOT/tools/ci/abi-diff.sh" 's/^baseline_ref=\(v[^[:space:]]*\).*/\1/p')"
     fi
 fi
 # Check 2: mmt-test directory does NOT exist (doc should note this)

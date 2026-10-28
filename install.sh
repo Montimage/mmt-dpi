@@ -762,6 +762,10 @@ write_manifest() {
             (cd "$sdk/lib" && ls -d ./*.so.* ./*.a) | sed 's|^\./|dpi/lib/|'
             for f in libmmt_core libmmt_fuzz libmmt_security $MMT_PLUGIN_SET; do
                 echo "dpi/lib/$f.so"
+                # The SONAME links an installed Makefile lays down (issue #536).
+                for l in "$MMT_BASE/dpi/lib/$f".so.*; do
+                    if [ -L "$l" ]; then echo "dpi/lib/${l##*/}"; fi
+                done
             done
             for f in $MMT_PLUGIN_SET; do echo "plugins/$f.so"; done
             (cd "$sdk/include" && find . -mindepth 1) | sed 's|^\./|dpi/include/|'

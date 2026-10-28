@@ -92,6 +92,21 @@ install: --check-built --check-prefix
 	@ln -sf $(MMT_LIB)/$(LIBMOBILE).so.$(VERSION)    $(MMT_LIB)/$(LIBMOBILE).so
 	@ln -sf $(MMT_LIB)/$(LIBBAPP).so.$(VERSION)      $(MMT_LIB)/$(LIBBAPP).so
 	@ln -sf $(MMT_LIB)/$(LIBDICOM).so.$(VERSION)      $(MMT_LIB)/$(LIBDICOM).so
+# Runtime (SONAME) links, issue #536: lib<name>.so.$(SOVERSION) is what a
+# consumer's NEEDED entry names, so the loader needs it even when ldconfig
+# never runs (an unprivileged install). Only for the libraries installed.
+# Any other lib<name>.so.<n> there is a stale earlier version: one from v1.9.1
+# or before has SONAME lib<name>.so, so ldconfig would repoint the development
+# link at it. Removed (regular files and links only) before ldconfig runs.
+	@ for l in $(MMT_SONAME_LIBS); do \
+		if [ -f $(MMT_LIB)/$$l.so.$(VERSION) ]; then \
+			for f in $(MMT_LIB)/$$l.so.[0-9]*; do \
+				case "$${f##*/}" in $$l.so.$(VERSION)|$$l.so.$(SOVERSION)) continue ;; esac; \
+				if [ -L "$$f" ] || [ -f "$$f" ]; then rm -f -- "$$f" && echo "[MMT-]> Removed stale $$f"; fi; \
+			done; \
+			ln -sf $$l.so.$(VERSION) $(MMT_LIB)/$$l.so.$(SOVERSION); \
+		fi; \
+	done
 
 	@ echo "[MMT-]> Installed  "$(SDKLIB)" at "$(MMT_LIB)
 	@ umask 022 && cp -R $(SDKINC)/* $(MMT_INC) \
@@ -232,12 +247,14 @@ uninstall: --check-prefix
 MMT_MANIFEST     = $(MMT_BASE)/.mmt-dpi-manifest
 mmt_rel          = $(patsubst $(MMT_BASE)/%,%,$(1))
 MMT_LIB_LINKS    = libmmt_core.so libmmt_fuzz.so libmmt_security.so libmmt_tcpip.so $(LIBMOBILE).so $(LIBBAPP).so $(LIBDICOM).so
+# Every shared library, by base name; each gets its SONAME link (issue #536).
+MMT_SONAME_LIBS  = libmmt_core libmmt_fuzz libmmt_security libmmt_tcpip $(LIBMOBILE) $(LIBBAPP) $(LIBDICOM)
 MMT_PLUGIN_FILES = libmmt_tcpip.so $(LIBMOBILE).so $(LIBDICOM).so $(LIBBAPP).so
 # Shell snippets printing the entries `install` copies from this build.
 MMT_LIST_TREES   = (cd $(SDKINC) && find . -mindepth 1) | sed 's|^\./|$(call mmt_rel,$(MMT_INC))/|'; \
 	(cd $(SDKXAM) && find . -mindepth 1) | sed 's|^\./|$(call mmt_rel,$(MMT_EXAMS))/|'
 MMT_LIST_INSTALLED = (cd $(SDKLIB) && ls -d *.so.* *.a) | sed 's|^|$(call mmt_rel,$(MMT_LIB))/|'; \
-	for f in $(MMT_LIB_LINKS); do echo "$(call mmt_rel,$(MMT_LIB))/$$f"; done; \
+	for f in $(MMT_LIB_LINKS) $(addsuffix .so.$(SOVERSION),$(MMT_SONAME_LIBS)); do echo "$(call mmt_rel,$(MMT_LIB))/$$f"; done; \
 	for f in $(MMT_PLUGIN_FILES); do echo "$(call mmt_rel,$(MMT_PLUGINS))/$$f"; done; \
 	$(MMT_LIST_TREES); \
 	$(MMT_LIST_DOCS)
@@ -327,6 +344,11 @@ SEC_PKG_LICENSE := GPL-3.0-or-later AND Apache-2.0
 	$(QUIET) ln -s $(MMT_LIB)/$(LIBMOBILE).so.$(VERSION)    $(BUILD_DIR)$(MMT_LIB)/$(LIBMOBILE).so
 	$(QUIET) ln -s $(MMT_LIB)/$(LIBBAPP).so.$(VERSION)    $(BUILD_DIR)$(MMT_LIB)/$(LIBBAPP).so
 	$(QUIET) ln -s $(MMT_LIB)/$(LIBDICOM).so.$(VERSION)    $(BUILD_DIR)$(MMT_LIB)/$(LIBDICOM).so
+	# SONAME links (issue #536), as `install` lays them down: shipped in the
+	# package, not left to the postinst ldconfig, so dpkg/rpm own them.
+	$(QUIET) for l in $(MMT_SONAME_LIBS); do \
+		if [ -f $(BUILD_DIR)$(MMT_LIB)/$$l.so.$(VERSION) ]; then ln -s $$l.so.$(VERSION) $(BUILD_DIR)$(MMT_LIB)/$$l.so.$(SOVERSION); fi; \
+	done
 
 	#tell ldconfig to find mmt-dpi libraries at the installed folder
 	umask 022 && echo "$(MMT_LIB)" > $(BUILD_DIR)/etc/ld.so.conf.d/mmt-dpi.conf \
@@ -551,6 +573,8 @@ zip: sdk $(SDKLIB) $(SDKINC) $(SDKXAM)
 	# the bundled common file so the ZIP never drifts from the build.
 	$(QUIET) sed -i 's/^VERSION="$${VERSION:-.*}"/VERSION="$(VERSION)"/' $(BUILD_DIR)/mmt-install-common.sh 2>/dev/null || \
 	         sed -i 's/^VERSION="$${VERSION:-.*}"/VERSION="$(VERSION)"/' $(BUILD_DIR)/mmt-install-common.sh
+	# Likewise SOVERSION, which names the SONAME links its install.sh creates (issue #536).
+	$(QUIET) sed -i 's/^SOVERSION="$${SOVERSION:-.*}"/SOVERSION="$(SOVERSION)"/' $(BUILD_DIR)/mmt-install-common.sh
 	# Licence files (issue #497): the ZIP carries every library, so it ships
 	# LICENSE, THIRD-PARTY-NOTICES and, with the engines, the GPL text as COPYING.
 	$(QUIET) umask 022 && install -m 0644 $(PKG_LICENSE_FILES) $(BUILD_DIR)/ \

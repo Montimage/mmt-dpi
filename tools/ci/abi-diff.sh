@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# abi-diff.sh — report-only ABI comparison of the five SDK libraries against
-# the last release (issue #525; issue #536 turns the verdict into a gate).
+# abi-diff.sh — ABI comparison of the five SDK libraries against the last
+# release (issue #525), and the SOVERSION gate on it (issue #536).
 #
 # Libraries compared: libmmt_core, libmmt_tcpip, libmmt_tmobile,
 # libmmt_business_app, libmmt_tdicom (the regular libmmt_<name>.so.* file of
@@ -36,18 +36,29 @@
 # usage) = tool error; bit 8 = INCOMPATIBLE; bit 4 = CHANGED; 0 = NO CHANGE.
 # A library present on one side only is INCOMPATIBLE.
 #
+# Recorded breaks (issue #536, the SOVERSION policy in rules/common.mk): an
+# INCOMPATIBLE library whose SONAME differs between the two sides (read with
+# READELF -d) is RECORDED — the bump is announced, and the loader refuses to
+# pair a consumer linked against the old SONAME with the new library (from
+# SOVERSION 1 on: a pre-SOVERSION consumer still resolves the unversioned
+# development link, and dlopen'ed plugins carry no NEEDED on libmmt_core).
+# A SONAME that cannot be read on either side, or a library missing on one
+# side, stays INCOMPATIBLE (fail-closed). --fail-on incompatible counts only
+# the unrecorded INCOMPATIBLE verdicts; --fail-on change counts RECORDED too.
+#
 # Options:
 #   --baseline-ref REF   build mode baseline (default v1.9.1)
 #   --head-ref REF       build mode head (default HEAD)
 #   --keep-libs DIR      build mode: copy each side's libraries and headers
 #                        to DIR/{baseline,head}/{lib,include} before cleanup
-#   --fail-on WHAT       none (default) | incompatible | change
+#   --fail-on WHAT       none (default) | incompatible (an unrecorded break;
+#                        the CI gate) | change (any difference)
 #   --report FILE        full abidiff output (default: printed to stdout)
 #   --summary FILE       short Markdown summary: a verdict per library and an
 #                        excerpt of the report cut at ABI_SUMMARY_MAX_BYTES
 #                        (default 61440) bytes
 #
-# Environment: ABIDIFF (default abidiff), OBJCOPY (objcopy), DPKG_DEB
+# Environment: ABIDIFF (default abidiff), READELF (readelf), OBJCOPY (objcopy), DPKG_DEB
 # (dpkg-deb), MAKE (make), ABI_CC (gcc -g), ABI_CXX (g++ -std=c++11 -g),
 # ROOT_DIR (the repository the refs are read from; default this checkout),
 # TMPDIR (scratch location).
@@ -68,6 +79,7 @@ set -euo pipefail
 ROOT="${ROOT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 LIBS=(core tcpip tmobile business_app tdicom)
 ABIDIFF="${ABIDIFF:-abidiff}"
+READELF="${READELF:-readelf}"
 OBJCOPY="${OBJCOPY:-objcopy}"
 DPKG_DEB="${DPKG_DEB:-dpkg-deb}"
 MAKE="${MAKE:-make}"
@@ -133,6 +145,7 @@ for d in "$baseline_dir" "$head_dir" "$headers1" "$headers2"; do
     [ -z "$d" ] || [ -d "$d" ] || die "not a directory: $d"
 done
 command -v "$ABIDIFF" >/dev/null 2>&1 || die "abidiff not found ('$ABIDIFF'; install abigail-tools or set ABIDIFF)"
+command -v "$READELF" >/dev/null 2>&1 || die "readelf not found ('$READELF'; install binutils or set READELF)"
 if [ "$mode" = release ]; then
     command -v "$DPKG_DEB" >/dev/null 2>&1 || die "dpkg-deb not found ('$DPKG_DEB')"
     command -v "$OBJCOPY" >/dev/null 2>&1 || die "objcopy not found ('$OBJCOPY')"
@@ -180,6 +193,15 @@ find_lib() {
         found="$f"
     done
     printf '%s\n' "$found"
+}
+
+# soname_of <file>: the DT_SONAME of <file>, or "" when it has none or
+# READELF cannot read it.
+soname_of() {
+    local out
+    out="$("$READELF" -d "$1" 2>/dev/null)" || return 0
+    printf '%s\n' "$out" \
+        | sed -n 's/.*(SONAME)[[:space:]]*Library soname: \[\(.*\)\].*/\1/p' | head -n 1
 }
 
 title=""
@@ -238,6 +260,7 @@ rows=()
 n_error=0
 n_incompat=0
 n_changed=0
+n_recorded=0
 for name in "${LIBS[@]}"; do
     lib="libmmt_$name"
     old="$(find_lib "$baseline_dir" "$name")"
@@ -267,10 +290,23 @@ for name in "${LIBS[@]}"; do
         elif (( rc == 0 )); then verdict="NO CHANGE"
         else verdict="ERROR"
         fi
+        if [ "$verdict" = INCOMPATIBLE ]; then
+            so_old="$(soname_of "$old")"
+            so_new="$(soname_of "$new")"
+            if [ -n "$so_old" ] && [ -n "$so_new" ] && [ "$so_old" != "$so_new" ]; then
+                verdict="RECORDED"
+                body="SONAME bump $so_old → $so_new records this incompatible change (issue #536)
+$body"
+            else
+                body="unrecorded: SONAME '${so_old:-unreadable}' → '${so_new:-unreadable}' did not move (bump SOVERSION in rules/common.mk, issue #536)
+$body"
+            fi
+        fi
     fi
     case "$verdict" in
         ERROR) n_error=$((n_error + 1)) ;;
         INCOMPATIBLE) n_incompat=$((n_incompat + 1)) ;;
+        RECORDED) n_recorded=$((n_recorded + 1)) ;;
         CHANGED) n_changed=$((n_changed + 1)) ;;
     esac
     rows+=("$lib|$verdict|$rc")
@@ -300,7 +336,7 @@ if [ -n "$summary_out" ]; then
     {
         echo "### ABI diff: $title"
         echo
-        echo "Report-only (issue #525) — --fail-on $fail_on."
+        echo "Gate: --fail-on $fail_on (issue #536: an incompatible change fails unless its SONAME moved)."
         echo
         echo "| Library | Verdict | abidiff exit |"
         echo "|---------|---------|--------------|"
@@ -330,9 +366,9 @@ fi
 counted=0
 case "$fail_on" in
     incompatible) counted=$n_incompat ;;
-    change) counted=$((n_incompat + n_changed)) ;;
+    change) counted=$((n_incompat + n_recorded + n_changed)) ;;
 esac
-echo "Result: $n_incompat incompatible, $n_changed changed (--fail-on $fail_on)"
+echo "Result: $n_incompat incompatible, $n_recorded recorded by a SONAME bump, $n_changed changed (--fail-on $fail_on)"
 # The last command's status is the script's: no trailing `exit 0`
 # (shellcheck 0.11 then misreads the EXIT trap's function as unused).
 [ "$counted" -eq 0 ] || exit 1

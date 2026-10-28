@@ -62,6 +62,10 @@ assertions-live
 secret-scan
 # Replays tools/ci/fuzz/regressions before fuzzing (issue #486).
 fuzz
+# ABI gate against the last release tag (issue #536): fails on an
+# incompatible change whose SONAME did not move. Full tier only — a skipped
+# run reports success, and the merge queue always runs it.
+abi-diff
 resource-budgets (ubuntu-24.04-arm)
 
 # --- phase0-baseline.yml ---------------------------------------------------
