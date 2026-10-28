@@ -39,7 +39,14 @@
 # for it. So its workflow needs a `merge_group` trigger, and the job must
 # report a context of the committed list, or be in the `needs` of a job that
 # does (an aggregate). Path-filtered workflows (install-smoke, bootstrap-smoke)
-# are not checked: their jobs never gate a pull request.
+# are not checked: their jobs never gate a pull request. An aggregate gates a
+# queue-only job only when it still runs whatever that job's outcome — its
+# job-level `if:` is exactly `always()` or `!cancelled()` (any other condition
+# can be false when a need fails, is cancelled or is skipped, and a job
+# skipped that way reports success) — and reads its result
+# (`needs.<job>.result`, `needs['<job>'].result` or `needs.*.result`) in a
+# step. The step-side read is a static heuristic; whether the verdict is
+# right is the workflow self-tests' job.
 #
 # Retired contexts (issue #659): .github/retired-checks.txt, same format, lists
 # contexts folded into other jobs that protection may still require. Each must
@@ -371,13 +378,17 @@ for path in files:
         for cname, is_glob in names:
             reported.append((cname, is_glob, f"{wf}:{job_id}", job_why, stub))
         if always_on_pr:
-            step_ifs = [str(st.get("if", "")) for st in job.get("steps") or []
-                        if isinstance(st, dict)]
+            steps = [st for st in job.get("steps") or []
+                     if isinstance(st, dict)]
+            step_ifs = [str(st.get("if", "")) for st in steps]
             needs = job.get("needs") or []
             pr_jobs.append({
                 "wf": wf, "job_id": str(job_id), "names": names,
                 "off_pr": any(OFF_PR_IF.search(c) for c in [cond] + step_ifs),
-                "group": on_group,
+                "group": on_group, "cond": cond,
+                # Everything a step may read a need's result from.
+                "step_text": " ".join(str(st.get(k, "")) for st in steps
+                                      for k in ("if", "env", "run", "with")),
                 "needs": [needs] if isinstance(needs, str) else list(needs)})
 
 
@@ -426,6 +437,25 @@ def matches_ctx(names, ctx):
     return any((fnmatchcase(ctx, n) if g else ctx == n) for n, g in names)
 
 
+def aggregate_flaw(agg, job_id):
+    """Why `agg` would not fail when its need `job_id` fails, or ''."""
+    # The job-level half is exact: only `always()` or `!cancelled()` keeps
+    # the aggregate running whatever its needs' outcome. The step-side read
+    # is a static heuristic: it proves the aggregate looks at the result,
+    # not that its verdict is right — the wiring self-tests run each
+    # aggregate's verdict over every outcome.
+    if not NEVER_SKIPS_IF.match(agg["cond"]):
+        return ("has a job-level `if:` other than always() or !cancelled(), "
+                "so a failed, cancelled or skipped need can skip it and the "
+                "skip reports success")
+    if not re.search(r"needs(?:\.(?:\*|" + re.escape(job_id) + r")|\[\s*'"
+                     + re.escape(job_id) + r"'\s*\])\.result",
+                     agg["step_text"]):
+        return (f"reads neither needs.{job_id}.result nor needs.*.result in "
+                f"a step, so it passes whatever the need's outcome")
+    return ""
+
+
 committed = read_list(contexts_path)
 print(f"=== required contexts ({len(committed)}) in {contexts_path} ===")
 if not committed:
@@ -459,9 +489,20 @@ for j in pr_jobs:
         failures += 1
         continue
     gov = []
+    broken = 0
     for k in pr_jobs:
         if k["wf"] == j["wf"] and j["job_id"] in k["needs"]:
-            gov += [c for c in committed if matches_ctx(k["names"], c)]
+            agg_ctx = [c for c in committed if matches_ctx(k["names"], c)]
+            flaw = aggregate_flaw(k, j["job_id"]) if agg_ctx else ""
+            if flaw:
+                print(f"  FAIL queue-only: {where} is gated through the "
+                      f"aggregate {j['wf']}:{k['job_id']}, which {flaw}")
+                broken += 1
+                continue
+            gov += agg_ctx
+    if broken:
+        failures += broken
+        continue
     if not gov:
         # Gated by its own contexts: every one of them — each matrix leg —
         # must be required, since any leg may be the one that skips.

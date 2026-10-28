@@ -195,9 +195,9 @@ sdk/Makefile:1	^ARCH +\?= linux	-	default architecture is Linux
 rules/arch-linux.mk:2-3	^CXX := g\+\+	^CC  := gcc	Linux uses GCC and G++
 rules/arch-linux.mk:20-21	^CFLAGS \+= -std=gnu17$	^CFLAGS \+= \$\(MMT_EXTRA_CFLAGS\)$	the GCC toolchain pins gnu17, MMT_EXTRA_CFLAGS comes after
 rules/arch-linux.mk:73-85	^ifneq \(\$\(strip \$\(MMT_CCACHE\)\),\)	^endif$	MMT_CCACHE is an opt-in launcher in front of CC/CXX	override CC  := \$\(MMT_CCACHE\) \$\(CC\)
-.github/workflows/c-cpp.yml:507-512	Set up Ruby	bundler-cache: true	docs CI uses Ruby 3.4	ruby-version: "3.4"
+.github/workflows/c-cpp.yml:517-522	Set up Ruby	bundler-cache: true	docs CI uses Ruby 3.4	ruby-version: "3.4"
 docs/Gemfile:12-17	^source	^gem "jekyll-seo-tag"	documentation gems	jekyll
-.github/workflows/c-cpp.yml:525	bash tools/ci/build-docs-site.sh	-	CI builds Jekyll
+.github/workflows/c-cpp.yml:535	bash tools/ci/build-docs-site.sh	-	CI builds Jekyll
 rules/common.mk:3-8	^MMT_BASE	^MMT_EXAMS	Make install configuration
 tests/fault_injection/run_tests.sh:115-117	^ *make .* clean	^ *make .* install	fault injection builds and installs SDK
 tests/fault_injection/run_tests.sh:97-102	^if .*SDK_BUILD_PROFILE	^fi	sanitizers skip fault injection engine leg	exit 0

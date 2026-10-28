@@ -45,11 +45,16 @@ jobs:
     # `changes` — every output empty — runs everything, and an empty suite
     # list runs every suite.
     #
-    # Queue-only legs (issue #658): unit-tests-unsigned-char and the
-    # -fsigned-char unit-tests leg skip on every pull request and run in the
-    # merge queue (and on push and the schedule). Both contexts are required,
-    # so the queue waits for them: nothing leaves the PR path ungated, which
-    # tools/ci/check-required-checks.sh enforces.
+    # Queue-only legs (issue #658): unit-tests-unsigned-char, the
+    # -fsigned-char unit-tests leg, coverage, toolchain-floor and
+    # assertions-live skip on every pull request and run in the merge queue
+    # (and on push and the schedule). The queue waits only for required
+    # contexts: the first three report their own, and the other two are
+    # needed by `build`, whose required context fails when one of them did
+    # not succeed. Nothing leaves the PR path ungated, which
+    # tools/ci/check-required-checks.sh enforces. toolchain-ceiling stays on
+    # pull requests: it runs on a preview runner label, and making it
+    # merge-blocking is a maintainer call (docs/DECISIONS.md, issue #657).
     #
     # Every required context still reports. A job skipped by its `if:`
     # reports success, so the single-context jobs gate at job level — with
@@ -221,8 +226,10 @@ jobs:
     # job keeps its name, so the required context is unchanged. The image
     # retires on the date tools/ci/base-images.txt records (docs/DECISIONS.md).
     # Runs on the tests, family and full tiers, on the tier's suites (#656).
+    # A merge-queue leg (issue #658): it skips on pull requests, and `build`
+    # needs it, so the queue's required `build` context gates it.
     needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' }}
+    if: ${{ !cancelled() && github.event_name != 'pull_request' && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     container:
@@ -336,9 +343,12 @@ jobs:
     # library line percentage and instrumented-file count, enforce the
     # committed floor (tests/coverage/floor.json), and publish the report as
     # a CI artifact. Full tier only (#656): the floors measure every suite
-    # and harness, so a subset would fail them.
+    # and harness, so a subset would fail them. A merge-queue leg (issue
+    # #658): the floors are whole-repo metrics, checked once per merge, not
+    # per pull-request push; it skips on pull requests and its own required
+    # context gates the queue.
     needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.full != 'false' }}
+    if: ${{ !cancelled() && github.event_name != 'pull_request' && needs.changes.outputs.code != 'false' && needs.changes.outputs.full != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -729,10 +739,38 @@ jobs:
     # Never skips on a docs-only change (issue #552): its runtime
     # protocol-count check compares README.md, docs/index.html and
     # docs/_config.yml with the built SDK, so it is a docs job too.
+    #
+    # Also the aggregate of the variant-build legs (issue #658):
+    # toolchain-floor (GCC 11) and assertions-live (NDEBUG=1) skip on pull
+    # requests and run in the merge queue, which waits only for required
+    # contexts. `build` is one, so it needs them and fails unless each
+    # succeeded — a skip is accepted on a pull request only. !cancelled()
+    # keeps it running when one of them fails: a job skipped by a failed need
+    # would report success. On a pull request they skip as soon as `changes`
+    # (their need) finishes, so `build` starts after `changes`; in the queue
+    # it starts after the slower of the two.
+    needs: [toolchain-floor, assertions-live]
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
 
     steps:
+    - name: Variant-build legs succeeded (merge queue, push and schedule)
+      env:
+        EVENT: ${{ github.event_name }}
+        FLOOR: ${{ needs.toolchain-floor.result }}
+        ASSERTIONS: ${{ needs.assertions-live.result }}
+      run: |
+        bad=0
+        for leg in "toolchain-floor=$FLOOR" "assertions-live=$ASSERTIONS"; do
+          result="${leg#*=}"
+          echo "${leg%%=*}: ${result}"
+          [ "$result" = success ] && continue
+          [ "$result" = skipped ] && [ "$EVENT" = pull_request ] && continue
+          echo "::error::${leg%%=*} did not succeed (${result})"
+          bad=1
+        done
+        exit "$bad"
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - uses: ./.github/actions/bootstrap-deps
     - name: build-from-source
@@ -790,9 +828,11 @@ jobs:
     # compile line, then runs the full unit-suite set with the variable in
     # the environment so the SDK the suites build internally is the
     # assertions-live one too. Runs on the tests, family and full tiers, on
-    # the tier's suites (#656).
+    # the tier's suites (#656). A merge-queue leg (issue #658): it skips on
+    # pull requests, and `build` needs it, so the queue's required `build`
+    # context gates it.
     needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' }}
+    if: ${{ !cancelled() && github.event_name != 'pull_request' && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -1074,7 +1114,10 @@ jobs:
     # 15's C23 default where none is pinned) and get the GCC >= 15
     # diagnostics. The floor job above is unchanged. ubuntu-26.04 is a
     # GitHub preview runner label. Runs on the tests, family and full tiers,
-    # on the tier's suites (#656).
+    # on the tier's suites (#656). Not a merge-queue leg (issue #658): on a
+    # preview runner label, a stalled or retired runner would block the queue
+    # through `build`, so it stays on pull requests until a maintainer
+    # requires its context.
     needs: changes
     if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' }}
     runs-on: ubuntu-26.04

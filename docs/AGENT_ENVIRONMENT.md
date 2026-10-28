@@ -58,7 +58,10 @@ and with `-funsigned-char` on x86 (`unit-tests-unsigned-char`, through
 exercised (issue #528). The x86 mirror, like the `-fsigned-char` leg of
 `unit-tests`, runs in the merge queue (and on push and the schedule), not on
 pull requests (issue #658): both contexts are required, so the queue waits
-for them.
+for them. So do the `toolchain-floor` and `assertions-live` jobs below,
+which gate through the required `build` context: `build` needs them and
+fails unless each succeeded. `toolchain-ceiling`, on a preview runner
+label, still runs on every pull request.
 
 **Supported floor (issue #218, F-DEP-207):** GCC ≥ 11 with glibc ≥ 2.34 and
 libstdc++6 ≥ 11 — the oldest toolchain the release matrix
@@ -167,7 +170,7 @@ Notes:
 ### Documentation-site toolchain
 
 The C SDK does not require Ruby. For the documentation site, use Ruby **3.4**
-as in CI (`.github/workflows/c-cpp.yml:507-512`), with Bundler to install
+as in CI (`.github/workflows/c-cpp.yml:517-522`), with Bundler to install
 the gems and run Jekyll; every workflow's `ruby-version:` is that same
 release (issue #517). CI enables `bundler-cache` through `ruby/setup-ruby`
 and verifies the committed `docs/Gemfile.lock` under `BUNDLE_FROZEN=true`
@@ -183,7 +186,7 @@ gem install bundler
 ```
 
 `docs/Gemfile:12-17` defines Jekyll and its plugins. CI builds the site with
-`tools/ci/build-docs-site.sh` (`.github/workflows/c-cpp.yml:525`): source and
+`tools/ci/build-docs-site.sh` (`.github/workflows/c-cpp.yml:535`): source and
 built-site link checks around a frozen Jekyll 4 build, the lock-unchanged
 check, and a `docs/_site/build-manifest.json` recording the renderer versions,
 the lock digest and a site digest. GitHub Pages publishes the artifact that
@@ -473,8 +476,10 @@ whole SDK drops below `sdk.whole_sdk_line_pct` (measured 65.53% at issue
 `tools/ci/report-uncovered-runs.sh` as a gate: a contiguous run of more than
 10 uncovered lines in `coverage.info` fails it (issue #524).
 
-CI runs both modes on every push/PR to main (`.github/workflows/c-cpp.yml`,
-jobs `sanitizer-tests` and `coverage`); the coverage job uploads
+CI runs both modes on every push to main (`.github/workflows/c-cpp.yml`,
+jobs `sanitizer-tests` and `coverage`); `sanitizer-tests` also runs on every
+pull request, `coverage` in the merge queue instead (issue #658: the floors
+are whole-repo metrics, checked once per merge). The coverage job uploads
 `tests/coverage/` as a workflow artifact.
 
 ## 4. `MMT_BASE` Install-Prefix Behavior

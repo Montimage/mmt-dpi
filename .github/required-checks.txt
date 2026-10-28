@@ -26,8 +26,10 @@
 # reporting a context here also triggers on `merge_group`, and the helper
 # fails a context that a merge-queue run would not report (see its header).
 # A job that skips on pull requests and runs only in the queue (issue #658)
-# must report a context listed here, or be needed by one, or the queue would
-# not wait for it.
+# must report a context listed here, or be needed by one whose job-level if:
+# is exactly always() or !cancelled() and that reads its result, or the queue
+# would not wait for it. The queue waits only for contexts protection
+# requires LIVE: check with `check-required-checks.sh --live`.
 #
 # Retired contexts (issue #659) — folded into another job but possibly still
 # required by protection — are listed in .github/retired-checks.txt, not here.
@@ -45,11 +47,17 @@ unit-tests (-fsigned-char, hashmap memory hexdump mmt_utils mmt_inet_ntop)
 # gate them.
 unit-tests-arm
 unit-tests-unsigned-char
+# A merge-queue leg (issue #658), skipped on pull requests: `build`
+# (required live) needs it and fails unless it succeeded, so the queue gates
+# it before its own context is required live. Likewise assertions-live.
 toolchain-floor
 # Runs on the ubuntu-26.04 preview runner label (GCC >= 15, C23; #514).
+# Still on pull requests (issue #658): it moves to the queue only once a
+# maintainer requires it, since a stalled preview runner would block it.
 toolchain-ceiling
 sanitizer-tests (BUILD=asan, asan)
 sanitizer-tests (BUILD=tsan, tsan)
+# A merge-queue leg (issue #658): whole-repo floors, checked once per merge.
 coverage
 lint
 codeql
@@ -58,6 +66,7 @@ pre-commit
 doc-validators
 version-agreement
 root-install
+# A merge-queue leg (issue #658), gated through `build` (see toolchain-floor).
 assertions-live
 secret-scan
 # Replays tools/ci/fuzz/regressions before fuzzing (issue #486).
@@ -79,4 +88,6 @@ leak-gate
 # --- release-packages.yml --------------------------------------------------
 # Always reports: passes when a PR touches no packaging path (build and
 # reproducibility skipped), else requires every package leg to succeed.
+# Not required live yet, so every package leg still runs on pull requests
+# (issue #658): the matrix moves to the queue only once this is required.
 packages-gate
