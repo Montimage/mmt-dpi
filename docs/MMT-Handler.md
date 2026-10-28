@@ -34,7 +34,7 @@ MMT Handler has the following elements:
 ```c
    uint64_t get_active_session_count(mmt_handler_t * mmt_handler);
 ```
-   Returns the count of active sessions (`src/mmt_core/public_include/mmt_core.h:229`).
+   Returns the count of active sessions (`src/mmt_core/public_include/mmt_core.h:230`).
 
 ```c
    int get_data_link_type(mmt_handler_t *mmt_handler);
@@ -111,7 +111,7 @@ Register an evasion_handler
 bool register_evasion_handler(mmt_handler_t * mmt_handler, generic_evasion_handler_callback evasion_handler, mmt_opaque_t user_args);
 ```
 
-Signature from `src/mmt_core/public_include/mmt_core.h:331`; `user_args` is passed back to the callback as `args`.
+Signature from `src/mmt_core/public_include/mmt_core.h:332`; `user_args` is passed back to the callback as `args`.
 
 With `evasion_handler`:
 
@@ -133,7 +133,7 @@ Define the id of evasion (`src/mmt_core/public_include/mmt_core.h:106-110`):
 #define EVA_IP_FRAGMENT_DUPLICATED 5 // Event: IP fragmentation duplicated segments
 ```
 
-Update the value for the limit number of fragment in packet (`src/mmt_core/public_include/mmt_core.h:580`)
+Update the value for the limit number of fragment in packet (`src/mmt_core/public_include/mmt_core.h:581`)
 ```c
 MMTAPI bool MMTCALL set_fragment_in_packet(
     mmt_handler_t *mmt_handler,
@@ -149,7 +149,7 @@ MMTAPI bool MMTCALL set_fragmented_packet_in_session(
 );
 ```
 
-Set value for number of fragmented packet in session (`src/mmt_core/public_include/mmt_core.h:592`); returns `true` on success.
+Set value for number of fragmented packet in session (`src/mmt_core/public_include/mmt_core.h:593`); returns `true` on success.
 
 ```c
 MMTAPI bool MMTCALL set_fragment_in_session(
@@ -158,7 +158,7 @@ MMTAPI bool MMTCALL set_fragment_in_session(
 );
 ```
 
-Set value for number of fragments in one session (`src/mmt_core/public_include/mmt_core.h:604`); returns `true` on success.
+Set value for number of fragments in one session (`src/mmt_core/public_include/mmt_core.h:605`); returns `true` on success.
 
 
 ## Open Issues ##

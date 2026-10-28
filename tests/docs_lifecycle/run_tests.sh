@@ -37,17 +37,17 @@ CITING_DOCS=(docs/USER_GUIDE.md docs/THREADING.md docs/Global-Handler.md docs/MM
 # <path>:<start>[-<end>] <TAB> <regex the start line must match>
 #   [<TAB> <regex the end line must match>]
 CITATIONS="$(cat <<'TABLE'
-src/mmt_core/src/packet_registry.c:1255	^bool init_extraction\(\)
-src/mmt_core/src/packet_registry.c:1303-1304	^ *init_plugins\(\);	mmt_configured_handlers_map = init_map_space
-src/mmt_core/src/packet_registry.c:950	^mmt_handler_t \*mmt_init_handler\(
-src/mmt_core/src/packet_registry.c:1097	insert_key_value\(mmt_configured_handlers_map
+src/mmt_core/src/packet_registry.c:1260	^bool init_extraction\(\)
+src/mmt_core/src/packet_registry.c:1308-1309	^ *init_plugins\(\);	mmt_configured_handlers_map = init_map_space
+src/mmt_core/src/packet_registry.c:955	^mmt_handler_t \*mmt_init_handler\(
+src/mmt_core/src/packet_registry.c:1102	insert_key_value\(mmt_configured_handlers_map
 src/mmt_core/src/packet_pipeline.c:1502	^bool packet_process\(
-src/mmt_core/src/packet_registry.c:1130	^void mmt_close_handler\(mmt_handler_t
-src/mmt_core/src/packet_registry.c:1180	delete_key_value\(mmt_configured_handlers_map
-src/mmt_core/src/packet_registry.c:1333	^void close_extraction\(\)
-src/mmt_core/src/packet_registry.c:1333-1351	^void close_extraction\(\)	^\}$
-src/mmt_core/src/packet_registry.c:1336	iterate_through_mmt_handlers\(mmt_close_handler_internal
-src/mmt_core/src/packet_registry.c:1350	^ *close_plugins\(\);
+src/mmt_core/src/packet_registry.c:1135	^void mmt_close_handler\(mmt_handler_t
+src/mmt_core/src/packet_registry.c:1185	delete_key_value\(mmt_configured_handlers_map
+src/mmt_core/src/packet_registry.c:1338	^void close_extraction\(\)
+src/mmt_core/src/packet_registry.c:1338-1356	^void close_extraction\(\)	^\}$
+src/mmt_core/src/packet_registry.c:1341	iterate_through_mmt_handlers\(mmt_close_handler_internal
+src/mmt_core/src/packet_registry.c:1355	^ *close_plugins\(\);
 src/examples/packet_handler.c:63	if *\(!init_extraction\(\)\)
 src/examples/packet_handler.c:69	mmt_handler = mmt_init_handler\(
 src/examples/packet_handler.c:100	if *\(!packet_process\(mmt_handler
@@ -55,15 +55,15 @@ src/examples/packet_handler.c:108	^	mmt_close_handler\(mmt_handler\);
 src/examples/packet_handler.c:111	^	close_extraction\(\);
 src/mmt_core/public_include/mmt_core.h:185	MMTAPI bool MMTCALL init_extraction\(\);
 src/mmt_core/public_include/mmt_core.h:198	MMTAPI void MMTCALL close_extraction\(\);
-src/mmt_core/public_include/mmt_core.h:1228	MMTAPI char\* MMTCALL mmt_version\(\);
+src/mmt_core/public_include/mmt_core.h:1229	MMTAPI char\* MMTCALL mmt_version\(\);
 src/mmt_core/public_include/mmt_core.h:106-110	^#define EVA_IP_FRAGMENT_PACKET 1	^#define EVA_IP_FRAGMENT_DUPLICATED 5
 src/mmt_core/public_include/mmt_core.h:125	^typedef void \(\*generic_evasion_handler_callback\)
 src/mmt_core/public_include/mmt_core.h:218	^MMTAPI void MMTCALL mmt_close_handler\(
-src/mmt_core/public_include/mmt_core.h:229	^MMTAPI uint64_t MMTCALL get_active_session_count\(
-src/mmt_core/public_include/mmt_core.h:331	^MMTAPI bool MMTCALL register_evasion_handler\(
-src/mmt_core/public_include/mmt_core.h:580	^MMTAPI bool MMTCALL set_fragment_in_packet\(
-src/mmt_core/public_include/mmt_core.h:592	^MMTAPI bool MMTCALL set_fragmented_packet_in_session\(
-src/mmt_core/public_include/mmt_core.h:604	^MMTAPI bool MMTCALL set_fragment_in_session\(
+src/mmt_core/public_include/mmt_core.h:230	^MMTAPI uint64_t MMTCALL get_active_session_count\(
+src/mmt_core/public_include/mmt_core.h:332	^MMTAPI bool MMTCALL register_evasion_handler\(
+src/mmt_core/public_include/mmt_core.h:581	^MMTAPI bool MMTCALL set_fragment_in_packet\(
+src/mmt_core/public_include/mmt_core.h:593	^MMTAPI bool MMTCALL set_fragmented_packet_in_session\(
+src/mmt_core/public_include/mmt_core.h:605	^MMTAPI bool MMTCALL set_fragment_in_session\(
 src/mmt_core/src/plugins_engine.c:43-50	scandir\( PLUGINS_REPOSITORY,	scandir\( PLUGINS_REPOSITORY_OPT,
 TABLE
 )"

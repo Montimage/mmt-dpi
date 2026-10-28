@@ -256,11 +256,11 @@ MMTAPI int MMTCALL register_pre_post_analysis_functions(
 ```
 This function registers a pre and post analysis functions for the protocol identified by the given protocol_struct. This function MUST only be used when a protocol registers its own analysis function. This function will always perform what it is supposed to do.
 ```c
-MMTAPI int MMTCALL is_free_protocol_id_for_registraction(
-    uint32_t proto_id
+MMTAPI bool MMTCALL is_free_protocol_id_for_registration(
+    mmt_proto_id_t proto_id
 );
 ```
-This function returns a positive value if their is no protocol registered with the given identifier. NULL otherwise.
+This function returns true if the identifier is valid and no protocol is registered with it, false otherwise. The misspelled `is_free_protocol_id_for_registractionl` remains exported but is deprecated (removal in 2.0.0) (`src/mmt_core/public_include/plugin_defs.h`).
 ```c
 MMTAPI protocol_t* MMTCALL get_protocol_struct_for_registration_if_free(
     uint32_t proto_id

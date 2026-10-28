@@ -18,6 +18,7 @@ extern "C" {
  #include <stdint.h>
  #include <math.h>
  #include <stdbool.h>
+ #include <limits.h> /* ULONG_MAX: MMT_HEX2DEC_ERROR */
  #include "mmt_exports.h"
 
 /**
@@ -71,10 +72,11 @@ MMTAPI char * MMTCALL str_hex2str(char *hstr, int start_index, int end_index);
 /**
  * Convert a string of a hexa number to decimal number
  * @param  str string
- * @return     -1 if the string is not a hexa number
+ * @return     MMT_HEX2DEC_ERROR if the string is not a hexa number
  *              0 if all the characters of @str is '0'
  *             value of hexa number in decimal system
  */
+#define MMT_HEX2DEC_ERROR ULONG_MAX /**< issue #546: the value `return -1` used to produce */
 MMTAPI unsigned long MMTCALL hex2dec(char* str);
 
 

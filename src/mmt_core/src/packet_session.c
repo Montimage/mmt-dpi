@@ -230,7 +230,7 @@ void process_timedout_sessions(mmt_handler_t * mmt_handler, uint32_t current_sec
 
 uint64_t get_active_session_count(mmt_handler_t *mmt_handler) {
     if (mmt_handler == NULL) {
-        return -1;
+        return MMT_INVALID_SESSION_COUNT;
     } else {
         return mmt_handler->active_sessions_count;
     }

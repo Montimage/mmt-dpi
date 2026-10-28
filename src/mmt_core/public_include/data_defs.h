@@ -15,6 +15,7 @@ extern "C" {
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <limits.h>     /* UINT_MAX: MMT_NO_PROTO_INDEX */
 #include <sys/types.h>  /* u_char */
 #include "types_defs.h"
 #include "mmt_exports.h"
@@ -226,9 +227,11 @@ struct proto_statistics_struct {
     uint64_t ip_df_packets_count;         /**< Total number of defragmented IP packets seen by the IP protocol*/
     uint64_t ip_df_data_volume;           /**< Total data volume of defragmented IP packets seen by the IP protocol*/
     uint64_t payload_volume;              /**< Total payload data volume seen by the protocol  on a particular protocol path */
-    uint64_t packets_count_direction[2];  /**< Total number of UL/DL packets seen by the protocol  on a particular protocol path */
-    uint64_t data_volume_direction[2];    /**< Total UL/DL data volume seen by the protocol  on a particular protocol path */
-    uint64_t payload_volume_direction[2]; /**< Total UL/DL payload data volume seen by the protocol  on a particular protocol path */
+    uint64_t packets_count_direction[2];  /**< Total number of UL/DL packets seen by the protocol  on a particular protocol path.
+                                               [0] = uplink (the direction of the session's first packet), [1] = downlink;
+                                               packets crossing the protocol without a session are counted in packets_count only */
+    uint64_t data_volume_direction[2];    /**< Total UL/DL data volume seen by the protocol  on a particular protocol path (same split) */
+    uint64_t payload_volume_direction[2]; /**< Total UL/DL payload data volume seen by the protocol  on a particular protocol path (same split) */
     uint64_t sessions_count;              /**< Total number of sessions seen by the protocol  on a particular protocol path */
     uint64_t timedout_sessions_count;     /**< Total number of timedout sessions (this is the difference between sessions count and active sessions count) on a particular protocol path */
     struct proto_statistics_struct *next; /**< next instance of statistics for the same protocol */
@@ -307,11 +310,21 @@ MMTAPI int MMTCALL get_packet_offset_at_index(
     unsigned index
 );
 
+/*
+ * Issue #546: the "not found" results of the unsigned accessors below. Each
+ * has the value `return -1` used to produce in that return type, so callers
+ * comparing against (uint32_t) -1, (unsigned) -1, (uint64_t) -1 — or storing
+ * an index in an int and testing it against -1 — keep working.
+ */
+#define MMT_NO_PROTO_ID    UINT32_MAX /**< get_protocol_id_at_index(): no protocol at that index */
+#define MMT_NO_PROTO_INDEX UINT_MAX   /**< get_protocol_index_by_id/_by_name(): protocol not in the hierarchy */
+#define MMT_NO_SESSION_ID  UINT64_MAX /**< get_session_id_from_packet(): the packet has no session */
+
 /**
  * Returns the identifier of the protocol at the given index
  * @param ipacket the packet structure
  * @param index the index of the protocol
- * @return the identifier of the protocol at the given index if such index exists, -1 otherwise.
+ * @return the identifier of the protocol at the given index if such index exists, MMT_NO_PROTO_ID otherwise.
  */
 MMTAPI uint32_t MMTCALL get_protocol_id_at_index(
     const ipacket_t *ipacket,
@@ -320,11 +333,11 @@ MMTAPI uint32_t MMTCALL get_protocol_id_at_index(
 
 /**
  * Returns the index of the protocol given by its identifier.
- * If the protocol identifier is not valid or the protocol does not appear in the protocol stack, -1 is returned.
+ * If the protocol identifier is not valid or the protocol does not appear in the protocol stack, MMT_NO_PROTO_INDEX is returned.
  * @param ipacket the packet structure
  * @param proto_id the identifier of the protocol to get its index
  * @return the index of the protocol given by its id.
- * If the protocol id is not valid or the protocol does not appear in the protocol hierarchy, -1 is returned.
+ * If the protocol id is not valid or the protocol does not appear in the protocol hierarchy, MMT_NO_PROTO_INDEX is returned.
  */
 MMTAPI unsigned MMTCALL get_protocol_index_by_id(
     const ipacket_t *ipacket,
@@ -333,11 +346,11 @@ MMTAPI unsigned MMTCALL get_protocol_index_by_id(
 
 /**
  * Returns the index of the protocol given by its name.
- * If the protocol name is not valid or the protocol does not appear in the protocol hierarchy, -1 is returned.
+ * If the protocol name is not valid or the protocol does not appear in the protocol hierarchy, MMT_NO_PROTO_INDEX is returned.
  * @param ipacket the packet structure
  * @param proto_name the name of the protocol to get its index
  * @return the index of the protocol given by its name.
- * If the protocol name is not valid or the protocol does not appear in the protocol hierarchy, -1 is returned.
+ * If the protocol name is not valid or the protocol does not appear in the protocol hierarchy, MMT_NO_PROTO_INDEX is returned.
  */
 MMTAPI unsigned MMTCALL get_protocol_index_by_name(
     const ipacket_t *ipacket,
@@ -347,7 +360,7 @@ MMTAPI unsigned MMTCALL get_protocol_index_by_name(
 /**
  * Returns the session ID associated to ipacket
  * @param ipacket the packet structure
- * @return the associated session identifier.
+ * @return the associated session identifier, MMT_NO_SESSION_ID when the packet has no session.
  */
 MMTAPI uint64_t MMTCALL get_session_id_from_packet(
     const ipacket_t *ipacket

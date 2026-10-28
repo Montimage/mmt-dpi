@@ -38,6 +38,15 @@ read -r -a extra_cflags <<< "${EXTRA_CFLAGS:-}"
 
 INCS=(-I"$CORE_PRIVATE_INC" -I"$CORE_PUBLIC_INC" -I"$PROJECT_DIR/src/mmt_tcpip/lib")
 
+# Issue #546: the classifier typedef returns mmt_classify_verdict_t in C and
+# keeps its int view in C++; an int-returning classifier must still register
+# from both languages, through the public headers alone, without a warning.
+echo "Compiling the classifier-typedef probe (C and C++)..."
+"$CC" -std=gnu17 -Wall -Wextra -Werror -c -I"$CORE_PUBLIC_INC" \
+    "$SCRIPT_DIR/verdict_typedef_probe.c" -o /dev/null
+"${CXX:-g++}" -x c++ -std=c++11 -Wall -Wextra -Werror -fsyntax-only -I"$CORE_PUBLIC_INC" \
+    "$SCRIPT_DIR/verdict_typedef_probe.c"
+
 echo "Compiling core-engine tests..."
 
 C_SOURCES="packet_processing.c packet_registry.c packet_pipeline.c \

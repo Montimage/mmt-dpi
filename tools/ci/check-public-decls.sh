@@ -12,13 +12,16 @@
 # tracked sources under src/. With --libs DIR (or when built libraries are
 # found under sdk/lib or $MMT_BASE/dpi/lib) the same names are additionally
 # checked against `nm -D` output — the check the task record asks for.
+# It also fails when a declaration with an unsigned return type has a
+# definition that returns -1 (issue #546, F-CLEAN-020).
 #
 # With --list it only prints the declared names, sorted and unique, one per
 # line — the set tools/ci/check-api-contracts.sh compares the public-API
 # contract table against (issue #525). It exits 2 when an MMTAPI declaration
 # lacks the MMTCALL marker, which the name set would otherwise miss.
 #
-# Exit codes: 0 = all declarations resolve, 1 = unresolved declaration(s),
+# Exit codes: 0 = all declarations resolve, 1 = unresolved declaration(s)
+#             or an unsigned public function returning -1,
 #             2 = helper broken (also: --list parsed no declaration).
 #
 # Usage: bash tools/ci/check-public-decls.sh [--libs DIR | --list]
@@ -129,6 +132,54 @@ if missing:
     sys.exit(1)
 
 print(f"✓ all {len(decls)} public declarations resolve to a definition")
+
+# Issue #546 (F-CLEAN-020): a public function with an unsigned return type
+# must not `return -1` — the caller sees UINT_MAX/UINT64_MAX under a contract
+# that reads "-1". Return a named sentinel (MMT_NO_PROTO_ID, ...) instead.
+# Flags a literal `return -1;` and a local initialised to -1 that is returned.
+decl_text = re.sub(r"^[ \t]*#(?:[^\n]*\\\n)*[^\n]*", "", text, flags=re.M)
+rettype = {
+    m.group(2): " ".join(m.group(1).split())
+    for m in re.finditer(r"\bMMTAPI\b([^;{}]*?)\bMMTCALL\b\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(",
+                         decl_text, re.S)}
+unsigned_re = re.compile(r"\b(unsigned|uint(8|16|32|64)_t|size_t|mmt_proto_id_t)\b")
+src_nc = re.sub(r"/\*.*?\*/", "", src, flags=re.S)
+src_nc = re.sub(r"//[^\n]*", "", src_nc)
+neg1 = r"\(?\s*-\s*1\s*\)?"
+minus_one = []
+for name, rt in sorted(rettype.items()):
+    if "*" in rt or not unsigned_re.search(rt):
+        continue
+    # A definition starts its line with the return type; a call opening a
+    # block (`if (fn(x)) {`) does not, so a caller's body is never scanned.
+    for m in re.finditer(r"(?m)^[A-Za-z_][^\n;{}()=]*\b" + re.escape(name)
+                         + r"\s*\([^;{}]*\)\s*\{", src_nc):
+        depth, end = 0, len(src_nc)
+        for j in range(m.end() - 1, len(src_nc)):
+            if src_nc[j] == "{":
+                depth += 1
+            elif src_nc[j] == "}":
+                depth -= 1
+                if depth == 0:
+                    end = j + 1
+                    break
+        body = src_nc[m.end() - 1:end]
+        hit = re.search(r"\breturn\s*" + neg1 + r"\s*;", body) is not None
+        for var in set(re.findall(r"\b([A-Za-z_][A-Za-z0-9_]*)\s*=\s*" + neg1 + r"\s*[;,]", body)):
+            if re.search(r"\breturn\s*\(?\s*" + re.escape(var) + r"\s*\)?\s*;", body):
+                hit = True
+        if hit:
+            minus_one.append(f"{name} ({rt})")
+            break
+if minus_one:
+    print(f"✗ {len(minus_one)} public function(s) with an unsigned return type return -1:",
+          file=sys.stderr)
+    for n in minus_one:
+        print(f"      {n}", file=sys.stderr)
+    print("To fix:  return a named sentinel of the return type instead (issue #546)",
+          file=sys.stderr)
+    sys.exit(1)
+print("✓ no public function with an unsigned return type returns -1")
 
 # Optional stronger pass: every declared symbol must also be *exported* by a
 # built shared library (nm -D), not merely defined somewhere in the tree.

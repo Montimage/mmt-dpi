@@ -126,7 +126,7 @@ unsigned long hex2dec(char *str){
     for(i = 0; i < strlen(str); i++ ){
         int nb = str[i];
         if (!( (nb >=48 && nb <= 57) || (nb >= 97 && nb<=102) || (nb >= 65 && nb<=70) )){
-            return -1;
+            return MMT_HEX2DEC_ERROR;
         }
     }
 
@@ -135,7 +135,7 @@ unsigned long hex2dec(char *str){
     if(ul == 0){
         int i;
         for(i = 0; i < strlen(str); i++){
-            if(str[i] != '0') return -1;
+            if(str[i] != '0') return MMT_HEX2DEC_ERROR;
         }
     }
     return ul;

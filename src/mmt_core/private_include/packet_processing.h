@@ -408,16 +408,16 @@ struct session_timer_handler_struct{
 
 struct mmt_classify_proto_struct {
     uint32_t weight;
-    int (*classify_me) (ipacket_t * ipacket, unsigned index);
+    generic_classification_function classify_me; /**< Issue #546: typed verdict (was int) */
     mmt_classify_proto_t * next;
     mmt_classify_proto_t * previous;
 };
 
 struct mmt_classify_next_struct {
     int status; /**< indicates if classification is enabled or disabled */
-    int (*pre_classify) (ipacket_t * ipacket, unsigned index);
+    generic_classification_function pre_classify;
     mmt_classify_proto_t * classify_protos;
-    int (*post_classify) (ipacket_t * ipacket, unsigned index);
+    generic_classification_function post_classify;
 };
 
 struct mmt_proto_data_analysis_proc_struct {

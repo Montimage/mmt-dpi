@@ -717,7 +717,7 @@ bool register_session_data_analysis_function_full(protocol_t *proto,
 }
 
 
-bool is_free_protocol_id_for_registractionl(uint32_t proto_id) {
+bool is_free_protocol_id_for_registration(uint32_t proto_id) {
     if (proto_id >= PROTO_MAX_IDENTIFIER) return 0; //The prtocol id is not valid
 
     protocol_t *proto = configured_protocols[proto_id];
@@ -725,6 +725,11 @@ bool is_free_protocol_id_for_registractionl(uint32_t proto_id) {
     if ( proto->is_registered ) return 0; //The protocol is already registered
 
     return 1; // Cool we can use this protocol id
+}
+
+/* Issue #546: the misspelled original, kept exported (deprecated) for plugins built against it. */
+bool is_free_protocol_id_for_registractionl(uint32_t proto_id) {
+    return is_free_protocol_id_for_registration(proto_id);
 }
 
 void init_protocol_struct(protocol_t * proto) {
@@ -769,7 +774,7 @@ void init_protocol_struct(protocol_t * proto) {
 }
 
 protocol_t *get_protocol_struct_for_registration_if_free(uint32_t proto_id) {
-    if (is_free_protocol_id_for_registractionl(proto_id) && configured_protocols[proto_id] != NULL) { // #505: no slot to init
+    if (is_free_protocol_id_for_registration(proto_id) && configured_protocols[proto_id] != NULL) { // #505: no slot to init
         init_protocol_struct(configured_protocols[proto_id]);
         return configured_protocols[proto_id];
     }
@@ -882,7 +887,7 @@ bool register_protocol(protocol_t *proto, uint32_t proto_id) {
     // per-handler snapshot, see configured_protocols declaration).
     int retval = PROTO_NOT_REGISTERED;
     pthread_mutex_lock(&configured_protocols_mutex);
-    if (is_free_protocol_id_for_registractionl(proto_id)) {
+    if (is_free_protocol_id_for_registration(proto_id)) {
         if (proto->proto_id == proto_id && proto == configured_protocols[proto_id]) {
             register_protocol_stats_attributes(proto);
             if (proto->has_session) {
@@ -907,7 +912,7 @@ bool unregister_protocol_by_id(uint32_t proto_id) {
     // Issue #22: guard the global registry mutation (see register_protocol).
     int retval = 0;
     pthread_mutex_lock(&configured_protocols_mutex);
-    if (!is_free_protocol_id_for_registractionl(proto_id)) {
+    if (!is_free_protocol_id_for_registration(proto_id)) {
         configured_protocols[proto_id]->is_registered = PROTO_NOT_REGISTERED;
         retval = 1;
     }
@@ -921,7 +926,7 @@ bool unregister_protocol_by_name(char* proto_name) {
     int retval = 0;
     pthread_mutex_lock(&configured_protocols_mutex);
     for (i =0;i<PROTO_MAX_IDENTIFIER;i++){
-        if (!is_free_protocol_id_for_registractionl(i)) {
+        if (!is_free_protocol_id_for_registration(i)) {
             if(mmt_strcasecmp(configured_protocols[i]->protocol_name,proto_name) == 0){
                 configured_protocols[i]->is_registered = PROTO_NOT_REGISTERED;
                 retval = 1;

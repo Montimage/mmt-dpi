@@ -161,4 +161,51 @@ else
     FAILED=1
 fi
 
+# Issue #546: the default pass refuses an unsigned public function that
+# returns -1, literally or through a local initialised to -1, and accepts a
+# named sentinel, a signed function's -1 and a signed caller returning -1
+# from a block opened by a call to an unsigned function. --libs pointing at an empty
+# directory is not given, so no nm pass runs (no sdk/lib in the scratch tree).
+mkdir -p "${WORK}/tree/src/lib"
+cat > "${WORK}/tree/src/mmt_core/public_include/probe.h" <<'EOF'
+#define MMTAPI extern
+#define MMTCALL
+MMTAPI unsigned MMTCALL probe_literal(int x);
+MMTAPI uint64_t MMTCALL probe_local(int x);
+MMTAPI uint32_t MMTCALL probe_sentinel(int x);
+MMTAPI int MMTCALL probe_signed(int x);
+EOF
+cat > "${WORK}/tree/src/lib/probe.c" <<'EOF'
+unsigned probe_literal(int x) { if (x) return -1; return 0; }
+uint64_t probe_local(int x) { int r = -1; if (x) r = x; return r; }
+uint32_t probe_sentinel(int x) { if (x) return UINT32_MAX; return 0; } /* return -1; */
+int probe_signed(int x) { return x ? -1 : 0; }
+int probe_caller(int x) {
+    if (probe_sentinel(x)) { return -1; }
+    return 0;
+}
+EOF
+rc=0
+(cd "${WORK}/tree" && MMT_BASE="${WORK}/none" bash tools/ci/check-public-decls.sh) >"${WORK}/out" 2>&1 || rc=$?
+if [ "${rc}" -eq 1 ] && grep -q "probe_literal (unsigned)" "${WORK}/out" \
+        && grep -q "probe_local (uint64_t)" "${WORK}/out" \
+        && ! grep -q "probe_sentinel\|probe_signed\|probe_caller" "${WORK}/out"; then
+    echo "✓ an unsigned public function returning -1 exits 1, naming only the offenders"
+else
+    echo "✗ unsigned -1 return scan: exit ${rc}, expected 1 naming probe_literal and probe_local only"
+    sed 's/^/      /' "${WORK}/out"
+    FAILED=1
+fi
+sed -i 's/return -1; return 0; }/return UINT_MAX; return 0; }/; s/int r = -1;/uint64_t r = UINT64_MAX;/' \
+    "${WORK}/tree/src/lib/probe.c"
+rc=0
+(cd "${WORK}/tree" && MMT_BASE="${WORK}/none" bash tools/ci/check-public-decls.sh) >"${WORK}/out" 2>&1 || rc=$?
+if [ "${rc}" -eq 0 ] && grep -q "no public function with an unsigned return type returns -1" "${WORK}/out"; then
+    echo "✓ named sentinels pass the unsigned -1 return scan"
+else
+    echo "✗ unsigned -1 return scan on fixed sources: exit ${rc}, expected 0"
+    sed 's/^/      /' "${WORK}/out"
+    FAILED=1
+fi
+
 exit "${FAILED}"

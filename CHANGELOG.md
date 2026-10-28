@@ -91,6 +91,9 @@ Version 2.0.0 (unreleased — scheduled removals)
   and `mmt_search_irc_ssl_detect_ninty_percent_but_very_fast` (use `mmt_search_irc_ssl_detect`)
   in `libmmt_tcpip`. All four are `__attribute__((deprecated))` today and keep their
   exported ABI until this major release.
+- remove `is_free_protocol_id_for_registractionl` from `libmmt_core` (issue #546):
+  the misspelled name of `is_free_protocol_id_for_registration`, deprecated and still
+  exported until this major release.
 
 Version 1.8.0 (23 July 2026 - by EM)
 - add DICOM protocol plugin (libmmt_dicom): classify DICOM flows and extract A-ASSOCIATE, C-FIND and P-DATA attributes (called/calling AE titles, max PDU length, command group length and command field, patient name)

@@ -27,7 +27,7 @@ In the following figure, Facebook has two statistics instances; one for path TCP
 
 ## API ##
 ### Common Attributes ###
-MMT provides a set of attributes (common to all protocols) to access the protocol statistics (`src/mmt_core/public_include/data_defs.h:234-241`):
+MMT provides a set of attributes (common to all protocols) to access the protocol statistics (`src/mmt_core/public_include/data_defs.h:242-254`):
 
  * `PROTO_PACKET_COUNT` OR "packet_count"
  * `PROTO_DATA_VOLUME` OR "data_count"

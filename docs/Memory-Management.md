@@ -38,7 +38,7 @@ The memory allocator does the housekeeping in a (hopefully) transparent way.
 An extraction function that returns a heap object through `attribute_t.data` hands it to the handler with `mmt_packet_scratch_adopt(ipacket, value, release)` (`src/mmt_core/public_include/plugin_defs.h:54`). Nothing else frees an extracted value: before issue #506 the DNS, FTP and NDN extractors leaked one object per read.
 
 * The handler chains the value on a per-packet list. The list records are bump-allocated from an `mmt_arena_t` that the handler creates on first use (`src/mmt_core/src/packet_pipeline.c:1578`).
-* When the next `packet_process()` call starts, the handler calls each `release` and rewinds the arena, keeping its first block (`src/mmt_core/src/packet_pipeline.c:1516`, `src/mmt_core/src/packet_pipeline.c:1602`). `mmt_close_handler()` releases the values and frees the arena (`src/mmt_core/src/packet_registry.c:1445`).
+* When the next `packet_process()` call starts, the handler calls each `release` and rewinds the arena, keeping its first block (`src/mmt_core/src/packet_pipeline.c:1516`, `src/mmt_core/src/packet_pipeline.c:1602`). `mmt_close_handler()` releases the values and frees the arena (`src/mmt_core/src/packet_registry.c:1450`).
 * The extractor sets `data` and returns 1 only when `mmt_packet_scratch_adopt()` returns `true`. On `false` the value is already released (or was `NULL`), so the extractor reports that nothing was extracted.
 
 Consumers must not free these values, and must copy what they need before the next packet. [MMT Attributes](./MMT-Attributes.md) lists the attributes concerned.
@@ -49,7 +49,7 @@ The contract is the standard `malloc()`/`realloc()` one, stated in `src/mmt_core
 
 * `mmt_malloc()` logs the failure and returns `NULL` (`src/mmt_core/src/memory.c:40-45`).
 * `mmt_realloc()` returns `NULL` and leaves the original block untouched, so the caller still owns it and must free it (`src/mmt_core/src/memory.c:73-79`).
-* `mmt_arena_alloc()` returns `NULL` on out-of-memory (`src/mmt_core/public_include/mmt_core.h:1252-1253`).
+* `mmt_arena_alloc()` returns `NULL` on out-of-memory (`src/mmt_core/public_include/mmt_core.h:1253-1254`).
 
 The library runs inside the host process. An allocation that a packet can trigger must not end that process. The library used to call `abort()` when an allocation failed, so a packet that triggered a huge allocation could crash the host: a remote denial of service (B5 in `src/mmt_core/src/memory.c:8-17`). Code that assumes success has the same effect, because the `NULL` it ignored crashes the process later.
 

@@ -146,14 +146,6 @@ typedef int (*generic_session_data_analysis_function)(ipacket_t * ipacket, unsig
 typedef void (*generic_session_data_cleanup_function)(mmt_session_t * session, unsigned index);
 
 /**
- * Signature of the function for classifying the protocol corresponding to the encapsulated data. Any implementing function
- * MUST analyze the @param packet and @param header parameters in order to identify the encapsulated protocol.
- * If such a classification is successful, the function MUST return the identifier of the classified protocol. If the
- * classification does not make it possible to identify the encapsulated protocol, the implementing function MUST return 0.
- */
-typedef int (*generic_classification_function)(ipacket_t * ipacket, unsigned previous_index);
-
-/**
  * Named verdicts of the classification pipeline (issue #150, F-DEAD-010).
  * Pre-classification and classification callbacks (generic_classification_function)
  * have always exchanged these integers with the core; the enum only names them.
@@ -162,14 +154,42 @@ typedef int (*generic_classification_function)(ipacket_t * ipacket, unsigned pre
  */
 typedef enum mmt_classify_verdict_enum {
     MMT_CLASSIFY_SKIP     = 0, /**< Pre-classifier: do not run the classifier chain for this packet.
-                                    Classifier: protocol not recognised, try the next classifier. */
-    MMT_CLASSIFY_CONTINUE = 1, /**< Pre-classifier: run the classifier chain. */
+                                    Classifier: protocol not recognised, try the next classifier.
+                                    Post-classifier: do not process the deeper layers. */
+    MMT_CLASSIFY_CONTINUE = 1, /**< Pre-classifier: run the classifier chain.
+                                    Post-classifier: process the deeper layers (any nonzero value does). */
     MMT_CLASSIFY_MATCHED  = 1, /**< Classifier: protocol recognised, stop walking the chain
                                     (a positive verdict shares the value of MMT_CLASSIFY_CONTINUE). */
+    /* Issue #546: not a verdict, never returned. A negative enumerator makes
+     * GCC and Clang pick int as the enum's compatible type, so a classifier
+     * declared `int fn(ipacket_t *, unsigned)` — every in-tree checker and
+     * every plugin written before the typedef returned this enum — still
+     * converts to generic_classification_function without a cast or an
+     * -Wincompatible-pointer-types diagnostic. */
+    MMT_CLASSIFY_VERDICT_INT_ANCHOR_ = -0x7fffffff - 1,
 } mmt_classify_verdict_t;
 
-/** A classifier verdict with any bit of this mask set (1, 2 or 3) counts as recognised: the chain stops. */
+/** A classifier verdict with any bit of this mask set (1, 2 or 3) counts as recognised: the chain stops.
+ *  Only MMT_CLASSIFY_MATCHED is a named verdict; 2 and 3 are accepted for plugins built against the int typedef. */
 #define MMT_CLASSIFY_MATCHED_MASK 3
+
+/**
+ * Signature of the pre-classification, classification and post-classification callbacks
+ * (register_classification_function*, register_pre_post_classification_functions).
+ * A classifier analyses the packet at @p previous_index to identify the encapsulated protocol
+ * and returns MMT_CLASSIFY_MATCHED when it recognised it (it records the protocol itself,
+ * e.g. through set_classified_proto()), MMT_CLASSIFY_SKIP otherwise. A pre-classifier returns
+ * MMT_CLASSIFY_CONTINUE or MMT_CLASSIFY_SKIP; a post-classifier returns nonzero to process
+ * the deeper layers. Issue #546: the return type was a bare int; in C a function declared with
+ * an int return still converts to this type (see MMT_CLASSIFY_VERDICT_INT_ANCHOR_). C++ has no
+ * such conversion between function-pointer types, so a C++ translation unit keeps the int view:
+ * same ABI (the enum is int-compatible), and existing C++ plugins keep compiling.
+ */
+#ifdef __cplusplus
+typedef int (*generic_classification_function)(ipacket_t * ipacket, unsigned previous_index);
+#else
+typedef mmt_classify_verdict_t (*generic_classification_function)(ipacket_t * ipacket, unsigned previous_index);
+#endif
 
 /**
  * Signature of the function for sessionizing a packet. That is, associating a packet to its communication session.
@@ -457,13 +477,21 @@ MMTAPI bool MMTCALL unregister_protocol_stack(
 );
 
 /**
- * Returns a positive value if their in no protocol registered with the given identifier. 0 otherwise.
+ * Tells whether no protocol is registered with the given identifier.
  * @param proto_id the identifier of the protocol
- * @return a positive value if their in no protocol registered with the given identifier. 0 otherwise.
+ * @return true if the identifier is valid and no protocol is registered with it, false otherwise.
+ */
+MMTAPI bool MMTCALL is_free_protocol_id_for_registration(
+    mmt_proto_id_t proto_id
+);
+
+/**
+ * @deprecated Misspelled name of is_free_protocol_id_for_registration(), kept
+ * exported so plugins built against it still load (issue #546).
  */
 MMTAPI bool MMTCALL is_free_protocol_id_for_registractionl(
     mmt_proto_id_t proto_id
-);
+) __attribute__((deprecated("use is_free_protocol_id_for_registration; removal in 2.0.0")));
 
 /**
  * Returns a pointer to the structure with index equal to the given protocol identifier if not registered.

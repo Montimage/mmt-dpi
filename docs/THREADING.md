@@ -215,7 +215,7 @@ so they need no locking as long as the "one handler per worker" rule holds:
    `close_extraction()` once, on a single thread. It force-closes any handler
    still registered and runs the internal `close_plugins()` /
    `free_registered_protocols()` steps itself
-   (`src/mmt_core/src/packet_registry.c:1333-1351`); a handler must not be
+   (`src/mmt_core/src/packet_registry.c:1338-1356`); a handler must not be
    used or closed after it returns. The single-threaded embedding sequence is
    in [USER_GUIDE.md §3](./USER_GUIDE.md#3-minimum-embedding-pattern).
 

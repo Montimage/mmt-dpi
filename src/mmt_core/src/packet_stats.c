@@ -421,6 +421,11 @@ void internal_protocol_children_stats_iterator(void * key, void * value, void * 
     children_stats->data_volume += child_stats->data_volume;
     children_stats->packets_count += child_stats->packets_count;
     children_stats->payload_volume += child_stats->payload_volume;
+    for (int d = 0; d < 2; d++) {
+        children_stats->packets_count_direction[d]  += child_stats->packets_count_direction[d];
+        children_stats->data_volume_direction[d]    += child_stats->data_volume_direction[d];
+        children_stats->payload_volume_direction[d] += child_stats->payload_volume_direction[d];
+    }
     children_stats->sessions_count += child_stats->sessions_count;
     children_stats->timedout_sessions_count += child_stats->timedout_sessions_count;
 }
@@ -432,6 +437,11 @@ void get_children_stats(proto_statistics_t * parent_stats, proto_statistics_t * 
     children_stats->data_volume = temp_stats.data_volume;
     children_stats->packets_count = temp_stats.packets_count;
     children_stats->payload_volume = temp_stats.payload_volume;
+    for (int d = 0; d < 2; d++) {
+        children_stats->packets_count_direction[d]  = temp_stats.packets_count_direction[d];
+        children_stats->data_volume_direction[d]    = temp_stats.data_volume_direction[d];
+        children_stats->payload_volume_direction[d] = temp_stats.payload_volume_direction[d];
+    }
     children_stats->sessions_count = temp_stats.sessions_count;
     children_stats->timedout_sessions_count = temp_stats.timedout_sessions_count;
 }
@@ -442,6 +452,9 @@ void reset_proto_stats(protocol_instance_t * proto) {
         proto_stats->data_volume = 0;
         proto_stats->payload_volume = 0;
         proto_stats->packets_count = 0;
+        memset(proto_stats->packets_count_direction, 0, sizeof(proto_stats->packets_count_direction));
+        memset(proto_stats->data_volume_direction, 0, sizeof(proto_stats->data_volume_direction));
+        memset(proto_stats->payload_volume_direction, 0, sizeof(proto_stats->payload_volume_direction));
         proto_stats->sessions_count = 0;
         proto_stats->timedout_sessions_count = 0;
         proto_stats = proto_stats->next;
@@ -475,10 +488,25 @@ proto_statistics_internal_t * update_proto_stats(ipacket_t * ipacket, protocol_i
         if (new_session) {
             proto_stats->sessions_count += 1;
         }
+        const uint64_t payload = (new_session ? ipacket->p_hdr->original_len : ipacket->p_hdr->len) - proto_offset;
         proto_stats->touched         = 1;
         proto_stats->packets_count  += 1;
         proto_stats->data_volume    += ipacket->p_hdr->original_len;
-        proto_stats->payload_volume += (new_session ? ipacket->p_hdr->original_len : ipacket->p_hdr->len) - proto_offset;
+        proto_stats->payload_volume += payload;
+        /* Issue #546: the per-direction counters were documented but never
+         * written. [0] counts the packets travelling in the direction of the
+         * session's first packet (uplink, as get_session_ul_packet_count()),
+         * [1] the others; a layer the packet crosses without a session
+         * (below the sessionizing protocol) has no direction and is counted
+         * in the totals only. proto_session_management() ran just before,
+         * so the session and its last_packet_direction are this packet's. */
+        const mmt_session_t * session = ipacket->session;
+        if (session != NULL) {
+            const unsigned dir = session->last_packet_direction != session->setup_packet_direction;
+            proto_stats->packets_count_direction[dir]  += 1;
+            proto_stats->data_volume_direction[dir]    += ipacket->p_hdr->original_len;
+            proto_stats->payload_volume_direction[dir] += payload;
+        }
         // Update the fist packet
         if (proto_stats->packets_count == 1) {
             proto_stats->first_packet_time = ipacket->p_hdr->ts;

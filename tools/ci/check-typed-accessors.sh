@@ -14,7 +14,11 @@
 # defining header (the accessors live in a public header, so a caller is any
 # .c occurrence — the definitions themselves are in mmt_core.h).
 #
-# Exit codes: 0 = every accessor has >= 1 call site, 1 = violation.
+# It also asserts that generic_classification_function returns
+# mmt_classify_verdict_t (issue #546).
+#
+# Exit codes: 0 = every accessor has >= 1 call site and the typedef holds,
+#             1 = violation.
 #
 # Usage: bash tools/ci/check-typed-accessors.sh
 
@@ -45,7 +49,19 @@ for accessor in $ACCESSORS; do
     fi
 done
 
+# Issue #546 (F-CLEAN-021): the classifier callback type returns the verdict
+# enum, not a bare int, in C (C++ keeps an int view of the same ABI; see the
+# comment in plugin_defs.h).
+if grep -Eq '^typedef mmt_classify_verdict_t \(\*generic_classification_function\)' \
+        src/mmt_core/public_include/plugin_defs.h; then
+    echo "    generic_classification_function: returns mmt_classify_verdict_t"
+else
+    echo "✗ generic_classification_function does not return mmt_classify_verdict_t (issue #546)" >&2
+    fail=1
+fi
+
 if [ "$fail" -ne 0 ]; then
     exit 1
 fi
 echo "✓ every typed accessor has at least one internal call site"
+echo "✓ the classifier typedef returns mmt_classify_verdict_t"

@@ -224,8 +224,9 @@ MMTAPI void MMTCALL mmt_close_handler(
  * Get number of active session
  * @param  mmt_handler MMT Handler
  * @return             number of active session
- *                     -1 if the mmt_handler is NULL
+ *                     MMT_INVALID_SESSION_COUNT if the mmt_handler is NULL
  */
+#define MMT_INVALID_SESSION_COUNT UINT64_MAX /**< issue #546: the value `return -1` used to produce */
 MMTAPI uint64_t MMTCALL get_active_session_count(
     mmt_handler_t *mmt_handler
 );
