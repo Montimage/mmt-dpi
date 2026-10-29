@@ -39,6 +39,9 @@ BUILD_LOG="${WORK}/build.log"
 # suite. Runs before WORK, which holds the moved engine, is removed.
 restore_prefix() {
     local f
+    if [ -e "${WORK}/mmt-dpi.pc" ]; then
+        mv "${WORK}/mmt-dpi.pc" "${PREFIX}/dpi/lib/pkgconfig/mmt-dpi.pc"
+    fi
     if [ -e "${PREFIX}/plugins/libmmt_tdicom.so.bak" ]; then
         mv "${PREFIX}/plugins/libmmt_tdicom.so.bak" "${PREFIX}/plugins/libmmt_tdicom.so"
     fi
@@ -168,6 +171,20 @@ for f in "${PREFIX}/dpi/lib/"libmmt_security.so.*; do mv "$f" "${WORK}/"; done
 check_fail "missing libmmt_security engine fails" \
     bash "${DRIVER}" --prefix "${PREFIX}" --distro suite-local
 for f in "${WORK}/"libmmt_security.so.*; do mv "$f" "${PREFIX}/dpi/lib/"; done
+
+# Issue #550: the consumer builds through the install's own mmt-dpi.pc. A
+# missing one must fail, and so must one found elsewhere on PKG_CONFIG_PATH
+# that describes another install.
+mv "${PREFIX}/dpi/lib/pkgconfig/mmt-dpi.pc" "${WORK}/mmt-dpi.pc"
+check_fail "missing mmt-dpi.pc fails" \
+    env PKG_CONFIG_PATH= PKG_CONFIG_LIBDIR="${WORK}/no-pc" \
+        bash "${DRIVER}" --prefix "${PREFIX}" --distro suite-local
+mkdir -p "${WORK}/other-pc"
+sed 's|^libdir=.*|libdir=/nonexistent/lib|' "${WORK}/mmt-dpi.pc" > "${WORK}/other-pc/mmt-dpi.pc"
+check_fail "an mmt-dpi.pc naming another libdir fails" \
+    env PKG_CONFIG_PATH="${WORK}/other-pc" PKG_CONFIG_LIBDIR="${WORK}/no-pc" \
+        bash "${DRIVER}" --prefix "${PREFIX}" --distro suite-local
+mv "${WORK}/mmt-dpi.pc" "${PREFIX}/dpi/lib/pkgconfig/mmt-dpi.pc"
 
 # A wrong expected label must fail the classification verdict.
 printf 'ftp_txt.pcap    http\n' > "${WORK}/fixtures-wrong-label.txt"

@@ -447,7 +447,7 @@ documentation: $(SDKDOC)
 #  E X A M P L E S
 #  - - - - - - - -
 
-MMT_EXAMPLES_SRC = attribute_handler_session_counter.c extract_all.c google-fr.pcap html_integration.c html_integration.h MAC_extraction.c packet_handler.c proto_attributes_iterator.c reconstruct_body.c simple_traffic_reporting.c
+MMT_EXAMPLES_SRC = attribute_handler_session_counter.c extract_all.c MAC_extraction.c mmt_export_info.c packet_handler.c proto_attributes_iterator.c simple_traffic_reporting.c
 SDK_EXAMPLES_SRC = $(addprefix $(SDKXAM)/,$(MMT_EXAMPLES_SRC))
 
 examples: $(SDK_EXAMPLES_SRC)
@@ -633,7 +633,7 @@ $(TOPDIR)/src/mmt_core/src/packet_processing.o: CFLAGS += -DGIT_VERSION=\"$(MMT_
 # Issue #536 (appended so no cited line range moves): the SOVERSION policy.
 # Every shared library is linked with SONAME lib<name>.so.$(SOVERSION)
 # (rules/common-linux.mk), and every install route — make install, the
-# .deb/.rpm staging, the offline ZIP — lays down the runtime link
+# .deb/.rpm staging, make install-fhs — lays down the runtime link
 # lib<name>.so.$(SOVERSION) -> lib<name>.so.$(VERSION) beside the file; the
 # unversioned lib<name>.so is the development (link-time) link only. A
 # consumer records the SONAME at link time, so bump SOVERSION with any change

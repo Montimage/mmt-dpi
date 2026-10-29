@@ -26,9 +26,9 @@
  *                                 most frequent non-transport verdict;
  *   4. orderly shutdown         — mmt_close_handler() + close_extraction().
  *
- * Build (done by the runner):
+ * Build (done by the runner, through the install's mmt-dpi.pc):
  *   gcc -O2 -o installed_consumer installed_consumer.c \
- *       -I <prefix>/dpi/include -L <prefix>/dpi/lib -lmmt_core -ldl -lpcap
+ *       $(pkg-config --cflags --libs mmt-dpi) -lpcap
  *
  * Usage:
  *   installed_consumer <file.pcap> <expected_protocol> [required_proto_csv]

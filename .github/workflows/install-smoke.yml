@@ -33,7 +33,6 @@ on:
   pull_request:
     paths:
       - install.sh
-      - dist/ZIP/mmt-install-common.sh
       - sdk/Makefile
       - docs/first-run/**
       - docs/_includes/first-example.md

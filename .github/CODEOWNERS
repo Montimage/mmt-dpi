@@ -28,7 +28,7 @@ scripts/                @luongnv89 @dev-montimage @nhnghia
 # What users run as root, and what builds and ships the release: installers,
 # build flags, the SDK Makefile and the Debian packaging.
 install.sh              @luongnv89 @dev-montimage @nhnghia
-dist/ZIP/               @luongnv89 @dev-montimage @nhnghia
+mmt-dpi.spec            @luongnv89 @dev-montimage @nhnghia
 rules/                  @luongnv89 @dev-montimage @nhnghia
 sdk/Makefile            @luongnv89 @dev-montimage @nhnghia
 debian/                 @luongnv89 @dev-montimage @nhnghia

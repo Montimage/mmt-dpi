@@ -52,7 +52,7 @@ If you cannot use GitHub advisories, email [contact@montimage.eu](mailto:contact
 
 ## Scope
 
-In scope: the MMT-DPI library and its first-party SDK/plugins shipped in this repository (`src/`, `sdk/`, `rules/`, `src/mmt_security/`) and the packaging/installer scripts (`install.sh`, `dist/ZIP/`, `tools/ci/build-package.sh`). Out of scope: third-party dependencies and external infrastructure — please report those to the upstream project.
+In scope: the MMT-DPI library and its first-party SDK/plugins shipped in this repository (`src/`, `sdk/`, `rules/`, `src/mmt_security/`) and the packaging/installer scripts (`install.sh`, `mmt-dpi.spec`, `debian/`, `tools/ci/build-package.sh`). Out of scope: third-party dependencies and external infrastructure — please report those to the upstream project.
 
 ## Security Best Practices for Contributors
 

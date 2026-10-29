@@ -13,7 +13,10 @@
 # Asserts, in order:
 #   1. installed layout — core lib, headers, the four protocol plugins and
 #      (with --expect-engines) the ENABLESEC=1 engines all exist;
-#   2. consumer builds against the packaged headers/libraries alone;
+#   2. consumer builds against the packaged headers/libraries alone, with
+#      the flags `pkg-config --cflags --libs mmt-dpi` prints (issue #550):
+#      the install's own mmt-dpi.pc (<libdir>/pkgconfig first on
+#      PKG_CONFIG_PATH) must be found and must name the directories under test;
 #   3. per fixture: registry initializes before the handler, every required
 #      protocol resolves (one name per plugin — a plugin that failed to
 #      dlopen cannot hide), the capture classifies to its known label, and
@@ -50,6 +53,7 @@
 #
 # Env:
 #   CC                 compiler (default gcc)
+#   PKG_CONFIG         pkg-config binary (default pkg-config)
 #   EXTRA_CFLAGS       extra flags for the consumer compile (sanitizer runs)
 #   REQUIRED_PROTOS    override the required-protocol CSV
 #   FIXTURES           override the fixture list (tests, exotic layouts)
@@ -92,7 +96,7 @@ while [ $# -gt 0 ]; do
         --no-engines)     EXPECT_ENGINES=0; shift ;;
         --root-install)   ROOT_INSTALL=1; shift ;;
         -h|--help)
-            sed -n '2,54p' "$0"; exit 0 ;;
+            sed -n '2,64p' "$0"; exit 0 ;;
         *) echo "✗ unknown argument: $1" >&2; exit 2 ;;
     esac
 done
@@ -173,12 +177,35 @@ trap 'rm -rf "${WORK}"' EXIT
 mkdir -p "${WORK}/run"   # neutral CWD: './plugins' must not shadow <prefix>/plugins
 BIN="${WORK}/installed_consumer"
 
+# Through pkg-config (issue #550): every install route ships mmt-dpi.pc, and
+# it must describe this install, not another one on the default search path.
+PKG_CONFIG="${PKG_CONFIG:-pkg-config}"
+command -v "${PKG_CONFIG}" >/dev/null 2>&1 \
+    || fail "${PKG_CONFIG} not found — the consumer is built through mmt-dpi.pc"
+export PKG_CONFIG_PATH="${LIB}/pkgconfig${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}"
+"${PKG_CONFIG}" --exists mmt-dpi \
+    || fail "mmt-dpi.pc not found (${LIB}/pkgconfig, then the default search path)"
+for var in libdir:"${LIB}" includedir:"${INC}" plugindir:"${PLUGINS}"; do
+    got="$("${PKG_CONFIG}" --variable="${var%%:*}" mmt-dpi)"
+    [ "${got}" = "${var#*:}" ] \
+        || fail "mmt-dpi.pc ${var%%:*}=${got}, not the install under test ${var#*:}"
+done
+read -r -a pc_flags <<< "$("${PKG_CONFIG}" --cflags --libs mmt-dpi)"
+# The root-install leg proves the loader cache: drop the rpath an /opt
+# prefix's .pc carries, or the consumer would find the SDK through it.
+if [ "${ROOT_INSTALL}" -eq 1 ]; then
+    kept=()
+    for f in "${pc_flags[@]}"; do
+        case "${f}" in -Wl,-rpath,*) ;; *) kept+=("${f}") ;; esac
+    done
+    pc_flags=("${kept[@]}")
+fi
 read -r -a extra_cflags <<< "${EXTRA_CFLAGS:-}"
 if ! "${CC}" "${extra_cflags[@]}" -O2 -Wall -o "${BIN}" "${CONSUMER_SRC}" \
-        -I "${INC}" -L "${LIB}" -lmmt_core -ldl -lpcap; then
-    fail "consumer does not compile against packaged headers/libraries"
+        "${pc_flags[@]}" -lpcap; then
+    fail "consumer does not compile with the flags of mmt-dpi.pc: ${pc_flags[*]}"
 fi
-say "consumer compiled against ${INC} + ${LIB}"
+say "consumer compiled through pkg-config: ${pc_flags[*]}"
 
 # --- 3. replay each fixture ----------------------------------------------------
 failures=0

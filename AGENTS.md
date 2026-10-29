@@ -33,7 +33,7 @@ the toolchain line, the `MMT_BASE` prefix contract and the sanitizer rules.
 | `rules/*.mk` | Every build flag: `MMT_BASE`, `BUILD=asan\|tsan\|coverage`, `ENABLESEC`, `DEBUG`, `SHOWLOG` |
 | `tests/` | Standalone unit suites (list in `DEFAULT_SUITES` of `tests/run_all_tests.sh`) |
 | `tools/phase0/` | CI baseline gates: golden-pcap classification fingerprint, precision/recall, ASan/TSan harnesses |
-| `dist/ZIP/` | Hand-maintained installer sources for the prebuilt ZIP — tracked, edit like any source |
+| `mmt-dpi.spec`, `debian/` | Distribution packaging (FHS, `make -C sdk install-fhs`): the RPM recipe and the Debian source package |
 
 ## Constraints
 

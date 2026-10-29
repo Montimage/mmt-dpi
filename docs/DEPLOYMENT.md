@@ -57,7 +57,7 @@ After installation, the following files are placed:
 └── examples/        # Example sources (rules/common.mk:8)
 ```
 
-The library path is configured via `/etc/ld.so.conf.d/mmt-dpi.conf` (`sdk/Makefile:136,354`): a root `make install` writes it whatever the prefix (opt out with `LDCONF=0`), and `make uninstall` removes it — see [Agent Environment Notes §4](./AGENT_ENVIRONMENT.md#4-mmt_base-install-prefix-behavior).
+The library path is configured via `/etc/ld.so.conf.d/mmt-dpi.conf` (`sdk/Makefile:139,374`): a root `make install` writes it whatever the prefix (opt out with `LDCONF=0`), and `make uninstall` removes it — see [Agent Environment Notes §4](./AGENT_ENVIRONMENT.md#4-mmt_base-install-prefix-behavior).
 
 ## Linking Against MMT-DPI
 

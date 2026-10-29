@@ -67,9 +67,8 @@ else
 fi
 
 # Check 5: DEVELOPMENT.md does not document 'make zip' as a dev build option
-# (the sdk/Makefile 'zip:' target still exists for release packaging — see
-# Prepare-for-a-new-released-version.md — but is intentionally not part of
-# the day-to-day dev build options this doc covers)
+# (the sdk/Makefile 'zip:' target was retired by issue #550, so the doc must
+# not advertise it)
 zip_doc_count=$(grep -c 'make zip' "$ROOT/docs/DEVELOPMENT.md" 2>/dev/null || true)
 if [ "$zip_doc_count" -eq 0 ]; then
     echo "  ✓ DEVELOPMENT.md does not document 'make zip' as a dev build option (doc correctly removed)"

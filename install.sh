@@ -184,25 +184,14 @@ validate_skip_deps "$SKIP_DEPS"
 validate_ldconf "$LDCONF"
 
 # ---------------------------------------------------------------------------
-# Shared install definitions (single source of truth — issue #211, F-BUG-121)
+# Install-prefix helpers (issue #211, F-BUG-121)
 # ---------------------------------------------------------------------------
-# The prefix validator and the prefix-writability helper live in
-# dist/ZIP/mmt-install-common.sh, shared with the offline ZIP installer. This
-# script is designed for `curl | bash` where no repo file sits next to it, so:
-#   * run from a checkout  -> source the file right away and validate MMT_BASE
-#                             up front (fail fast, covers --dry-run too);
-#   * curl|bash            -> source it from the verified clone after
-#                             clone_repo(), before MMT_BASE is ever used.
-COMMON_FILE=""   # path of the sourced mmt-install-common.sh, empty until then
+# The single definitions: the offline ZIP installer that shared them through
+# dist/ZIP/mmt-install-common.sh is retired (issue #550), so nothing is sourced
+# from a checkout or a clone any more — `curl | bash` has no repo file beside
+# the script anyway. sdk/Makefile's --check-prefix applies the same rules.
 ELEVATED=0       # set to 1 when the install step needed privilege escalation
 
-# prefix_writable() and validate_mmt_base() below are local fallbacks: the
-# canonical copies live in dist/ZIP/mmt-install-common.sh and overwrite these
-# when sourced — tests/installer asserts the two stay byte-identical. Local
-# copies are still needed because `curl | bash` has no repo file beside the
-# script, --dry-run never reaches the clone, and a clone of the pinned release
-# tag predates the common file entirely (v1.8.0 ships no
-# dist/ZIP/mmt-install-common.sh — issue #211).
 prefix_writable() {
     local p="$1"
     while [ ! -e "$p" ]; do
@@ -211,8 +200,8 @@ prefix_writable() {
     [ -w "$p" ]
 }
 
-# Fallback copy of dist/ZIP/mmt-install-common.sh's validator — keep identical
-# (the installer suite diffs the two definitions).
+# The prefix validator: an allowlist, so every metacharacter, whitespace and
+# control character is rejected by construction.
 validate_mmt_base() {
     local p="$1"
     if [ -z "$p" ] || [ ${#p} -gt 256 ]; then
@@ -243,27 +232,8 @@ validate_mmt_base() {
     fi
 }
 
-load_common_defs() {
-    local f="$1"
-    [ -f "$f" ] || return 1
-    # shellcheck disable=SC1090  # runtime-resolved path, checked just above
-    source "$f"
-    COMMON_FILE="$f"
-}
-
-# Only a script read from a file has a directory. Under `curl | bash` the
-# script comes from stdin: BASH_SOURCE[0] is empty and $0 is "bash", whose
-# dirname is "." — the caller's working directory, which must never be
-# trusted as the installer's checkout (issue #484, F-UX-003).
-_INSTALLER_DIR=""
-if [ -n "${BASH_SOURCE[0]:-}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
-    _INSTALLER_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
-fi
-if [ -n "$_INSTALLER_DIR" ] && [ -f "$_INSTALLER_DIR/install.sh" ]; then
-    load_common_defs "$_INSTALLER_DIR/dist/ZIP/mmt-install-common.sh" || true
-fi
-# Always validate the prefix up front — the local fallback exists even when no
-# common file was sourced, so this also covers `curl | bash -s -- --dry-run`.
+# Always validate the prefix up front, so this also covers
+# `curl | bash -s -- --dry-run`.
 validate_mmt_base "$MMT_BASE" || exit 1
 
 # Auto-detect parallelism
@@ -888,17 +858,6 @@ main() {
     install_dependencies
     preflight_checks
     clone_repo
-
-    # curl|bash path: the shared definitions were not next to this script —
-    # take them from the clone (commit-pinned and signature-checked when
-    # REF_KIND=tag) when the file exists there. The pinned release tag
-    # predates dist/ZIP/mmt-install-common.sh entirely, so a missing file is
-    # not fatal — the identical local fallbacks defined above are used.
-    if [ -z "$COMMON_FILE" ]; then
-        load_common_defs "$BUILD_DIR/mmt-dpi/dist/ZIP/mmt-install-common.sh" || true
-    fi
-    validate_mmt_base "$MMT_BASE" || exit 1
-
     build
     install_mmt
     post_install

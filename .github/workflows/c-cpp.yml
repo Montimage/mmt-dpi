@@ -706,7 +706,7 @@ jobs:
 
   version-agreement:
     # Single version source (issue #483): every version site must agree with
-    # rules/common.mk VERSION — mmt_core.h, the ZIP fallback, the CHANGELOG
+    # rules/common.mk VERSION — mmt_core.h, mmt-dpi.spec, the CHANGELOG
     # heading, debian/changelog when present, and the installer pin with the
     # README/site mentions of it. A dedicated job so the verdict carries its
     # own status-check name; it needs no dependencies and no write access.

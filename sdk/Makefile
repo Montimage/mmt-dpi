@@ -123,6 +123,9 @@ install: --check-built --check-prefix
 		&& install -m 0644 $(GPL_LICENSE_TEXT) $(MMT_SEC_DOC)/COPYING; \
 	fi
 	@ echo "[MMT-]> Installed the licence files at "$(MMT_DOCDIR)
+# pkg-config file (issue #550), with the rpath a prefix off the loader path needs.
+	@ install -d -m 0755 $(MMT_LIB)/pkgconfig && $(call mmt_write_pc,$(MMT_LIB)/pkgconfig/mmt-dpi.pc,rpath)
+	@ echo "[MMT-]> Installed $(MMT_LIB)/pkgconfig/mmt-dpi.pc — PKG_CONFIG_PATH=$(MMT_LIB)/pkgconfig pkg-config --cflags --libs mmt-dpi"
 # Assert nothing under the library directory is group- or world-writable —
 # the directory goes on the system search path below, so a permissive mode
 # here would hand any local user write access to code loaded by everyone.
@@ -261,6 +264,7 @@ MMT_LIST_TREES   = (cd $(SDKINC) && find . -mindepth 1) | sed 's|^\./|$(call mmt
 MMT_LIST_INSTALLED = (cd $(SDKLIB) && ls -d *.so.* *.a) | sed 's|^|$(call mmt_rel,$(MMT_LIB))/|'; \
 	for f in $(MMT_LIB_LINKS) $(addsuffix .so.$(SOVERSION),$(MMT_SONAME_LIBS)); do echo "$(call mmt_rel,$(MMT_LIB))/$$f"; done; \
 	for f in $(MMT_PLUGIN_FILES); do echo "$(call mmt_rel,$(MMT_PLUGINS))/$$f"; done; \
+	for f in pkgconfig pkgconfig/mmt-dpi.pc; do echo "$(call mmt_rel,$(MMT_LIB))/$$f"; done; \
 	$(MMT_LIST_TREES); \
 	$(MMT_LIST_DOCS)
 
@@ -281,6 +285,22 @@ MMT_LIST_DOCS     = for d in $(call mmt_rel,$(MMT_DPI)/share $(MMT_DOCDIR) $(MMT
 		echo "$(call mmt_rel,$(MMT_SEC_DOC))"; \
 		for f in LICENSE THIRD-PARTY-NOTICES COPYING; do echo "$(call mmt_rel,$(MMT_SEC_DOC))/$$f"; done; \
 	fi
+
+# pkg-config file (issue #550): the one template every install route writes —
+# `install` and the deb/rpm staging at $(MMT_LIB)/pkgconfig/mmt-dpi.pc,
+# `install-fhs` at $(MMT_PKGCONFIG)/mmt-dpi.pc. $(call mmt_write_pc,<file>,<rpath>):
+# a non-empty <rpath> sets the `rpath` variable Libs carries to
+# -Wl,-rpath,$${libdir}, because an /opt-style prefix is not on the loader path
+# (a consumer built with `pkg-config --libs mmt-dpi` then runs without
+# LD_LIBRARY_PATH; `--define-variable=rpath=` drops it). The FHS layout is on
+# the loader path, so install-fhs leaves it empty.
+MMT_PC_RPATH = 'rpath=-Wl,-rpath,$${libdir}'
+mmt_write_pc = umask 022 && printf '%s\n' \
+	'libdir=$(MMT_LIB)' 'includedir=$(MMT_INC)' 'plugindir=$(MMT_PLUGINS)' $(if $(2),$(MMT_PC_RPATH),'rpath=') '' \
+	'Name: mmt-dpi' 'Description: MMT-DPI deep packet inspection library' \
+	'URL: https://github.com/montimage-projects/mmt-dpi' 'Version: $(VERSION)' \
+	'Libs: -L$${libdir} $${rpath} -lmmt_core' 'Libs.private: -ldl -lpthread -lm' \
+	'Cflags: -I$${includedir}' > $(1) && chmod 0644 $(1)
 
 #  - - - - - - -
 #  B U I L D   D E B
@@ -353,6 +373,12 @@ SEC_PKG_LICENSE := GPL-3.0-or-later AND Apache-2.0
 	#tell ldconfig to find mmt-dpi libraries at the installed folder
 	umask 022 && echo "$(MMT_LIB)" > $(BUILD_DIR)/etc/ld.so.conf.d/mmt-dpi.conf \
 	    && chmod 0644 $(BUILD_DIR)/etc/ld.so.conf.d/mmt-dpi.conf
+	# pkg-config file (issue #550): the one `install` writes, rpath included,
+	# and a link from /usr/share/pkgconfig so pkg-config finds the installed
+	# package without PKG_CONFIG_PATH.
+	$(QUIET) install -d -m 0755 $(BUILD_DIR)$(MMT_LIB)/pkgconfig $(BUILD_DIR)/usr/share/pkgconfig \
+	    && $(call mmt_write_pc,$(BUILD_DIR)$(MMT_LIB)/pkgconfig/mmt-dpi.pc,rpath) \
+	    && ln -s $(MMT_LIB)/pkgconfig/mmt-dpi.pc $(BUILD_DIR)/usr/share/pkgconfig/mmt-dpi.pc
 	# Licence files (issue #497): LICENSE and THIRD-PARTY-NOTICES in each
 	# package, under its own doc directory.
 	$(QUIET) umask 022 && install -d -m 0755 $(BUILD_DIR)$(MMT_DOC) \
@@ -517,6 +543,8 @@ rpm: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	    \n%defattr(-,root,root,-)\
 	    \n%dir $(MMT_DPI)\
 	    \n%dir $(MMT_LIB)$(foreach l,$(MMT_PKG_LIBS),\n$(MMT_LIB)/$(l)*)\
+	    \n$(MMT_LIB)/pkgconfig\
+	    \n/usr/share/pkgconfig/mmt-dpi.pc\
 	    \n$(MMT_INC)\
 	    \n%exclude $(MMT_INC)/fuzz\
 	    \n$(MMT_PLUGINS)\
@@ -556,36 +584,6 @@ rpm: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	$(QUIET) $(RM) $(BUILD_DIR) $(SEC_BUILD_DIR) rpmbuild mmt-dpi.spec
 
 
-#  - - - - - - - - - -
-#  B U I L D   Z I P
-#  - - - - - - - - - -
-
-
-zip: sdk $(SDKLIB) $(SDKINC) $(SDKXAM)
-	echo $(BUILD_DIR)
-	# Remove old build
-	$(QUIET) $(RM) $(BUILD_DIR)
-	$(QUIET) $(MKDIR) $(BUILD_DIR)
-	# Copy installer scripts (common + install/uninstall) and README
-	$(QUIET) $(CP) ../dist/ZIP/* $(BUILD_DIR)
-	# Stamp VERSION from the single source of truth (rules/common.mk) into
-	# the bundled common file so the ZIP never drifts from the build.
-	$(QUIET) sed -i 's/^VERSION="$${VERSION:-.*}"/VERSION="$(VERSION)"/' $(BUILD_DIR)/mmt-install-common.sh 2>/dev/null || \
-	         sed -i 's/^VERSION="$${VERSION:-.*}"/VERSION="$(VERSION)"/' $(BUILD_DIR)/mmt-install-common.sh
-	# Likewise SOVERSION, which names the SONAME links its install.sh creates (issue #536).
-	$(QUIET) sed -i 's/^SOVERSION="$${SOVERSION:-.*}"/SOVERSION="$(SOVERSION)"/' $(BUILD_DIR)/mmt-install-common.sh
-	# Licence files (issue #497): the ZIP carries every library, so it ships
-	# LICENSE, THIRD-PARTY-NOTICES and, with the engines, the GPL text as COPYING.
-	$(QUIET) umask 022 && install -m 0644 $(PKG_LICENSE_FILES) $(BUILD_DIR)/ \
-	    && if $(SEC_ENGINES_BUILT); then install -m 0644 $(GPL_LICENSE_TEXT) $(BUILD_DIR)/COPYING; fi
-	# Copy source to zip file
-	$(QUIET) $(CP) -R $(SDKLIB) $(BUILD_DIR)
-	$(QUIET) $(CP) -R $(SDKINC) $(BUILD_DIR)
-	$(QUIET) $(CP) -R $(SDKXAM) $(BUILD_DIR)
-	# Make zip file
-	zip -r $(BUILD_DIR).zip $(BUILD_DIR)
-
-	$(QUIET) $(RM) $(BUILD_DIR)
 #  - - - - -
 #  C L E A N
 #  - - - - -
@@ -595,10 +593,10 @@ clean:
 	$(QUIET) $(RM) $(SDKLIB) $(SDKBIN) $(SDKINC) $(SDKDOC) $(SDKXAM) $(BUILD_DIR) $(SEC_BUILD_DIR) rpmbuild mmt-dpi.spec $(PLUGINS_PATH_STAMP)
 	$(QUIET) $(RM) $(TOPDIR)/*.log $(TOPDIR)/*.tmp $(TOPDIR)/*.bak $(TOPDIR)/coverage.info $(TOPDIR)/coverage.json $(TOPDIR)/lcov.info
 	$(QUIET) $(RM) $(TOPDIR)/cppcheck*.xml $(TOPDIR)/cppcheck_output.xml $(TOPDIR)/cppcheck-report.xml $(TOPDIR)/PVS-Studio.log $(TOPDIR)/pvs.log
-	$(QUIET) $(RM) $(TOPDIR)/mmt-dpi_*.deb $(TOPDIR)/mmt-dpi_*.rpm $(TOPDIR)/mmt-dpi_*.zip
-	$(QUIET) $(RM) $(TOPDIR)/sdk/mmt-dpi_*.deb $(TOPDIR)/sdk/mmt-dpi_*.rpm $(TOPDIR)/sdk/mmt-dpi_*.zip 2>/dev/null || true
+	$(QUIET) $(RM) $(TOPDIR)/mmt-dpi_*.deb $(TOPDIR)/mmt-dpi_*.rpm
+	$(QUIET) $(RM) $(TOPDIR)/sdk/mmt-dpi_*.deb $(TOPDIR)/sdk/mmt-dpi_*.rpm 2>/dev/null || true
 	$(QUIET) $(RM) $(TOPDIR)/mmt-dpi-security_*.deb $(TOPDIR)/mmt-dpi-security_*.rpm $(TOPDIR)/sdk/mmt-dpi-security_*.deb $(TOPDIR)/sdk/mmt-dpi-security_*.rpm 2>/dev/null || true
-	$(QUIET) $(RM) mmt-dpi_*.deb mmt-dpi_*.rpm mmt-dpi_*.zip *.gcda *.gcno *.gcov 2>/dev/null || true
+	$(QUIET) $(RM) mmt-dpi_*.deb mmt-dpi_*.rpm *.gcda *.gcno *.gcov 2>/dev/null || true
 	$(QUIET) $(RM) mmt-dpi-security_*.deb mmt-dpi-security_*.rpm $(SEC_BUILD_DIR) 2>/dev/null || true
 	# F-DEAD-016 (issue #229): stale example binaries compiled in-tree sit
 	# inside the source directory (gitignored, so a plain build never
@@ -698,13 +696,7 @@ install-fhs: --check-built
 	@ umask 022 && cp -R $(SDKXAM)/. $(DESTDIR)$(MMT_EXAMS)/ \
 		&& find $(DESTDIR)$(MMT_EXAMS) -type d -exec chmod 0755 {} + \
 		&& find $(DESTDIR)$(MMT_EXAMS) -type f -exec chmod 0644 {} +
-	@ umask 022 && printf '%s\n' \
-		'libdir=$(MMT_LIB)' 'includedir=$(MMT_INC)' 'plugindir=$(MMT_PLUGINS)' '' \
-		'Name: mmt-dpi' 'Description: MMT-DPI deep packet inspection library' \
-		'URL: https://github.com/montimage-projects/mmt-dpi' 'Version: $(VERSION)' \
-		'Libs: -L$${libdir} -lmmt_core' 'Libs.private: -ldl -lpthread -lm' \
-		'Cflags: -I$${includedir}' > $(DESTDIR)$(MMT_PKGCONFIG)/mmt-dpi.pc \
-		&& chmod 0644 $(DESTDIR)$(MMT_PKGCONFIG)/mmt-dpi.pc
+	@ $(call mmt_write_pc,$(DESTDIR)$(MMT_PKGCONFIG)/mmt-dpi.pc,)
 # Same assertion as `install`: nothing group/world-writable in the loader path.
 	@ if find $(DESTDIR)$(MMT_LIB) -type f -perm /022 -print -quit | grep -q .; then \
 		echo "ERROR: group/world-writable file under $(DESTDIR)$(MMT_LIB)" >&2; exit 1; \

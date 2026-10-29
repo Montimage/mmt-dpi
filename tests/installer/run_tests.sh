@@ -3,16 +3,18 @@
 # run_tests.sh — regression suite for issue #211
 # (F-BUG-104, F-BUG-105, F-BUG-116, F-BUG-117, F-BUG-121):
 #
-#   * the install prefix validator is an allowlist defined canonically in
-#     dist/ZIP/mmt-install-common.sh; the root install.sh carries a
-#     byte-identical fallback for `curl | bash` runs whose pinned clone
-#     predates the common file (v1.8.0 ships none);
+#   * the install prefix validator is an allowlist, defined once in the root
+#     install.sh, which sources no file from a checkout or a clone (the
+#     offline ZIP that shared it is retired, issue #550);
 #   * install.sh elevates by prefix writability (not the /opt/mmt literal)
 #     and only runs ldconfig when it installed with elevation;
 #   * tools/ci/build-package.sh supports --dry-run, clears dist/packages/
 #     before collecting and smoke-tests the tracked artifact path;
-#   * the offline ZIP install/uninstall round trip leaves no residue under a
-#     temporary prefix (runnable unprivileged);
+#   * issue #550: every install route writes mmt-dpi.pc — `make install`
+#     (recorded in the manifest, with the rpath an /opt prefix needs),
+#     install-fhs and the make deb/rpm staging; mmt-dpi.spec is the
+#     distribution recipe; dist/ZIP is retired; MMT_EXAMPLES_SRC names only
+#     the programs in src/examples;
 #   * the patched examples initialise their argument storage, reject an unset
 #     mode, and use a flag + pcap_breakloop in the signal handler;
 #   * issue #485 (F-CI-104, F-UX-007, F-SEC-005, F-CI-116): `make install`
@@ -57,10 +59,9 @@ check_fail() {
     if "$@" >"${WORK}/out.log" 2>&1; then bad "$desc (unexpected success)"; else ok "$desc"; fi
 }
 
-# vbase <prefix> — run the shared validator inside a subshell.
+# vbase <prefix> — run install.sh's validator inside a subshell.
 vbase() {
-    ( # shellcheck disable=SC1091  # path anchored at the repo root
-      source "${REPO_ROOT}/dist/ZIP/mmt-install-common.sh"
+    ( eval "$(sed -n '/^validate_mmt_base()/,/^}/p' "${REPO_ROOT}/install.sh")"
       validate_mmt_base "$1" )
 }
 
@@ -79,22 +80,19 @@ for p in "rel/path" "/" "/tmp/../etc" "/tmp/x;id" '/tmp/$(id)' '/tmp/x`id`' \
     check_fail "validator rejects ${p@Q}" vbase "$p"
 done
 check "validator is an allowlist (no blacklist glob left)" \
-    bash -c "grep -q 'A-Za-z0-9._/-' '${REPO_ROOT}/dist/ZIP/mmt-install-common.sh'"
+    bash -c "sed -n '/^validate_mmt_base()/,/^}/p' '${REPO_ROOT}/install.sh' | grep -q 'A-Za-z0-9._/-'"
 
-# --- 2. Canonical definition in the shared file; install.sh carries an ------
-#      identical local fallback (sourced copy wins when present). The fallback
-#      exists because `curl | bash` clones the pinned v1.8.0 tag, which ships
-#      no dist/ZIP/mmt-install-common.sh at all — the diff check is what keeps
-#      the two copies from drifting (issue #211, F-BUG-121).
-echo "--- shared validator + install.sh fallback (dedupe) ---"
-check "shared file defines the canonical validator" \
-    bash -c "grep -q '^validate_mmt_base()' '${REPO_ROOT}/dist/ZIP/mmt-install-common.sh'"
-check "install.sh fallback is identical to the shared definition" \
-    bash -c "diff -q <(sed -n '/^validate_mmt_base()/,/^}/p' '${REPO_ROOT}/install.sh') <(sed -n '/^validate_mmt_base()/,/^}/p' '${REPO_ROOT}/dist/ZIP/mmt-install-common.sh') >/dev/null"
-check "install.sh sources mmt-install-common.sh when present" \
-    grep -q 'mmt-install-common\.sh' "${REPO_ROOT}/install.sh"
-check "clone lacking the common file is not fatal (local fallback)" \
-    bash -c "grep -qF 'load_common_defs \"\$BUILD_DIR/mmt-dpi/dist/ZIP/mmt-install-common.sh\" || true' '${REPO_ROOT}/install.sh'"
+# --- 2. One definition, nothing sourced (issue #550) ------------------------
+#      install.sh used to source dist/ZIP/mmt-install-common.sh from its
+#      checkout or its clone and keep a byte-identical fallback; with the ZIP
+#      retired its own definitions are the only ones.
+echo "--- install.sh: one validator, nothing sourced ---"
+check "install.sh defines validate_mmt_base and prefix_writable once" \
+    bash -c "[ \"\$(grep -c '^validate_mmt_base()' '${REPO_ROOT}/install.sh')\" -eq 1 ] && [ \"\$(grep -c '^prefix_writable()' '${REPO_ROOT}/install.sh')\" -eq 1 ]"
+check "install.sh sources no file" \
+    bash -c "! grep -nE '^[[:space:]]*(source|\.)[[:space:]]' '${REPO_ROOT}/install.sh'"
+check "dist/ZIP is retired: no tracked file, no zip target" \
+    bash -c "[ -z \"\$(git -C '${REPO_ROOT}' ls-files dist/ZIP)\" ] && ! grep -q '^zip:' '${REPO_ROOT}/sdk/Makefile'"
 
 # --- 3. Root installer: --prefix, writability-based elevation --------------
 echo "--- install.sh CLI and elevation ---"
@@ -233,15 +231,25 @@ check "PKG_LICENSE is the mmt-dpi SPDX expression" \
 check "SEC_PKG_LICENSE is the mmt-dpi-security SPDX expression" \
     grep -qx 'SEC_PKG_LICENSE := GPL-3.0-or-later AND Apache-2.0' "${MK}"
 check "rpm spec: mmt-dpi License: is PKG_LICENSE" \
-    bash -c "sed -n '/^rpm:/,/^zip:/p' '${MK}' | grep -qF '\\nLicense: \$(PKG_LICENSE)'"
+    bash -c "sed -n '/^rpm:/,/^clean:/p' '${MK}' | grep -qF '\\nLicense: \$(PKG_LICENSE)'"
 check "rpm spec: the security subpackage License: is SEC_PKG_LICENSE" \
-    bash -c "sed -n '/^rpm:/,/^zip:/p' '${MK}' | grep -qF '\\nLicense: \$(SEC_PKG_LICENSE)'"
+    bash -c "sed -n '/^rpm:/,/^clean:/p' '${MK}' | grep -qF '\\nLicense: \$(SEC_PKG_LICENSE)'"
 check "rpm spec: libmmt_security/libmmt_fuzz belong to the security subpackage" \
-    bash -c "sed -n '/^rpm:/,/^zip:/p' '${MK}' | grep -q '%package security' && grep -qx 'MMT_PKG_LIBS  = \$(MMT_LAYOUT_LIBS)' '${MK}' && ! grep '^MMT_LAYOUT_LIBS' '${MK}' | grep -Eq 'SECURITY|FUZZ|security|fuzz'"
+    bash -c "sed -n '/^rpm:/,/^clean:/p' '${MK}' | grep -q '%package security' && grep -qx 'MMT_PKG_LIBS  = \$(MMT_LAYOUT_LIBS)' '${MK}' && ! grep '^MMT_LAYOUT_LIBS' '${MK}' | grep -Eq 'SECURITY|FUZZ|security|fuzz'"
 check "no hard-coded licence literal is left in the spec" \
-    bash -c "! sed -n '/^rpm:/,/^zip:/p' '${MK}' | grep -Eq 'License: *(proprietary|Apache-2.0)'"
+    bash -c "! sed -n '/^rpm:/,/^clean:/p' '${MK}' | grep -Eq 'License: *(proprietary|Apache-2.0)'"
 check "THIRD-PARTY-NOTICES and the licence expressions are current" \
     python3 "${REPO_ROOT}/tools/ci/vendored-components.py" notices --check
+# mmt-dpi.spec (issue #550): the distribution recipe builds the mmt-dpi
+# package's libraries, so it carries the same expression; it builds from the
+# release source tarball through install-fhs, one variable set for both.
+SPEC="${REPO_ROOT}/mmt-dpi.spec"
+check "mmt-dpi.spec License: is PKG_LICENSE" \
+    bash -c "[ \"\$(sed -n 's/^License:[[:space:]]*//p' '${SPEC}')\" = \"\$(sed -n 's/^PKG_LICENSE := //p' '${MK}')\" ]"
+check "mmt-dpi.spec builds from the release source tarball" \
+    grep -qE '^Source0:.*/%\{name\}-%\{version\}\.tar\.gz$' "${SPEC}"
+check "mmt-dpi.spec passes one variable set to the build and to install-fhs" \
+    bash -c "grep -qE '^LDFLAGS=\"%\\{build_ldflags\\}\" %make_build -C sdk %\\{mmt_vars\\} MMT_EXTRA_CFLAGS' '${SPEC}' && grep -qE '^%make_build -C sdk %\\{mmt_vars\\} DESTDIR=%\\{buildroot\\} install-fhs$' '${SPEC}'"
 
 # --- 4c. One install layout (issue #538, F-DEAD-011) -------------------------
 # install, its manifest and uninstall, the deb/rpm staging and install-fhs all
@@ -305,58 +313,19 @@ no_engine_in_main() {
 }
 check "the mmt-dpi package and the plugin list hold no engine (with or without ENABLESEC)" no_engine_in_main
 
-# --- 5. ZIP install/uninstall round trip — no residue ----------------------
-echo "--- ZIP install/uninstall round trip ---"
-Z="${WORK}/zip"
-mkdir -p "${Z}/lib" "${Z}/include" "${Z}/examples"
-cp "${REPO_ROOT}"/dist/ZIP/install.sh "${REPO_ROOT}"/dist/ZIP/uninstall.sh \
-   "${REPO_ROOT}"/dist/ZIP/mmt-install-common.sh "${Z}/"
-for l in libmmt_core libmmt_tcpip libmmt_tmobile libmmt_tdicom \
-         libmmt_business_app libmmt_security libmmt_fuzz; do
-    : > "${Z}/lib/${l}.so.1.8.0"
-done
-echo '/* stub header */'  > "${Z}/include/mmt_core.h"
-echo '/* stub example */' > "${Z}/examples/stub.c"
-cp "${REPO_ROOT}/LICENSE" "${REPO_ROOT}/THIRD-PARTY-NOTICES" "${Z}/"
-cp "${REPO_ROOT}/LICENSES/GPL-3.0-or-later.txt" "${Z}/COPYING"
-
-ZPREFIX="${WORK}/prefix"
-# Issue #536: an upgrade in place over an earlier version — its stale library
-# files (and links to them) must go; a foreign library must stay.
-mkdir -p "${ZPREFIX}/dpi/lib"
-: > "${ZPREFIX}/dpi/lib/libmmt_core.so.1.7.0"
-ln -s libmmt_core.so.1.7.0 "${ZPREFIX}/dpi/lib/libmmt_core.so.1.7"
-: > "${ZPREFIX}/dpi/lib/libmmt_corex.so.1.7.0"
-check "ZIP install into temp prefix (unprivileged)" \
-    bash -c "cd '${Z}' && MMT_BASE='${ZPREFIX}' bash install.sh"
-check "installed lib present"  test -f "${ZPREFIX}/dpi/lib/libmmt_core.so.1.8.0"
-check "installed .so link"     test -e "${ZPREFIX}/dpi/lib/libmmt_core.so"
-# Issue #536: the SONAME link, named from the SOVERSION the ZIP carries —
-# the fallback make zip restamps, which must equal rules/common.mk's.
+# --- 5. Versions and the installed examples ----------------------------------
 SOV="$(sed -n 's/^SOVERSION[[:space:]]*:=[[:space:]]*//p' "${REPO_ROOT}/rules/common.mk")"
 VER="$(sed -n 's/^VERSION[[:space:]]*:=[[:space:]]*//p' "${REPO_ROOT}/rules/common.mk")"
 check "rules/common.mk defines SOVERSION" test -n "${SOV}"
-check "the ZIP SOVERSION fallback is rules/common.mk's" \
-    grep -qx "SOVERSION=\"\${SOVERSION:-${SOV}}\"" "${REPO_ROOT}/dist/ZIP/mmt-install-common.sh"
-check "make zip restamps SOVERSION" \
-    bash -c "sed -n '/^zip:/,/^clean:/p' '${REPO_ROOT}/sdk/Makefile' | grep -qF 'SOVERSION=\"\$(SOVERSION)\"'"
-check "ZIP install lays down the SONAME link" \
-    bash -c "[ \"\$(readlink '${ZPREFIX}/dpi/lib/libmmt_core.so.${SOV}')\" = libmmt_core.so.1.8.0 ]"
-check "ZIP install removes a stale earlier library and its link" \
-    bash -c "[ ! -e '${ZPREFIX}/dpi/lib/libmmt_core.so.1.7.0' ] && [ ! -L '${ZPREFIX}/dpi/lib/libmmt_core.so.1.7' ]"
-check "ZIP install keeps another product's library" test -f "${ZPREFIX}/dpi/lib/libmmt_corex.so.1.7.0"
-check "installed plugin"       test -f "${ZPREFIX}/plugins/libmmt_tcpip.so"
-check "installed examples dir" test -f "${ZPREFIX}/examples/stub.c"
-check "ZIP install lays down LICENSE, THIRD-PARTY-NOTICES and COPYING" \
-    bash -c "for f in LICENSE THIRD-PARTY-NOTICES COPYING; do [ -f '${ZPREFIX}/dpi/share/doc/mmt-dpi/'\$f ] || exit 1; done"
-check "make zip packs the licence files" \
-    bash -c "sed -n '/^zip:/,/^clean:/p' '${REPO_ROOT}/sdk/Makefile' | grep -q 'PKG_LICENSE_FILES'"
-check "uninstaller removes examples dir (was created by installer)" \
-    bash -c "cd '${Z}' && MMT_BASE='${ZPREFIX}' bash uninstall.sh >/dev/null 2>&1 && [ ! -e '${ZPREFIX}/examples' ]"
-check "no residue under prefix after round trip" \
-    bash -c "! [ -e '${ZPREFIX}' ] || [ -z \"\$(find '${ZPREFIX}' -mindepth 1 -print -quit)\" ]"
-check_fail "unwritable prefix still refused for non-root" \
-    bash -c "cd '${Z}' && MMT_BASE=/sys/mmt-nope bash install.sh"
+# Issue #550: MMT_EXAMPLES_SRC listed three files that do not exist and a
+# capture no rule copies. It must name exactly the programs in src/examples.
+examples_listed() {
+    local listed have
+    listed="$(print_var MMT_EXAMPLES_SRC | tr ' ' '\n' | sed '/^$/d' | LC_ALL=C sort)"
+    have="$(find "${REPO_ROOT}/src/examples" -maxdepth 1 -name '*.c' | sed 's|.*/||' | LC_ALL=C sort)"
+    [ -n "${listed}" ] && [ "${listed}" = "${have}" ]
+}
+check "MMT_EXAMPLES_SRC names exactly the src/examples/*.c programs" examples_listed
 
 # --- 5b. Distribution packaging (issue #475) -------------------------------
 # The debian/changelog version is checked by scripts/validate-release-prep.sh
@@ -543,6 +512,23 @@ check "loader drop-in is mode 0644" \
 check "registration runs ldconfig" test -s "${WORK}/ldconfig.calls"
 check "make install writes the install manifest" \
     bash -c "grep -qx 'dpi/lib/libmmt_core.so' '${PREFIX2}/.mmt-dpi-manifest' && grep -qx 'examples/extract_all.c' '${PREFIX2}/.mmt-dpi-manifest'"
+# Issue #550: make install writes mmt-dpi.pc, records it, and its rpath lets
+# a consumer built through pkg-config run with LD_LIBRARY_PATH unset.
+PC2="${PREFIX2}/dpi/lib/pkgconfig/mmt-dpi.pc"
+check "make install writes dpi/lib/pkgconfig/mmt-dpi.pc (0644) and records it" \
+    bash -c "[ \"\$(stat -c %a '${PC2}')\" = 644 ] && grep -qx 'dpi/lib/pkgconfig' '${PREFIX2}/.mmt-dpi-manifest' && grep -qx 'dpi/lib/pkgconfig/mmt-dpi.pc' '${PREFIX2}/.mmt-dpi-manifest'"
+if command -v pkg-config >/dev/null 2>&1; then
+    pc2() { PKG_CONFIG_PATH="${PREFIX2}/dpi/lib/pkgconfig" pkg-config "$@" mmt-dpi; }
+    check "pkg-config --cflags --libs mmt-dpi names the prefix, with its rpath" \
+        bash -c "[ \"\$(PKG_CONFIG_PATH='${PREFIX2}/dpi/lib/pkgconfig' pkg-config --cflags --libs mmt-dpi | xargs)\" = '-I${INC} -L${LIB} -Wl,-rpath,${LIB} -lmmt_core' ]"
+    check "pkg-config --modversion mmt-dpi is VERSION" test "$(pc2 --modversion)" = "${VER}"
+    read -r -a PC_FLAGS <<< "$(pc2 --cflags --libs)"
+    check "extract_all built through pkg-config runs with LD_LIBRARY_PATH unset" \
+        bash -c "'${CC}' -O1 -o '${WORK}/extract_all_pc' '${PREFIX2}/examples/extract_all.c' \"\$@\" -lpcap \
+            && cd '${WORK}' && env -u LD_LIBRARY_PATH '${WORK}/extract_all_pc' -t '${REPO_ROOT}/src/examples/google-fr.pcap' >/dev/null 2>&1" _ "${extra_cflags[@]}" "${PC_FLAGS[@]}"
+else
+    echo "  ○ pkg-config unavailable — mmt-dpi.pc contents not exercised"
+fi
 check "the manifest records the SONAME links (issue #536)" \
     bash -c "grep -qx 'dpi/lib/libmmt_core.so.${SOV}' '${PREFIX2}/.mmt-dpi-manifest' && grep -qx 'dpi/lib/libmmt_tcpip.so.${SOV}' '${PREFIX2}/.mmt-dpi-manifest'"
 # Issue #536: upgrading in place over v1.9.1 or before. The stale library has
@@ -653,6 +639,8 @@ check "install-fhs: headers, examples and the pkg-config file" \
         && [ -f '${FHS}/usr/share/doc/libmmt-dpi-dev/examples/extract_all.c' ] \
         && grep -qx 'libdir=${FHS_LIB}' '${FHS}${FHS_LIB}/pkgconfig/mmt-dpi.pc' \
         && grep -qx 'Version: ${VER}' '${FHS}${FHS_LIB}/pkgconfig/mmt-dpi.pc'"
+check "install-fhs: mmt-dpi.pc carries no rpath (the FHS libdir is on the loader path)" \
+    grep -qx 'rpath=' "${FHS}${FHS_LIB}/pkgconfig/mmt-dpi.pc"
 check "install-fhs: no group/world-writable file" \
     bash -c "[ -z \"\$(find '${FHS}' -type f -perm /022)\" ]"
 
@@ -705,6 +693,10 @@ else
             check "dpkg-deb -c mmt-dpi-security lists ${l}.so.${SOV} -> ${l}.so.${VER}" \
                 grep -qF "/dpi/lib/${l}.so.${SOV} -> ${l}.so.${VER}" "${WORK}/sec.list"
         done
+        # Issue #550: the package ships the `install` .pc and a link that puts
+        # it on pkg-config's default search path.
+        check "dpkg-deb -c mmt-dpi lists dpi/lib/pkgconfig/mmt-dpi.pc and the /usr/share/pkgconfig link" \
+            bash -c "grep -q '/opt/mmt/dpi/lib/pkgconfig/mmt-dpi.pc\$' '${WORK}/main.list' && grep -qF './usr/share/pkgconfig/mmt-dpi.pc -> /opt/mmt/dpi/lib/pkgconfig/mmt-dpi.pc' '${WORK}/main.list'"
         check "mmt-dpi holds neither engine nor the fuzz headers" \
             bash -c "! grep -Eq 'libmmt_(security|fuzz)|/include/fuzz/' '${WORK}/main.list'"
         check "mmt-dpi-security depends on exactly its own mmt-dpi version" \

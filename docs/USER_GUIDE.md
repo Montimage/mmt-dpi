@@ -27,7 +27,7 @@ curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/ins
 This script (`install.sh`):
 1. Detects your distribution and installs the default-profile build set
    (compiler, `make`, `git`) plus libpcap for the example programs
-   (`install.sh:386-453`) — not libxml2, which only `ENABLESEC=1` needs. What
+   (`install.sh:356-423`) — not libxml2, which only `ENABLESEC=1` needs. What
    each package list holds is recorded in `tools/ci/build-deps.txt`; the
    developer toolchain line is in
    [Agent Environment Notes §1 Toolchain Requirements](./AGENT_ENVIRONMENT.md#1-toolchain-requirements).

@@ -69,9 +69,9 @@ fi
 
 # Check 6: Version consistency
 version_common=$(grep '^VERSION' "$ROOT/rules/common.mk" 2>/dev/null | head -1 || echo "")
-version_zip=$(grep 'VERSION=' "$ROOT/dist/ZIP/mmt-install-common.sh" 2>/dev/null | head -1 || echo "")
-if [ -n "$version_common" ] && [ -n "$version_zip" ]; then
-    echo "  ✓ Version defined in rules/common.mk and dist/ZIP/mmt-install-common.sh"
+version_spec=$(grep '^Version:' "$ROOT/mmt-dpi.spec" 2>/dev/null | head -1 || echo "")
+if [ -n "$version_common" ] && [ -n "$version_spec" ]; then
+    echo "  ✓ Version defined in rules/common.mk and mmt-dpi.spec"
 else
     echo "  ✗ Version definition missing from expected locations"
     ERRORS=$((ERRORS + 1))

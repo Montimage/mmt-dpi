@@ -28,7 +28,7 @@ link here instead of repeating it. Two kinds of apt line elsewhere in the
 repository are deliberately not copies of it — executable package lists, which
 have to be runnable (`install.sh`, `tools/ci/build-package.sh`, the CI
 workflows), and package sets for a different job (the CubieBoard/ARM notes,
-the QoE demo, the prebuilt ZIP, the Debian packaging checklist).
+the QoE demo, the Debian packaging checklist).
 
 ```bash
 sudo apt-get update
@@ -48,7 +48,11 @@ executable lists — `install.sh`, `tools/ci/install-build-deps.sh`, the rpm
 `BuildRequires:` in `sdk/Makefile` and `.github/actions/bootstrap-deps` — are
 each checked against `tools/ci/build-deps.txt`, which records what every list
 must hold, by `tools/ci/check-dependency-lists.sh`: change a package there
-first.
+first. `mmt-dpi.spec`'s `BuildRequires:` (`gcc`, `make`: what `rpmbuild`
+needs in a distribution buildroot, issue #550) is not one of them — the
+`rpm-package` job builds the spec in each EL release container, which also
+holds the job's own tools (rpmlint, git, pkgconf, libpcap-devel), so it shows
+the list suffices there, not that it is minimal.
 
 CI builds and tests on `ubuntu-24.04` (GCC 13) — see
 `.github/workflows/c-cpp.yml`. That is the reference toolchain. The full
@@ -511,7 +515,7 @@ documents link here.
   root install out; `LDCONF=1` forces registration; `LDCONF_DIR` and
   `LDCONFIG` relocate the drop-in and the command (the installer suite uses
   a staged directory and a fake `ldconfig`).
-- **`make -C sdk MMT_BASE=<prefix> uninstall`** (`sdk/Makefile:170-211`)
+- **`make -C sdk MMT_BASE=<prefix> uninstall`** (`sdk/Makefile:173-214`)
   removes exactly the entries `install` recorded in
   `<prefix>/.mmt-dpi-manifest` (one path per line, relative to the prefix,
   merged across reinstalls), then the SDK directories left empty (`rmdir`,
@@ -546,7 +550,7 @@ documents link here.
 
 ### The `make test` trap
 
-`sdk/Makefile`'s `test` target (`sdk/Makefile:620-625`) compiles the
+`sdk/Makefile`'s `test` target (`sdk/Makefile:618-623`) compiles the
 `proto_attributes_iterator` example **from the installed prefix**:
 
 ```
@@ -679,7 +683,7 @@ next build of any profile deletes them, so harvest them first with
 
 - Object/header selection: `rules/common.mk:201-203, 225-228, 310-313`
 - Link rules and libxml2 wiring: `rules/common-linux.mk:6-12, 249-252, 260-264, 297-313`
-- Install symlinks for both engines: `sdk/Makefile:248` (the install layout list, issue #538), laid down by `sdk/Makefile:88, 344-346`
+- Install symlinks for both engines: `sdk/Makefile:251` (the install layout list, issue #538), laid down by `sdk/Makefile:88, 364-366`
 
 Usage (requires `libxml2-dev`):
 

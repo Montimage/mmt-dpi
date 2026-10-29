@@ -30,12 +30,13 @@ install_build_deps_debian() {
   # links libpcap) — neither lands in the package's Depends, which is derived
   # from the shipped libraries' NEEDED entries instead. binutils provides
   # objdump for that derivation (tools/ci/shlib-deps.sh); python3 runs the
-  # --verify-package leg of check-package-deps.sh. Both lists in this file
-  # are checked against tools/ci/build-deps.txt by
+  # --verify-package leg of check-package-deps.sh; pkg-config builds the
+  # installed consumer through mmt-dpi.pc (issue #550). Both lists in this
+  # file are checked against tools/ci/build-deps.txt by
   # tools/ci/check-dependency-lists.sh.
   apt-get install -y --no-install-recommends \
     build-essential gcc g++ make git ca-certificates file binutils \
-    libxml2-dev libpcap-dev dpkg-dev python3
+    libxml2-dev libpcap-dev dpkg-dev python3 pkg-config
 }
 
 install_build_deps_rhel() {
@@ -52,10 +53,11 @@ install_build_deps_rhel() {
   "$pm" install -y dnf-plugins-core || true
   "$pm" config-manager --set-enabled crb 2>/dev/null \
     || "$pm" config-manager --set-enabled powertools 2>/dev/null || true
-  # python3 runs the --verify-package leg of check-package-deps.sh.
+  # python3 runs the --verify-package leg of check-package-deps.sh;
+  # pkgconf-pkg-config builds the installed consumer through mmt-dpi.pc.
   "$pm" install -y \
     gcc gcc-c++ make git file findutils which binutils \
-    libxml2-devel libpcap-devel rpm-build python3
+    libxml2-devel libpcap-devel rpm-build python3 pkgconf-pkg-config
 }
 
 case "$PKG_TYPE" in

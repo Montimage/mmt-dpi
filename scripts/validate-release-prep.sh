@@ -68,8 +68,11 @@ else
     # (a) Declared-version sites: must equal VERSION exactly.
     agree "src/mmt_core/public_include/mmt_core.h #define VERSION" "$VERSION" \
         "$(first_match "$ROOT/src/mmt_core/public_include/mmt_core.h" 's/^#define VERSION "\([^"]*\)".*/\1/p')"
-    agree "dist/ZIP/mmt-install-common.sh VERSION fallback" "$VERSION" \
-        "$(first_match "$ROOT/dist/ZIP/mmt-install-common.sh" 's/^VERSION="\${VERSION:-\([^}]*\)}".*/\1/p')"
+    agree "mmt-dpi.spec Version:" "$VERSION" \
+        "$(first_match "$ROOT/mmt-dpi.spec" 's/^Version:[[:space:]]*\([^[:space:]]*\).*/\1/p')"
+    # Its newest %changelog entry too: SOURCE_DATE_EPOCH is read from it.
+    agree "mmt-dpi.spec newest %changelog entry" "$VERSION" \
+        "$(sed -n '/^%changelog/,$p' "$ROOT/mmt-dpi.spec" 2>/dev/null | sed -n 's/^\*.* - \([^ -]*\)-[^ ]*$/\1/p' | head -n 1)"
     agree "CHANGELOG.md topmost 'Version' heading" "$VERSION" \
         "$(first_match "$ROOT/CHANGELOG.md" 's/^Version \([0-9][^ ]*\).*/\1/p')"
     # debian/ (issue #475): checked when present, so a tree without it still validates.
@@ -146,10 +149,8 @@ check "git is available" "command -v git"
 # Check 5: CHANGELOG.md exists
 check "CHANGELOG.md exists" "test -f $ROOT/CHANGELOG.md"
 
-# Check 6: dist/ZIP/ directory exists
-check "dist/ZIP/install.sh exists" "test -f $ROOT/dist/ZIP/install.sh"
-check "dist/ZIP/uninstall.sh exists" "test -f $ROOT/dist/ZIP/uninstall.sh"
-check "dist/ZIP/mmt-install-common.sh exists" "test -f $ROOT/dist/ZIP/mmt-install-common.sh"
+# Check 6: the offline ZIP is retired (issue #550) — nothing to bump there
+check "dist/ZIP/ is retired" "test ! -e $ROOT/dist/ZIP"
 
 # Check 7: CI workflows exist
 check ".github/workflows/c-cpp.yml exists" "test -f $ROOT/.github/workflows/c-cpp.yml"

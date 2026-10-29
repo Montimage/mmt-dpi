@@ -25,6 +25,8 @@
 #   package    turning the build into a .deb/.rpm
 #   verify     check-package-deps.sh --verify-package
 #   devtools   the test runner and its helpers
+#   pkgconfig  the installed-consumer check, which compiles through the
+#              installed mmt-dpi.pc (issue #550)
 
 role  build      apt     build-essential gcc g++ make git
 role  build      dnf     gcc gcc-c++ make git
@@ -49,6 +51,9 @@ role  verify     dnf     python3
 
 role  devtools   apt     bash pkg-config jq
 
+role  pkgconfig  apt     pkg-config
+role  pkgconfig  dnf     pkgconf-pkg-config
+
 # The one-command installer builds the default profile and leaves the user
 # able to compile the examples (install.sh, install_deps_linux).
 list  install.sh:apt                 apt     build examples
@@ -60,8 +65,8 @@ list  install.sh:zypper              zypper  build examples
 
 # Release containers: ENABLESEC=1 package build, then the installed-consumer
 # check and --verify-package (tools/ci/install-build-deps.sh).
-list  install-build-deps.sh:deb      apt     build enablesec examples package verify
-list  install-build-deps.sh:rpm      dnf     build enablesec examples package verify
+list  install-build-deps.sh:deb      apt     build enablesec examples package verify pkgconfig
+list  install-build-deps.sh:rpm      dnf     build enablesec examples package verify pkgconfig
 
 # What rpmbuild itself needs (sdk/Makefile, rpm target).
 list  sdk/Makefile:BuildRequires     dnf     build enablesec package

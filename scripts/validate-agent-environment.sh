@@ -175,11 +175,11 @@ sdk/Makefile:8-12	^ifdef MMT_BASE	^endif	an unset MMT_BASE targets /opt/mmt	MMT_
 sdk/Makefile:25-29	^PLUGINS_PATH_STAMP :=	^FORCE:	plugins_engine.o depends on a plugin-directory stamp	plugins_engine\.o: \$\(PLUGINS_PATH_STAMP\)
 sdk/Makefile:58-68	^LDCONF +\?= auto	^[[:space:]]+esac$	the loader is registered by privilege (LDCONF=auto|0|1)	id -u
 sdk/Makefile:70-80	^--check-built:	^[[:space:]]+fi$	make install refuses a missing or mismatched build	PLUGINS_PATH_STAMP
-sdk/Makefile:170-211	^uninstall:	Done!	make uninstall removes the install and its drop-in	LDCONF_FILE
+sdk/Makefile:173-214	^uninstall:	Done!	make uninstall removes the install and its drop-in	LDCONF_FILE
 sdk/Makefile:88	ln -sf .*\$\$l\.so	-	make install creates the unversioned .so symlinks	MMT_SONAME_LIBS
-sdk/Makefile:248	^MMT_LAYOUT_SEC_LIBS := libmmt_security libmmt_fuzz$	-	install symlinks both ENABLESEC engines (the layout list, issue #538)
-sdk/Makefile:344-346	for l in \$\(MMT_SONAME_LIBS\)	^[[:space:]]+done$	the dist tree symlinks every library, both ENABLESEC engines included	ln -s .*\$\$l\.so 
-sdk/Makefile:620-625	^test:	\./proto_attributes_iterator	the make test target builds from the installed prefix	\$\(MMT_EXAMS\)/proto_attributes_iterator\.c
+sdk/Makefile:251	^MMT_LAYOUT_SEC_LIBS := libmmt_security libmmt_fuzz$	-	install symlinks both ENABLESEC engines (the layout list, issue #538)
+sdk/Makefile:364-366	for l in \$\(MMT_SONAME_LIBS\)	^[[:space:]]+done$	the dist tree symlinks every library, both ENABLESEC engines included	ln -s .*\$\$l\.so 
+sdk/Makefile:618-623	^test:	\./proto_attributes_iterator	the make test target builds from the installed prefix	\$\(MMT_EXAMS\)/proto_attributes_iterator\.c
 tests/run_all_tests.sh:8-118	^# Modes:	^esac	the runner has two opt-in sanitizer modes	\-fsanitize=thread
 tests/run_all_tests.sh:106-109	command -v setarch	^ *fi$	TSan re-execs once with ASLR disabled	exec setarch .*\-R
 tests/run_all_tests.sh:245-276	^DEFAULT_SUITES=\(	^\)$	the default suite list lives in DEFAULT_SUITES	docs_onboarding
@@ -380,8 +380,8 @@ defined_once() {
 
 # The toolchain install line is identified by its package set on one apt-get
 # line, independent of order or indentation. Package sets installed for a
-# different job (the CubieBoard/ARM notes, the QoE demo, the prebuilt ZIP, the
-# Debian packaging checklist) are a different fact, not a copy of this one, and
+# different job (the CubieBoard/ARM notes, the QoE demo, the Debian packaging
+# checklist) are a different fact, not a copy of this one, and
 # executable package lists are exempt because they have to be runnable.
 defined_once "toolchain install line" \
              'apt-get install' 'build-essential' 'pkg-config' 'jq'
@@ -473,7 +473,7 @@ check "AGENTS.md has no @imports (Claude-only syntax)" \
 check "the never-commit rule names dist/packages/, and dist/packages/ is ignored" \
       "grep -qF 'dist/packages/' '$AGENTS' && grep -qx 'dist/packages/' '$ROOT/.gitignore'"
 # shellcheck disable=SC2016  # backticks are Markdown syntax inside the pattern
-check "no agent file forbids committing all of dist/ (dist/ZIP/ is tracked source)" \
+check "no agent file forbids committing all of dist/ (only its build outputs are generated)" \
       "! grep -qF '\`dist/\`' '$AGENTS' && ! grep -qF '\`dist/\`' '$ROOT/CLAUDE.md'"
 
 # -----------------------------------------------------------------------------

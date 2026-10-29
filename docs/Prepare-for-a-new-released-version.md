@@ -38,7 +38,7 @@ cycle, to the version being prepared; each must equal `VERSION` exactly:
 |------|----------------------|
 | `rules/common.mk` | `VERSION := x.y.z` (the source) |
 | `src/mmt_core/public_include/mmt_core.h` | `#define VERSION "x.y.z"` (fallback for consumers that do not pass `-DVERSION`) |
-| `dist/ZIP/mmt-install-common.sh` | `VERSION="${VERSION:-x.y.z}"` (`make zip` restamps it) |
+| `mmt-dpi.spec` | `Version: x.y.z` (with a matching top `%changelog` entry `- x.y.z-1`) |
 | `CHANGELOG.md` | the topmost `Version x.y.z (...)` heading — `(unreleased)` until the tag, then the release date |
 | `debian/changelog` | the first entry's upstream version — checked only when the file exists |
 
