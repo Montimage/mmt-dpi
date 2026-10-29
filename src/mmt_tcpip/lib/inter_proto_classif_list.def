@@ -13,8 +13,17 @@
  * grouping. Append new classifiers at the end of their group; do not
  * sort this file.
  *
+ * MMT_INTER_PROTO_LEGACY(parent_proto, classify_fn, weight) rows (issue
+ * #540, F-BUG-311) are the 38 registrations (35 checkers) of defunct
+ * services: they keep their place in the chain but are skipped unless the
+ * handler runs the opt-in `legacy` DPI profile (docs/DPI-Profiles.md), so
+ * the default chains no longer run them on every unknown flow. A classifier is legacy only when its
+ * service or client protocol is unequivocally retired; the list and
+ * the criterion are recorded in docs/DECISIONS.md (2026-10-29, #540).
+ *
  * This file is intentionally not `#pragma once` / include-guarded: it is
- * meant to be included with MMT_INTER_PROTO defined by the includer.
+ * meant to be included with MMT_INTER_PROTO and MMT_INTER_PROTO_LEGACY
+ * defined by the includer.
  */
 
     /* CLASSIFY PROTOCOL OVER TCP PROTOCOL */
@@ -49,37 +58,37 @@
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_mssql, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_sip, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_edonkey, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_fasttrack, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_fasttrack, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_gnutella, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_winmx, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_directconnect_tcp, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_msn_tcp, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_yahoo_tcp, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_oscar, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_msn_tcp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_yahoo_tcp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_oscar, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_applejuice, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_soulseek, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_irc, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_usenet, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_filetopia, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_manolito_tcp, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_imesh_tcp, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_mms, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_pando, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_tvants_tcp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_filetopia, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_manolito_tcp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_imesh_tcp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_mms, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_pando, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_tvants_tcp, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_sopcast_tcp, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_tvuplayer_tcp, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_ppstream_tcp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_tvuplayer_tcp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_ppstream_tcp, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_pplive_tcp, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_gadugadu, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_zattoo_tcp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_zattoo_tcp, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_qq_tcp, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_feidian_tcp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_feidian_tcp, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_popo, 50)                           // verified: TCP login signature + @163.com pattern
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_thunder_tcp, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_vnc, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_teamviewer_tcp, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_i23v5, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_socrates_tcp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_i23v5, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_socrates_tcp, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_steam, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_xbox, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_http_application_activesync, 50)
@@ -87,11 +96,11 @@
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_flash, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_bgp, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_secondlife_tcp, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_pcanywhere, 50)                     // verified: UDP-only signature, a TCP flow is excluded on its first packet
+    MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_pcanywhere, 50)                     // verified: UDP-only signature, a TCP flow is excluded on its first packet
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_icecast, 50)                        // verified: Icecast is HTTP-framed, the HTTP dependence is intended
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_shoutcast, 50)                      // verified: SHOUTcast is HTTP-framed, the HTTP dependence is intended
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_veohtv_tcp, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_openft, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_veohtv_tcp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_openft, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_syslog, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_tds, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_direct_download_link, 50)
@@ -100,14 +109,14 @@
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_warcraft3, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_xdmcp_tcp, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_pptp, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_stealthnet, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_meebo, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_stealthnet, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_meebo, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_afp, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_aimini_tcp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_aimini_tcp, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_florensia_tcp, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_maplestory, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_dofus, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_world_of_kung_fu, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_world_of_kung_fu, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_fiesta, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_crossfire_tcp, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_guildwars, 50)
@@ -155,44 +164,44 @@
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_edonkey, 50)                        // verified: mmt_int_edonkey_udp() handles the UDP opcodes
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_gnutella, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_directconnect_udp, 50)
-    MMT_INTER_PROTO(PROTO_UDP, mmt_check_msn_udp, 50)
-    MMT_INTER_PROTO(PROTO_UDP, mmt_check_yahoo_udp, 50)
-    MMT_INTER_PROTO(PROTO_UDP, mmt_check_oscar, 50)                          // fixed: TCP-only signatures, the checker excludes a UDP flow at once
+    MMT_INTER_PROTO_LEGACY(PROTO_UDP, mmt_check_msn_udp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_UDP, mmt_check_yahoo_udp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_UDP, mmt_check_oscar, 50)                          // fixed: TCP-only signatures, the checker excludes a UDP flow at once
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_jabber, 50)                         // verified: the XML stanza match does not depend on TCP
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_gtp, 50)
-    MMT_INTER_PROTO(PROTO_UDP, mmt_check_manolito_udp, 50)
-    MMT_INTER_PROTO(PROTO_UDP, mmt_check_imesh_udp, 50)
-    MMT_INTER_PROTO(PROTO_UDP, mmt_check_pando, 50)
-    MMT_INTER_PROTO(PROTO_UDP, mmt_check_tvants_udp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_UDP, mmt_check_manolito_udp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_UDP, mmt_check_imesh_udp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_UDP, mmt_check_pando, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_UDP, mmt_check_tvants_udp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_sopcast_udp, 50)
-    MMT_INTER_PROTO(PROTO_UDP, mmt_check_tvuplayer_udp, 50)
-    MMT_INTER_PROTO(PROTO_UDP, mmt_check_ppstream_udp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_UDP, mmt_check_tvuplayer_udp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_UDP, mmt_check_ppstream_udp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_pplive_udp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_iax, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_mgcp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_gadugadu, 50)                       // verified: TCP-only signatures, a UDP flow is excluded on its first packet
-    MMT_INTER_PROTO(PROTO_UDP, mmt_check_zattoo_udp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_UDP, mmt_check_zattoo_udp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_qq_udp, 50)
-    MMT_INTER_PROTO(PROTO_UDP, mmt_check_feidian_udp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_UDP, mmt_check_feidian_udp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_popo, 50)                           // verified: the @163.com pattern is transport-independent
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_thunder_udp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_teamviewer_udp, 50)
-    MMT_INTER_PROTO(PROTO_UDP, mmt_check_socrates_udp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_UDP, mmt_check_socrates_udp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_halflife2, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_xbox, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_quake, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_battlefield, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_secondlife_udp, 50)
-    MMT_INTER_PROTO(PROTO_UDP, mmt_check_pcanywhere, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_UDP, mmt_check_pcanywhere, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_snmp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_kontiki, 50)
-    MMT_INTER_PROTO(PROTO_UDP, mmt_check_veohtv_udp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_UDP, mmt_check_veohtv_udp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_ipp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_ldap, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_warcraft3, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_xdmcp_udp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_tftp, 50)
-    MMT_INTER_PROTO(PROTO_UDP, mmt_check_aimini_udp, 50)
+    MMT_INTER_PROTO_LEGACY(PROTO_UDP, mmt_check_aimini_udp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_florensia_udp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_crossfire_udp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_armagetron, 50)

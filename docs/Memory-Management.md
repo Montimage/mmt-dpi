@@ -37,8 +37,8 @@ The memory allocator does the housekeeping in a (hopefully) transparent way.
 
 An extraction function that returns a heap object through `attribute_t.data` hands it to the handler with `mmt_packet_scratch_adopt(ipacket, value, release)` (`src/mmt_core/public_include/plugin_defs.h:54`). Nothing else frees an extracted value: before issue #506 the DNS, FTP and NDN extractors leaked one object per read.
 
-* The handler chains the value on a per-packet list. The list records are bump-allocated from an `mmt_arena_t` that the handler creates on first use (`src/mmt_core/src/packet_pipeline.c:1582`).
-* When the next `packet_process()` call starts, the handler calls each `release` and rewinds the arena, keeping its first block (`src/mmt_core/src/packet_pipeline.c:1520`, `src/mmt_core/src/packet_pipeline.c:1606`). `mmt_close_handler()` releases the values and frees the arena (`src/mmt_core/src/packet_registry_attr.c:148`).
+* The handler chains the value on a per-packet list. The list records are bump-allocated from an `mmt_arena_t` that the handler creates on first use (`src/mmt_core/src/packet_pipeline.c:1589`).
+* When the next `packet_process()` call starts, the handler calls each `release` and rewinds the arena, keeping its first block (`src/mmt_core/src/packet_pipeline.c:1527`, `src/mmt_core/src/packet_pipeline.c:1613`). `mmt_close_handler()` releases the values and frees the arena (`src/mmt_core/src/packet_registry_attr.c:148`).
 * The extractor sets `data` and returns 1 only when `mmt_packet_scratch_adopt()` returns `true`. On `false` the value is already released (or was `NULL`), so the extractor reports that nothing was extracted.
 
 Consumers must not free these values, and must copy what they need before the next packet. [MMT Attributes](./MMT-Attributes.md) lists the attributes concerned.

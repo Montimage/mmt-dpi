@@ -113,18 +113,6 @@ typedef struct tcp_seg_struct
   struct tcp_seg_struct *idx_right;
 } tcp_seg_t;
 
-/**
- * Create a new TCP segment
- * @param   seq Sequence number
- * @param   next_seq Next segment sequence number
- * @param   ack Acknowledgement number
- * @param   len len of segment
- * @param   data data of segment
- * @return NULL if cannot allocate memory for a new TCP segment
- *              a pointer points to new TCP segment. The new node has the key = 0, all other attributes are NULL
- */
-tcp_seg_t *tcp_seg_new(uint64_t packet_id, uint64_t seq, uint64_t next_seq, uint64_t ack, uint16_t len, uint8_t *data);
-
 /* Forward declaration of the per-flow arena (defined in mmt_core.h). */
 struct mmt_arena_s;
 

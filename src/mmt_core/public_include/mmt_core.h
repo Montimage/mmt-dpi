@@ -812,13 +812,13 @@ MMTAPI bool MMTCALL disable_ip_address_classify(
  * predefined or file-defined profile name before mmt_init_handler().
  * MMT_DPI_PROFILES_FILE points at a data file adding custom named profiles —
  * one per line:
- *     <name> <max_depth> <app_protocol_classify> <port_classify> <ip_address_classify>
+ *     <name> <max_depth> <app_protocol_classify> <port_classify> <ip_address_classify> [<legacy>]
  * (e.g. "edge 4 1 0 0"; '#' starts a comment). Predefined names are
  * reserved: a file entry reusing one is skipped with a diagnostic.
  *
- * The default handler configuration is unchanged — equivalent to
- * MMT_DPI_PROFILE_DEFAULT — so the bundled classification output stays
- * byte-identical unless a profile is explicitly applied.
+ * The default handler configuration is MMT_DPI_PROFILE_DEFAULT. Since #540
+ * the defunct-service checkers run only under the by-name `legacy` profile
+ * (or a file profile whose optional sixth column is 1).
  */
 
 /**
@@ -853,7 +853,7 @@ MMTAPI const mmt_dpi_profile_t MMT_DPI_PROFILE_MINIMAL;
 
 /**
  * Apply a DPI profile to a handler: sets classification_max_depth and the
- * three detection toggles in one call. May be called any time after
+ * three detection toggles, and turns the legacy checkers off (#540). Callable any time after
  * mmt_init_handler(); mid-stream application only affects subsequent
  * classification (layers already recorded in existing session paths stay).
  * @param  mmt_handler mmt handler
@@ -867,7 +867,7 @@ MMTAPI bool MMTCALL mmt_apply_dpi_profile(
 );
 
 /**
- * Apply a named DPI profile: searches the four predefined profiles first,
+ * Apply a named DPI profile: searches the five predefined ones (`legacy` too) first,
  * then the custom names loaded via mmt_load_dpi_profiles_file() (or
  * MMT_DPI_PROFILES_FILE). Name matching is case-insensitive.
  * @param  mmt_handler mmt handler
@@ -882,7 +882,7 @@ MMTAPI bool MMTCALL mmt_apply_dpi_profile_by_name(
 
 /**
  * Load custom named DPI profiles from a data file — one profile per line:
- *   <name> <max_depth> <app_protocol_classify> <port_classify> <ip_address_classify>
+ *   <name> <max_depth> <app_protocol_classify> <port_classify> <ip_address_classify> [<legacy>]
  * '#' starts a comment; blank and malformed lines are skipped. Names are
  * case-insensitive, must not collide with a predefined profile or an
  * already-loaded name, and are truncated at 31 chars. Loaded profiles are

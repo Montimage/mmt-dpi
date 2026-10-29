@@ -39,40 +39,13 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
     uint16_t plen;
     uint16_t status = 0;
 
-#ifdef PROTO_SSL
-    if (packet->detected_protocol_stack[0] == PROTO_SSL) {
-        if (ipacket->session->data_packet_count < 10) {
-        }
-
-        if (ipacket->session->data_packet_count == 7 && packet->payload_packet_len > 300) {
-            if (mmt_memcmp(packet->payload + 24, "MSNSLP", 6) == 0
-                    || (get_u32(packet->payload, 0) == htonl(0x30000000) && get_u32(packet->payload, 4) == 0x00000000)) {
-                mmt_int_msn_add_connection(ipacket, MMT_REAL_PROTOCOL);
-                return;
-            }
-        }
-        if (packet->payload_packet_len > 8 && ipacket->session->data_packet_count >= 5 && ipacket->session->data_packet_count <= 10 && (get_u32(packet->payload, 0) == htonl(0x18000000)
-                && get_u32(packet->payload, 4) == 0x00000000)) {
-            flow->l4.tcp.msn_ssl_ft++;
-            if (flow->l4.tcp.msn_ssl_ft == 2) {
-                mmt_int_msn_add_connection(ipacket, MMT_REAL_PROTOCOL);
-            }
-            return;
-        }
-    }
-#endif
-
     /* we detect the initial connection only ! */
     /* match: "VER " ..... "CVR" x 0x0d 0x0a
      * len should be small, lets say less than 100 bytes
      * x is now "0", but can be increased
      */
     /* now we have a look at the first packet only. */
-    if (ipacket->session->data_packet_count == 1
-#ifdef PROTO_SSL
-            || ((packet->detected_protocol_stack[0] == PROTO_SSL) && ipacket->session->data_packet_count <= 3)
-#endif
-            ) {
+    if (ipacket->session->data_packet_count == 1) {
 
         /* this part is working asymmetrically */
         if (packet->payload_packet_len > 32 && (packet->payload[0] == 0x02 || packet->payload[0] == 0x00)
@@ -454,12 +427,13 @@ int mmt_check_msn_tcp(ipacket_t * ipacket, unsigned index) {
         /* this if request should always be true */
         if (MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MSN) == 0) {
             /* we deal with tcp now */
-            /* msn can use http or ssl for connection. That's why every http, ssl and ukn packet must enter in the msn detection */
-            /* the detection can swich out the http or the ssl detection. In this case we need not check those protocols */
-            // need to do the ceck when protocol == http too (POST /gateway ...)
+            /* msn can use http for connection, so http and unknown packets
+             * enter the msn detection (POST /gateway ...). Issue #540
+             * (F-BUG-311): a flow already classified SSL is no longer
+             * re-inspected for up to MAX_PACKETS_FOR_MSN packets — the
+             * MSN-over-TLS signatures matched a service shut down in 2013. */
             if (packet->detected_protocol_stack[0] == PROTO_UNKNOWN
                     || packet->detected_protocol_stack[0] == PROTO_HTTP
-                    || packet->detected_protocol_stack[0] == PROTO_SSL
                     || packet->detected_protocol_stack[0] == PROTO_STUN
                     ) {
                 mmt_search_msn_tcp(ipacket);
@@ -490,14 +464,14 @@ int init_proto_msn_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_MSN, PROTO_MSN_ALIAS);
     if (protocol_struct != NULL) {
 
-        /* three detection adds (HTTP and SSL on top of MSN) — beyond the
-         * single-add shape of mmt_init_classify_bitmasks(). The old wrapper's
-         * explicit MMT_BITMASK_RESET of the excluded mask was redundant:
-         * MMT_SAVE_AS_BITMASK already zeroes every word. */
+        /* two detection adds (HTTP on top of MSN; SSL dropped by issue
+         * #540) — beyond the single-add shape of mmt_init_classify_bitmasks().
+         * The old wrapper's explicit MMT_BITMASK_RESET of the excluded mask
+         * was redundant: MMT_SAVE_AS_BITMASK already zeroes every word. */
         mmt_init_classify_bitmasks_multi(&selection_bitmask, &detection_bitmask,
                 &excluded_protocol_bitmask,
                 MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
-                (const uint32_t[]){PROTO_MSN, PROTO_HTTP, PROTO_SSL}, 3,
+                (const uint32_t[]){PROTO_MSN, PROTO_HTTP}, 2,
                 PROTO_MSN);
 
         return register_protocol(protocol_struct, PROTO_MSN);

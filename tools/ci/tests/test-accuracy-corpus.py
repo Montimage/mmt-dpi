@@ -491,6 +491,19 @@ with Scratch() as s:
     check("commented-out registrations are not required", rc == 0, out)
 
 with Scratch() as s:
+    rc, out = s.offline("--chain", s.chain(
+        "MMT_INTER_PROTO_LEGACY(PROTO_TCP, mmt_check_defunct, 50)\n"))
+    check("legacy-profile registrations are not required (issue #540)",
+          rc == 0, out)
+
+with Scratch() as s:
+    s.pending(s.pending() + "mmt_check_defunct  # moved to the legacy profile\n")
+    rc, out = s.offline("--chain", s.chain(
+        "MMT_INTER_PROTO_LEGACY(PROTO_UDP, mmt_check_defunct, 50)\n"))
+    check("pending entry for a legacy-profile classifier fails (issue #540)",
+          rc == 1 and "no longer register" in out, out)
+
+with Scratch() as s:
     man = s.manifest()
     s.case(man, "acc_http_positive.pcap")["classifiers"].append(
         "mmt_check_not_registered")

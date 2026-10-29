@@ -394,9 +394,10 @@ static inline int get_response_code_offset(const char *msg, int msg_len, char **
 /**
  * Parse the HTTP HEADER.
  */
-/* Unreachable: its only caller, http_session_data_analysis(), is registered by
- * init_http_proto_struct(), which nothing calls (proto_http.c owns HTTP), so
- * this legacy parser gets no optimisation work. */
+/* Unreachable from the engine: its only caller, http_session_data_analysis(),
+ * is registered by nothing (proto_http.c owns HTTP; the unused registration
+ * that wired it was deleted by issue #540) and is kept only for the phase0
+ * http_session harness, so this legacy parser gets no optimisation work. */
 static inline int
 parse_message_header_lines(ipacket_t * ipacket, unsigned index, int offset) {
     int code, hlen;
@@ -524,28 +525,6 @@ int http_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     //Parse the first line line of the header (request or response line)
     parse_message_header_lines(ipacket, index, offset);
     return MMT_CONTINUE;
-}
-
-int init_http_proto_struct() {
-
-    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_HTTP, PROTO_HTTP_ALIAS);
-
-    if (protocol_struct != NULL) {
-        register_classification_function(protocol_struct, NULL);
-        register_session_data_initialization_function(protocol_struct, http_session_data_init);
-        register_session_data_analysis_function(protocol_struct, http_session_data_analysis);
-        /* issue #204 (F-BUG-053): free HTTP session data at session teardown. */
-        register_session_data_cleanup_function(protocol_struct, http_session_data_cleanup);
-        /* issue #204 (F-BUG-048): assert the MIME tables' min_len >= cmp_len
-         * invariant before the protocol can be used. */
-        if (mmt_http_content_tables_check() != 0) {
-            return 0;
-        }
-
-        return register_protocol(protocol_struct, PROTO_HTTP);
-    } else {
-        return 0;
-    }
 }
 
 static inline void mmt_int_http_add_connection(ipacket_t * ipacket, uint32_t protocol) {
@@ -978,17 +957,6 @@ static inline void xbox_parse_packet_useragentline(ipacket_t * ipacket) {
 }
 #endif
 
-#ifdef PROTO_WINDOWS_UPDATE
-
-static inline void windows_update_packet_useragentline(ipacket_t * ipacket) {
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-
-    if (packet->user_agent_line.len >= 20 && mmt_memcmp(packet->user_agent_line.ptr, "Windows-Update-Agent", 20) == 0) {
-        mmt_int_http_add_connection(ipacket, PROTO_WINDOWS_UPDATE);
-    }
-}
-#endif
-
 #ifdef PROTO_FLASH
 
 static inline void flash_check_http_payload(ipacket_t * ipacket) {
@@ -1181,9 +1149,6 @@ static inline void check_content_type_and_change_protocol(ipacket_t * ipacket) {
 #ifdef PROTO_XBOX
         xbox_parse_packet_useragentline(ipacket);
 #endif
-#ifdef PROTO_WINDOWS_UPDATE
-        windows_update_packet_useragentline(ipacket);
-#endif
 #ifdef PROTO_WINDOWSMEDIA
         winmedia_parse_packet_useragentline(ipacket);
 #endif
@@ -1323,9 +1288,6 @@ static inline uint16_t http_request_url_offset(ipacket_t * ipacket) {
 
 static inline void http_bitmask_exclude(struct mmt_internal_tcpip_session_struct *flow) {
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP);
-#ifdef PROTO_WINDOWS_UPDATE
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_WINDOWS_UPDATE);
-#endif
 #ifdef PROTO_MPEG
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MPEG);
 #endif

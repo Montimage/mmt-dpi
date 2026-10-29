@@ -11,7 +11,10 @@
  *     to MMT_DPI_PROFILE_DEFAULT, and the env hook applies at init;
  *   src/mmt_core/src/packet_pipeline.c — classification_max_depth gating in
  *     proto_packet_classify_next() (checker walk skipped) and
- *     set_classified_proto() (out-of-band appends refused).
+ *     set_classified_proto() (out-of-band appends refused);
+ *   the `legacy` profile (issue #540, F-BUG-311) — a checker marked by
+ *     mmt_classifier_mark_legacy() is skipped by the walk unless the handler
+ *     runs the `legacy` profile (by name, env or a file's sixth column).
  *
  * The fake protocol stack classifies META -> L1 -> L2 -> L3 -> L4, one
  * checker per layer appending the next — so proto_hierarchy->len after a
@@ -40,6 +43,7 @@ static int g_failures = 0;
 #define TEST_PROTO_L2   621
 #define TEST_PROTO_L3   622
 #define TEST_PROTO_L4   623
+#define TEST_PROTO_OLD  624 /* issue #540: what the legacy checker detects */
 
 #define DEPTH_UNLIMITED (PROTO_PATH_SIZE - 1)
 
@@ -80,6 +84,21 @@ static int test_oob_checker(ipacket_t *ipacket, unsigned index) {
     r.proto_id = TEST_PROTO_L4; /* reclassify own slot: always allowed */
     r.status = Classified;
     (void) set_classified_proto(ipacket, index, r);
+    return MMT_CLASSIFY_MATCHED;
+}
+
+/* Issue #540: a defunct-service stand-in on L1. Registered ahead of the
+ * chain checker (weight 10 < 50) and marked legacy, so when it runs it wins
+ * L1 and the path ends META, L1, OLD (len 3); when it is skipped the chain
+ * checker continues to L4 (len 5). */
+static int g_legacy_calls;
+static int test_legacy_checker(ipacket_t *ipacket, unsigned index) {
+    classified_proto_t r;
+    g_legacy_calls++;
+    r.offset = 4;
+    r.proto_id = TEST_PROTO_OLD;
+    r.status = Classified;
+    (void) set_classified_proto(ipacket, index + 1, r);
     return MMT_CLASSIFY_MATCHED;
 }
 
@@ -283,6 +302,81 @@ static void test_depth_gate(mmt_handler_t *h) {
     set_classification_max_depth(h, DEPTH_UNLIMITED);
 }
 
+static void test_legacy_profile(mmt_handler_t *h) {
+    fprintf(stderr, "  test: the legacy profile (issue #540)\n");
+    CHECK(h->legacy_classify == 0, "legacy checkers off by default");
+
+    CHECK(mmt_apply_dpi_profile_by_name(h, "legacy") == 1, "name: legacy");
+    CHECK(h->legacy_classify == 1, "legacy profile walks the legacy checkers");
+    CHECK(h->classification_max_depth == DEPTH_UNLIMITED &&
+          h->hostname_classify == 1 && h->port_classify == 0 &&
+          h->ip_address_classify == 1,
+          "legacy profile keeps the default levers");
+    CHECK(mmt_apply_dpi_profile_by_name(h, "default") == 1, "name: default");
+    CHECK(h->legacy_classify == 0, "default by name turns legacy off");
+    CHECK(mmt_apply_dpi_profile_by_name(h, "legacy") == 1 &&
+          mmt_apply_dpi_profile_by_name(h, "full") == 1, "name: full after legacy");
+    CHECK(h->legacy_classify == 0, "full does not walk the legacy checkers");
+
+    CHECK(mmt_apply_dpi_profile_by_name(h, "LeGaCy") == 1,
+          "legacy name is case-insensitive");
+    CHECK(mmt_apply_dpi_profile(h, &MMT_DPI_PROFILE_FULL) == 1, "apply full struct");
+    CHECK(h->legacy_classify == 0,
+          "a profile struct has no legacy lever: applying one turns it off");
+
+    /* the walk gate */
+    g_legacy_calls = 0;
+    CHECK(mmt_apply_dpi_profile(h, &MMT_DPI_PROFILE_DEFAULT) == 1, "apply default");
+    CHECK(run_one_packet(h) == 5, "default: legacy checker skipped, chain reaches L4");
+    CHECK(g_legacy_calls == 0, "default: the legacy checker is never called");
+    CHECK(h->last_received_packet.proto_hierarchy.proto_path[2] == TEST_PROTO_L2,
+          "default: L2 recorded after L1");
+
+    CHECK(mmt_apply_dpi_profile_by_name(h, "legacy") == 1, "apply legacy");
+    CHECK(run_one_packet(h) == 3, "legacy: the legacy checker wins L1");
+    CHECK(g_legacy_calls == 1, "legacy: the legacy checker is called once");
+    CHECK(h->last_received_packet.proto_hierarchy.proto_path[2] == TEST_PROTO_OLD,
+          "legacy: the legacy checker's protocol recorded after L1");
+
+    /* a file-defined profile opts in with its sixth column */
+    char tmpl[] = "/tmp/mmt_dpi_profiles_legacy_XXXXXX";
+    int fd = mkstemp(tmpl);
+    CHECK(fd >= 0, "mkstemp for legacy profiles file");
+    if (fd >= 0) {
+        FILE *fp = fdopen(fd, "w");
+        CHECK(fp != NULL, "fdopen legacy profiles file");
+        if (fp != NULL) {
+            fprintf(fp,
+                    "oldnets 4 1 0 0 1\n"
+                    "modern  4 1 0 0 0\n"
+                    "badlegacy 4 1 0 0 2\n"); /* legacy must be 0/1 - skipped */
+            fclose(fp);
+            CHECK(mmt_load_dpi_profiles_file(tmpl) == 2,
+                  "two profiles with a legacy column loaded");
+            CHECK(mmt_apply_dpi_profile_by_name(h, "oldnets") == 1 &&
+                  h->legacy_classify == 1 && h->classification_max_depth == 4,
+                  "file profile with legacy 1 applied");
+            CHECK(mmt_apply_dpi_profile_by_name(h, "modern") == 1 &&
+                  h->legacy_classify == 0, "file profile with legacy 0 applied");
+            CHECK(mmt_apply_dpi_profile_by_name(h, "badlegacy") == 0,
+                  "out-of-range legacy column rejected");
+        }
+        unlink(tmpl);
+    }
+
+    /* the marker itself */
+    protocol_t *l1 = get_protocol_struct_by_id(TEST_PROTO_L1);
+    CHECK(mmt_classifier_mark_legacy(l1, test_legacy_checker) == 0,
+          "an already-marked checker is not marked twice");
+    CHECK(mmt_classifier_mark_legacy(l1, test_oob_checker) == 0,
+          "a checker not registered on the protocol is not marked");
+    CHECK(mmt_classifier_mark_legacy(NULL, test_legacy_checker) == 0,
+          "NULL protocol rejected");
+    CHECK(mmt_classifier_mark_legacy(l1, NULL) == 0, "NULL checker rejected");
+
+    CHECK(mmt_apply_dpi_profile(h, &MMT_DPI_PROFILE_DEFAULT) == 1, "restore");
+}
+
 static void test_profiles_file(mmt_handler_t *h) {
     fprintf(stderr, "  test: mmt_load_dpi_profiles_file\n");
     char tmpl[] = "/tmp/mmt_dpi_profiles_XXXXXX";
@@ -337,6 +431,16 @@ static void test_env(char errbuf[256]) {
         CHECK(h->classification_max_depth == 3 && h->hostname_classify == 0 &&
               h->port_classify == 0 && h->ip_address_classify == 0,
               "env-selected minimal profile applied at init");
+        mmt_close_handler(h);
+    }
+    unsetenv("MMT_DPI_PROFILE");
+
+    /* issue #540: the legacy profile is reachable without code changes */
+    setenv("MMT_DPI_PROFILE", "legacy", 1);
+    h = mmt_init_handler(TEST_STACK_ID, 0, errbuf);
+    CHECK(h != NULL, "handler init under legacy env");
+    if (h != NULL) {
+        CHECK(h->legacy_classify == 1, "env-selected legacy profile applied at init");
         mmt_close_handler(h);
     }
     unsetenv("MMT_DPI_PROFILE");
@@ -396,6 +500,14 @@ int main(void) {
           "L3 checker registered");
     CHECK(register_layer(TEST_PROTO_L4, "dpi_l4", test_oob_checker) != NULL,
           "L4 checker registered");
+    /* Issue #540: L1 also carries a legacy checker, ahead of the chain
+     * checker; it stays skipped unless the legacy profile is applied. */
+    CHECK(register_layer(TEST_PROTO_OLD, "dpi_old", NULL) != NULL,
+          "legacy target protocol registered");
+    CHECK(register_classification_function_with_parent_protocol(TEST_PROTO_L1,
+                test_legacy_checker, 10) == 1, "legacy checker registered on L1");
+    CHECK(mmt_classifier_mark_legacy(get_protocol_struct_by_id(TEST_PROTO_L1),
+                test_legacy_checker) == 1, "legacy checker marked");
 
     errbuf[0] = '\0';
     mmt_handler_t *h = mmt_init_handler(TEST_STACK_ID, 0, errbuf);
@@ -411,6 +523,7 @@ int main(void) {
     test_depth_setter(h);
     test_append_gate(h);
     test_depth_gate(h);
+    test_legacy_profile(h);
     test_profiles_file(h);
     test_env(errbuf);
 

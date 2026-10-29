@@ -435,6 +435,7 @@ struct session_timer_handler_struct{
 
 struct mmt_classify_proto_struct {
     uint32_t weight;
+    uint8_t legacy; /**< Issue #540: 1 = defunct-service checker, walked only when the handler's legacy_classify is set */
     generic_classification_function classify_me; /**< Issue #546: typed verdict (was int) */
     mmt_classify_proto_t * next;
     mmt_classify_proto_t * previous;
@@ -540,6 +541,29 @@ struct protocol_struct {
     int (* update_protocol_fct) (int); // function to update protocol structure
 };
 
+/**
+ * Issue #540 (F-BUG-311): mark the chain node of `fn` registered on `proto`
+ * as a legacy checker, which proto_packet_classify_next() skips unless the
+ * handler runs the `legacy` DPI profile. Header-inline so the tcpip plugin
+ * (inter_proto_classif_list.def's MMT_INTER_PROTO_LEGACY rows) uses it with
+ * no new libmmt_core export. Marks the first unmarked node of `fn`.
+ * @return 1 when a node was marked, 0 when `fn` is not registered on `proto`
+ */
+static inline int mmt_classifier_mark_legacy(protocol_t *proto,
+        generic_classification_function fn) {
+    mmt_classify_proto_t *n;
+    if (proto == NULL || fn == NULL) {
+        return 0;
+    }
+    for (n = proto->classify_next.classify_protos; n != NULL; n = n->next) {
+        if (n->classify_me == fn && !n->legacy) {
+            n->legacy = 1;
+            return 1;
+        }
+    }
+    return 0;
+}
+
 struct protocol_instance_struct {
     protocol_t * protocol; /**< pointer to the protocol model */
     proto_statistics_internal_t * proto_stats; /**< pointer to the protocol stats (linked list) */
@@ -577,6 +601,7 @@ struct mmt_handler_struct {
     uint8_t port_classify; // 0 - no classification based on port number, 1 - classification based on port number
     uint8_t port_classify_payload_confirm; // M9 (issue #75): 0 - accept any port-based guess (default), 1 - only accept a port-based guess when a payload signature confirms it
     uint8_t classification_max_depth; // Issue #87: deepest protocol-path index the classifier may write (0..PROTO_PATH_SIZE-1; PROTO_PATH_SIZE-1 = unlimited). Layers already in the path stay; the classify walk and path appends stop below it.
+    uint8_t legacy_classify; // Issue #540: 0 - skip the defunct-service checkers (default), 1 - walk them too (the `legacy` DPI profile)
 
     uint32_t last_expiry_timeout;
     uint32_t attr_extraction_strategy;

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "mmt_common_internal_include.h"
+#include "packet_processing.h" /* issue #540: mmt_classifier_mark_legacy() */
 #include "../include/mmt_tcpip_plugin.h"
 #include "../include/mmt_tcpip_protocols.h"
 
@@ -100,21 +101,35 @@ int init_tcpip_plugin() {
     /* Inter-protocol classifier registrations — data lives in
      * inter_proto_classif_list.def (issue #238, F-CLEAN-006: the ~160
      * REGISTER_INTER_PROTO_OR_FAIL calls that used to fill this body were
-     * data expressed as code). Order is registration order again. */
+     * data expressed as code). Order is registration order again.
+     * Issue #540 (F-BUG-311): a MMT_INTER_PROTO_LEGACY row registers the
+     * same way, in the same place, and its chain node is then marked legacy
+     * — walked only under the opt-in `legacy` DPI profile. */
     static const struct {
         uint32_t parent;
         generic_classification_function classify_fn;
         int weight;
         const char *name;
+        int legacy;
     } inter_proto_table[] = {
-#define MMT_INTER_PROTO(parent, fn, w) { parent, fn, w, #fn },
+#define MMT_INTER_PROTO(parent, fn, w) { parent, fn, w, #fn, 0 },
+#define MMT_INTER_PROTO_LEGACY(parent, fn, w) { parent, fn, w, #fn, 1 },
 #include "inter_proto_classif_list.def"
+#undef MMT_INTER_PROTO_LEGACY
 #undef MMT_INTER_PROTO
     };
     for (size_t i = 0; i < sizeof(inter_proto_table)/sizeof(inter_proto_table[0]); i++) {
         if (!mmt_register_classifier(inter_proto_table[i].parent,
                     inter_proto_table[i].classify_fn,
                     inter_proto_table[i].weight, inter_proto_table[i].name)) {
+            return 0;
+        }
+        if (inter_proto_table[i].legacy
+                && !mmt_classifier_mark_legacy(
+                    get_protocol_struct_by_id(inter_proto_table[i].parent),
+                    inter_proto_table[i].classify_fn)) {
+            mmt_stderr_log("Error marking legacy classification function %s for parent protocol %u\n Exiting\n",
+                    inter_proto_table[i].name, (unsigned) inter_proto_table[i].parent);
             return 0;
         }
     }

@@ -31,7 +31,8 @@
  *   H. teardown         — clean_session_payload() returns every allocation
  *                         with pending segments, images or both, and is a
  *                         no-op when nothing was reassembled.
- *   I. direct helpers   — issue #524: tcp_seg_new() / tcp_seg_new_in_arena()
+ *   I. direct helpers   — issue #524: tcp_seg_new_in_arena() (tcp_seg_new()
+ *                         was deleted by issue #540: nothing called it)
  *                         (fields, ownership tag, payload copy, every NULL
  *                         return) and tcp_option_extraction()'s not-found
  *                         reset of each option attribute, which the store
@@ -459,36 +460,18 @@ static void test_seg_constructors(void) {
 	int64_t out0 = tcm_outstanding;
 	uint64_t failed0 = tcm_failed;
 
-	/* malloc-backed node: every field set, links and index cleared; the
-	 * node owns its payload, so tcp_seg_free() returns both blocks. */
+	/* malloc-owned node (in_arena 0): tcp_seg_free() returns the node and
+	 * its payload. Built by hand since tcp_seg_new() was deleted (#540). */
 	uint8_t *data = (uint8_t *) malloc(8);
-	CHECK(data != NULL, "seg_new: payload allocation failed");
-	if (data == NULL) return;
+	tcp_seg_t *seg = (tcp_seg_t *) calloc(1, sizeof(tcp_seg_t));
+	CHECK(data != NULL && seg != NULL, "seg_free: allocation failed");
+	if (data == NULL || seg == NULL) { free(data); free(seg); return; }
 	memset(data, 0x5a, 8);
-	tcp_seg_t *seg = tcp_seg_new(41, 1000, 1008, 77, 8, data);
-	CHECK(seg != NULL, "seg_new: NULL on a healthy allocator");
-	if (seg != NULL) {
-		CHECK(seg->packet_id == 41 && seg->seq == 1000 && seg->next_seq == 1008
-		      && seg->ack == 77 && seg->len == 8 && seg->data == data,
-		      "seg_new: fields not stored");
-		CHECK(seg->in_arena == 0 && seg->blk == NULL && seg->blk_size == 0,
-		      "seg_new: node not tagged malloc-owned");
-		CHECK(seg->next == NULL && seg->prev == NULL && seg->idx_height == 0
-		      && seg->idx_left == NULL && seg->idx_right == NULL,
-		      "seg_new: links or index not cleared");
-		tcp_seg_free(seg);
-	} else {
-		free(data);
-	}
-	CHECK(tcm_outstanding == out0, "seg_new: %lld allocation(s) outstanding",
+	seg->len = 8;
+	seg->data = data;
+	tcp_seg_free(seg);
+	CHECK(tcm_outstanding == out0, "seg_free: %lld allocation(s) outstanding",
 	      (long long) (tcm_outstanding - out0));
-
-	/* The node allocation fails: NULL, and the caller keeps the payload. */
-	tcm_fail_at = tcm_calls + 1;
-	seg = tcp_seg_new(1, 1, 2, 0, 1, NULL);
-	tcm_fail_at = 0;
-	CHECK(seg == NULL, "seg_new: OOM must return NULL");
-	CHECK(tcm_outstanding == out0, "seg_new OOM: allocation leaked");
 
 	/* Arena-backed node: the payload is copied into the arena and the node
 	 * is tagged so tcp_seg_free() never hands arena memory to free(). */
@@ -532,7 +515,7 @@ static void test_seg_constructors(void) {
 	                           sizeof(payload), payload);
 	tcm_fail_at = 0;
 	CHECK(seg == NULL, "seg_new_in_arena: node OOM must return NULL");
-	CHECK(tcm_failed - failed0 == 3, "seg constructors: %llu forced failure(s), expected 3",
+	CHECK(tcm_failed - failed0 == 2, "seg constructors: %llu forced failure(s), expected 2",
 	      (unsigned long long) (tcm_failed - failed0));
 
 	mmt_arena_destroy(arena);

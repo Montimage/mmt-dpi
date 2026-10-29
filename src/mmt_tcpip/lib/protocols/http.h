@@ -218,8 +218,6 @@ struct http_session_data_struct {
 };
 
 void mmt_http_init_detection_bitmask();
-int init_http_proto_struct();
-int init_http_proto_struct_new();
 
 /* issue #204: session lifecycle hooks and the MIME-table invariant check,
  * non-static so the phase0 regression harnesses can link them directly. */

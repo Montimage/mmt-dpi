@@ -101,40 +101,6 @@ void mmt_segblk_free_all(mmt_segblk_t *head, uint64_t *reserved) {
 }
 
 /**
- * Create a new TCP segment
- * @param   seq Sequence number
- * @param   next_seq Next segment sequence number
- * @param   len len of segment
- * @param   data data of segment
- * @return NULL if cannot allocate memory for a new TCP segment
- *              a pointer points to new TCP segment. The new node has the key = 0, all other attributes are NULL
- */
-tcp_seg_t * tcp_seg_new(uint64_t packet_id, uint64_t seq, uint64_t next_seq, uint64_t ack, uint16_t len, uint8_t * data){
-	// mmt_stream_printf(stdout, "[tcp_seg_new] New segment of packet: %lu\n", packet_id);
-	tcp_seg_t * new_seg = (tcp_seg_t *) malloc(sizeof(tcp_seg_t));
-	if (new_seg == NULL) {
-		// mmt_debug_log("[tcp_seg_new] Cannot create a new tcp_seg_t");
-		return NULL;
-	}else{
-		new_seg->packet_id = packet_id;
-		new_seg->seq = seq;
-		new_seg->next_seq = next_seq;
-		new_seg->ack = ack;
-		new_seg->len = len;
-		new_seg->in_arena = 0; /* Issue #201: malloc-backed node */
-		new_seg->data = data;
-		new_seg->next = NULL;
-		new_seg->prev = NULL;
-		new_seg->blk = NULL;   /* Issue #245: not store-carved */
-		new_seg->blk_size = 0;
-		new_seg->idx_height = 0; /* Issue #382: not indexed */
-		new_seg->idx_left = NULL;
-		new_seg->idx_right = NULL;
-		return new_seg;
-	}
-}
-
-/**
  * Issue #20 (P2): create a TCP segment with its node and payload copy carved
  * from a per-flow arena (one bump-allocation each, no per-segment malloc/free).
  */

@@ -15,6 +15,13 @@
  *   - ip_address_classify    -> mmt_handler_t.ip_address_classify (IP-range
  *     fallback).
  *
+ * A fifth lever, mmt_handler_t.legacy_classify (issue #540, F-BUG-311),
+ * walks the defunct-service checkers (the MMT_INTER_PROTO_LEGACY rows of
+ * inter_proto_classif_list.def). mmt_dpi_profile_t has no field for it — the
+ * public struct and the ABI are unchanged — so only named profiles set it:
+ * the predefined `legacy` profile and file-defined profiles with a sixth
+ * column of 1. Applying a profile struct turns it off.
+ *
  * Selection paths, all optional:
  *   1. mmt_apply_dpi_profile() — apply a caller-built profile struct;
  *   2. mmt_apply_dpi_profile_by_name() — apply a predefined or file-defined
@@ -27,9 +34,9 @@
  * explicit mmt_load_dpi_profiles_file() call before packets flow — and is
  * read-only afterwards, so no locking is needed on the lookup path.
  *
- * The built-in handler defaults are untouched: with no profile applied the
- * engine behaves exactly as before (byte-identical classification), which
- * keeps the phase0 golden-pcap fingerprint stable.
+ * With no profile applied the handler runs MMT_DPI_PROFILE_DEFAULT, whose
+ * chains skip the defunct-service checkers since issue #540; applying a
+ * profile never changes the built-in defaults of later handlers.
  */
 
 #include <stdio.h>
@@ -78,32 +85,44 @@ const mmt_dpi_profile_t MMT_DPI_PROFILE_MINIMAL = {
 static const struct {
     const char *name;
     const mmt_dpi_profile_t *profile;
+    uint8_t legacy; /* issue #540: walk the defunct-service checkers */
 } predefined_profiles[] = {
-    { "default",  &MMT_DPI_PROFILE_DEFAULT  },
-    { "full",     &MMT_DPI_PROFILE_FULL     },
-    { "balanced", &MMT_DPI_PROFILE_BALANCED },
-    { "minimal",  &MMT_DPI_PROFILE_MINIMAL  },
+    { "default",  &MMT_DPI_PROFILE_DEFAULT,  0 },
+    { "full",     &MMT_DPI_PROFILE_FULL,     0 },
+    { "balanced", &MMT_DPI_PROFILE_BALANCED, 0 },
+    { "minimal",  &MMT_DPI_PROFILE_MINIMAL,  0 },
+    /* Issue #540: the default levers plus the defunct-service checkers —
+     * the classifier chains as they were before #540. */
+    { "legacy",   &MMT_DPI_PROFILE_DEFAULT,  1 },
 };
 
 typedef struct {
     char name[MMT_DPI_PROFILE_NAME_LEN];
     mmt_dpi_profile_t profile;
+    uint8_t legacy; /* issue #540: optional sixth column of the file */
 } custom_profile_entry_t;
 
 static custom_profile_entry_t custom_profiles[MMT_DPI_CUSTOM_PROFILES_MAX];
 static size_t custom_profiles_n = 0;
 
-static const mmt_dpi_profile_t *find_profile_by_name(const char *name) {
+/* `legacy`, when not NULL, receives the profile's legacy lever. */
+static const mmt_dpi_profile_t *find_profile_by_name(const char *name, uint8_t *legacy) {
     if (name == NULL || name[0] == '\0') {
         return NULL;
     }
     for (size_t i = 0; i < sizeof(predefined_profiles) / sizeof(predefined_profiles[0]); i++) {
         if (strcasecmp(name, predefined_profiles[i].name) == 0) {
+            if (legacy != NULL) {
+                *legacy = predefined_profiles[i].legacy;
+            }
             return predefined_profiles[i].profile;
         }
     }
     for (size_t i = 0; i < custom_profiles_n; i++) {
         if (strcasecmp(name, custom_profiles[i].name) == 0) {
+            if (legacy != NULL) {
+                *legacy = custom_profiles[i].legacy;
+            }
             return &custom_profiles[i].profile;
         }
     }
@@ -132,14 +151,22 @@ uint8_t get_classification_max_depth(const mmt_handler_t *mmt_handler) {
     return mmt_handler->classification_max_depth;
 }
 
-bool mmt_apply_dpi_profile(mmt_handler_t *mmt_handler, const mmt_dpi_profile_t *profile) {
-    if (mmt_handler == NULL || profile == NULL) {
-        return 0;
-    }
+static void apply_profile(mmt_handler_t *mmt_handler, const mmt_dpi_profile_t *profile,
+        uint8_t legacy) {
     mmt_handler->classification_max_depth = clamp_depth(profile->classification_max_depth);
     mmt_handler->hostname_classify     = (profile->app_protocol_classify != 0) ? 1 : 0;
     mmt_handler->port_classify         = (profile->port_classify != 0) ? 1 : 0;
     mmt_handler->ip_address_classify   = (profile->ip_address_classify != 0) ? 1 : 0;
+    mmt_handler->legacy_classify       = (legacy != 0) ? 1 : 0;
+}
+
+bool mmt_apply_dpi_profile(mmt_handler_t *mmt_handler, const mmt_dpi_profile_t *profile) {
+    if (mmt_handler == NULL || profile == NULL) {
+        return 0;
+    }
+    /* Issue #540: the struct has no legacy lever — a struct-applied profile
+     * selects the default chains, whatever was applied before. */
+    apply_profile(mmt_handler, profile, 0);
     return 1;
 }
 
@@ -147,11 +174,13 @@ bool mmt_apply_dpi_profile_by_name(mmt_handler_t *mmt_handler, const char *name)
     if (mmt_handler == NULL) {
         return 0;
     }
-    const mmt_dpi_profile_t *profile = find_profile_by_name(name);
+    uint8_t legacy = 0;
+    const mmt_dpi_profile_t *profile = find_profile_by_name(name, &legacy);
     if (profile == NULL) {
         return 0;
     }
-    return mmt_apply_dpi_profile(mmt_handler, profile);
+    apply_profile(mmt_handler, profile, legacy);
+    return 1;
 }
 
 int mmt_load_dpi_profiles_file(const char *path) {
@@ -173,23 +202,24 @@ int mmt_load_dpi_profiles_file(const char *path) {
         if (hash != NULL) {
             *hash = '\0';
         }
-        /* Format: "<name> <max_depth> <app> <port> <ip>" — same one-line-one-
-         * rule style as the M9 port-map file. */
+        /* Format: "<name> <max_depth> <app> <port> <ip> [<legacy>]" — same
+         * one-line-one-rule style as the M9 port-map file. The optional
+         * sixth column (issue #540) walks the defunct-service checkers. */
         char name_tok[MMT_DPI_PROFILE_NAME_LEN];
-        int depth = -1, app = -1, port = -1, ip = -1;
-        int nf = sscanf(line, "%31s %d %d %d %d",
-                name_tok, &depth, &app, &port, &ip);
+        int depth = -1, app = -1, port = -1, ip = -1, legacy = 0;
+        int nf = sscanf(line, "%31s %d %d %d %d %d",
+                name_tok, &depth, &app, &port, &ip, &legacy);
         if (nf < 5) {
             continue; // blank / malformed line -> skip silently
         }
         if (depth < 0 || (app != 0 && app != 1) || (port != 0 && port != 1)
-                || (ip != 0 && ip != 1)) {
+                || (ip != 0 && ip != 1) || (legacy != 0 && legacy != 1)) {
             mmt_stderr_log("[mmt-dpi][profiles] %s:%d invalid value(s) "
                     "(depth %d must be >= 0, toggles must be 0/1) - skipped\n",
                     path, lineno, depth);
             continue;
         }
-        if (find_profile_by_name(name_tok) != NULL) {
+        if (find_profile_by_name(name_tok, NULL) != NULL) {
             mmt_stderr_log("[mmt-dpi][profiles] %s:%d name '%s' already taken "
                     "(predefined or loaded) - skipped\n", path, lineno, name_tok);
             continue;
@@ -207,6 +237,7 @@ int mmt_load_dpi_profiles_file(const char *path) {
         e->profile.app_protocol_classify = (uint8_t) app;
         e->profile.port_classify = (uint8_t) port;
         e->profile.ip_address_classify = (uint8_t) ip;
+        e->legacy = (uint8_t) legacy;
         custom_profiles_n++;
         loaded++;
     }

@@ -313,7 +313,6 @@ struct mmt_internal_tcp_session_struct {
 #endif
 #ifdef PROTO_MSN
     uint32_t msn_stage : 3;
-    uint32_t msn_ssl_ft : 2;
 #endif
 #ifdef PROTO_SSH
     uint32_t ssh_stage : 3;

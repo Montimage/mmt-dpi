@@ -204,16 +204,18 @@ int main(void) {
      */
     {
         uint8_t *dst = (uint8_t *) malloc(100);
-        uint8_t *d1 = (uint8_t *) malloc(60);
-        uint8_t *d2 = (uint8_t *) malloc(60);
+        uint8_t d1[60], d2[60];
         memset(dst, 0, 100); memset(d1, 'A', 60); memset(d2, 'B', 60);
-        tcp_seg_t *l = tcp_seg_new(1, 1000, 1060, 0, 60, d1);
-        l->next = tcp_seg_new(2, 1060, 1120, 0, 60, d2);
+        /* Arena-carved segments: tcp_seg_new() was deleted (issue #540). */
+        mmt_arena_t *arena = mmt_arena_create(0);
+        tcp_seg_t *l = tcp_seg_new_in_arena(arena, 1, 1000, 1060, 0, 60, d1);
+        l->next = tcp_seg_new_in_arena(arena, 2, 1060, 1120, 0, 60, d2);
         l->next->prev = l;
         tcp_seg_reassembly(dst, l, 100);
         CHECK(dst[59] == 'A' && dst[60] == 'B' && dst[99] == 'B',
               "F-BUG-019: reassembly clamped to the dst budget (60+40)");
-        tcp_seg_free_list(l);
+        mmt_arena_destroy(arena);
+        free(dst);
     }
 
     /* ---------------------------------------------------------------

@@ -19,6 +19,11 @@
  * same crafted payloads. Every case uses its own host pair (classifiers keep
  * per-IP state such as learned ports) and its own client port, and every
  * capture is an exactly-sized heap copy so ASan brackets it.
+ *
+ * Issue #540 (F-BUG-311): the defunct-service classifiers are walked only
+ * under the opt-in `legacy` DPI profile. A LEGACY case replays twice: on the
+ * default handler, where its protocol must stay out of the path, and on a
+ * handler running the `legacy` profile, where it must be classified.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,10 +66,13 @@ typedef struct {
     uint16_t     dport;     /* server port */
     const seg_t *segs;
     unsigned     nsegs;
+    int          legacy;    /* issue #540: classified under the legacy profile only */
 } case_t;
 
 #define CASE(name, want, tcp, dport, segs) \
-    { (name), (want), (tcp), (dport), (segs), (unsigned) (sizeof(segs) / sizeof((segs)[0])) }
+    { (name), (want), (tcp), (dport), (segs), (unsigned) (sizeof(segs) / sizeof((segs)[0])), 0 }
+#define LEGACY(name, want, tcp, dport, segs) \
+    { (name), (want), (tcp), (dport), (segs), (unsigned) (sizeof(segs) / sizeof((segs)[0])), 1 }
 
 static int g_want;          /* protocol looked for in the path */
 static int g_seen;          /* g_want was in the path of some packet */
@@ -466,9 +474,9 @@ static const case_t g_cases[] = {
     CASE("Gnutella CONNECT", PROTO_GNUTELLA, 1, 6346, gnutella_connect_segs),
     CASE("BitTorrent handshake", PROTO_BITTORRENT, 1, 6881, bittorrent_segs),
     CASE("eDonkey Hello", PROTO_EDONKEY, 1, 4662, edonkey_segs),
-    CASE("Yahoo YMSG", PROTO_YAHOO, 1, 5050, yahoo_segs),
-    CASE("MSN USR", PROTO_MSN, 1, 1863, msn_segs),
-    CASE("MSN VER", PROTO_MSN, 1, 1863, msn_ver_segs),
+    LEGACY("Yahoo YMSG", PROTO_YAHOO, 1, 5050, yahoo_segs),
+    LEGACY("MSN USR", PROTO_MSN, 1, 1863, msn_segs),
+    LEGACY("MSN VER", PROTO_MSN, 1, 1863, msn_ver_segs),
     CASE("Jabber stream", PROTO_UNENCRYPED_JABBER, 1, 5222, jabber_segs),
     CASE("DirectConnect hub", PROTO_DIRECTCONNECT, 1, 411, directconnect_segs),
     CASE("DirectConnect peer", PROTO_DIRECTCONNECT, 1, 8008, directconnect_peer_segs),
@@ -481,11 +489,11 @@ static const case_t g_cases[] = {
     CASE("Soulseek login", PROTO_SOULSEEK, 1, 2242, soulseek_segs),
     CASE("PPLive", PROTO_PPLIVE, 1, 8003, pplive_segs),
     CASE("RTP", PROTO_RTP, 0, 30000, rtp_segs),
-    CASE("iMesh", PROTO_IMESH, 1, 8004, imesh_segs),
-    CASE("AIMini", PROTO_AIMINI, 0, 8005, aimini_segs),
-    CASE("Oscar file transfer", PROTO_OSCAR, 1, 5190, oscar_segs),
-    CASE("Oscar FLAP", PROTO_OSCAR, 1, 5190, oscar_flap_segs),
-    CASE("Zattoo", PROTO_ZATTOO, 1, 8006, zattoo_segs),
+    LEGACY("iMesh", PROTO_IMESH, 1, 8004, imesh_segs),
+    LEGACY("AIMini", PROTO_AIMINI, 0, 8005, aimini_segs),
+    LEGACY("Oscar file transfer", PROTO_OSCAR, 1, 5190, oscar_segs),
+    LEGACY("Oscar FLAP", PROTO_OSCAR, 1, 5190, oscar_flap_segs),
+    LEGACY("Zattoo", PROTO_ZATTOO, 1, 8006, zattoo_segs),
     CASE("SopCast", PROTO_SOPCAST, 1, 8007, sopcast_segs),
     CASE("SIP", PROTO_SIP, 0, 5060, sip_segs),
     CASE("POP3", PROTO_POP, 1, 110, pop_segs),
@@ -539,7 +547,7 @@ static void test_ddl(mmt_handler_t *h) {
             exit(2);
         }
         const seg_t seg = { C2S, req, (unsigned) len };
-        const case_t c = { "DDL", PROTO_DIRECT_DOWNLOAD_LINK, 1, 80, &seg, 1 };
+        const case_t c = { "DDL", PROTO_DIRECT_DOWNLOAD_LINK, 1, 80, &seg, 1, 0 };
         if (replay(h, &c, (uint16_t)(47000 + i)))
             ok++;
         else
@@ -560,19 +568,41 @@ int main(void) {
         return 2;
     }
     register_packet_handler(h, 1, packet_handler, NULL);
+    /* Issue #540: a second handler running the opt-in legacy profile. */
+    mmt_handler_t *hl = mmt_init_handler(DLT_EN10MB, 0, errbuf);
+    if (hl == NULL) {
+        fprintf(stderr, "mmt_init_handler (legacy) failed: %s\n", errbuf);
+        mmt_close_handler(h);
+        close_extraction();
+        return 2;
+    }
+    CHECK(mmt_apply_dpi_profile_by_name(hl, "legacy"), "the legacy profile applies by name");
+    register_packet_handler(hl, 1, packet_handler, NULL);
 
     printf("issue #531: tcpip classifier sweep (%u cases)\n",
            (unsigned) (sizeof g_cases / sizeof g_cases[0]));
     for (unsigned i = 0; i < sizeof g_cases / sizeof g_cases[0]; i++) {
         const case_t *c = &g_cases[i];
+        const char *pname = get_protocol_name_by_id((uint32_t) c->want);
+        if (c->legacy) {
+            snprintf(msg, sizeof msg, "%s exchange on %s port %u is not classified as %s "
+                     "by the default chains", c->name, c->tcp ? "TCP" : "UDP",
+                     (unsigned) c->dport, pname);
+            CHECK(!replay(h, c, (uint16_t)(46000 + i)), msg);
+            snprintf(msg, sizeof msg, "%s exchange on %s port %u is classified as %s "
+                     "under the legacy profile", c->name, c->tcp ? "TCP" : "UDP",
+                     (unsigned) c->dport, pname);
+            CHECK(replay(hl, c, (uint16_t)(46000 + i)), msg);
+            continue;
+        }
         snprintf(msg, sizeof msg, "%s exchange on %s port %u is classified as %s",
-                 c->name, c->tcp ? "TCP" : "UDP", (unsigned) c->dport,
-                 get_protocol_name_by_id((uint32_t) c->want));
+                 c->name, c->tcp ? "TCP" : "UDP", (unsigned) c->dport, pname);
         CHECK(replay(h, c, (uint16_t)(46000 + i)), msg);
     }
     test_ddl(h);
     CHECK(g_reads > 0, "attributes of the classified protocols are extracted");
 
+    mmt_close_handler(hl);
     mmt_close_handler(h);
     close_extraction();
     printf("  %d checks, %d failures\n", g_checks, g_failures);

@@ -759,8 +759,15 @@ int proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * config
                 pi->mmt_current_classifier = NULL;
             } else {
                 mmt_classify_proto_t * temp = configured_protocol->protocol->classify_next.classify_protos;
-                // Checking for the port number ??????
+                /* Issue #540 (F-BUG-311): the defunct-service checkers
+                 * (MMT_INTER_PROTO_LEGACY rows) stay in the chain but are
+                 * walked only under the opt-in `legacy` DPI profile. */
+                const uint8_t walk_legacy = (ipacket->mmt_handler != NULL)
+                        ? ipacket->mmt_handler->legacy_classify : 0;
                 for (; temp != NULL; temp = temp->next) {
+                    if (temp->legacy && !walk_legacy) {
+                        continue;
+                    }
 #if MMT_CLASSIFY_STATS
                     __atomic_add_fetch(&mmt_classify_checker_calls, 1, __ATOMIC_RELAXED);
                     __atomic_add_fetch(&mmt_classify_checker_calls_by_proto[configured_protocol->protocol->proto_id], 1, __ATOMIC_RELAXED);

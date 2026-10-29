@@ -19,7 +19,8 @@ packets the SDK abstains on and which (if any) it still attributes.
 Classifier coverage (issue #527): a case may name, in "classifiers", the
 mmt_check_* functions of the default TCP/UDP chains it exercises. Every
 classifier registered in src/mmt_tcpip/lib/inter_proto_classif_list.def
-(commented-out registrations excluded) needs a positive case and a
+(commented-out registrations and the opt-in MMT_INTER_PROTO_LEGACY rows of
+issue #540, which the default chains skip, excluded) needs a positive case and a
 negative/ambiguous case naming it, or an entry in coverage-pending.txt next to
 corpus.json. The pending list only shrinks: an entry for a covered or no
 longer registered classifier fails, as does a case naming a classifier the
@@ -296,7 +297,8 @@ def load_chain(path):
 def parse_chain(text, path):
     """Ordered distinct classifiers registered in the default TCP/UDP chains:
     every MMT_INTER_PROTO(PROTO_TCP|PROTO_UDP, fn, weight) row outside a
-    comment."""
+    comment. MMT_INTER_PROTO_LEGACY rows (issue #540) are not matched: they
+    run only under the opt-in `legacy` DPI profile."""
     text = re.sub(r"/\*.*?\*/", " ", text, flags=re.S)
     text = re.sub(r"//[^\n]*", " ", text)
     rows = re.findall(r"\bMMT_INTER_PROTO\s*\(\s*PROTO_(TCP|UDP)\s*,"

@@ -128,7 +128,7 @@ callbacks, statistics), one `mmt_handler_t` per packet stream. The order is:
    `register_extraction_attribute_by_name()`, and optionally packet-,
    attribute- or session-level callbacks. Each returns `false` on failure.
 4. Feed packets in with `packet_process()`
-   (`src/mmt_core/src/packet_pipeline.c:1506`); it returns `false` when a
+   (`src/mmt_core/src/packet_pipeline.c:1513`); it returns `false` when a
    packet could not be processed, and later packets can still be fed.
 5. Release every handler with `mmt_close_handler()`: it expires the
    handler's sessions, frees everything the handler owns and removes it from
