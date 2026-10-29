@@ -102,7 +102,8 @@ int mmt_register_classifier(uint32_t parent_proto,
         generic_classification_function classify_fn, int weight,
         const char *name);
 
-/* --- protocols/proto_ftp.c -------------------------------------------------- */
+/* --- protocols/proto_ftp_addr.c, proto_ftp_parse.c, proto_ftp_session.c ------
+ * (split out of proto_ftp.c by issue #544) */
 char *ftp_get_data_client_addr_v6_from_LPRT(char *payload, uint32_t payload_len);
 char *ftp_get_data_client_addr_v6_from_EPRT(char *payload, uint32_t payload_len);
 unsigned short ftp_get_data_client_port_from_EPRT(char *payload, uint32_t payload_len);
@@ -110,7 +111,7 @@ unsigned short ftp_get_data_client_port_from_LPRT(char *payload, uint32_t payloa
 unsigned int ftp_get_addr_from_parameter(char *payload, unsigned int payload_len);
 /* src/mmt_tcpip/lib/protocols/ftp.h — result structs read back by
  * ftp_lprt_eprt_test.c; mirrored here (like dns_name_t above) because ftp.h
- * is not self-contained: it needs the internal bitmask types. Keep in step
+ * is not self-contained: it needs the plugin's internal headers. Keep in step
  * with that file (#206). */
 typedef struct ftp_command_struct {
     uint16_t cmd;

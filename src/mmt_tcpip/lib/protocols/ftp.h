@@ -17,11 +17,6 @@ extern "C" {
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #define MMT_FTP_TIMEOUT                     10
-static MMT_PROTOCOL_BITMASK detection_bitmask;
-static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
-static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
-
-static uint32_t ftp_connection_timeout = MMT_FTP_TIMEOUT * MMT_MICRO_IN_SEC;
 
 // FTP control connection session status
 #define MMT_FTP_STATUS_OPENED               1 // Open a session control
@@ -264,6 +259,66 @@ typedef struct ftp_control_session_struct{
     ftp_control_session_t *next;
 
 }ftp_control_session_t;
+
+/*
+ * Functions the proto_ftp*.c units share (issue #544). libmmt_tcpip is
+ * compiled with hidden visibility, so none of them is exported.
+ */
+
+/* proto_ftp_session.c — connection tuple and session structure lifecycles */
+ftp_tuple6_t *ftp_new_tuple6(void);
+ftp_tuple6_t *ftp_copy_tupl6(ftp_tuple6_t *tuple6);
+void free_ftp_tuple6(ftp_tuple6_t *t6);
+ftp_tuple6_t *ftp_get_tuple6(const ipacket_t *ipacket);
+ftp_response_t *ftp_new_response(void);
+void free_ftp_response(ftp_response_t *res);
+ftp_command_t *ftp_new_command(void);
+void free_ftp_command(ftp_command_t *cmd);
+ftp_user_t *ftp_new_user(void);
+void free_ftp_user(ftp_user_t *user);
+ftp_file_t *ftp_new_file(void);
+void free_ftp_file(ftp_file_t *file);
+ftp_data_session_t *ftp_new_data_connection(void);
+void free_ftp_data_session(ftp_data_session_t *ftp_data);
+int ftp_reset_data_session(ftp_data_session_t *ftp_data);
+ftp_control_session_t *ftp_new_control_session(ftp_tuple6_t *tuple6);
+void free_ftp_control_session(ftp_control_session_t *ftp_control);
+int ftp_compare_tuple6(ftp_tuple6_t *t1, ftp_tuple6_t *t2);
+void ftp_set_tuple6_direction(ftp_tuple6_t *tuple6, ftp_tuple6_t *conn, int compare);
+ftp_control_session_t *ftp_get_list_control_session(ipacket_t *ipacket, unsigned index);
+
+/* proto_ftp_parse.c — command and reply parsing */
+uint8_t mmt_int_check_possible_ftp_command(char *payload, int payload_len);
+uint8_t mmt_int_check_possible_ftp_reply(char *payload, int payload_len);
+uint8_t mmt_int_check_possible_ftp_continuation_reply(char *payload, int payload_len);
+ftp_command_t *ftp_get_command(char *payload, int payload_len);
+char *ftp_get_command_param(char *payload, int payload_len);
+char *ftp_get_command_str(char *payload, int payload_len);
+ftp_response_t *ftp_get_response(char *payload, int payload_len);
+char *ftp_get_response_str_code(char *payload, int payload_len);
+char *ftp_get_response_value(char *payload, int payload_len);
+int ftp_get_response_code(char *payload, int payload_len);
+
+/* proto_ftp_addr.c — PORT/EPRT/LPRT and 227/228/229 address parameters */
+uint32_t ftp_get_data_client_addr_from_EPRT(char *payload, uint32_t payload_len);
+char *ftp_get_data_client_addr_v6_from_EPRT(char *payload, uint32_t payload_len);
+uint16_t ftp_get_data_client_port_from_EPRT(char *payload, uint32_t payload_len);
+uint32_t ftp_get_addr_from_parameter(char *payload, uint32_t payload_len);
+char *ftp_get_data_client_addr_v6_from_LPRT(char *payload, uint32_t payload_len);
+uint16_t power_16(uint16_t nb, int t);
+uint16_t ftp_get_data_client_port_from_LPRT(char *payload, uint32_t payload_len);
+uint16_t ftp_get_port_from_parameter(char *payload, uint32_t payload_len);
+uint16_t ftp_get_data_server_port_code_229(char *payload, uint32_t payload_len);
+uint32_t ftp_get_data_server_addr_code_227(char *payload, uint32_t payload_len);
+uint16_t ftp_get_data_server_port_code_227(char *payload, uint32_t payload_len);
+uint16_t ftp_get_data_server_port_code_228(char *payload, uint32_t payload_len);
+uint32_t ftp_get_data_server_addr_code_228(char *payload, uint32_t payload_len);
+
+/* proto_ftp_extract.c — attribute extraction */
+extern attribute_metadata_t ftp_attributes_metadata[FTP_ATTRIBUTES_NB];
+
+/* proto_ftp.c — payload bound shared with the extractors */
+uint32_t ftp_effective_payload_len(const ipacket_t *ipacket, unsigned proto_index, int *offset_out);
 
 #ifdef  __cplusplus
 }

@@ -4,7 +4,8 @@
  *
  * Part of the MMT-DPI Master Improvement Plan, Phase 2f.
  *
- * The heap-overflow defects being exercised, all in proto_ftp.c:
+ * The heap-overflow defects being exercised, all in proto_ftp.c (the address
+ * parsers are in proto_ftp_addr.c since issue #544):
  *
  *   K4  ftp_get_data_client_addr_v6_from_LPRT() rendered each comma-separated
  *       address element with sprintf("%X", atoi(token)) into a malloc(3)/(4)
@@ -49,11 +50,11 @@
 #include <string.h>
 #include <arpa/inet.h>
 
-/* Parsers under test — exported from proto_ftp.c, declared in the shared
- * internal header (issue #186). */
+/* Parsers under test — defined in proto_ftp_addr.c and proto_ftp_parse.c
+ * (issue #544), declared in the shared internal header (issue #186). */
 #include "internal_decls.h"
 
-/* protocols/ftp.h is not self-contained (needs the internal bitmask types),
+/* protocols/ftp.h is not self-contained (needs the plugin's internal headers),
  * so internal_decls.h mirrors ftp_command_t / ftp_response_t. The command
  * enum values are not mirrored: UNKNOWN_CMD is 0 by definition, and the
  * known-command checks assert cmd != 0 plus the decoded strings instead of
@@ -102,7 +103,7 @@ static void test_lprt_wellformed(void)
 {
     printf("[K4] LPRT well-formed classification unchanged\n");
 
-    /* The RFC 1639 example from the proto_ftp.c docstring. Must still decode to
+    /* The RFC 1639 example from the proto_ftp_addr.c docstring. Must still decode to
      * exactly this IPv6 string. */
     char *in = dup_payload(
         "LPRT 6,16,32,2,81,131,67,131,0,0,0,0,0,0,81,131,67,131,2,4,7");
@@ -207,7 +208,7 @@ static void test_eprt_port(void)
     printf("[#35] EPRT port delimiter validation + well-formed decode\n");
 
     /* Well-formed EPRT IPv4: the port sits between the 3rd and 4th "|".
-     * From the proto_ftp.c docstring example. Must still decode to 6275. */
+     * From the proto_ftp_addr.c docstring example. Must still decode to 6275. */
     {
         char *in = dup_payload("EPRT |1|132.235.1.2|6275|");
         unsigned short port = ftp_get_data_client_port_from_EPRT(in, (uint32_t)strlen(in));

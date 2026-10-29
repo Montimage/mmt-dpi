@@ -179,10 +179,21 @@
 #                               MMT_PROTO_SIMPLE rows and checks each against
 #                               the registry after init_extraction().
 #
+# Issue #544 adds the "ftp-sessions" fixture: the 25 FTP session extractors
+# resolve the control and data sessions through one helper of
+# proto_ftp_extract.c — each attribute must read the same from the control
+# connection and from the data connection of one passive download, and
+# nothing session-scoped from a data flow detached by the 226 reset.
+#
+#   test_ftp_session_attrs_api.c — packet/API path: crafted
+#                               Ethernet/IPv4/TCP FTP control and data
+#                               connections through mmt_init_handler +
+#                               packet_process.
+#
 # Usage: tests/parser_boundaries/run_tests.sh [fixture ...]
 #   no arguments runs every fixture; "udp"/"dtls"/"dns-soa"/"dns-txt"/"dns-names"/"nfs"/"int"/
 #   "tcp-options"/"radius-dns"/"quic"/"gre"/"classifier-audit"/"tcp-events"/"s1ap-integer"/
-#   "classify"/"registration" select a fixture family.
+#   "classify"/"registration"/"ftp-sessions" select a fixture family.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -190,7 +201,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # --- fixture selection -----------------------------------------------------
 FIXTURES=( "$@" )
-[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration)
+[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions)
 UNIT_TESTS=()
 API_TESTS=()
 MOBILE_TESTS=()
@@ -245,8 +256,11 @@ for f in "${FIXTURES[@]}"; do
         registration)
             API_TESTS+=(simple_registration_api)
             ;;
+        ftp-sessions)
+            API_TESTS+=(ftp_session_attrs_api)
+            ;;
         *)
-            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration)" >&2
+            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions)" >&2
             exit 2
             ;;
     esac
@@ -387,4 +401,4 @@ if [ "${rc}" -ne 0 ]; then
     echo "✗ parser boundary tests failed" >&2
     exit 1
 fi
-echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455, #505, #513, #531, #542)"
+echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455, #505, #513, #531, #542, #544)"
