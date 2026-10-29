@@ -79,6 +79,19 @@ else
     else
         echo "  ○ debian/changelog absent — skipped"
     fi
+    # Release signing (issue #538): debian/upstream/signing-key.asc and
+    # debian/watch's pgpsigurlmangle come together. The checker sits beside
+    # this script, so a --root fixture without tools/ci still validates.
+    if [ -f "$ROOT/debian/watch" ]; then
+        if sig_out="$(bash "$(dirname "$0")/../tools/ci/sign-source-tarball.sh" --root "$ROOT" --check 2>&1)"; then
+            echo "  $sig_out"
+        else
+            echo "  $sig_out"
+            ERRORS=$((ERRORS + 1))
+        fi
+    else
+        echo "  ○ debian/watch absent — release signing pairing skipped"
+    fi
     # (b) Published-release sites: the installer pins the latest PUBLISHED tag,
     # which lags VERSION between the bump and the tag (a tagged commit cannot
     # pin its own SHA in RELEASE_TAG_SHA). They must agree with install.sh's

@@ -85,13 +85,7 @@ install: --check-built --check-prefix
 	@ install -m 0755 $(SDKLIB)/*.so.* $(MMT_LIB)/
 	@ install -m 0644 $(SDKLIB)/*.a    $(MMT_LIB)/
 # Make links
-	@ln -sf $(MMT_LIB)/libmmt_core.so.$(VERSION)     $(MMT_LIB)/libmmt_core.so
-	@ln -sf $(MMT_LIB)/libmmt_fuzz.so.$(VERSION)     $(MMT_LIB)/libmmt_fuzz.so
-	@ln -sf $(MMT_LIB)/libmmt_security.so.$(VERSION) $(MMT_LIB)/libmmt_security.so
-	@ln -sf $(MMT_LIB)/libmmt_tcpip.so.$(VERSION)    $(MMT_LIB)/libmmt_tcpip.so
-	@ln -sf $(MMT_LIB)/$(LIBMOBILE).so.$(VERSION)    $(MMT_LIB)/$(LIBMOBILE).so
-	@ln -sf $(MMT_LIB)/$(LIBBAPP).so.$(VERSION)      $(MMT_LIB)/$(LIBBAPP).so
-	@ln -sf $(MMT_LIB)/$(LIBDICOM).so.$(VERSION)      $(MMT_LIB)/$(LIBDICOM).so
+	@ for l in $(MMT_SONAME_LIBS); do ln -sf $(MMT_LIB)/$$l.so.$(VERSION) $(MMT_LIB)/$$l.so || exit 1; done
 # Runtime (SONAME) links, issue #536: lib<name>.so.$(SOVERSION) is what a
 # consumer's NEEDED entry names, so the loader needs it even when ldconfig
 # never runs (an unprivileged install). Only for the libraries installed.
@@ -117,17 +111,10 @@ install: --check-built --check-prefix
 		&& find $(MMT_EXAMS) -type d -exec chmod 0755 {} + \
 		&& find $(MMT_EXAMS) -type f -exec chmod 0644 {} +
 	@ echo "[MMT-]> Installed  "$(SDKXAM)" at "$(MMT_EXAMS)
-	@ install -m 0755 $(SDKLIB)/libmmt_tcpip.so.$(VERSION) $(MMT_PLUGINS)/libmmt_tcpip.so
-	@ echo "[MMT-]> Installed "$(MMT_PLUGINS)/libmmt_tcpip.so
-
-	@ install -m 0755 $(SDKLIB)/$(LIBMOBILE).so.$(VERSION) $(MMT_PLUGINS)/$(LIBMOBILE).so
-	@ echo "[MMT-]> Installed "$(MMT_PLUGINS)/$(LIBMOBILE).so
-
-	@ install -m 0755 $(SDKLIB)/$(LIBDICOM).so.$(VERSION) $(MMT_PLUGINS)/$(LIBDICOM).so
-	@ echo "[MMT-]> Installed "$(MMT_PLUGINS)/$(LIBDICOM).so
-
-	@ install -m 0755 $(SDKLIB)/$(LIBBAPP).so.$(VERSION) $(MMT_PLUGINS)/$(LIBBAPP).so
-	@ echo "[MMT-]> Installed "$(MMT_PLUGINS)/$(LIBBAPP).so
+	@ for l in $(MMT_LAYOUT_PLUGINS); do \
+		install -m 0755 $(SDKLIB)/$$l.so.$(VERSION) $(MMT_PLUGINS)/$$l.so \
+		&& echo "[MMT-]> Installed $(MMT_PLUGINS)/$$l.so" || exit 1; \
+	done
 # Licence files (issue #497), laid out as the two packages lay them out.
 	@ umask 022 && install -d -m 0755 $(MMT_DOC) && install -m 0644 $(PKG_LICENSE_FILES) $(MMT_DOC)/
 	@ if $(SEC_ENGINES_BUILT); then \
@@ -243,13 +230,31 @@ uninstall: --check-prefix
 		sub=1; \
 	done
 
+#  - - - - - - - - - - - - - - -
+#  I N S T A L L   L A Y O U T
+#  - - - - - - - - - - - - - - -
+# The one list of what the SDK installs (issue #538, F-DEAD-011): `install`,
+# its manifest and `uninstall`, the deb/rpm staging and `install-fhs` all
+# iterate these instead of naming libraries themselves.
+#   MMT_LAYOUT_PLUGINS   the protocol plugins the core dlopen()s from $(MMT_PLUGINS)
+#   MMT_LAYOUT_LIBS      the libraries of the mmt-dpi package: the core + plugins
+#   MMT_LAYOUT_SEC_LIBS  the ENABLESEC=1 engines, packaged as mmt-dpi-security
+#                        (issue #497). Named literally: rules/common.mk defines
+#                        LIBSECURITY/LIBFUZZ only under ENABLESEC, and install and
+#                        the package split test for the engine files at run time,
+#                        so a build made with ENABLESEC=1 installs alike without it.
+MMT_LAYOUT_PLUGINS  := $(LIBTCPIP) $(LIBMOBILE) $(LIBBAPP) $(LIBDICOM)
+MMT_LAYOUT_LIBS     := $(LIBCORE) $(MMT_LAYOUT_PLUGINS)
+MMT_LAYOUT_SEC_LIBS := libmmt_security libmmt_fuzz
+
 # Install manifest (issue #485): one path per line, relative to $(MMT_BASE).
 MMT_MANIFEST     = $(MMT_BASE)/.mmt-dpi-manifest
 mmt_rel          = $(patsubst $(MMT_BASE)/%,%,$(1))
-MMT_LIB_LINKS    = libmmt_core.so libmmt_fuzz.so libmmt_security.so libmmt_tcpip.so $(LIBMOBILE).so $(LIBBAPP).so $(LIBDICOM).so
-# Every shared library, by base name; each gets its SONAME link (issue #536).
-MMT_SONAME_LIBS  = libmmt_core libmmt_fuzz libmmt_security libmmt_tcpip $(LIBMOBILE) $(LIBBAPP) $(LIBDICOM)
-MMT_PLUGIN_FILES = libmmt_tcpip.so $(LIBMOBILE).so $(LIBDICOM).so $(LIBBAPP).so
+# Every shared library, by base name; each gets its development and SONAME
+# links (issue #536). Derived from the layout list above (issue #538).
+MMT_SONAME_LIBS  = $(MMT_LAYOUT_LIBS) $(MMT_LAYOUT_SEC_LIBS)
+MMT_LIB_LINKS    = $(addsuffix .so,$(MMT_SONAME_LIBS))
+MMT_PLUGIN_FILES = $(addsuffix .so,$(MMT_LAYOUT_PLUGINS))
 # Shell snippets printing the entries `install` copies from this build.
 MMT_LIST_TREES   = (cd $(SDKINC) && find . -mindepth 1) | sed 's|^\./|$(call mmt_rel,$(MMT_INC))/|'; \
 	(cd $(SDKXAM) && find . -mindepth 1) | sed 's|^\./|$(call mmt_rel,$(MMT_EXAMS))/|'
@@ -269,7 +274,7 @@ PKG_LICENSE_FILES = $(TOPDIR)/LICENSE $(TOPDIR)/THIRD-PARTY-NOTICES
 GPL_LICENSE_TEXT  = $(TOPDIR)/LICENSES/GPL-3.0-or-later.txt
 # Shell condition: the ENABLESEC engines are in this build (tested when the
 # recipe runs, so `make sdk deb` sees the libraries the same invocation built).
-SEC_ENGINES_BUILT = { [ -e $(SDKLIB)/libmmt_security.so.$(VERSION) ] || [ -e $(SDKLIB)/libmmt_fuzz.so.$(VERSION) ]; }
+SEC_ENGINES_BUILT = { $(foreach l,$(MMT_LAYOUT_SEC_LIBS),[ -e $(SDKLIB)/$(l).so.$(VERSION) ] ||) false; }
 MMT_LIST_DOCS     = for d in $(call mmt_rel,$(MMT_DPI)/share $(MMT_DOCDIR) $(MMT_DOC)); do echo "$$d"; done; \
 	for f in LICENSE THIRD-PARTY-NOTICES; do echo "$(call mmt_rel,$(MMT_DOC))/$$f"; done; \
 	if $(SEC_ENGINES_BUILT); then \
@@ -296,7 +301,7 @@ BUILD_DIR = mmt-dpi_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
 # the engines sit in the library directory mmt-dpi registers with the loader.
 SEC_BUILD_DIR = mmt-dpi-security_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
 # The libraries the mmt-dpi package itself ships (rpm %files).
-MMT_PKG_LIBS  = libmmt_core libmmt_tcpip $(LIBMOBILE) $(LIBBAPP) $(LIBDICOM)
+MMT_PKG_LIBS  = $(MMT_LAYOUT_LIBS)
 
 # SPDX licence expressions of the two packages (issue #497). Not hand-picked:
 # `tools/ci/vendored-components.py notices --check` recomputes them from the
@@ -332,18 +337,13 @@ SEC_PKG_LICENSE := GPL-3.0-or-later AND Apache-2.0
 	$(QUIET) umask 022 && $(CP) -r $(SDKXAM)   $(BUILD_DIR)$(MMT_BASE) \
 	                  && find $(BUILD_DIR)$(MMT_BASE)/examples -type d -exec chmod 0755 {} + \
 	                  && find $(BUILD_DIR)$(MMT_BASE)/examples -type f -exec chmod 0644 {} +
-	$(QUIET) install -m 0755 $(SDKLIB)/libmmt_tcpip.so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/libmmt_tcpip.so
-	$(QUIET) install -m 0755 $(SDKLIB)/$(LIBMOBILE).so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/$(LIBMOBILE).so
-	$(QUIET) install -m 0755 $(SDKLIB)/$(LIBBAPP).so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/$(LIBBAPP).so
-	$(QUIET) install -m 0755 $(SDKLIB)/$(LIBDICOM).so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/$(LIBDICOM).so
+	$(QUIET) for l in $(MMT_LAYOUT_PLUGINS); do \
+		install -m 0755 $(SDKLIB)/$$l.so.$(VERSION) $(BUILD_DIR)$(MMT_PLUGINS)/$$l.so || exit 1; \
+	done
 	# Make links
-	$(QUIET) ln -s $(MMT_LIB)/libmmt_core.so.$(VERSION)     $(BUILD_DIR)$(MMT_LIB)/libmmt_core.so
-	$(QUIET) ln -s $(MMT_LIB)/libmmt_fuzz.so.$(VERSION)     $(BUILD_DIR)$(MMT_LIB)/libmmt_fuzz.so
-	$(QUIET) ln -s $(MMT_LIB)/libmmt_security.so.$(VERSION) $(BUILD_DIR)$(MMT_LIB)/libmmt_security.so
-	$(QUIET) ln -s $(MMT_LIB)/libmmt_tcpip.so.$(VERSION)    $(BUILD_DIR)$(MMT_LIB)/libmmt_tcpip.so
-	$(QUIET) ln -s $(MMT_LIB)/$(LIBMOBILE).so.$(VERSION)    $(BUILD_DIR)$(MMT_LIB)/$(LIBMOBILE).so
-	$(QUIET) ln -s $(MMT_LIB)/$(LIBBAPP).so.$(VERSION)    $(BUILD_DIR)$(MMT_LIB)/$(LIBBAPP).so
-	$(QUIET) ln -s $(MMT_LIB)/$(LIBDICOM).so.$(VERSION)    $(BUILD_DIR)$(MMT_LIB)/$(LIBDICOM).so
+	$(QUIET) for l in $(MMT_SONAME_LIBS); do \
+		ln -s $(MMT_LIB)/$$l.so.$(VERSION) $(BUILD_DIR)$(MMT_LIB)/$$l.so || exit 1; \
+	done
 	# SONAME links (issue #536), as `install` lays them down: shipped in the
 	# package, not left to the postinst ldconfig, so dpkg/rpm own them.
 	$(QUIET) for l in $(MMT_SONAME_LIBS); do \
@@ -366,14 +366,14 @@ SEC_PKG_LICENSE := GPL-3.0-or-later AND Apache-2.0
 	$(QUIET) if $(SEC_ENGINES_BUILT); then \
 		umask 022 && install -d -m 0755 $(SEC_BUILD_DIR)$(MMT_LIB) $(SEC_BUILD_DIR)$(MMT_INC) \
 		    $(SEC_BUILD_DIR)$(MMT_SEC_DOC) \
-		&& for f in $(BUILD_DIR)$(MMT_LIB)/libmmt_security.* $(BUILD_DIR)$(MMT_LIB)/libmmt_fuzz.*; do \
+		&& for f in $(foreach l,$(MMT_LAYOUT_SEC_LIBS),$(BUILD_DIR)$(MMT_LIB)/$(l).*); do \
 			if [ -e "$$f" ] || [ -L "$$f" ]; then mv "$$f" $(SEC_BUILD_DIR)$(MMT_LIB)/; fi; \
 		done \
 		&& if [ -d $(BUILD_DIR)$(MMT_INC)/fuzz ]; then mv $(BUILD_DIR)$(MMT_INC)/fuzz $(SEC_BUILD_DIR)$(MMT_INC)/; fi \
 		&& install -m 0644 $(PKG_LICENSE_FILES) $(SEC_BUILD_DIR)$(MMT_SEC_DOC)/ \
 		&& install -m 0644 $(GPL_LICENSE_TEXT) $(SEC_BUILD_DIR)$(MMT_SEC_DOC)/COPYING; \
 	else \
-		$(RM) $(BUILD_DIR)$(MMT_LIB)/libmmt_security.so $(BUILD_DIR)$(MMT_LIB)/libmmt_fuzz.so; \
+		$(RM) $(addprefix $(BUILD_DIR)$(MMT_LIB)/,$(addsuffix .so,$(MMT_LAYOUT_SEC_LIBS))); \
 	fi
 	# The package is installed by root into the system search path — assert the
 	# staged library dir carries no group/world-writable file (F-SEC-012).
@@ -531,8 +531,7 @@ rpm: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	    if [ -n "$$sec" ]; then echo -e\
 	    "\n%files security\
 	    \n%defattr(-,root,root,-)\
-	    \n$(MMT_LIB)/libmmt_security*\
-	    \n$(MMT_LIB)/libmmt_fuzz*\
+	    $(foreach l,$(MMT_LAYOUT_SEC_LIBS),\n$(MMT_LIB)/$(l)*)\
 	    \n$(MMT_INC)/fuzz\
 	    \n$(MMT_SEC_DOC)\
 	    \n%post security\
@@ -670,10 +669,12 @@ endif
 
 DESTDIR       ?=
 MMT_PKGCONFIG ?= $(MMT_LIB)/pkgconfig
-FHS_LIBS      := $(LIBCORE) $(LIBTCPIP) $(LIBMOBILE) $(LIBBAPP) $(LIBDICOM)
-FHS_PLUGINS   := $(LIBTCPIP) $(LIBMOBILE) $(LIBBAPP) $(LIBDICOM)
+# The layout list at the top of this file (issue #538); the engines only
+# when this build has them.
+FHS_LIBS      := $(MMT_LAYOUT_LIBS)
+FHS_PLUGINS   := $(MMT_LAYOUT_PLUGINS)
 ifdef ENABLESEC
-FHS_LIBS      += $(LIBSECURITY) $(LIBFUZZ)
+FHS_LIBS      += $(MMT_LAYOUT_SEC_LIBS)
 endif
 
 install-fhs: --check-built

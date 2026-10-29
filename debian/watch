@@ -1,4 +1,16 @@
+# The signed release asset mmt-dpi-<version>.tar.gz (tools/ci/build-source-tarball.sh,
+# published by .github/workflows/release-packages.yml), found through the
+# GitHub releases API — not GitHub's tag archives, which are generated on
+# demand and carry no signature (issue #538). Files-Excluded in
+# debian/copyright repacks it as <version>+ds.
+#
+# Signature verification: once debian/upstream/signing-key.asc is committed,
+# add pgpsigurlmangle=s/$/.asc/ to opts. The two go together —
+# tools/ci/sign-source-tarball.sh --check (scripts/validate-release-prep.sh)
+# fails when only one of them is present, and the release job then signs
+# every tarball with the matching secret key.
 version=4
-opts="filenamemangle=s%(?:.*?)?v?(\d[\d.]*)\.tar\.gz%mmt-dpi-$1.tar.gz%" \
- https://github.com/montimage-projects/mmt-dpi/tags \
- (?:.*?/)?v?(\d[\d.]*)\.tar\.gz
+opts="searchmode=plain, repacksuffix=+ds, dversionmangle=auto, \
+  filenamemangle=s%.*/mmt-dpi-(\d[\d.]*)\.tar\.gz%mmt-dpi-$1.tar.gz%" \
+ https://api.github.com/repos/montimage-projects/mmt-dpi/releases?per_page=50 \
+ https://github.com/montimage-projects/mmt-dpi/releases/download/v[\d.]+/mmt-dpi-(\d[\d.]*)\.tar\.gz

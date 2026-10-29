@@ -58,8 +58,11 @@ grep -q 'PLUGINS_REPOSITORY_OPT' "$ROOT/rules/common.mk" && echo "  ✓ PLUGINS_
 # sdk/lib/ is a gitignored build artifact that does not exist on a clean
 # checkout, so assert each library in the Makefile instead (issue #187 — the
 # doc-validators CI job runs on a clean checkout).
+# The names live in rules/common.mk; sdk/Makefile installs them through its
+# one layout list, MMT_LAYOUT_LIBS (issue #538).
 for lib in libmmt_core libmmt_tcpip; do
-    check "sdk/Makefile builds $lib" "grep -q '$lib' $ROOT/sdk/Makefile"
+    check "the build names $lib and sdk/Makefile installs its layout list" \
+        "grep -Eq ':= *$lib\$' $ROOT/rules/common.mk && grep -q '^MMT_LAYOUT_LIBS ' $ROOT/sdk/Makefile"
 done
 
 # Check 6: public headers exist at their source — sdk/include/ is a

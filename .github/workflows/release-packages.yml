@@ -4,6 +4,9 @@ name: Build & release packages
 # distribution families:
 #   - Debian / Ubuntu        -> .deb  (dpkg-deb, via `make deb`)
 #   - RedHat / Rocky / CentOS -> .rpm  (rpmbuild, via `make rpm`)
+# Every Debian/Ubuntu release distribution also builds the distribution
+# packaging in debian/ with dpkg-buildpackage and lints it with lintian
+# (`debian-package`, issue #538); those .debs are checked, not published.
 #
 # Each distribution is built inside its own container image (GitHub-hosted
 # runners only provide Ubuntu/macOS/Windows), for both amd64 and arm64.
@@ -111,7 +114,7 @@ jobs:
               sdk/*|src/*|rules/*|tools/ci/tests/*|\
               tools/ci/build-package.sh|tools/ci/install-build-deps.sh|\
               debian/*|tools/ci/build-debian-package.sh|\
-              tools/ci/build-source-tarball.sh|\
+              tools/ci/build-source-tarball.sh|tools/ci/sign-source-tarball.sh|\
               tools/ci/check-reproducible-build.sh|tools/ci/check-release-tag.sh|\
               tools/ci/check-release-gates.sh|tools/ci/publish-release.sh|\
               tools/ci/check-hardening-flags.sh|\
@@ -316,13 +319,18 @@ jobs:
   debian-package:
     # Issue #475: the package a Debian archive would build itself — the
     # source tree's debian/ (FHS layout through `make -C sdk install-fhs`,
-    # libmmt-dpi1 + libmmt-dpi-dev, no /opt/mmt), built in a digest-pinned
-    # Debian 13 image, linted, installed and run through the autopkgtest
-    # payload debian/tests/installed-consumer. Distinct from the upstream
-    # `make deb` packages of the build matrix above, and never published.
-    # The amd64 leg also proves the reproducible upstream source tarball and
-    # hands it to the release job, which publishes it with the other assets.
-    name: Debian source package (${{ matrix.arch }})
+    # libmmt-dpi1 + libmmt-dpi-dev, no /opt/mmt), built, linted
+    # (`lintian --fail-on error`), installed and run through the autopkgtest
+    # payload debian/tests/installed-consumer. Issue #538: one leg per
+    # Debian/Ubuntu distribution of the build matrix above, same pinned
+    # images, both architectures — its own job, so a slow apt or lintian run
+    # never eats into the 60-minute cap of the `make deb` leg. Distinct from
+    # the upstream `make deb` packages, and not published: the release
+    # assets and the bootstrap stay on those (docs/DECISIONS.md, #538).
+    # The debian-13 amd64 leg also proves the reproducible upstream source
+    # tarball and hands it to the release job, which signs and publishes it
+    # with the other assets.
+    name: Debian source package (${{ matrix.distro.name }}, ${{ matrix.arch }})
     needs: changes
     if: needs.changes.outputs.packaging == 'true'
     runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
@@ -331,8 +339,15 @@ jobs:
       fail-fast: false
       matrix:
         arch: [amd64, arm64]
+        distro:
+          - { name: ubuntu-22.04,   image: "ubuntu:22.04@sha256:e0f80c829509ef4df9e76bd8944eb7b8ec25cbb379b112a7f9448b2c77a77c9b" }
+          - { name: ubuntu-24.04,   image: "ubuntu:24.04@sha256:24737cef17f4e22b1977df7d9a05e77c4e28b7da5b8911f8d8ccda136bf3573c" }
+          - { name: debian-12,      image: "debian:12@sha256:854dd8ab51d62866dbd8f5431d15ce77b12983a2a4a1e1fe43a2395dc7ef9f61" }
+          - { name: ubuntu-26.04,   image: "ubuntu:26.04@sha256:19fcd1bf268f02b60aca3bd30bd8a6d9a11759a430e32921833e65f16d87348a" }
+          - { name: debian-13,      image: "debian:13@sha256:4c25275446ca371766b8b093c696782eabce06263fccacb8d5d813b3dc44b308" }
     env:
-      IMAGE: "debian:13@sha256:4c25275446ca371766b8b093c696782eabce06263fccacb8d5d813b3dc44b308"
+      IMAGE: ${{ matrix.distro.image }}
+      TARBALL_LEG: ${{ matrix.distro.name == 'debian-13' && matrix.arch == 'amd64' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -343,11 +358,11 @@ jobs:
         run: sed 's/[[:space:]]*#.*$//' tools/ci/base-images.txt | grep -Fx -- "$IMAGE"
 
       - name: Source tarball is reproducible
-        if: matrix.arch == 'amd64'
+        if: env.TARBALL_LEG == 'true'
         run: bash tools/ci/build-source-tarball.sh --verify --out dist/source
 
       - name: Upload the source tarball
-        if: matrix.arch == 'amd64'
+        if: env.TARBALL_LEG == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: source-tarball
@@ -536,6 +551,9 @@ jobs:
             tools/ci/publish-release.sh
             tools/ci/make-release-bootstrap.sh
             tools/ci/bootstrap-install.sh
+            tools/ci/sign-source-tarball.sh
+            debian/watch
+            debian/upstream/
           sparse-checkout-cone-mode: false
           persist-credentials: false
 
@@ -556,6 +574,24 @@ jobs:
           cp -v artifacts/source-tarball/mmt-dpi-*.tar.gz release/
           echo "Assets to publish:"
           ls -l release
+
+      # Detached signature of the source tarball (issue #538, F-SEC-010), the
+      # file debian/watch verifies with pgpsigurlmangle against
+      # debian/upstream/signing-key.asc. Before SHA256SUMS and the
+      # attestation, so both cover the .asc. Until the maintainer commits the
+      # public key and provisions the MMT_RELEASE_SIGNING_KEY secret, the
+      # script warns and the tarball ships unsigned; once either exists, a
+      # missing or mismatched half fails the release. The secret reaches this
+      # step only.
+      - name: Sign the source tarball
+        env:
+          MMT_RELEASE_SIGNING_KEY: ${{ secrets.MMT_RELEASE_SIGNING_KEY }}
+          MMT_RELEASE_SIGNING_PASSPHRASE: ${{ secrets.MMT_RELEASE_SIGNING_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          for t in release/mmt-dpi-*.tar.gz; do
+            bash src/tools/ci/sign-source-tarball.sh --root src "$t"
+          done
 
       # Verified bootstrap (issue #498, F-CI-112): a copy of every package
       # under its stable alias name (<package>_<distro>_<amd64|arm64>.<ext>),

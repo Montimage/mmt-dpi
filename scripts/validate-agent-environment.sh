@@ -175,11 +175,11 @@ sdk/Makefile:8-12	^ifdef MMT_BASE	^endif	an unset MMT_BASE targets /opt/mmt	MMT_
 sdk/Makefile:25-29	^PLUGINS_PATH_STAMP :=	^FORCE:	plugins_engine.o depends on a plugin-directory stamp	plugins_engine\.o: \$\(PLUGINS_PATH_STAMP\)
 sdk/Makefile:58-68	^LDCONF +\?= auto	^[[:space:]]+esac$	the loader is registered by privilege (LDCONF=auto|0|1)	id -u
 sdk/Makefile:70-80	^--check-built:	^[[:space:]]+fi$	make install refuses a missing or mismatched build	PLUGINS_PATH_STAMP
-sdk/Makefile:183-224	^uninstall:	Done!	make uninstall removes the install and its drop-in	LDCONF_FILE
-sdk/Makefile:88-94	ln -sf .*libmmt_core\.so	ln -sf .*LIBDICOM	make install creates the unversioned .so symlinks	LIBMOBILE
-sdk/Makefile:89-90	ln -sf .*libmmt_fuzz\.so	ln -sf .*libmmt_security\.so	install symlinks both ENABLESEC engines	libmmt_fuzz\.so\.\$\(VERSION\) +\$\(MMT_LIB\)/libmmt_fuzz\.so$
-sdk/Makefile:341-342	ln -s .*libmmt_fuzz\.so	ln -s .*libmmt_security\.so	the dist tree symlinks both ENABLESEC engines	libmmt_security\.so\.\$\(VERSION\) +\$\(BUILD_DIR\)\$\(MMT_LIB\)/libmmt_security\.so$
-sdk/Makefile:621-626	^test:	\./proto_attributes_iterator	the make test target builds from the installed prefix	\$\(MMT_EXAMS\)/proto_attributes_iterator\.c
+sdk/Makefile:170-211	^uninstall:	Done!	make uninstall removes the install and its drop-in	LDCONF_FILE
+sdk/Makefile:88	ln -sf .*\$\$l\.so	-	make install creates the unversioned .so symlinks	MMT_SONAME_LIBS
+sdk/Makefile:248	^MMT_LAYOUT_SEC_LIBS := libmmt_security libmmt_fuzz$	-	install symlinks both ENABLESEC engines (the layout list, issue #538)
+sdk/Makefile:344-346	for l in \$\(MMT_SONAME_LIBS\)	^[[:space:]]+done$	the dist tree symlinks every library, both ENABLESEC engines included	ln -s .*\$\$l\.so 
+sdk/Makefile:620-625	^test:	\./proto_attributes_iterator	the make test target builds from the installed prefix	\$\(MMT_EXAMS\)/proto_attributes_iterator\.c
 tests/run_all_tests.sh:8-118	^# Modes:	^esac	the runner has two opt-in sanitizer modes	\-fsanitize=thread
 tests/run_all_tests.sh:106-109	command -v setarch	^ *fi$	TSan re-execs once with ASLR disabled	exec setarch .*\-R
 tests/run_all_tests.sh:245-276	^DEFAULT_SUITES=\(	^\)$	the default suite list lives in DEFAULT_SUITES	docs_onboarding

@@ -20,9 +20,12 @@ Releasing a new upstream version
      (the version-agreement job and the tag's verify-tag job) fails otherwise.
   2. Tag vX.Y.Z. The release workflow attaches mmt-dpi-X.Y.Z.tar.gz
      (tools/ci/build-source-tarball.sh: `git archive` + `gzip -n`, byte
-     reproducible), SHA256SUMS and a provenance attestation.
-  3. `uscan` fetches the tag archive and, because of Files-Excluded in
-     debian/copyright, repacks it as mmt-dpi_X.Y.Z+ds.orig.tar.xz.
+     reproducible), SHA256SUMS and a provenance attestation, and, once
+     release signing is configured (below), mmt-dpi-X.Y.Z.tar.gz.asc.
+  3. `uscan` finds that release asset through the GitHub releases API
+     (debian/watch) — not GitHub's tag archive — and, because of
+     Files-Excluded in debian/copyright, repacks it as
+     mmt-dpi_X.Y.Z+ds.orig.tar.xz.
   4. Build in a clean chroot: `sbuild -d unstable` (or `pbuilder`), then run
      `lintian -i -I --pedantic` and `autopkgtest` on the result.
 
@@ -31,6 +34,27 @@ Changing the ABI
   job fails an incompatible change that does not move it). When it moves,
   rename libmmt-dpi1 to libmmt-dpi<SOVERSION> in debian/control and the
   *.install / *.lintian-overrides file names.
+
+Release signing (issue #538)
+  The release job signs the source tarball with
+  tools/ci/sign-source-tarball.sh. It needs two things only the maintainer
+  can provide: the ASCII-armoured public release key committed as
+  debian/upstream/signing-key.asc (with pgpsigurlmangle=s/$/.asc/ added to
+  the opts of debian/watch in the same change), and the matching secret key
+  in the repository secret MMT_RELEASE_SIGNING_KEY (plus
+  MMT_RELEASE_SIGNING_PASSPHRASE when it has one). Until then releases ship
+  unsigned with a warning; `sign-source-tarball.sh --check`
+  (scripts/validate-release-prep.sh) fails a change that adds only one of
+  the key and the watch option, and the release fails when the secret is
+  missing or does not match the committed key.
+
+CI
+  The debian-package job of .github/workflows/release-packages.yml runs
+  tools/ci/build-debian-package.sh on every Debian/Ubuntu distribution the
+  release builds (Ubuntu 22.04, 24.04, 26.04, Debian 12, 13; amd64 and
+  arm64). These .debs are checked, not published: the release assets and the
+  bootstrap installer stay on the upstream `make deb` packages
+  (docs/DECISIONS.md, issue #538).
 
 Local check of the whole packaging
   docker run --rm -v "$PWD":/work -w /work debian:13 \

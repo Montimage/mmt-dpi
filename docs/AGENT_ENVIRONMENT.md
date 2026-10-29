@@ -216,7 +216,7 @@ The build produces versioned shared libraries and static archives under
 `sdk/lib/` (`libmmt_core.so.$(VERSION)`, `libmmt_tcpip.so.$(VERSION)`,
 `libmmt_tmobile.so.$(VERSION)`, `libmmt_business_app.so.$(VERSION)`,
 `libmmt_tdicom.so.$(VERSION)`, plus matching `.a` files; the unversioned
-`.so` symlinks are created by `make install`, `sdk/Makefile:88-94`), copies
+`.so` symlinks are created by `make install`, `sdk/Makefile:88`), copies
 public headers under `sdk/include/` and example sources under
 `sdk/examples/` (`sdk/bin/` stays empty in a plain build). It does **not**
 require root and does **not** install anything.
@@ -295,7 +295,9 @@ checker self-test `test-api-contracts.sh` and the ABI-diff self-test
 `test-shared-sdk-build.sh`, issue #654, which drives a copy of the runner
 over fake suites with a stub `make`, and the weak-type ratchet self-test
 `test-weak-types.sh`, issue #539, which proves the `opaque` metric of
-`tools/ci/count-weak-types.sh` fails on fixture headers) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
+`tools/ci/count-weak-types.sh` fails on fixture headers, and the
+source-signing self-test `test-source-signing.sh`, issue #538, which drives
+`tools/ci/sign-source-tarball.sh` on fixture `debian/` trees) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
 #387); the first three build nothing, `sdk_coverage` builds its own
 `BUILD=coverage` SDK whatever the mode and cleans `sdk/` afterwards. `installed_consumer` (issue #374) drives the
 other
@@ -509,7 +511,7 @@ documents link here.
   root install out; `LDCONF=1` forces registration; `LDCONF_DIR` and
   `LDCONFIG` relocate the drop-in and the command (the installer suite uses
   a staged directory and a fake `ldconfig`).
-- **`make -C sdk MMT_BASE=<prefix> uninstall`** (`sdk/Makefile:183-224`)
+- **`make -C sdk MMT_BASE=<prefix> uninstall`** (`sdk/Makefile:170-211`)
   removes exactly the entries `install` recorded in
   `<prefix>/.mmt-dpi-manifest` (one path per line, relative to the prefix,
   merged across reinstalls), then the SDK directories left empty (`rmdir`,
@@ -544,7 +546,7 @@ documents link here.
 
 ### The `make test` trap
 
-`sdk/Makefile`'s `test` target (`sdk/Makefile:621-626`) compiles the
+`sdk/Makefile`'s `test` target (`sdk/Makefile:620-625`) compiles the
 `proto_attributes_iterator` example **from the installed prefix**:
 
 ```
@@ -677,7 +679,7 @@ next build of any profile deletes them, so harvest them first with
 
 - Object/header selection: `rules/common.mk:201-203, 225-228, 310-313`
 - Link rules and libxml2 wiring: `rules/common-linux.mk:6-12, 249-252, 260-264, 297-313`
-- Install symlinks for both engines: `sdk/Makefile:89-90, 341-342`
+- Install symlinks for both engines: `sdk/Makefile:248` (the install layout list, issue #538), laid down by `sdk/Makefile:88, 344-346`
 
 Usage (requires `libxml2-dev`):
 

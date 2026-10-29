@@ -237,11 +237,73 @@ check "rpm spec: mmt-dpi License: is PKG_LICENSE" \
 check "rpm spec: the security subpackage License: is SEC_PKG_LICENSE" \
     bash -c "sed -n '/^rpm:/,/^zip:/p' '${MK}' | grep -qF '\\nLicense: \$(SEC_PKG_LICENSE)'"
 check "rpm spec: libmmt_security/libmmt_fuzz belong to the security subpackage" \
-    bash -c "sed -n '/^rpm:/,/^zip:/p' '${MK}' | grep -q '%package security' && grep -q '^MMT_PKG_LIBS  = libmmt_core ' '${MK}' && ! grep '^MMT_PKG_LIBS' '${MK}' | grep -Eq 'SECURITY|FUZZ|security|fuzz'"
+    bash -c "sed -n '/^rpm:/,/^zip:/p' '${MK}' | grep -q '%package security' && grep -qx 'MMT_PKG_LIBS  = \$(MMT_LAYOUT_LIBS)' '${MK}' && ! grep '^MMT_LAYOUT_LIBS' '${MK}' | grep -Eq 'SECURITY|FUZZ|security|fuzz'"
 check "no hard-coded licence literal is left in the spec" \
     bash -c "! sed -n '/^rpm:/,/^zip:/p' '${MK}' | grep -Eq 'License: *(proprietary|Apache-2.0)'"
 check "THIRD-PARTY-NOTICES and the licence expressions are current" \
     python3 "${REPO_ROOT}/tools/ci/vendored-components.py" notices --check
+
+# --- 4c. One install layout (issue #538, F-DEAD-011) -------------------------
+# install, its manifest and uninstall, the deb/rpm staging and install-fhs all
+# iterate the MMT_LAYOUT_* lists: no other line of sdk/Makefile may name a
+# plugin or engine library as a list or recipe token. Description text
+# ("the libmmt_security rule engine") and the *_OBJECTS variables do not
+# count; a hard-coded recipe line must.
+echo "--- one install layout list (issue #538) ---"
+# second_layout_list <makefile> — prints each non-comment line outside the
+# MMT_LAYOUT_ definitions that names a plugin/engine library; fails if any.
+second_layout_list() {
+    ! grep -nE '\$\(LIB(TCPIP|MOBILE|DICOM|BAPP|SECURITY|FUZZ)\)|libmmt_(tcpip|tmobile|tdicom|business_app|security|fuzz)(\.so|\.\*|\*|\.a)' "$1" \
+        | grep -vE '^[0-9]+:[[:space:]]*#' | grep -vE '^[0-9]+:MMT_LAYOUT_'
+}
+check "sdk/Makefile names the plugin and engine libraries only in MMT_LAYOUT_*" \
+    second_layout_list "${MK}"
+cp "${MK}" "${WORK}/Makefile.second-list"
+# shellcheck disable=SC2016  # a literal make recipe line
+printf '\t@ install -m 0755 $(SDKLIB)/libmmt_tcpip.so.$(VERSION) $(MMT_PLUGINS)/libmmt_tcpip.so\n' >> "${WORK}/Makefile.second-list"
+check_fail "a hard-coded plugin recipe line is caught" \
+    second_layout_list "${WORK}/Makefile.second-list"
+# Evaluated without ENABLESEC: rules/common.mk defines LIBSECURITY/LIBFUZZ
+# only with it, but a build made with ENABLESEC=1 is installed and packaged
+# by a plain `make install`/`make deb`, which must still lay out the engines.
+# print_var <var> [make args...] — the value of one sdk/Makefile variable.
+print_var() {
+    local v="$1"; shift
+    # shellcheck disable=SC2016  # $($*) is make syntax, not shell
+    make -s -C "${REPO_ROOT}/sdk" "$@" --eval 'print-%: ; @echo $($*)' "print-${v}"
+}
+# engines_listed — both engines in the SONAME and dev-link lists, no ENABLESEC.
+engines_listed() {
+    local o
+    o="$(print_var MMT_SONAME_LIBS)" && grep -qw libmmt_security <<< "${o}" && grep -qw libmmt_fuzz <<< "${o}" \
+        && o="$(print_var MMT_LIB_LINKS)" && grep -qw 'libmmt_security\.so' <<< "${o}" && grep -qw 'libmmt_fuzz\.so' <<< "${o}"
+}
+# plugins_shared — install-fhs and the install manifest use the layout's plugins.
+plugins_shared() {
+    local p
+    # shellcheck disable=SC2086  # one word per plugin
+    p="$(print_var MMT_LAYOUT_PLUGINS)" && [ -n "${p}" ] \
+        && [ "$(print_var FHS_PLUGINS)" = "${p}" ] \
+        && [ "$(print_var MMT_PLUGIN_FILES)" = "$(printf '%s.so\n' ${p} | paste -sd' ')" ]
+}
+# fhs_engines_opt_in — install-fhs ships the engines only with ENABLESEC=1.
+fhs_engines_opt_in() {
+    ! print_var FHS_LIBS | grep -q libmmt_security && print_var FHS_LIBS ENABLESEC=1 | grep -qw libmmt_security
+}
+check "without ENABLESEC the SONAME/dev-link lists still name both engines" engines_listed
+check "install, install-fhs and the packages share the plugin list" plugins_shared
+check "install-fhs adds the engines only with ENABLESEC=1" fhs_engines_opt_in
+# no_engine_in_main — evaluated, with and without ENABLESEC=1: the mmt-dpi
+# package's libraries and the plugin list never hold an engine.
+no_engine_in_main() {
+    local v
+    for v in MMT_PKG_LIBS MMT_LAYOUT_LIBS MMT_LAYOUT_PLUGINS; do
+        print_var "${v}" | grep -Eq 'libmmt_(core|tcpip)' || [ "${v}" = MMT_LAYOUT_PLUGINS ] || return 1
+        ! print_var "${v}" | grep -Eq 'libmmt_(security|fuzz)' || return 1
+        ! print_var "${v}" ENABLESEC=1 | grep -Eq 'libmmt_(security|fuzz)' || return 1
+    done
+}
+check "the mmt-dpi package and the plugin list hold no engine (with or without ENABLESEC)" no_engine_in_main
 
 # --- 5. ZIP install/uninstall round trip — no residue ----------------------
 echo "--- ZIP install/uninstall round trip ---"
