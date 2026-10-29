@@ -5,8 +5,9 @@
 #
 # The names come from the single source of truth for protocol registration,
 # src/mmt_tcpip/lib/proto_init_list.def — one MMT_PROTO_INIT(init_fn, "name")
-# row per protocol — so the published listing can never drift from what the
-# engine actually registers.
+# or MMT_PROTO_SIMPLE(id, alias, "name") row per protocol (issue #542) — so
+# the published listing can never drift from what the engine actually
+# registers.
 #
 # Usage: bash tools/gen-protocol-list.sh     (rewrites docs/PROTOCOLS.md)
 
@@ -20,7 +21,7 @@ OUT="docs/PROTOCOLS.md"
 
 [ -f "$DEF" ] || { echo "✗ protocol list not found: $DEF" >&2; exit 2; }
 
-names="$(grep -oE 'MMT_PROTO_INIT\([a-zA-Z0-9_]+,[[:space:]]*"[^"]+"' "$DEF" \
+names="$(grep -oE 'MMT_PROTO_(INIT\([a-zA-Z0-9_]+|SIMPLE\([a-zA-Z0-9_]+,[[:space:]]*[a-zA-Z0-9_]+),[[:space:]]*"[^"]+"' "$DEF" \
           | sed -E 's/.*"([^"]+)"/\1/' | LC_ALL=C sort -u)"
 count="$(printf '%s\n' "$names" | grep -c .)"
 

@@ -169,10 +169,20 @@
 #                               mmt_init_handler + packet_process, one host
 #                               pair per case.
 #
+# Issue #542 adds the "registration" fixture: the 506 registration-only
+# proto_*.c stubs became MMT_PROTO_SIMPLE(id, alias, name) rows of
+# proto_init_list.def, registered by one generic helper in
+# configured_protocols.c — every row must still register under its id and
+# resolve both ways by its alias.
+#
+#   test_simple_registration_api.c — expands proto_init_list.def's
+#                               MMT_PROTO_SIMPLE rows and checks each against
+#                               the registry after init_extraction().
+#
 # Usage: tests/parser_boundaries/run_tests.sh [fixture ...]
 #   no arguments runs every fixture; "udp"/"dtls"/"dns-soa"/"dns-txt"/"dns-names"/"nfs"/"int"/
 #   "tcp-options"/"radius-dns"/"quic"/"gre"/"classifier-audit"/"tcp-events"/"s1ap-integer"/
-#   "classify" select a fixture family.
+#   "classify"/"registration" select a fixture family.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -180,7 +190,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # --- fixture selection -----------------------------------------------------
 FIXTURES=( "$@" )
-[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify)
+[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration)
 UNIT_TESTS=()
 API_TESTS=()
 MOBILE_TESTS=()
@@ -232,8 +242,11 @@ for f in "${FIXTURES[@]}"; do
         classify)
             API_TESTS+=(tcpip_classify_api)
             ;;
+        registration)
+            API_TESTS+=(simple_registration_api)
+            ;;
         *)
-            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify)" >&2
+            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration)" >&2
             exit 2
             ;;
     esac
@@ -374,4 +387,4 @@ if [ "${rc}" -ne 0 ]; then
     echo "✗ parser boundary tests failed" >&2
     exit 1
 fi
-echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455, #505, #513, #531)"
+echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455, #505, #513, #531, #542)"

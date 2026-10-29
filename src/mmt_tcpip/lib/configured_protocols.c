@@ -27,6 +27,20 @@ int mmt_register_classifier(uint32_t parent_proto,
     return 1;
 }
 
+/* Issue #542 (F-CLEAN-012): the registration a MMT_PROTO_SIMPLE row of
+ * proto_init_list.def stands for — the body of each of the 506 identical
+ * proto_*.c stubs it replaced, so the registry is built by the same calls in
+ * the same order. */
+static int mmt_register_simple_protocol(mmt_proto_id_t proto_id,
+        const char *proto_alias) {
+    protocol_t *protocol_struct =
+        init_protocol_struct_for_registration(proto_id, proto_alias);
+    if (protocol_struct == NULL) {
+        return 0;
+    }
+    return register_protocol(protocol_struct, proto_id);
+}
+
 int init_proto() {
     return init_tcpip_plugin();
 }
@@ -56,14 +70,28 @@ int init_tcpip_plugin() {
 
     /* Protocol init functions — data lives in proto_init_list.def, the same
      * list that declares these functions in mmt_common_internal_include.h
-     * (issue #148). Order decides classifier chain order. */
-    static const struct { int (*init)(void); const char *name; } proto_init_table[] = {
-#define MMT_PROTO_INIT(init_fn, display_name) { init_fn, display_name },
+     * (issue #148). Order decides classifier chain order. A MMT_PROTO_SIMPLE
+     * row has no init function: its id and alias go to
+     * mmt_register_simple_protocol() (issue #542). */
+    static const struct {
+        int (*init)(void);
+        mmt_proto_id_t id;
+        const char *alias;
+        const char *name;
+    } proto_init_table[] = {
+#define MMT_PROTO_INIT(init_fn, display_name) { init_fn, 0, NULL, display_name },
+#define MMT_PROTO_SIMPLE(proto_id, proto_alias, display_name) \
+        { NULL, proto_id, proto_alias, display_name },
 #include "proto_init_list.def"
+#undef MMT_PROTO_SIMPLE
 #undef MMT_PROTO_INIT
     };
     for (size_t i = 0; i < sizeof(proto_init_table)/sizeof(proto_init_table[0]); i++) {
-        if (!proto_init_table[i].init()) {
+        int ok = (proto_init_table[i].init != NULL)
+            ? proto_init_table[i].init()
+            : mmt_register_simple_protocol(proto_init_table[i].id,
+                    proto_init_table[i].alias);
+        if (!ok) {
             mmt_stderr_log( "Error initializing protocol %s\n Exiting\n", proto_init_table[i].name);
             return 0;
         }

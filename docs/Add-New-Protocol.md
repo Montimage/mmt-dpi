@@ -29,37 +29,12 @@ In the TCP/IP header file **`src/mmt_tcpip/include/mmt_tcpip_protocols.h`** add:
 #define PROTO_LEMONDE_ALIAS "lemonde"
 ```
 
-In the TCP/IP protocols folder **`src/mmt_tcpip/lib/protocols/`** add the following filename **`proto_lemonde.c`** (see existing `src/mmt_tcpip/lib/protocols/proto_dns.c` for a reference).
+**lemonde** only needs to be registered — it is classified by hostname (section 3) and has no attributes or classifier of its own — so it needs **no source file**: its `MMT_PROTO_SIMPLE` row in `proto_init_list.def` (section 2) registers it (issue #542). A protocol that does need its own code (attributes, a classifier, session context) gets a file **`src/mmt_tcpip/lib/protocols/proto_<name>.c`** defining `int init_proto_<name>_struct()` (see existing `src/mmt_tcpip/lib/protocols/proto_dns.c` for a reference) and an `MMT_PROTO_INIT` row instead.
 
-```c
-#include "mmt_core.h"
-#include "plugin_defs.h"
-#include "extraction_lib.h"
-#include "../mmt_common_internal_include.h"
-
-
-/////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
-
-/////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
-
-int init_proto_lemonde_struct() {
-    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_LEMONDE, PROTO_LEMONDE_ALIAS);
-    if (protocol_struct != NULL) { 
-        return register_protocol(protocol_struct, PROTO_LEMONDE);
-    } else {
-        return 0;
-    }
-}
-```
 ## 2- Initialize the Protocol
 
-In the TCP/IP internal include header file **`src/mmt_tcpip/lib/mmt_common_internal_include.h`** add **lemonde** protocol initialization definition at the end of the protocol initialization definitions block:
+The `init_proto_<name>_struct()` declaration of an `MMT_PROTO_INIT` row is generated in **`src/mmt_tcpip/lib/mmt_common_internal_include.h`** from the same list; do not add it by hand.
 
-```c
-    /////////// PLUGIN INIT FOR PROTO_LEMONDE //////////////////
-    int init_proto_lemonde_struct();
-    /////////////////////////////////////////////////
-```
 If a protocol needs a classification for example protocol rtp, we need to add a function
 
 ```c
@@ -71,8 +46,10 @@ If a protocol needs a classification for example protocol rtp, we need to add a 
 In the protocol-init list **`src/mmt_tcpip/lib/proto_init_list.def`** (included by `configured_protocols.c`, which expands it into the `proto_init_table[]` walked by `init_tcpip_plugin()`) add **lemonde** protocol initialization at the end of the list — order is significant, it decides classifier chain order:
 
 ```c
-    MMT_PROTO_INIT(init_proto_lemonde_struct, "proto_lemonde")
+    MMT_PROTO_SIMPLE(PROTO_LEMONDE, PROTO_LEMONDE_ALIAS, "proto_lemonde")
 ```
+A protocol with its own source file uses `MMT_PROTO_INIT(init_proto_<name>_struct, "proto_<name>")` instead.
+
 If a protocol needs a classification for example protocol rtp, we need to add a classification function entry in the inter-protocol list **`src/mmt_tcpip/lib/inter_proto_classif_list.def`** (expanded into `inter_proto_table[]` in the same function):
 
 ```c

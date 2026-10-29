@@ -59,7 +59,6 @@ path src/mmt_tcpip/lib/protocols/proto_8021ad.c full
 path src/mmt_tcpip/lib/protocols/proto_8021q.c full
 path src/mmt_tcpip/lib/protocols/proto_arp.c full
 path src/mmt_tcpip/lib/protocols/proto_batman.c full
-path src/mmt_tcpip/lib/protocols/proto_etherip.c full
 path src/mmt_tcpip/lib/protocols/proto_ethernet.c full
 path src/mmt_tcpip/lib/protocols/proto_gre.c full
 path src/mmt_tcpip/lib/protocols/proto_gtp.c full
@@ -68,21 +67,14 @@ path src/mmt_tcpip/lib/protocols/proto_icmpv6.c full
 path src/mmt_tcpip/lib/protocols/proto_ip.c full
 path src/mmt_tcpip/lib/protocols/proto_ip_dgram.c full
 path src/mmt_tcpip/lib/protocols/proto_ip_frag.c full
-path src/mmt_tcpip/lib/protocols/proto_ip_in_ip.c full
 path src/mmt_tcpip/lib/protocols/proto_ipv6.c full
 path src/mmt_tcpip/lib/protocols/proto_ipv6_dgram.c full
-path src/mmt_tcpip/lib/protocols/proto_ipx_in_ip.c full
-path src/mmt_tcpip/lib/protocols/proto_l2tp.c full
 path src/mmt_tcpip/lib/protocols/proto_llc.c full
 path src/mmt_tcpip/lib/protocols/proto_loopback.c full
-path src/mmt_tcpip/lib/protocols/proto_mpls_in_ip.c full
-path src/mmt_tcpip/lib/protocols/proto_ppp.c full
-path src/mmt_tcpip/lib/protocols/proto_pppoe.c full
 path src/mmt_tcpip/lib/protocols/proto_sctp.c full
 path src/mmt_tcpip/lib/protocols/proto_sll.c full
 path src/mmt_tcpip/lib/protocols/proto_tcp.c full
 path src/mmt_tcpip/lib/protocols/proto_udp.c full
-path src/mmt_tcpip/lib/protocols/proto_udplite.c full
 
 # --- helpers shared by several dissectors ------------------------------------
 path src/mmt_tcpip/lib/protocols/http.c full

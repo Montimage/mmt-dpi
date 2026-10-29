@@ -215,7 +215,9 @@ extern "C" {
      * both in one list is what makes adding a protocol a single-line edit
      * (issue #148). */
 #define MMT_PROTO_INIT(init_fn, display_name) int init_fn();
+#define MMT_PROTO_SIMPLE(proto_id, proto_alias, display_name)
 #include "proto_init_list.def"
+#undef MMT_PROTO_SIMPLE
 #undef MMT_PROTO_INIT
 
 #ifdef	__cplusplus
