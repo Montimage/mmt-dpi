@@ -34,8 +34,10 @@ Usage:
 """
 import argparse
 import hashlib
+import hmac
 import os
 import struct
+import zlib
 
 ETH_HLEN = 14
 IP_HLEN = 20
@@ -1225,6 +1227,257 @@ def _sip_ok():
                   b"Content-Length: 0", b""])
 
 
+def _ndn_tlv(t, v):
+    """NDN Packet Format v0.3 sec. 1.2: TLV with 1-octet TYPE and LENGTH (< 253)."""
+    return bytes([t, len(v)]) + v
+
+
+def _ndn_name(*comps):
+    """NDN Packet Format v0.3 sec. 2.1: Name (0x07) of GenericNameComponents (0x08)."""
+    return _ndn_tlv(0x07, b"".join(_ndn_tlv(0x08, c) for c in comps))
+
+
+def _ndn_interest(name):
+    """NDN Packet Format v0.3 sec. 5.1: Interest (0x05) = Name, Nonce, InterestLifetime."""
+    return _ndn_tlv(0x05, name + _ndn_tlv(0x0A, b"\x5a\x5a\x5a\x5a")
+                    + _ndn_tlv(0x0C, struct.pack("!H", 4000)))
+
+
+def _ndn_data(name, content):
+    """NDN Packet Format v0.3 sec. 6.1/7.3: Data (0x06) signed with DigestSha256."""
+    signed = (name + _ndn_tlv(0x14, _ndn_tlv(0x18, b"\x00"))
+              + _ndn_tlv(0x15, content)
+              + _ndn_tlv(0x16, _ndn_tlv(0x1B, b"\x00")))
+    return _ndn_tlv(0x06, signed
+                    + _ndn_tlv(0x17, hashlib.sha256(signed).digest()))
+
+
+ICE_TXID = bytes(range(0x40, 0x4C))
+ICE_PWD = b"accuracyIcePasswordRemote1"
+
+
+def _rfc4571(msg):
+    """RFC 4571 §2 framing: a 16-bit length before each RTP/STUN message
+    (the framing ICE-TCP uses for STUN and media, RFC 6544 §3)."""
+    return struct.pack("!H", len(msg)) + msg
+
+
+def _stun_attr(atype, value):
+    """RFC 8489 §14 attribute TLV, value padded to a 4-byte boundary."""
+    return (struct.pack("!HH", atype, len(value)) + value
+            + b"\x00" * (-len(value) % 4))
+
+
+def _stun_ice(msg_type, attrs):
+    """RFC 8489 STUN message ending in MESSAGE-INTEGRITY (§14.5, HMAC-SHA1
+    over the message with the length covering it) and FINGERPRINT (§14.7,
+    CRC-32 XOR 0x5354554e)."""
+    def hdr(n):
+        return struct.pack("!HHI", msg_type, n, 0x2112A442) + ICE_TXID
+    mi = hmac.new(ICE_PWD, hdr(len(attrs) + 24) + attrs, "sha1").digest()
+    attrs += _stun_attr(0x0008, mi)
+    crc = zlib.crc32(hdr(len(attrs) + 8) + attrs) ^ 0x5354554E
+    attrs += _stun_attr(0x8028, struct.pack("!I", crc))
+    return hdr(len(attrs)) + attrs
+
+
+def _ice_check():
+    """RFC 8445 §7.2.2 ICE connectivity check: Binding request with USERNAME
+    (rfrag:lfrag), PRIORITY and ICE-CONTROLLING, framed for ICE-TCP."""
+    return _rfc4571(_stun_ice(0x0001,
+                              _stun_attr(0x0006, b"ACCR:ACCL")
+                              + _stun_attr(0x0024, struct.pack("!I", 0x6E7F00FF))
+                              + _stun_attr(0x802A, b"\x5a\xcc" * 4)))
+
+
+def _ice_check_ok(port):
+    """Binding success response carrying the client's XOR-MAPPED-ADDRESS."""
+    xaddr = struct.unpack("!I", ACC_CLIENT)[0] ^ 0x2112A442
+    return _rfc4571(_stun_ice(0x0101, _stun_attr(
+        0x0020, struct.pack("!BBHI", 0, 1, port ^ 0x2112, xaddr))))
+
+
+def _iax_full(scall, dcall, oseq, iseq, subclass, ies):
+    """RFC 5456 §8.1.1 IAX2 full frame of type IAX (6) with its IEs (§8.6)."""
+    body = b"".join(struct.pack("!BB", t, len(v)) + v for t, v in ies)
+    return struct.pack("!HHIBBBB", 0x8000 | scall, dcall, 3, oseq, iseq, 6,
+                       subclass) + body
+
+
+def _iax_new():
+    """RFC 5456 §6.2.2 NEW: VERSION 2, called/calling numbers, calling name,
+    username, desired FORMAT (u-law) and CAPABILITY (u-law|a-law)."""
+    return _iax_full(1, 0, 0, 0, 0x01, [
+        (0x0B, struct.pack("!H", 2)), (0x01, b"100"), (0x02, b"200"),
+        (0x04, b"Alice"), (0x06, b"alice"), (0x09, struct.pack("!I", 4)),
+        (0x08, struct.pack("!I", 0x0C))])
+
+
+def _iax_accept():
+    """RFC 5456 §6.2.3 ACCEPT answering the NEW with the chosen FORMAT."""
+    return _iax_full(2, 1, 0, 1, 0x07, [(0x09, struct.pack("!I", 4))])
+
+
+def _tcf_udp(code, attrs=b""):
+    """Eclipse TCF UDP discovery (port 1534) packet: "TCF2" magic and
+    version, the 1-byte code, 3 reserved zero bytes, then NUL-terminated
+    name=value peer attributes."""
+    return b"TCF2" + bytes([code, 0, 0, 0]) + attrs
+
+
+def _tcf_peer_info():
+    """TCF Locator peer attributes (ID, Name, OSName, TransportName, Host,
+    Port) of an agent at 198.51.100.2:1534 (code 2, ACK_INFO)."""
+    return _tcf_udp(2, b"".join(x + b"\x00" for x in (
+        b"ID=TCP:198.51.100.2:1534", b"Name=TCF Agent",
+        b"OSName=Linux", b"TransportName=TCP",
+        b"Host=198.51.100.2", b"Port=1534")))
+
+
+def _mqtt_connect():
+    """MQTT 3.1.1 §3.1 CONNECT: protocol name MQTT, level 4, clean session,
+    keep-alive 60 s, client identifier acc-client."""
+    var = b"\x00\x04MQTT" + struct.pack("!BBH", 4, 0x02, 60)
+    payload = struct.pack("!H", 10) + b"acc-client"
+    return bytes([0x10, len(var) + len(payload)]) + var + payload
+
+
+def _x11_setup():
+    """X11 core protocol connection setup (X Window System Protocol,
+    "Connection Setup"): LSB-first 'l', version 11.0, MIT-MAGIC-COOKIE-1
+    with a 16-byte cookie -- 48 bytes."""
+    return (b"l\x00" + struct.pack("<HHHH", 11, 0, 18, 16) + b"\x00\x00"
+            + b"MIT-MAGIC-COOKIE-1\x00\x00" + bytes(range(0xA0, 0xB0)))
+
+
+def _x11_setup_failed():
+    """X11 connection setup Failed reply (code 0) with its reason string."""
+    reason = b"Invalid MIT-MAGIC-COOKIE-1 key"
+    pad = b"\x00" * (-len(reason) % 4)
+    return (struct.pack("<BBHHH", 0, len(reason), 11, 0,
+                        (len(reason) + len(pad)) // 4) + reason + pad)
+
+
+def _array8(data):
+    """XDMCP 1.1 ARRAY8: CARD16 length, then the bytes."""
+    return struct.pack("!H", len(data)) + data
+
+
+def _xdmcp(opcode, body):
+    """XDMCP 1.1 header: version 1, opcode, length of the rest."""
+    return struct.pack("!HHH", 1, opcode, len(body)) + body
+
+
+DCE_NDR_SYNTAX = bytes.fromhex("045d888aeb1cc9119fe808002b104860")  # 8a885d04-1ceb-11c9-9fe8-08002b104860 v2
+DCE_EPM_IFACE = bytes.fromhex("0883afe11f5dc91191a408002b14a0fa")   # e1af8308-5d1f-11c9-91a4-08002b14a0fa v3
+
+
+def _dce_header(ptype, body):
+    """DCE 1.1 RPC (C706 §12.6.3.1) connection-oriented common header:
+    v5.0, first+last fragment, little-endian NDR data representation."""
+    return (struct.pack("<BBBB4sHHI", 5, 0, ptype, 0x03, b"\x10\x00\x00\x00",
+                        16 + len(body), 0, 1) + body)
+
+
+def _dce_bind():
+    """C706 §12.6.4.3 bind: one presentation context for the endpoint
+    mapper interface (v3.0) with the NDR transfer syntax, on TCP/135."""
+    ctx = (struct.pack("<HBB", 0, 1, 0) + DCE_EPM_IFACE
+           + struct.pack("<HH", 3, 0) + DCE_NDR_SYNTAX + struct.pack("<I", 2))
+    return _dce_header(11, struct.pack("<HHIB3x", 4280, 4280, 0, 1) + ctx)
+
+
+def _dce_bind_ack():
+    """C706 §12.6.4.4 bind_ack: secondary address "135", padded to 4 bytes,
+    one result accepting the NDR transfer syntax."""
+    sec = b"135\x00"
+    body = (struct.pack("<HHIH", 4280, 4280, 0x00012345, len(sec)) + sec
+            + b"\x00\x00" + struct.pack("<B3xHH", 1, 0, 0)
+            + DCE_NDR_SYNTAX + struct.pack("<I", 2))
+    return _dce_header(12, body)
+
+
+def _dsi_open_session(flags, option):
+    """DSI (AFP over TCP, Apple AFP Programming Guide, DSI header) OpenSession
+    command 4, request ID 1, carrying one session option."""
+    return struct.pack("!BBHIII", flags, 0x04, 1, 0, len(option), 0) + option
+
+
+def _ica_detect():
+    """Citrix ICA connection detect string 7F 7F 'ICA' 00 (nDPI citrix.c)."""
+    return b"\x7f\x7fICA\x00"
+
+
+def _rtmp_c0c1():
+    """RTMP 1.0 §5.2.2-5.2.3 C0 (version 3) + C1 (time, zero, 1528 random
+    bytes), sent as one 1537-byte segment."""
+    return (b"\x03" + struct.pack("!II", 0, 0)
+            + bytes((i * 7) & 0xFF for i in range(1528)))
+
+
+def _rtmp_s0s1s2():
+    """RTMP 1.0 §5.2.2-5.2.4 S0 + S1 + S2 (S2 echoes C1's time and random)."""
+    return (b"\x03" + struct.pack("!II", 0, 0)
+            + bytes((i * 11) & 0xFF for i in range(1528))
+            + struct.pack("!II", 0, 1)
+            + bytes((i * 7) & 0xFF for i in range(1528)))
+
+
+def _teamviewer_cmd(cmd, body):
+    """TeamViewer command: protocol version 0x1724 in the first two bytes and
+    the command in the third (the reverse-engineered OpenDPI/nDPI signature
+    proto_teamviewer.c:23 keys on; 0x12 = CMD_MASTERCOMMAND), then an assumed
+    little-endian 32-bit body length and the body."""
+    return b"\x17\x24" + bytes([cmd]) + struct.pack("<I", len(body)) + body
+
+
+def _teamviewer_udp(seq, cmd, body):
+    """TeamViewer UDP datagram: an 11-byte prefix whose first byte is the
+    sequence counter (0 on the first datagram), then the 0x1724 command."""
+    return (bytes([seq]) + b"\x00" * 10) + _teamviewer_cmd(cmd, body)
+
+
+def _steam_version(v):
+    """Legacy Steam directory/content-server handshake (the reverse-engineered
+    OpenDPI/nDPI signature proto_steam.c:22-35 applies): the client opens the
+    connection with its protocol version as a 4-byte big-endian integer."""
+    return struct.pack("!I", v)
+
+
+def _steam_accept():
+    """Server accept: 0x01 followed by the client's external IPv4 address."""
+    return b"\x01" + ACC_CLIENT
+
+
+def _wow_logon_challenge(account):
+    """CMD_AUTH_LOGON_CHALLENGE client message (wowdev.wiki Login): opcode 0,
+    protocol 8, LE size, "WoW", client 3.3.5 build 12340, platform x86, OS
+    Win, locale enUS (the four-char codes stored reversed), timezone, IP,
+    account name length and the upper-case account name."""
+    body = (b"WoW\x00" + bytes([3, 3, 5]) + struct.pack("<H", 12340)
+            + b"68x\x00" + b"niW\x00" + b"SUne" + struct.pack("<I", 0)
+            + ACC_CLIENT + bytes([len(account)]) + account)
+    return b"\x00\x08" + struct.pack("<H", len(body)) + body
+
+
+def _wow_logon_challenge_reply():
+    """CMD_AUTH_LOGON_CHALLENGE server reply, WOW_SUCCESS: SRP6 B, g = 7, the
+    32-byte WoW N (little-endian on the wire), salt, CRC salt, flags 0."""
+    n = bytes.fromhex("894B645E89E1535BBDAD5B8B290650530801B18EBFBF5E8F"
+                      "AB3C82872A3E9BB7")[::-1]
+    return (b"\x00\x00\x00" + bytes(range(0x40, 0x60)) + b"\x01\x07"
+            + b"\x20" + n + bytes(range(0x60, 0x80))
+            + bytes(range(0x80, 0x90)) + b"\x00")
+
+
+def _xbox_udp(msg_type, length):
+    """Xbox UDP message shape the classifier keys on (OpenDPI/nDPI
+    signature, proto_xbox.c:34-42): four zero bytes, type, 0x58 ('X'),
+    the datagram length, three zero bytes, zero padding to `length`."""
+    hdr = b"\x00" * 4 + bytes([msg_type, 0x58, length]) + b"\x00" * 3
+    return hdr + b"\x00" * (length - len(hdr))
+
+
 ACC_SYSLOG = b"<34>Sep 23 12:00:00 accuracy su: 'su root' failed for alice"
 
 
@@ -1567,6 +1820,157 @@ ACC_CLASSIFIER_FLOWS = {
     "acc_ipp_negative": (17, 631, 631, False, [
         ("cli", b"hello, this datagram is not a printer browse packet\n")],
         {"server": BROADCAST, "server_mac": b"\xff" * 6}),
+    "acc_usenet_positive": (6, 49500, 119, True, [
+        ("srv", b"200 accuracy.example NNTP service ready, posting allowed\r\n"),
+        ("cli", b"MODE READER\r\n"),
+        ("srv", b"200 Reader mode, posting allowed\r\n"),
+        ("cli", b"QUIT\r\n"),
+        ("srv", b"205 Connection closing\r\n")], {}),
+    "acc_usenet_negative": (6, 49501, 119, True, [
+        ("cli", b"hello, this stream is not an NNTP request\n"),
+        ("srv", b"and this reply is not an NNTP response\n")], {}),
+    "acc_activesync_positive": (6, 49502, 80, True, [
+        ("cli", _text([b"OPTIONS /Microsoft-Server-ActiveSync?User=alice"
+                       b"&DeviceId=ACC0000000000001&DeviceType=SmartPhone "
+                       b"HTTP/1.1",
+                       b"Host: mail.accuracy.example",
+                       b"User-Agent: accuracy/1.0",
+                       b"Authorization: Basic YWxpY2U6c2VjcmV0",
+                       b"Content-Length: 0", b""])),
+        ("srv", _text([b"HTTP/1.1 200 OK",
+                       b"MS-Server-ActiveSync: 16.1",
+                       b"MS-ASProtocolVersions: 2.5,12.0,12.1,14.0,14.1,"
+                       b"16.0,16.1",
+                       b"MS-ASProtocolCommands: Sync,SendMail,SmartForward,"
+                       b"SmartReply,GetAttachment,FolderSync,Ping",
+                       b"Content-Length: 0", b""]))], {}),
+    "acc_activesync_negative": (6, 49503, 80, True, [
+        ("cli", b"hello, this stream is not an ActiveSync request\n"),
+        ("srv", b"and this reply is not an ActiveSync response\n")], {}),
+    "acc_icecast_positive": (6, 49504, 8000, True, [
+        ("cli", _text([b"SOURCE /live.mp3 HTTP/1.0",
+                       b"Authorization: Basic c291cmNlOmFjY3VyYWN5",
+                       b"User-Agent: accuracy/1.0",
+                       b"Content-Type: audio/mpeg",
+                       b"ice-name: accuracy test stream",
+                       b"ice-public: 0", b""])),
+        ("srv", _text([b"HTTP/1.0 200 OK", b""]))], {}),
+    "acc_icecast_negative": (6, 49505, 8000, True, [
+        ("cli", b"hello, this stream is not an Icecast request\n"),
+        ("srv", b"and this reply is not an Icecast response\n")], {}),
+    "acc_shoutcast_positive": (6, 49506, 8001, True, [
+        ("cli", b"123456\r\n"),
+        ("srv", b"OK2\r\nicy-caps:11\r\n\r\n"),
+        ("cli", _text([b"icy-name:accuracy test stream", b"icy-genre:test",
+                       b"icy-pub:0", b"icy-br:128",
+                       b"icy-url:http://radio.accuracy.example/",
+                       b"content-type:audio/mpeg", b""]))], {}),
+    "acc_shoutcast_negative": (6, 49507, 8001, True, [
+        ("cli", b"hello, this stream is not a SHOUTcast request\n"),
+        ("srv", b"and this reply is not a SHOUTcast response\n")], {}),
+    "acc_ndn_http_positive": (17, 49508, 6363, False, [
+        ("cli", _ndn_interest(_ndn_name(b"accuracy.example", b"GET",
+                                        b"index.html"))),
+        ("srv", _ndn_data(_ndn_name(b"accuracy.example", b"GET",
+                                    b"index.html"), b"ok"))], {}),
+    "acc_ndn_http_negative": (17, 49509, 6363, False, [
+        ("cli", b"hello, this datagram is not an NDN Interest\n"),
+        ("srv", b"and this reply is not an NDN Data packet\n")], {}),
+    "acc_dcerpc_positive": (6, 49530, 135, True, [
+        ("cli", _dce_bind()),
+        ("srv", _dce_bind_ack())], {}),
+    "acc_dcerpc_negative": (6, 49531, 135, True, [
+        ("cli", b"hello, this stream is not a DCE/RPC bind request\n"),
+        ("srv", b"and this reply is not a DCE/RPC bind_ack\n")], {}),
+    "acc_afp_positive": (6, 49532, 548, True, [
+        ("cli", _dsi_open_session(0x00, struct.pack("!BBI", 0x01, 4, 1024))),
+        ("srv", _dsi_open_session(0x01, struct.pack("!BBI", 0x00, 4,
+                                                     0x00100000)))], {}),
+    "acc_afp_negative": (6, 49533, 548, True, [
+        ("cli", b"hello, this stream is not a DSI OpenSession request\n"),
+        ("srv", b"and this reply is not a DSI response\n")], {}),
+    "acc_citrix_positive": (6, 49534, 1494, True, [
+        ("srv", _ica_detect()),
+        ("cli", _ica_detect())], {}),
+    "acc_citrix_negative": (6, 49535, 1494, True, [
+        ("cli", b"hello, this stream is not a Citrix ICA handshake\n"),
+        ("srv", b"and this reply is not an ICA response\n")], {}),
+    "acc_flash_positive": (6, 49536, 1935, True, [
+        ("cli", _rtmp_c0c1()),
+        ("srv", _rtmp_s0s1s2())], {}),
+    "acc_flash_negative": (6, 49537, 1935, True, [
+        ("cli", b"hello, this stream is not an RTMP handshake\n"),
+        ("srv", b"and this reply is not an RTMP response\n")], {}),
+    "acc_stun_tcp_positive": (6, 49560, 3478, True, [
+        ("cli", _ice_check()),
+        ("srv", _ice_check_ok(49560))], {}),
+    "acc_stun_tcp_negative": (6, 49561, 3478, True, [
+        ("cli", b"hello, this stream is not a STUN binding request\n"),
+        ("srv", b"and this reply is not a STUN response\n")], {}),
+    "acc_iax_positive": (17, 49564, 4569, False, [
+        ("cli", _iax_new()),
+        ("srv", _iax_accept())], {}),
+    "acc_iax_negative": (17, 49565, 4569, False, [
+        ("cli", b"hello, this datagram is not an IAX2 NEW frame\n"),
+        ("srv", b"and neither is this reply, despite the port\n")], {}),
+    "acc_eclipse_tcf_positive": (17, 49566, 1534, False, [
+        ("cli", _tcf_udp(1)),
+        ("srv", _tcf_peer_info())], {}),
+    "acc_eclipse_tcf_negative": (17, 49567, 1534, False, [
+        ("cli", b"hello, this datagram is not a TCF discovery packet\n"),
+        ("srv", b"and neither is this reply, despite the port\n")], {}),
+    "acc_mqtt_positive": (6, 49568, 1883, True, [
+        ("cli", _mqtt_connect()),
+        ("srv", b"\x20\x02\x00\x00"),          # CONNACK, return code 0
+        ("cli", b"\xc0\x00"),                  # PINGREQ
+        ("srv", b"\xd0\x00")], {}),            # PINGRESP
+    "acc_mqtt_negative": (6, 49569, 1883, True, [
+        ("cli", b"\x05\x01\x00"),              # SOCKS5 greeting, no-auth
+        ("srv", b"\x05\x00")], {}),            # SOCKS5 method selection
+    "acc_xdmcp_tcp_positive": (6, 49570, 6000, True, [
+        ("cli", _x11_setup()),
+        ("srv", _x11_setup_failed())], {}),
+    "acc_xdmcp_tcp_negative": (6, 49571, 6000, True, [
+        ("cli", b"hello, this stream is not an X11 connection setup\n"),
+        ("srv", b"and this reply is not an X11 setup reply\n")], {}),
+    "acc_xdmcp_udp_positive": (17, 49572, 177, False, [
+        ("cli", _xdmcp(2, b"\x00")),
+        ("srv", _xdmcp(5, _array8(b"") + _array8(b"accuracy.example")
+                       + _array8(b"Linux 6.1")))], {}),
+    "acc_xdmcp_udp_negative": (17, 49573, 177, False, [
+        ("cli", b"hello, this datagram is not an XDMCP Query\n"),
+        ("srv", b"and neither is this reply, despite the port\n")], {}),
+    "acc_teamviewer_tcp_positive": (6, 49590, 5938, True, [
+        ("cli", _teamviewer_cmd(0x12, b"\x00" * 4 + b"accuracy.example\x00")),
+        ("srv", _teamviewer_cmd(0x12, b"\x00" * 8))], {}),
+    "acc_teamviewer_tcp_negative": (6, 49591, 5938, True, [
+        ("cli", b"hello, this stream is not a TeamViewer command\n"),
+        ("srv", b"and this reply is not a TeamViewer response\n")], {}),
+    "acc_teamviewer_udp_positive": (17, 49592, 5938, False, [
+        ("cli", _teamviewer_udp(0, 0x12, b"\x00" * 4
+                                + b"accuracy.example\x00")),
+        ("srv", _teamviewer_udp(0, 0x12, b"\x00" * 8))], {}),
+    "acc_teamviewer_udp_negative": (17, 49593, 5938, False, [
+        ("cli", b"hello, this datagram is not a TeamViewer command\n"),
+        ("srv", b"and neither is this reply, despite the port\n")], {}),
+    "acc_steam_positive": (6, 49594, 27030, True, [
+        ("cli", _steam_version(2)),
+        ("srv", _steam_accept())], {}),
+    "acc_steam_negative": (6, 49595, 27030, True, [
+        ("cli", b"hello, this stream is not a Steam handshake\n"),
+        ("srv", b"and this reply is not a Steam accept\n")], {}),
+    "acc_worldofwarcraft_positive": (6, 49596, 3724, True, [
+        ("cli", _wow_logon_challenge(b"ACCURACY")),
+        ("srv", _wow_logon_challenge_reply())], {}),
+    "acc_worldofwarcraft_negative": (6, 49597, 3724, True, [
+        ("cli", b"hello, this stream is not a WoW logon challenge\n"),
+        ("srv", b"and this reply is not a WoW logon response\n")], {}),
+    "acc_xbox_positive": (17, 49598, 3074, False, [
+        ("cli", _xbox_udp(0x02, 0x18)),
+        ("srv", _xbox_udp(0x03, 0x40))], {}),
+    "acc_xbox_negative": (17, 49599, 3074, False, [
+        ("cli", b"hello, this datagram is not an Xbox Live packet\n"),
+        ("srv", b"and neither is this reply, despite the port\n")], {}),
 }
 
 

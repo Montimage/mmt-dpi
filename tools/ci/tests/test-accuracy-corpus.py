@@ -453,10 +453,10 @@ with Scratch() as s:
           out)
 
 with Scratch() as s:
-    s.pending(s.pending().replace("mmt_check_eclipse_tcf", "#"))
+    s.pending(s.pending().replace("mmt_check_spotify", "#"))
     rc, out = s.offline()
     check("uncovered classifier missing from the pending list fails",
-          rc == 1 and "mmt_check_eclipse_tcf" in out
+          rc == 1 and "mmt_check_spotify" in out
           and "not in coverage-pending.txt" in out, out)
 
 with Scratch() as s:

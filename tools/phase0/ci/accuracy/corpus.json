@@ -258,6 +258,91 @@
         "ipp"
       ]
     },
+    "usenet": {
+      "wire_labels": [
+        "usenet"
+      ]
+    },
+    "activesync": {
+      "wire_labels": [
+        "http_activesync"
+      ]
+    },
+    "icecast": {
+      "wire_labels": [
+        "icecast"
+      ]
+    },
+    "shoutcast": {
+      "wire_labels": [
+        "shoutcast"
+      ]
+    },
+    "ndn_http": {
+      "wire_labels": [
+        "ndn_http"
+      ]
+    },
+    "dcerpc": {
+      "wire_labels": [
+        "dcerpc"
+      ]
+    },
+    "afp": {
+      "wire_labels": [
+        "afp"
+      ]
+    },
+    "citrix": {
+      "wire_labels": [
+        "citrix"
+      ]
+    },
+    "flash": {
+      "wire_labels": [
+        "flash"
+      ]
+    },
+    "iax": {
+      "wire_labels": [
+        "iax"
+      ]
+    },
+    "eclipse_tcf": {
+      "wire_labels": [
+        "eclipse_tcf"
+      ]
+    },
+    "mqtt": {
+      "wire_labels": [
+        "mqtt"
+      ]
+    },
+    "xdmcp": {
+      "wire_labels": [
+        "xdmcp"
+      ]
+    },
+    "teamviewer": {
+      "wire_labels": [
+        "teamviewer"
+      ]
+    },
+    "steam": {
+      "wire_labels": [
+        "steam"
+      ]
+    },
+    "worldofwarcraft": {
+      "wire_labels": [
+        "worldofwarcraft"
+      ]
+    },
+    "xbox": {
+      "wire_labels": [
+        "xbox"
+      ]
+    },
     "unknown": {
       "wire_labels": [],
       "abstention": true
@@ -3992,6 +4077,1323 @@
         "checks": [
           "plain text both ways on the classifier's well-known port; no protocol grammar",
           "expected handling: no ipp verdict (abstention); payload-less TCP handshake packets abstain too"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_usenet_positive.pcap",
+      "family": "usenet",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_usenet"
+      ],
+      "description": "NNTP reader session on TCP/119: 200 greeting, MODE READER, 200 reply, QUIT, 205 closing. The greeting abstains; the flow is labelled from MODE READER on.",
+      "sha256": "7d00db0c02c40735a21336b3527f9a334d0daa663f197bf03ab188f16232a89d",
+      "expected": {
+        "packets": 8,
+        "wire": 4,
+        "abstain": 4,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_usenet_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "200 greeting, MODE READER and 205 QUIT reply per RFC 3977 \u00a75.1, \u00a75.3, \u00a75.4",
+          "expected handling: the handshake and the greeting abstain (proto_usenet.c sets its stage on the 200 line and matches the 13-byte MODE READER)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_usenet_negative.pcap",
+      "family": "usenet",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_usenet"
+      ],
+      "description": "Plain text instead of an NNTP greeting on TCP/119: the port alone must not yield a verdict.",
+      "sha256": "bde448fe85af95bfe3834e0e605fc46d00dcbfc5321058998d599af2f3a1eabf",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_usenet_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "plain text both ways on the classifier's well-known port; no protocol grammar (no 200/201 greeting, no AUTHINFO or MODE READER)",
+          "expected handling: no usenet verdict (abstention); payload-less TCP handshake packets abstain too"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_activesync_positive.pcap",
+      "family": "activesync",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_http_application_activesync"
+      ],
+      "description": "Exchange ActiveSync OPTIONS discovery request to /Microsoft-Server-ActiveSync (User, DeviceId, DeviceType) on TCP/80, answered with MS-ASProtocolVersions and MS-ASProtocolCommands; labelled http.http_activesync.",
+      "sha256": "7b7d8f719ea5381f42ae592cff216ec164e26596690c22fb29e8b24256d628b1",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_activesync_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "OPTIONS request and MS-ASProtocolVersions/MS-ASProtocolCommands response headers per MS-ASHTTP \u00a72.2.3 and \u00a73.1.5.1; query parameters per MS-ASHTTP \u00a72.2.1.1.1.1",
+          "the request is longer than the 150 bytes proto_http_application_activesync.c requires; the HTTP layer above the label is encapsulation, not attribution"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_activesync_negative.pcap",
+      "family": "activesync",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_http_application_activesync"
+      ],
+      "description": "Plain text instead of an ActiveSync request on TCP/80: the port alone must not yield a verdict.",
+      "sha256": "44450575ddf007ee3d56098ef050ae39736eb6689e72dc60e3c59d0e055bf896",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_activesync_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "plain text both ways on the classifier's well-known port; no protocol grammar (no OPTIONS/POST /Microsoft-Server-ActiveSync? request line)",
+          "expected handling: no http_activesync verdict (abstention); payload-less TCP handshake packets abstain too"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_icecast_positive.pcap",
+      "family": "icecast",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_icecast"
+      ],
+      "description": "Icecast 2 source client SOURCE request (Basic auth, Content-Type audio/mpeg, ice-name/ice-public headers) on TCP/8000, answered HTTP/1.0 200 OK.",
+      "sha256": "f25cb4ec198cf938120c4804c0ef19d7a00658616f036af8f53140df38f00a05",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_icecast_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "SOURCE method with ice-* stream headers per the Icecast 2 source-client protocol (legacy SOURCE, before 2.4's PUT)",
+          "finding: an Icecast listener GET answered with Server: Icecast is labelled http/http.ogg, never icecast; only the SOURCE path classifies (issue #527 tranche 2)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_icecast_negative.pcap",
+      "family": "icecast",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_icecast"
+      ],
+      "description": "Plain text instead of an Icecast request on TCP/8000: the port alone must not yield a verdict.",
+      "sha256": "78e298736a6bb7a9f7d8cdef98c1ba4fc3352188f10e9b2661228173901a40ec",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_icecast_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "plain text both ways on the classifier's well-known port; no protocol grammar (no SOURCE request, no ice- header, no Server: Icecast)",
+          "expected handling: no icecast verdict (abstention); payload-less TCP handshake packets abstain too"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_shoutcast_positive.pcap",
+      "family": "shoutcast",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_shoutcast"
+      ],
+      "description": "SHOUTcast v1 (DNAS 1.x) source login on TCP/8001 (listener port + 1): password line, OK2/icy-caps:11 reply, then the source's icy-* stream headers; the third data packet is labelled.",
+      "sha256": "a340ff1965be0445d979b4a3fcd8ef96d6d4ca3db7413eceec809661ba33118a",
+      "expected": {
+        "packets": 6,
+        "wire": 1,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_shoutcast_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "password CRLF / OK2 icy-caps:11 / icy-name, icy-genre, icy-pub, icy-br, icy-url per the SHOUTcast DNAS v1 source protocol",
+          "finding: the classifier accepts the source login only when the password starts with 123456 (proto_shoutcast.c:27), which this case uses; a listener GET with Icy-MetaData is labelled http.mpeg, never shoutcast"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_shoutcast_negative.pcap",
+      "family": "shoutcast",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_shoutcast"
+      ],
+      "description": "Plain text instead of a SHOUTcast login on TCP/8001: the port alone must not yield a verdict.",
+      "sha256": "e1786b2da96fb7774ab0137eb8bfec67b4afa5d0ee2cd0b83985bf05428b103f",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_shoutcast_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "plain text both ways on the classifier's well-known port; no protocol grammar (no ICY 200 OK, OK2, 123456 or icy- prefix)",
+          "expected handling: no shoutcast verdict (abstention); payload-less TCP handshake packets abstain too"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_ndn_http_positive.pcap",
+      "family": "ndn_http",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_ndn_http"
+      ],
+      "description": "NDN Interest for /accuracy.example/GET/index.html (Nonce, InterestLifetime 4000 ms) and its Data reply (Content \"ok\", DigestSha256 signature) on NFD's UDP face port 6363.",
+      "sha256": "13e773f0280a157b97fde4e1810e61b0f881b81008c7a6ee0c7d59b2f396b004",
+      "expected": {
+        "packets": 2,
+        "wire": 2,
+        "abstain": 0,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_ndn_http_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "Interest/Data/Name/Nonce/InterestLifetime/MetaInfo/Content/SignatureInfo/SignatureValue TLV types per NDN Packet Format v0.3 \u00a75.1, \u00a76.1, \u00a77.3; the SignatureValue is the real SHA-256 of the signed portion",
+          "finding: over TCP the same packets are never labelled after a three-way handshake, because proto_ndn_http.c:218 excludes the protocol on the payload-less SYN; the case therefore uses UDP"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_ndn_http_negative.pcap",
+      "family": "ndn_http",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_ndn_http"
+      ],
+      "description": "Plain text instead of an NDN Interest on UDP/6363: the port alone must not yield a verdict.",
+      "sha256": "b927b655235452fee3ee90e3be9d429c2f87f0397c94599b7e7fe16e22d57b4a",
+      "expected": {
+        "packets": 2,
+        "wire": 0,
+        "abstain": 2,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_ndn_http_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "plain text both ways on the classifier's well-known port; no protocol grammar (first octet is not 0x05/0x06)",
+          "expected handling: no ndn_http verdict (abstention)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_dcerpc_positive.pcap",
+      "family": "dcerpc",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_dcerpc"
+      ],
+      "description": "DCE/RPC bind to the endpoint mapper (v3.0, NDR transfer syntax) and its bind_ack on TCP/135.",
+      "sha256": "fad1addea6ab62fb9c722c72941adb26ecaced1772ed236539a02f0d58c334d5",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_dcerpc_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "common header per C706 \u00a712.6.3.1: version 5.0, PTYPE 11/12, pfc_flags first+last, drep 10 00 00 00; frag_length matches",
+          "bind and bind_ack bodies per C706 \u00a712.6.4.3/\u00a712.6.4.4: secondary address \"135\" padded to 4 bytes; EPM and NDR UUIDs little-endian"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_dcerpc_negative.pcap",
+      "family": "dcerpc",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_dcerpc"
+      ],
+      "description": "Plain text instead of a DCE/RPC bind on TCP/135: the port alone must not yield a verdict.",
+      "sha256": "6c1e960154b995a0c176d334bf628e720a56f00a78660626ed71b345b5a466aa",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_dcerpc_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "plain text both ways on the classifier's well-known port; no protocol grammar (first byte is not RPC version 5)",
+          "expected handling: no dcerpc verdict (abstention); payload-less TCP handshake packets abstain too"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_afp_positive.pcap",
+      "family": "afp",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_afp"
+      ],
+      "description": "DSI OpenSession request (Attention Quantum 1024) and its reply (Server Request Quantum 1 MiB) on TCP/548.",
+      "sha256": "76ccae91b5dbbe63159e9f38e8c1b82cad8c0605ad45135228d1fa9830be91e8",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_afp_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "DSI header per the Apple AFP Programming Guide: flags 0/1, command 4 (DSIOpenSession), request ID 1, totalDataLength 6, reserved 0",
+          "session option type/length bytes 0x01 0x04 and 0x00 0x04"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_afp_negative.pcap",
+      "family": "afp",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_afp"
+      ],
+      "description": "Plain text instead of a DSI OpenSession request on TCP/548: the port alone must not yield a verdict.",
+      "sha256": "9a74dec0d8fee32de92333b96ff8f63c21030b0026106907d2a92f24a22a29ac",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_afp_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "plain text both ways on the classifier's well-known port; no protocol grammar (no DSI header)",
+          "expected handling: no afp verdict (abstention); payload-less TCP handshake packets abstain too"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_citrix_positive.pcap",
+      "family": "citrix",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_citrix"
+      ],
+      "description": "Citrix ICA connection detect string 7F 7F 'ICA' 00 sent by the server and echoed by the client on TCP/1494.",
+      "sha256": "6560455cd584aee637ed85c6ec952ef9fbb86ffd544f60d8ef10c63cb3f5d6ae",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_citrix_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "bytes 7F 7F 49 43 41 00; Citrix publishes no ICA specification, so the reference is the nDPI citrix.c signature proto_citrix.c cites"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_citrix_negative.pcap",
+      "family": "citrix",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_citrix"
+      ],
+      "description": "Plain text instead of an ICA handshake on TCP/1494: the port alone must not yield a verdict.",
+      "sha256": "832dca6e9d707c058f383e201e3201ba2c2825b5653b56e0517319f0ec95c882",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_citrix_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "plain text both ways on the classifier's well-known port; no protocol grammar (no ICA detect string, CGP/01 header or Citrix.TcpProxyService)",
+          "expected handling: no citrix verdict (abstention); payload-less TCP handshake packets abstain too"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_flash_positive.pcap",
+      "family": "flash",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_flash"
+      ],
+      "description": "RTMP handshake on TCP/1935: C0+C1 (1537 bytes) in one segment, answered by S0+S1+S2 (3073 bytes, S2 echoing C1).",
+      "sha256": "7311537718dc4eebd442bd152eee6843012017f5016cafc13a7e60b65d43c829",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_flash_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "C0/S0 version 3, C1/S1 time + zero + 1528 random bytes, S2 echoing C1, per Adobe RTMP 1.0 \u00a75.2.2-\u00a75.2.4",
+          "each direction is one PSH segment larger than a 1500-byte MTU (as in a TSO/loopback capture): the classifier needs the 1537-byte C0+C1 in one PSH segment or non-PSH partial segments, and the generator always sets PSH"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_flash_negative.pcap",
+      "family": "flash",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_flash"
+      ],
+      "description": "Plain text instead of an RTMP handshake on TCP/1935: the port alone must not yield a verdict.",
+      "sha256": "798a4dce4b309fb5e274d69680f6d05a95fc313ed2c01d12cf35ce3d928a9cc9",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_flash_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "plain text both ways on the classifier's well-known port; no protocol grammar (first byte is not 0x03 or 0x06)",
+          "expected handling: no flash verdict (abstention); payload-less TCP handshake packets abstain too"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_stun_tcp_positive.pcap",
+      "family": "stun",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_stun_tcp"
+      ],
+      "description": "ICE-TCP connectivity check (RFC 6544) on TCP/3478: STUN Binding request with USERNAME, PRIORITY, ICE-CONTROLLING, HMAC-SHA1 MESSAGE-INTEGRITY and CRC-32 FINGERPRINT, then the Binding success response with XOR-MAPPED-ADDRESS, each with the RFC 4571 length prefix.",
+      "sha256": "8ef75bcf8c148af7f1406d5174673974c6b3f19719398daaaecb733e9feb66ce",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_stun_tcp_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "STUN header, magic cookie and attribute padding per RFC 8489 \u00a75/\u00a714; MESSAGE-INTEGRITY and FINGERPRINT computed per \u00a714.5/\u00a714.7; 2-byte framing per RFC 4571 \u00a72 as ICE-TCP uses it (RFC 6544 \u00a73)",
+          "finding: unframed STUN over TCP (RFC 8489 \u00a76.2.2) is not detected, because mmt_check_stun_tcp requires the RFC 4571 prefix (proto_stun.c:125-126)",
+          "TCP/3478 is nominal here: ICE-TCP candidates use arbitrary ports, and unframed STUN is what RFC 8489 \u00a76.2.2 runs on 3478/TCP"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_stun_tcp_negative.pcap",
+      "family": "stun",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_stun_tcp"
+      ],
+      "description": "Plain text instead of a framed STUN binding request on TCP/3478: the port alone must not yield a verdict.",
+      "sha256": "7eb63ca05d6748bbafaa5cdb1a22a640118735ebbf731506c488542b2ada679a",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_stun_tcp_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "plain text both ways on the classifier's well-known port; no protocol grammar (no RFC 4571 length prefix matching the segment)",
+          "expected handling: no stun verdict (abstention); payload-less TCP handshake packets abstain too"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_iax_positive.pcap",
+      "family": "iax",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_iax"
+      ],
+      "description": "IAX2 NEW full frame (VERSION 2, called/calling number, calling name, username, FORMAT u-law, CAPABILITY) answered by an ACCEPT on UDP/4569.",
+      "sha256": "752422304646da38c1d2a9102c6cad2fcabdcc1d810d8a9b5ce25b4f74435ff8",
+      "expected": {
+        "packets": 2,
+        "wire": 2,
+        "abstain": 0,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_iax_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "full-frame header (F bit, call numbers, timestamp, sequence numbers, frame type 6, subclass NEW=1/ACCEPT=7) per RFC 5456 \u00a78.1.1/\u00a78.4",
+          "IE codes and lengths per RFC 5456 \u00a78.6; the IE chain ends exactly at the payload end"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_iax_negative.pcap",
+      "family": "iax",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_iax"
+      ],
+      "description": "Plain text instead of an IAX2 NEW frame on UDP/4569: the port alone must not yield a verdict.",
+      "sha256": "dd4c02818d945b4ccae1c20cca58f0db5e4d32534e5f4d3cf6c91f3ce9557f5a",
+      "expected": {
+        "packets": 2,
+        "wire": 0,
+        "abstain": 2,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_iax_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "plain text both ways on the classifier's well-known port; no protocol grammar (full-frame F bit clear)",
+          "expected handling: no iax verdict (abstention)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_eclipse_tcf_positive.pcap",
+      "family": "eclipse_tcf",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_eclipse_tcf"
+      ],
+      "description": "Eclipse TCF UDP discovery on UDP/1534: REQ_INFO (\"TCF2\" header, code 1) answered by ACK_INFO (code 2) listing the Locator peer attributes ID, Name, OSName, TransportName, Host and Port.",
+      "sha256": "a7b12b28db125bf8a2a1075d83fe308531a483bc0b450bff24197b383a0c91f9",
+      "expected": {
+        "packets": 2,
+        "wire": 2,
+        "abstain": 0,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_eclipse_tcf_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "header 'T','C','F', version '2', code, 3 zero bytes and NUL-terminated name=value attributes per the Eclipse TCF agent's UDP discovery (discovery_udp.c) and the Locator service peer attributes"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_eclipse_tcf_negative.pcap",
+      "family": "eclipse_tcf",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_eclipse_tcf"
+      ],
+      "description": "Plain text instead of a TCF discovery packet on UDP/1534: the port alone must not yield a verdict.",
+      "sha256": "cea7d36050afd21b0a4420f850fe2d88bf9d59dc9ca18596648cc4e89984b25e",
+      "expected": {
+        "packets": 2,
+        "wire": 0,
+        "abstain": 2,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_eclipse_tcf_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "plain text both ways on the classifier's well-known port; no protocol grammar (payload does not start with TCF2)",
+          "expected handling: no eclipse_tcf verdict (abstention)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_mqtt_positive.pcap",
+      "family": "mqtt",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_mqtt"
+      ],
+      "description": "MQTT 3.1.1 session on TCP/1883: CONNECT (level 4, clean session, keep-alive 60, client id acc-client), CONNACK 0, PINGREQ, PINGRESP.",
+      "sha256": "5af92060b64880fe2f63793c1ddfe0648b7d64f8d6ab856cc7903ff8220a4154",
+      "expected": {
+        "packets": 7,
+        "wire": 4,
+        "abstain": 3,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_mqtt_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "fixed header, Remaining Length and CONNECT variable header/payload per MQTT 3.1.1 \u00a72.2, \u00a73.1, \u00a73.2, \u00a73.12, \u00a73.13"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_mqtt_negative.pcap",
+      "family": "mqtt",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_mqtt"
+      ],
+      "description": "SOCKS5 greeting (05 01 00) and method selection (05 00) on TCP/1883: another protocol's genuine messages, whose first byte carries the reserved MQTT packet type 0, must not be labelled mqtt.",
+      "sha256": "dd44adca1fb07f416f9341f547df197c90d99ccee8447e474b9de03d949d0ca5",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_mqtt_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "SOCKS5 version identifier/method selection bytes per RFC 1928 \u00a73; MQTT packet type 0 is Reserved per MQTT 3.1.1 \u00a72.2.1",
+          "expected handling: no mqtt verdict (abstention); the case exercises only the reserved-type-0 rejection of mmt_check_mqtt (proto_mqtt.c:22) -- plain text on 1883 is still a known false accept (acc_unknown_mqtt_port) and 8883 accepts any payload"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_xdmcp_tcp_positive.pcap",
+      "family": "xdmcp",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_xdmcp_tcp"
+      ],
+      "description": "X11 core-protocol connection setup to display :0 on TCP/6000 (LSB-first, version 11.0, MIT-MAGIC-COOKIE-1 with a 16-byte cookie, 48 bytes) answered by a setup Failed reply; the TCP classifier labels the X11 session xdmcp.",
+      "sha256": "ca7feccfeae0e22cd006b5091095ce27a843120ce2d1e5ec4962950370425cde",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_xdmcp_tcp_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "connection-setup and Failed-reply layouts per the X Window System Protocol, Connection Setup (byte order 'l', major 11, n=18, d=16, pad(n))",
+          "the TCP 'xdmcp' classifier matches the X11 setup the XDMCP-managed session opens; XDMCP itself is UDP/177"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_xdmcp_tcp_negative.pcap",
+      "family": "xdmcp",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_xdmcp_tcp"
+      ],
+      "description": "Plain text instead of an X11 connection setup on TCP/6000: the port alone must not yield a verdict.",
+      "sha256": "d8fd7c244856d7376e9805243dea863fec4d5ef5f7e8abc52db80a38b5deb7c0",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_xdmcp_tcp_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "plain text both ways on the classifier's well-known port; no protocol grammar (not a 48-byte setup starting 'l')",
+          "expected handling: no xdmcp verdict (abstention); payload-less TCP handshake packets abstain too"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_xdmcp_udp_positive.pcap",
+      "family": "xdmcp",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_xdmcp_udp"
+      ],
+      "description": "XDMCP Query (empty AuthenticationNames) answered by Willing (Hostname accuracy.example, Status) on UDP/177.",
+      "sha256": "16f1d23562e4a98789dfce2f9c0a326cb1add7f497f08c86a4ad3f33c1b4fc43",
+      "expected": {
+        "packets": 2,
+        "wire": 2,
+        "abstain": 0,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_xdmcp_udp_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "header (Version 1, Opcode, Length), Query and Willing bodies and ARRAY8/ARRAYofARRAY8 encodings per the X Display Manager Control Protocol 1.1"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_xdmcp_udp_negative.pcap",
+      "family": "xdmcp",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_xdmcp_udp"
+      ],
+      "description": "Plain text instead of an XDMCP Query on UDP/177: the port alone must not yield a verdict.",
+      "sha256": "418579d7faab5f60dac39f227e106e0191d3ca6c703af56d1289b063fce8fa53",
+      "expected": {
+        "packets": 2,
+        "wire": 0,
+        "abstain": 2,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_xdmcp_udp_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "plain text both ways on the classifier's well-known port; no protocol grammar (version/opcode words are not 1/2 and the length does not match)",
+          "expected handling: no xdmcp verdict (abstention)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_teamviewer_tcp_positive.pcap",
+      "family": "teamviewer",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_teamviewer_tcp"
+      ],
+      "description": "TeamViewer CMD_MASTERCOMMAND (0x12) exchange on TCP/5938, both directions framed with protocol version 0x1724.",
+      "sha256": "953f1d3b5e2331fb5813192d61b5ff27a323f69e515bd8ee4e0fe84d5847de34",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_teamviewer_tcp_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "bytes 0-2 = 0x17 0x24 protocol version + 0x12 CMD_MASTERCOMMAND, the reverse-engineered OpenDPI/nDPI signature proto_teamviewer.c:23 keys on",
+          "only the version and command bytes are publicly documented; the little-endian length and body are an assumed framing"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_teamviewer_tcp_negative.pcap",
+      "family": "teamviewer",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_teamviewer_tcp"
+      ],
+      "description": "Plain text instead of a TeamViewer command on TCP/5938: the port alone must not yield a verdict.",
+      "sha256": "39f8cd8def02dcf398a7cbfa50d573d8725b5b77412aa548195db2e6b75f5d3e",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_teamviewer_tcp_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "plain text both ways on the classifier's well-known port; no protocol grammar (payload does not start 0x17 0x24)",
+          "expected handling: no teamviewer verdict (abstention); payload-less TCP handshake packets abstain too"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_teamviewer_udp_positive.pcap",
+      "family": "teamviewer",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_teamviewer_udp"
+      ],
+      "description": "TeamViewer datagrams on UDP/5938: an 11-byte prefix with sequence counter 0, then the 0x1724 CMD_MASTERCOMMAND header.",
+      "sha256": "4407e77c3a0c29fec4bfe728dec60ab00a3b8f0da398b12c958b16dc730006a0",
+      "expected": {
+        "packets": 2,
+        "wire": 2,
+        "abstain": 0,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_teamviewer_udp_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "byte 0 = 0 (first-datagram counter), bytes 11-12 = 0x17 0x24; the inner command uses the same version/command header as TCP",
+          "the UDP prefix layout is reverse-engineered, not specified"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_teamviewer_udp_negative.pcap",
+      "family": "teamviewer",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_teamviewer_udp"
+      ],
+      "description": "Plain text instead of a TeamViewer datagram on UDP/5938: the port alone must not yield a verdict.",
+      "sha256": "0b98dc03694c03199480301b8cfc1f1058dbad9ee8a7287e23f3db14dda790bd",
+      "expected": {
+        "packets": 2,
+        "wire": 0,
+        "abstain": 2,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_teamviewer_udp_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "plain text both ways on the classifier's well-known port; no protocol grammar (byte 0 not 0, no 0x1724 at offset 11)",
+          "expected handling: no teamviewer verdict (abstention)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_steam_positive.pcap",
+      "family": "steam",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_steam"
+      ],
+      "description": "Legacy Steam directory/content-server handshake on TCP/27030: the client sends its protocol version (4-byte big-endian 2), the server accepts with 0x01 and the client's address 192.0.2.1.",
+      "sha256": "fec78329bbffe98b473ff15fc0cbd0eaad1f94cea3fa75b35b5d56bfb9c024af",
+      "expected": {
+        "packets": 5,
+        "wire": 1,
+        "abstain": 4,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_steam_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "4-byte big-endian version to the 27030-27040 range, then a 5-byte reply starting 0x01 from the server; the reply carries the TEST-NET-1 client address",
+          "the legacy Steam handshake is reverse-engineered, not specified: the layout is the OpenDPI/nDPI signature proto_steam.c:22-35 applies"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_steam_negative.pcap",
+      "family": "steam",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_steam"
+      ],
+      "description": "Plain text instead of a Steam handshake on TCP/27030: the port alone must not yield a verdict.",
+      "sha256": "da5b56ae48e76995307b162f8ccd624ece1d2723943c43897fef73529898416c",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_steam_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "plain text both ways on the classifier's well-known port; no protocol grammar (first payload is not 4 bytes)",
+          "expected handling: no steam verdict (abstention); payload-less TCP handshake packets abstain too"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_worldofwarcraft_positive.pcap",
+      "family": "worldofwarcraft",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_worldofwarcraft"
+      ],
+      "description": "World of Warcraft 3.3.5a (build 12340) CMD_AUTH_LOGON_CHALLENGE for account ACCURACY on TCP/3724, answered by a WOW_SUCCESS challenge (SRP6 g = 7 and the published 32-byte N).",
+      "sha256": "c4b173fd629a74f075d55586f2e28294a69fb72f636fae422c9ea1433f93533e",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_worldofwarcraft_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "client layout per the wowdev.wiki Login page (CMD_AUTH_LOGON_CHALLENGE_Client): opcode 0, protocol 8, LE size 30 + name length, 'WoW', reversed 'x86'/'Win'/'enUS'",
+          "server reply is 119 bytes with N 894B645E...3E9BB7 sent little-endian"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_worldofwarcraft_negative.pcap",
+      "family": "worldofwarcraft",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_worldofwarcraft"
+      ],
+      "description": "Plain text instead of a WoW logon challenge on TCP/3724: the port alone must not yield a verdict.",
+      "sha256": "5561dd6ec33f5e98cf9ad8bfdf742c142b72875bf4b2910d99c66505881a6ee8",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_worldofwarcraft_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "plain text both ways on the classifier's well-known port; no protocol grammar (no 'WoW' at offset 4)",
+          "expected handling: no worldofwarcraft verdict (abstention); payload-less TCP handshake packets abstain too"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_xbox_positive.pcap",
+      "family": "xbox",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_xbox"
+      ],
+      "description": "Two Xbox Live datagrams on UDP/3074: four zero bytes, then the type/'X' (0x58)/length triples (0x02, 24) and (0x03, 64).",
+      "sha256": "8ab9b22767dbf94e11d70a415f18d28b06259ec7bfb5b11127a26967840e24f9",
+      "expected": {
+        "packets": 2,
+        "wire": 2,
+        "abstain": 0,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_xbox_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "type/length pairs (0x02, 0x18) and (0x03, 0x40) as in the OpenDPI/nDPI signature proto_xbox.c applies; bytes 0-3 and 7-9 zero",
+          "no public specification: the shape is the reverse-engineered signature; mmt_check_xbox detects UDP only (the TCP path is left to the HTTP code)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_xbox_negative.pcap",
+      "family": "xbox",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_xbox"
+      ],
+      "description": "Plain text instead of an Xbox Live datagram on UDP/3074: the port alone must not yield a verdict.",
+      "sha256": "09e000c5a1412328ab032e0775f829e9aafc5a95a5f657e6926b4cc1e3d052bb",
+      "expected": {
+        "packets": 2,
+        "wire": 0,
+        "abstain": 2,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_xbox_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #527",
+        "date": "2026-10-29",
+        "checks": [
+          "plain text both ways on the classifier's well-known port; no protocol grammar (payload[0] is not 0 and no length rule matches)",
+          "expected handling: no xbox verdict (abstention)"
         ]
       }
     }

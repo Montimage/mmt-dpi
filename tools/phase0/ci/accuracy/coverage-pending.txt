@@ -11,98 +11,78 @@
 # oracle with --base HEAD^1, so only a newly registered classifier may enter.
 #
 # Format: <classifier>  # <why it is pending>
-mmt_check_stun_tcp                     # no reviewed case yet
-mmt_check_rtp_tcp                      # no reviewed case yet
-mmt_check_edonkey                      # no reviewed case yet
-mmt_check_fasttrack                    # no reviewed case yet
-mmt_check_gnutella                     # no reviewed case yet
-mmt_check_winmx                        # no reviewed case yet
-mmt_check_directconnect_tcp            # no reviewed case yet
-mmt_check_msn_tcp                      # no reviewed case yet
-mmt_check_yahoo_tcp                    # no reviewed case yet
-mmt_check_oscar                        # no reviewed case yet
-mmt_check_applejuice                   # no reviewed case yet
-mmt_check_soulseek                     # no reviewed case yet
-mmt_check_usenet                       # no reviewed case yet
-mmt_check_filetopia                    # no reviewed case yet
-mmt_check_manolito_tcp                 # no reviewed case yet
-mmt_check_imesh_tcp                    # no reviewed case yet
-mmt_check_mms                          # no reviewed case yet
-mmt_check_pando                        # no reviewed case yet
-mmt_check_tvants_tcp                   # no reviewed case yet
-mmt_check_sopcast_tcp                  # no reviewed case yet
-mmt_check_tvuplayer_tcp                # no reviewed case yet
-mmt_check_ppstream_tcp                 # no reviewed case yet
-mmt_check_pplive_tcp                   # no reviewed case yet
-mmt_check_gadugadu                     # no reviewed case yet
-mmt_check_zattoo_tcp                   # no reviewed case yet
-mmt_check_qq_tcp                       # no reviewed case yet
-mmt_check_feidian_tcp                  # no reviewed case yet
-mmt_check_popo                         # no reviewed case yet
-mmt_check_thunder_tcp                  # no reviewed case yet
-mmt_check_vnc                          # finding: an RFB 3.8 version exchange on TCP/5900 is not detected; not yet diagnosed
-mmt_check_teamviewer_tcp               # no reviewed case yet
-mmt_check_i23v5                        # no reviewed case yet
-mmt_check_socrates_tcp                 # no reviewed case yet
-mmt_check_steam                        # no reviewed case yet
-mmt_check_xbox                         # no reviewed case yet
-mmt_check_http_application_activesync  # no reviewed case yet
-mmt_check_worldofwarcraft              # no reviewed case yet
-mmt_check_flash                        # no reviewed case yet
-mmt_check_secondlife_tcp               # no reviewed case yet
-mmt_check_pcanywhere                   # no reviewed case yet
-mmt_check_icecast                      # no reviewed case yet
-mmt_check_shoutcast                    # no reviewed case yet
-mmt_check_veohtv_tcp                   # no reviewed case yet
-mmt_check_openft                       # no reviewed case yet
-mmt_check_tds                          # no reviewed case yet
-mmt_check_direct_download_link         # no reviewed case yet
-mmt_check_warcraft3                    # no reviewed case yet
-mmt_check_xdmcp_tcp                    # no reviewed case yet
-mmt_check_stealthnet                   # no reviewed case yet
-mmt_check_meebo                        # no reviewed case yet
-mmt_check_afp                          # no reviewed case yet
-mmt_check_aimini_tcp                   # no reviewed case yet
-mmt_check_florensia_tcp                # no reviewed case yet
-mmt_check_maplestory                   # no reviewed case yet
-mmt_check_dofus                        # no reviewed case yet
-mmt_check_world_of_kung_fu             # no reviewed case yet
-mmt_check_fiesta                       # no reviewed case yet
-mmt_check_crossfire_tcp                # no reviewed case yet
-mmt_check_guildwars                    # no reviewed case yet
-mmt_check_citrix                       # no reviewed case yet
-mmt_check_dcerpc                       # no reviewed case yet
-mmt_check_spotify                      # no reviewed case yet
-mmt_check_tpkt                         # finding: a TPKT/COTP connection request on TCP/102 is not detected; not yet diagnosed
-mmt_check_ndn_http                     # no reviewed case yet
-mmt_check_mqtt                         # finding: port-only on TCP/1883 and 8883, no non-MQTT payload is rejected (acc_unknown_mqtt_port)
+mmt_check_rtp_tcp                      # RFC 4571-framed RTP is checked only after STUN is detected (proto_rtp.c:822-831), and the pipeline then dispatches the flow to mmt_check_stun_tcp alone (packet_pipeline.c:740-758); the only other route is a defunct Yahoo framing (proto_rtp.c:811-817)
+mmt_check_edonkey                      # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_fasttrack                    # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_gnutella                     # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_winmx                        # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_directconnect_tcp            # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_msn_tcp                      # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_yahoo_tcp                    # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_oscar                        # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_applejuice                   # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_soulseek                     # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_filetopia                    # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_manolito_tcp                 # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_imesh_tcp                    # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_mms                          # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_pando                        # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_tvants_tcp                   # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_sopcast_tcp                  # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_tvuplayer_tcp                # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_ppstream_tcp                 # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_pplive_tcp                   # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_gadugadu                     # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_zattoo_tcp                   # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_qq_tcp                       # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_feidian_tcp                  # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_popo                         # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_thunder_tcp                  # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_vnc                          # finding: excluded on the payload-less TCP handshake (unconditional exclusion, proto_vnc.c:52), so an RFB exchange after a three-way handshake is never labelled
+mmt_check_i23v5                        # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_socrates_tcp                 # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_secondlife_tcp               # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_pcanywhere                   # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_veohtv_tcp                   # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_openft                       # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_tds                          # shadowed: mmt_check_mssql runs earlier in the chain and claims every conformant TDS header (Window 0) off port 102 that mmt_check_tds accepts (proto_tds.c:23-29, proto_mssql.c:41-51)
+mmt_check_direct_download_link         # matches only real file-hoster Host names (proto_direct_download_link.c:24, search_ddl_domains); no RFC 2606 name can match
+mmt_check_warcraft3                    # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_stealthnet                   # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_meebo                        # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_aimini_tcp                   # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_florensia_tcp                # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_maplestory                   # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_dofus                        # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_world_of_kung_fu             # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_fiesta                       # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_crossfire_tcp                # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_guildwars                    # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_spotify                      # needs Spotify's own 78.31.8.0/22 address range (proto_spotify.c:31-32); documentation addresses cannot trigger it
+mmt_check_tpkt                         # finding: excluded on the payload-less TCP handshake (unconditional exclusion, proto_tpkt.c:67), so a TPKT/COTP CR/CC after a three-way handshake is never labelled
 mmt_check_dhcpv6                       # IPv6-only protocol; the accuracy generator emits IPv4 flows only
-mmt_check_directconnect_udp            # no reviewed case yet
-mmt_check_msn_udp                      # no reviewed case yet
-mmt_check_yahoo_udp                    # no reviewed case yet
-mmt_check_manolito_udp                 # no reviewed case yet
-mmt_check_imesh_udp                    # no reviewed case yet
-mmt_check_tvants_udp                   # no reviewed case yet
-mmt_check_sopcast_udp                  # no reviewed case yet
-mmt_check_tvuplayer_udp                # no reviewed case yet
-mmt_check_ppstream_udp                 # no reviewed case yet
-mmt_check_pplive_udp                   # no reviewed case yet
-mmt_check_iax                          # no reviewed case yet
-mmt_check_zattoo_udp                   # no reviewed case yet
-mmt_check_qq_udp                       # no reviewed case yet
-mmt_check_feidian_udp                  # no reviewed case yet
-mmt_check_thunder_udp                  # no reviewed case yet
-mmt_check_teamviewer_udp               # no reviewed case yet
-mmt_check_socrates_udp                 # no reviewed case yet
-mmt_check_halflife2                    # no reviewed case yet
-mmt_check_quake                        # no reviewed case yet
-mmt_check_battlefield                  # no reviewed case yet
-mmt_check_secondlife_udp               # no reviewed case yet
-mmt_check_kontiki                      # no reviewed case yet
-mmt_check_veohtv_udp                   # no reviewed case yet
-mmt_check_xdmcp_udp                    # no reviewed case yet
-mmt_check_aimini_udp                   # no reviewed case yet
-mmt_check_florensia_udp                # no reviewed case yet
-mmt_check_crossfire_udp                # no reviewed case yet
-mmt_check_armagetron                   # no reviewed case yet
-mmt_check_eclipse_tcf                  # no reviewed case yet
+mmt_check_directconnect_udp            # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_msn_udp                      # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_yahoo_udp                    # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_manolito_udp                 # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_imesh_udp                    # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_tvants_udp                   # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_sopcast_udp                  # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_tvuplayer_udp                # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_ppstream_udp                 # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_pplive_udp                   # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_zattoo_udp                   # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_qq_udp                       # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_feidian_udp                  # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_thunder_udp                  # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_socrates_udp                 # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_halflife2                    # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_quake                        # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_battlefield                  # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_secondlife_udp               # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_kontiki                      # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_veohtv_udp                   # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_aimini_udp                   # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_florensia_udp                # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_crossfire_udp                # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
+mmt_check_armagetron                   # no reviewed case yet; deferred until #540 settles which checkers leave the default chains
