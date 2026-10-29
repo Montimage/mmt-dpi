@@ -41,6 +41,11 @@
  * back. The old global was written but never returned on these paths, so the
  * regression oracle is SANITIZE=tsan: it reported the write-write race.
  *
+ * Issue #548: the decoder.h input checks are functions (nas_check_pdu,
+ * nas_check_length) instead of macros hiding a return. Their results are
+ * pinned, including the operand types the macros compared in, and a check's
+ * warning still names the decoder's .c file, not decoder.h.
+ *
  * Verifies crafted Attach-Accept/Request tail cases (ielen 0..10 at buffer end)
  * pass without AddressSanitizer errors.
  */
@@ -49,6 +54,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <unistd.h>
 #include "emm/nas_emm_attach_accept.h"
 #include "emm/nas_emm_attach_request.h"
 #include "ies/pdn_address.h"
@@ -693,7 +699,7 @@ static void *decode_malformed_ies(void *arg) {
         nas_eps_mobile_identity_t ident;
         /* ielen 0: the decoder's own early return */
         const uint8_t pdn_ielen0[2] = { 0x00, NAS_PDN_VALUE_TYPE_IPV4 };
-        /* ielen 5 with 1 byte left: CHECK_LENGTH_DECODER's return */
+        /* ielen 5 with 1 byte left: the nas_check_length() return */
         const uint8_t pdn_short[3] = { 0x05, NAS_PDN_VALUE_TYPE_IPV4, 0x0a };
         const uint8_t ident_ielen0[2] = { 0x00, 0x00 };
 
@@ -727,7 +733,116 @@ static void test_concurrent_decode_errors(void) {
     CHECK("each concurrent decode returns DECODE_BUFFER_TOO_SHORT (race oracle: SANITIZE=tsan)", total == 0);
 }
 
+/* --- Issue #548: the decoder.h checks are functions --- */
+
+static void test_decoder_checks(void) {
+    const uint8_t buf[4] = { 0 };
+    uint32_t two = 2;
+    int32_t one = 1;
+
+    printf("decoder.h input checks (issue #548):\n");
+    CHECK("nas_check_pdu NULL buffer -> DECODE_BUFFER_NULL",
+          nas_check_pdu(NULL, 1, 4) == DECODE_BUFFER_NULL);
+    CHECK("nas_check_pdu NULL buffer wins over a short length",
+          nas_check_pdu(NULL, 4, 0) == DECODE_BUFFER_NULL);
+    CHECK("nas_check_pdu short -> DECODE_BUFFER_TOO_SHORT",
+          nas_check_pdu(buf, 4, 3) == DECODE_BUFFER_TOO_SHORT);
+    CHECK("nas_check_pdu exact length -> 0", nas_check_pdu(buf, 4, 4) == 0);
+    CHECK("nas_check_pdu longer -> 0", nas_check_pdu(buf, 4, 5) == 0);
+    CHECK("nas_check_length short -> DECODE_BUFFER_TOO_SHORT",
+          nas_check_length(3, 4) == DECODE_BUFFER_TOO_SHORT);
+    CHECK("nas_check_length equal -> 0", nas_check_length(4, 4) == 0);
+    CHECK("nas_check_length longer -> 0", nas_check_length(5, 4) == 0);
+    /* uint32_t len - decoded wraps; the macro compared it unsigned, so a
+     * wrapped remainder was never too short (the decoders compute signed
+     * remainders, (int32_t)len - decoded, where that matters) */
+    CHECK("nas_check_length wrapped uint32_t remainder is not too short",
+          nas_check_length(two - 3, 1) == 0 && !((two - 3) < 1));
+    /* (int32_t)len - decoded below zero is too short, as in the macro */
+    CHECK("nas_check_length negative int32_t remainder is too short",
+          nas_check_length(one - 3, 1) == DECODE_BUFFER_TOO_SHORT && ((one - 3) < 1));
+}
+
+/* Copies the captured line holding needle into line; 0 when there is none. */
+static int captured_line(const char *text, const char *needle, char *line, size_t size) {
+    const char *hit = strstr(text, needle);
+    if (hit == NULL)
+        return 0;
+    while (hit > text && hit[-1] != '\n')
+        hit--;
+    size_t len = strcspn(hit, "\n");
+    if (len >= size)
+        len = size - 1;
+    memcpy(line, hit, len);
+    line[len] = '\0';
+    return 1;
+}
+
+/* A check's warning is written by the LOG() expanded at the decoder's call
+ * site: mmt_log names that file and line (and rate-limits that site). */
+static void check_warning_site(const char *text, const char *needle, const char *desc) {
+    char line[512];
+    int found = captured_line(text, needle, line, sizeof(line));
+    if (found)
+        printf("    captured: %s\n", line);
+    CHECK(desc, found
+          && strncmp(line, "[mmt-dpi][W] pdn_address.c:", 27) == 0
+          && strstr(line, "decoder.h") == NULL);
+}
+
+static void test_check_log_site(void) {
+    char text[4096];
+    size_t n = 0;
+    nas_pdn_address_t addr;
+    const uint8_t short_pdu[1] = { 0x59 };
+    /* IEI 0x5a where 0x59 is expected, then ielen 1 with an IPv4 type and
+     * no address: the IEI warning is logged before the length error */
+    const uint8_t wrong_iei[3] = { 0x5a, 0x01, NAS_PDN_VALUE_TYPE_IPV4 };
+
+    printf("check warnings name the decoder's file (issue #548):\n");
+    FILE *cap = tmpfile();
+    CHECK("stderr capture file created", cap != NULL);
+    if (cap == NULL)
+        return;
+    fflush(stderr);
+    int saved = dup(STDERR_FILENO);
+    if (saved < 0 || dup2(fileno(cap), STDERR_FILENO) < 0) {
+        CHECK("stderr redirected", 0);
+        if (saved >= 0)
+            close(saved);
+        fclose(cap);
+        return;
+    }
+    int prev = mmt_log_set_level(MMT_LOG_LEVEL_WARN);
+    memset(&addr, 0, sizeof(addr));
+    int r_short = nas_decode_pdn_address(&addr, 0x59, short_pdu, 0);
+    int r_null  = nas_decode_pdn_address(&addr, 0, NULL, 4);
+    int r_iei   = nas_decode_pdn_address(&addr, 0x59, wrong_iei, sizeof(wrong_iei));
+    mmt_log_set_level(prev);
+    fflush(stderr);
+    dup2(saved, STDERR_FILENO);
+    close(saved);
+    rewind(cap);
+    n = fread(text, 1, sizeof(text) - 1, cap);
+    text[n] = '\0';
+    fclose(cap);
+
+    CHECK("short PDU -> DECODE_BUFFER_TOO_SHORT", r_short == DECODE_BUFFER_TOO_SHORT);
+    CHECK("NULL PDU -> DECODE_BUFFER_NULL", r_null == DECODE_BUFFER_NULL);
+    CHECK("wrong IEI, no address -> DECODE_BUFFER_TOO_SHORT", r_iei == DECODE_BUFFER_TOO_SHORT);
+    check_warning_site(text, "[NAS] Expecting at least 1 bytes, got 0",
+                       "short-PDU warning names pdn_address.c");
+    check_warning_site(text, "[NAS] Got NULL pointer for the payload",
+                       "NULL-PDU warning names pdn_address.c");
+    check_warning_site(text, "[NAS] IEI is different than the one expected.(Got: 0x5a, expecting: 0x59)",
+                       "IEI-mismatch warning names pdn_address.c");
+}
+
 int main(void) {
+    /* first: its call sites must not be rate-limited by earlier decodes
+     * when MMT_DPI_LOG_LEVEL enables logging for the whole run */
+    test_check_log_site();
+    test_decoder_checks();
     test_pdn_tail();
     test_mobile_identity_tail();
     test_mobile_identity_imsi_15_digits();

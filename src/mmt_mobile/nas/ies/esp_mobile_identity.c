@@ -159,52 +159,77 @@ int nas_decode_eps_mobile_identity(nas_eps_mobile_identity_t *ident, uint8_t iei
 	int decoded_rc = DECODE_VALUE_DOESNT_MATCH;
 	int decoded = 0;
 	uint8_t ielen = 0;
+	int rc;
 
 	/* F-BUG-083: validate pointer and length before the first read, and
 	 * compute the remainder in a checked signed form (len - decoded must
 	 * never wrap). */
 	if (iei > 0) {
-		CHECK_PDU_POINTER_AND_LENGTH_DECODER(buffer, 1, len);
-		CHECK_IEI_DECODER(iei, *buffer);
+		rc = nas_check_pdu(buffer, 1, len);
+		if (unlikely(rc < 0)) {
+			NAS_LOG_PDU_CHECK(rc, 1, len);
+			return rc;
+		}
+		NAS_LOG_IEI_MISMATCH(iei, *buffer);
 		decoded++;
 	}
-	CHECK_PDU_POINTER_AND_LENGTH_DECODER(buffer, decoded + 1, len);
+	rc = nas_check_pdu(buffer, decoded + 1, len);
+	if (unlikely(rc < 0)) {
+		NAS_LOG_PDU_CHECK(rc, decoded + 1, len);
+		return rc;
+	}
 	ielen = *(buffer + decoded);
 	decoded++;
-	CHECK_LENGTH_DECODER((int32_t)len - decoded, ielen);
+	rc = nas_check_length((int32_t)len - decoded, ielen);
+	if (unlikely(rc < 0))
+		return rc;
 
 	// F-BUG-203: bound fixed-size decodes by remaining length
 	if (ielen == 0) {
 		return DECODE_BUFFER_TOO_SHORT;
 	}
-	CHECK_LENGTH_DECODER(ielen, 1);
-	CHECK_LENGTH_DECODER((int32_t)len - decoded, 1);
+	rc = nas_check_length(ielen, 1);
+	if (unlikely(rc < 0))
+		return rc;
+	rc = nas_check_length((int32_t)len - decoded, 1);
+	if (unlikely(rc < 0))
+		return rc;
 
 	uint8_t typeofidentity = *(buffer + decoded) & 0x7;
 
 	switch( typeofidentity){
 	case EPS_MOBILE_IDENTITY_IMSI:
 		// F-BUG-203: the IMSI decoder reads exactly ielen octets, which
-		// CHECK_LENGTH_DECODER above bounded by the buffer, and rejects
+		// the nas_check_length() above bounded by the buffer, and rejects
 		// more than 8 (identity octet + 7 BCD octets, 15 digits).
 		// Issue #427: 15 digits are 8 octets, not 9. Issue #443: shorter
 		// IMSIs are fewer octets (TS 24.301 §9.9.3.12) — at least 4, the
 		// 6 digits of MCC + MNC.
-		CHECK_LENGTH_DECODER(ielen, 4);
+		rc = nas_check_length(ielen, 4);
+		if (unlikely(rc < 0))
+			return rc;
 		decoded_rc = _decode_imsi_eps_mobile_identity(&ident->imsi,
 				buffer + decoded, ielen);
 		break;
 	case EPS_MOBILE_IDENTITY_GUTI:
 		// GUTI requires 11 bytes
-		CHECK_LENGTH_DECODER(ielen, 11);
-		CHECK_LENGTH_DECODER((int32_t)len - decoded, 11);
+		rc = nas_check_length(ielen, 11);
+		if (unlikely(rc < 0))
+			return rc;
+		rc = nas_check_length((int32_t)len - decoded, 11);
+		if (unlikely(rc < 0))
+			return rc;
 		decoded_rc = _decode_guti_eps_mobile_identity(&ident->guti,
 				buffer + decoded);
 		break;
 	case EPS_MOBILE_IDENTITY_IMEI:
 		// IMEI (15 digits) is read as 8 octets, like the IMSI (issue #427)
-		CHECK_LENGTH_DECODER(ielen, 8);
-		CHECK_LENGTH_DECODER((int32_t)len - decoded, 8);
+		rc = nas_check_length(ielen, 8);
+		if (unlikely(rc < 0))
+			return rc;
+		rc = nas_check_length((int32_t)len - decoded, 8);
+		if (unlikely(rc < 0))
+			return rc;
 		decoded_rc = _decode_imei_eps_mobile_identity(&ident->imei,
 				buffer + decoded);
 		break;

@@ -597,6 +597,16 @@ jobs:
       # helper runs as an ordinary blocking step, not in the advisory loop.
       # A rise above the baseline fails the job.
       run: bash tools/ci/lint-commented-code.sh
+    - name: Function shape — engine, DICOM, NDN, NAS (blocking — issue #548)
+      # Issue #548 split the last over-200-line functions of these sources
+      # and replaced the NAS CHECK_*DECODER macros, so the shape gate
+      # (≤200 lines, nesting depth ≤6) holds on them and a regression now
+      # fails the job. Issue #547 re-aims the shape report at all of src/.
+      run: |
+        bash tools/ci/report-function-shape.sh \
+          src/mmt_security/*.c src/mmt_dicom/*.c \
+          src/mmt_tcpip/lib/protocols/ndn.c \
+          src/mmt_mobile/nas/*.c src/mmt_mobile/nas/*/*.c
     - name: Packet-path I/O lint (blocking — issue #246)
       # The gate condition holds — zero unconditional printf/fprintf on
       # packet paths — so this helper runs as an ordinary blocking step, not

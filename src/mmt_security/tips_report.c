@@ -181,30 +181,455 @@ static void json_grow_append(char **buf, size_t *cap, const char *src) {
     memcpy(*buf + cur, src, add + 1);
 }
 
-void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_rule, char *cause, short event_id )
+/* The verdict JSON store_history() builds: buf grows through
+ * json_grow_append(), line is the fixed scratch buffer each piece is
+ * formatted into first. */
+typedef struct {
+    char *buf;
+    size_t cap;
+    char *line;
+    size_t line_cap;
+} history_json_t;
+
+/* One attribute of the event as extracted from the packet: its tuple, its
+ * data, the attribute's data size and its protocol/attribute names. */
+typedef struct {
+    const tuple *t;
+    void *data;
+    int size;
+    const char *proto_name;
+    const char *att_name;
+} history_attr_t;
+
+/* Header line: packet bytes, escaped (not copied raw, F-BUG-209, #510) and
+ * bounded to 512 bytes. Returns -1 when the escape buffer cannot be
+ * allocated. */
+static int history_append_header_line(history_json_t *h, const history_attr_t *a)
+{
+    char * buff =NULL;
+    //parse_mmt_header_line( &data1, & data_size );
+    int hl_len = ((mmt_header_line_t *)a->data)->len;
+    if (hl_len < 0) hl_len = 0;
+    if (hl_len > 512) hl_len = 512;
+    /* packet bytes: escaped, not copied raw (F-BUG-209, #510) */
+    buff = xmalloc ((size_t) hl_len * 6 + 1);
+    if(buff == NULL){
+        /* F-BUG-096 (#209): the old `break` only left the
+         * switch — the loop kept appending into the freed
+         * json_buff and both buffers were freed again at the
+         * bottom (use-after-free + double free). Every failure
+         * path now reaches the single cleanup exit. */
+        return -1;
+    }
+    json_escape_into(buff, (size_t) hl_len * 6 + 1,
+            ((mmt_header_line_t *)a->data)->ptr, (size_t) hl_len);
+    snprintf(h->line, h->line_cap, "{\"%s.%s\":\"%s\"},", a->proto_name,
+            a->att_name, (char *)buff);
+    xfree(buff);
+    json_grow_append(&h->buf, &h->cap, h->line);
+    return 0;
+}
+
+/* Binary record: 4 bytes print as a dotted quad, other lengths as
+ * colon-separated hex bytes. */
+static void history_append_binary(history_json_t *h, const history_attr_t *a)
 {
     unsigned long L1=0,L2=0,L3=0,L4=0;
-    //store data on packet so that they can be printed if rule is satisfied
-    void * data1 = NULL;
-    void * data2 = NULL;
-    long type = 0;
-    char * buff =NULL;
+    long type = a->t->data_type_id;
     mmt_binary_data_t *db1;
-    int data_size = 0, j = 0, data_pointer_size = 0;
+    void * data2 = NULL;
+    int data_size = 0, j = 0;
+    db1 = (mmt_binary_data_t *) (a->data);
+    /* db1->len is a packet-controlled record prefix — bound it
+     * by the inline array the record actually carries, same
+     * family as the int-prefix clamps above (F-BUG-091, #209) */
+    data_size = db1->len;
+    if (data_size > (int)(type == MMT_BINARY_VAR_DATA ? BINARY_1024DATA_LEN : BINARY_64DATA_LEN))
+        data_size = (int)(type == MMT_BINARY_VAR_DATA ? BINARY_1024DATA_LEN : BINARY_64DATA_LEN);
+    if (data_size < 0) data_size = 0;
+    data2 = db1->data;
+    if (data_size == 4) {
+        /* byte by byte: an LP64 unsigned long read 8 bytes (#511) */
+        L1 = ((const uint8_t *) (data2))[0];
+        L2 = ((const uint8_t *) (data2))[1];
+        L3 = ((const uint8_t *) (data2))[2];
+        L4 = ((const uint8_t *) (data2))[3];
+        snprintf(h->line, h->line_cap, "{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},", a->proto_name, a->att_name, L1, L2, L3, L4);
+        json_grow_append(&h->buf, &h->cap, h->line);
+    } else if (data_size == 6) {
+        int close_tag=NO;
+        for (j = 0; j < data_size; j++) {
+            if (j == 0) {
+                snprintf(h->line, h->line_cap, "{\"%s.%s\":\"%2.2X", a->proto_name,
+                        a->att_name, *((unsigned char*) data2 + j));
+                close_tag=YES;
+            } else {
+                snprintf(h->line, h->line_cap, ":%2.2X", *((unsigned char*) data2 + j));
+            }
+            json_grow_append(&h->buf, &h->cap, h->line);
+        }
+        /* quoted: a bare AA:BB:.. is not a JSON value */
+        if(close_tag==YES)
+          json_grow_append(&h->buf, &h->cap, "\"},");
+    } else {
+        int close_tag=NO;
+        for (j = 0; j < data_size; j++) {
+            if (j == 0) {
+                snprintf(h->line, h->line_cap, "{\"%s.%s\":\"%02X", a->proto_name,
+                        a->att_name, *((unsigned char*) data2 + j));
+                close_tag=YES;
+            } else {
+                snprintf(h->line, h->line_cap, ":%02X", *((unsigned char*) data2 + j));
+            }
+            json_grow_append(&h->buf, &h->cap, h->line);
+        }
+        //end attribute
+        if(close_tag==YES)
+          json_grow_append(&h->buf, &h->cap, "\"},");
+    }
+}
+
+/* Generic pointer: only tcp.p_payload (354.4098) has a printable form —
+ * a generic pointer value is meaningless in a verdict. */
+static void history_append_tcp_payload(history_json_t *h, const verify_ctx_t *ctx, const history_attr_t *a)
+{
+    int data_pointer_size = 0;
     char * data_pointer = NULL;
     char * new_data_pointer = NULL;
+    void *data_ptr;
+    //check only if we are verifying tcp.p_payload
+    if( a->t->protocol_id == 354  && a->t->field_id == 4098 ){
+        data_ptr = get_attribute_extracted_data_by_name(ctx->pkt, "tcp","payload_len");
+        if( data_ptr != NULL ){
+            data_pointer_size = *(int *) data_ptr;
+            data_pointer = get_attribute_extracted_data_by_name(ctx->pkt, "tcp","p_payload");
+            if( data_pointer != NULL ){
+                new_data_pointer = convert_string_to_json_compatible (data_pointer, data_pointer_size);
+                /* NULL on non-positive size or OOM — a NULL %s
+                 * argument is undefined; skip the attribute */
+                if (new_data_pointer != NULL) {
+                    json_append_string_attr(&h->buf, &h->cap, a->proto_name, a->att_name, new_data_pointer, NULL);
+                    xfree (new_data_pointer);
+                }
+            }
+        }
+    }
+}
+
+/* RFC2822 header line: NUL-terminated field and value */
+static void history_append_generic_header_line(history_json_t *h, const history_attr_t *a)
+{
+    mmt_generic_header_line_t *ghl = (mmt_generic_header_line_t *) (a->data);
+    if (ghl->hfield != NULL || ghl->hvalue != NULL) {
+        char *esc = convert_string_to_json_compatible(
+                ghl->hfield != NULL ? (char *) ghl->hfield : "",
+                (int) (ghl->hfield != NULL ? strlen(ghl->hfield) : 0));
+        char *esc2 = convert_string_to_json_compatible(
+                ghl->hvalue != NULL ? (char *) ghl->hvalue : "",
+                (int) (ghl->hvalue != NULL ? strlen(ghl->hvalue) : 0));
+        json_append_string_attr(&h->buf, &h->cap, a->proto_name, a->att_name,
+                esc != NULL ? esc : "", esc2 != NULL ? esc2 : "");
+        if (esc != NULL) xfree(esc);
+        if (esc2 != NULL) xfree(esc2);
+    }
+}
+
+/* Appends one {"proto.att":value} entry, formatted by data type. Returns -1
+ * when a buffer cannot be allocated (F-BUG-096: the caller's single exit
+ * frees both JSON buffers). */
+static int history_append_attribute(history_json_t *h, const verify_ctx_t *ctx, const history_attr_t *a)
+{
+    unsigned long L1=0,L2=0,L3=0,L4=0;
+    unsigned long tmp_lu=0;
+    char *temp_MAC;
+    const char *proto_name = a->proto_name, *att_name = a->att_name;
+    void * data1 = a->data;
+    int data_size = a->size;
+    switch (a->t->data_type_id) {
+        case MMT_DATA_IP6_ADDR: {
+            char ip6_str[INET6_ADDRSTRLEN];
+            if (inet_ntop(AF_INET6, data1, ip6_str, sizeof(ip6_str)) != NULL) {
+                snprintf(h->line, h->line_cap, "{\"%s.%s\":\"%s\"},", proto_name, att_name, ip6_str);
+                json_grow_append(&h->buf, &h->cap, h->line);
+            }
+            break;
+        }
+        case MMT_DATA_FLOAT:
+            /* %f prints nan/inf, which are not JSON values (#510) */
+            if (isfinite(*(float*) (data1)))
+                snprintf(h->line, h->line_cap, "{\"%s.%s\":%f},", proto_name,
+                        att_name, (double) *(float*) (data1));
+            else
+                snprintf(h->line, h->line_cap, "{\"%s.%s\":null},", proto_name, att_name);
+            json_grow_append(&h->buf, &h->cap, h->line);
+            break;
+        case MMT_DATA_MAC_ADDR:
+            temp_MAC = xmalloc(22);
+            if (temp_MAC == NULL) return -1; /* F-BUG-096: one exit frees both JSON buffers */
+            convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
+            snprintf(h->line, h->line_cap, "{\"%s.%s\":\"%s\"},", proto_name, att_name, temp_MAC);
+            json_grow_append(&h->buf, &h->cap, h->line);
+            xfree(temp_MAC);
+            break;
+        case MMT_DATA_TIMEVAL: {
+            struct timeval tv = *(struct timeval *) (data1);
+            snprintf(h->line, h->line_cap, "{\"%s.%s\":\"%lu.%06lu\"},", proto_name,
+                    att_name, tv.tv_sec, (unsigned long) tv.tv_usec);
+            json_grow_append(&h->buf, &h->cap, h->line);
+            break;
+        }
+        case MMT_DATA_IP_ADDR:
+            if(proto_name!=NULL && att_name!=NULL && *((char*)data1)!=0){
+               /* byte by byte: an LP64 unsigned long read 8 bytes (#511) */
+               L1 = ((const uint8_t *) (data1))[0];
+               L2 = ((const uint8_t *) (data1))[1];
+               L3 = ((const uint8_t *) (data1))[2];
+               L4 = ((const uint8_t *) (data1))[3];
+               snprintf(h->line, h->line_cap,"{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},", proto_name, att_name, L1, L2, L3, L4);
+            }else
+               snprintf(h->line, h->line_cap,"{\"x.x\":\"0.0.0.0\"},");
+            json_grow_append(&h->buf, &h->cap, h->line);
+            break;
+        case MMT_U16_DATA:
+            snprintf(h->line, h->line_cap, "{\"%s.%s\":%u},", proto_name,
+                    att_name, *(unsigned short*) (data1));
+            json_grow_append(&h->buf, &h->cap, h->line);
+            break;
+        case MMT_U32_DATA:
+            tmp_lu=*(uint32_t*) data1;
+            snprintf(h->line, h->line_cap, "{\"%s.%s\":%lu},", proto_name,
+                    att_name, tmp_lu);
+            json_grow_append(&h->buf, &h->cap, h->line);
+            break;
+        case MMT_U64_DATA:
+        case MMT_DATA_POINT:
+            snprintf(h->line, h->line_cap, "{\"%s.%s\":%"PRIu64"},", proto_name,
+                    att_name, *(uint64_t*) (data1));
+            json_grow_append(&h->buf, &h->cap, h->line);
+            break;
+        case MMT_U8_DATA:
+        case MMT_DATA_CHAR:
+            snprintf(h->line, h->line_cap, "{\"%s.%s\":\"%u\"},", proto_name,
+                    att_name, *(unsigned char*) (data1));
+            json_grow_append(&h->buf, &h->cap, h->line);
+            break;
+        case MMT_HEADER_LINE:
+            if (history_append_header_line(h, a) != 0) return -1;
+            break;
+        case MMT_DATA_PATH:
+        case MMT_STRING_LONG_DATA:
+        case MMT_STRING_DATA: {
+            /* declared prefix is packet-controlled: bound it by the
+             * record size and by the stack buffer (F-BUG-091, #209) */
+            int slen = *(int*)(data1);
+            if (slen > data_size - (int)sizeof(int)) slen = data_size - (int)sizeof(int);
+            if (slen > 512) slen = 512;
+            if (slen < 0) slen = 0;
+            /* packet bytes: escaped, not copied raw (F-BUG-209, #510) */
+            char tmp_str[512 * 6 + 1];
+            json_escape_into(tmp_str, sizeof tmp_str, (char*)(data1 + sizeof(int)), (size_t) slen);
+            snprintf(h->line, h->line_cap, "{\"%s.%s\":\"%s\"},", proto_name, att_name, tmp_str);
+            json_grow_append(&h->buf, &h->cap, h->line);
+            break;
+        }
+        case MMT_BINARY_DATA:
+        case MMT_BINARY_VAR_DATA:
+            history_append_binary(h, a);
+            break;
+        case MMT_DATA_POINTER:
+            history_append_tcp_payload(h, ctx, a);
+            break;
+        case MMT_STRING_DATA_POINTER:
+            /* pointer-typed attribute: data1 is the string itself —
+             * bound the scan by the string-record capacity */
+            if ((char *) data1 != NULL) {
+                char *esc = convert_string_to_json_compatible((char *) data1,
+                        (int) strnlen((char *) data1, STRING_DATA_LEN));
+                if (esc != NULL) {
+                    json_append_string_attr(&h->buf, &h->cap, proto_name, att_name, esc, NULL);
+                    xfree(esc);
+                }
+            }
+            break;
+        case MMT_GENERIC_HEADER_LINE:
+            history_append_generic_header_line(h, a);
+            break;
+        /* Types with no defined record representation — none is
+         * emitted by extraction, so omitting the attribute is the
+         * intended result (#326). */
+        case MMT_DATA_PORT:
+        case MMT_DATA_PORT_RANGE:
+        case MMT_DATA_DATE:
+        case MMT_DATA_LAYERID:
+        case MMT_DATA_TIMEARG:
+        case MMT_DATA_IP_NET:
+        case MMT_DATA_FILTER_STATE:
+        case MMT_UNDEFINED_TYPE:
+        case MMT_DATA_BUFFER:
+        case MMT_DATA_STRING_INDEX:
+        case MMT_DATA_PARENT:
+        case MMT_STATS:
+            break;
+
+        default:
+            (void)fprintf(stderr, "Error 15.2: Type not implemented yet. Data type unknown.\n");
+            exit(-1);
+    }//end of switch
+    return 0;
+}
+
+/* The packet's source (dst == NO) or destination IPv4 address when the
+ * event did not print it, else its MAC address when the event did not
+ * print that either. Returns -1 when the MAC buffer cannot be allocated. */
+static int history_append_endpoint(history_json_t *h, const ipacket_t *pkt, enum_yes dst, int having_mac)
+{
+    unsigned long L1=0,L2=0,L3=0,L4=0;
+    char *temp_MAC;
+    void * data1 = get_attribute_extracted_data(pkt, 178, dst == YES ? 13 : 12);
+    if(data1!= NULL && *((char*)data1)!=0){
+        /* byte by byte: an LP64 unsigned long read 8 bytes (#511) */
+        L1 = ((const uint8_t *) (data1))[0];
+        L2 = ((const uint8_t *) (data1))[1];
+        L3 = ((const uint8_t *) (data1))[2];
+        L4 = ((const uint8_t *) (data1))[3];
+        if (dst == YES)
+            snprintf(h->line, h->line_cap,"{\"ip.dst\":\"%lu.%lu.%lu.%lu\"},", L1, L2, L3, L4);
+        else
+            snprintf(h->line, h->line_cap,"{\"ip.src\":\"%lu.%lu.%lu.%lu\"},", L1, L2, L3, L4);
+        json_grow_append(&h->buf, &h->cap, h->line);
+    }else if( having_mac == 0 ){
+        data1 = get_attribute_extracted_data(pkt, 99, dst == YES ? 2 : 3);
+        temp_MAC = xmalloc(22);
+        if (temp_MAC == NULL) return -1;
+        convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
+        if (dst == YES)
+            snprintf(h->line, h->line_cap,"{\"eth.dst\":\"%s\"},", temp_MAC);
+        else
+            snprintf(h->line, h->line_cap,"{\"eth.src\":\"%s\"},", temp_MAC );
+        json_grow_append(&h->buf, &h->cap, h->line);
+        xfree( temp_MAC );
+    }
+    return 0;
+}
+
+/* Appends every printable attribute of the rule's print list, then the
+ * packet's IP (or MAC) source and destination when the list has none.
+ * Returns the number of attributes counted, or -1 on an allocation
+ * failure. */
+static int history_append_attributes(history_json_t *h, const verify_ctx_t *ctx)
+{
+    int having_ip_src = 0, having_ip_dst = 0, having_mac_src = 0, having_mac_dst = 0;
+    int num_attr = 0;
+    history_attr_t a;
+    //printout all the attributes
+    tuple * temp = ctx->curr_root->list_of_tuples_to_print;
+    while (temp) {
+        if(temp->protocol_id<1||temp->field_id<1){
+          temp=temp->next;
+          continue;
+        }
+        a.data = get_attribute_extracted_data(ctx->pkt, temp->protocol_id, temp->field_id);
+        if(a.data == NULL){
+          temp=temp->next;
+          continue;
+        }
+        num_attr ++;
+
+        a.t = temp;
+        a.size       = get_data_size_by_proto_and_field_ids(temp->protocol_id, temp->field_id);
+        a.proto_name = get_protocol_name_by_id(temp->protocol_id);
+        a.att_name   = get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id);
+
+        //protocol IP
+        if( temp->protocol_id == 178 ){
+        	if( temp->field_id == 12 )
+        		having_ip_src = 1;
+        	else if( temp->field_id == 13 )
+        		having_ip_dst = 1;
+        }else if( temp->protocol_id == 99 ){ //Ethernet
+        	if( temp->field_id == 3 )
+        		having_mac_src = 1;
+        	else if( temp->field_id == 2 )
+        		having_mac_dst = 1;
+        }
+
+        if (history_append_attribute(h, ctx, &a) != 0) return -1;
+        temp = temp->next;
+    }
+    //ensure IP or MAC of src and dst are included in attribute
+    if( having_ip_src == 0){
+        if (history_append_endpoint(h, ctx->pkt, NO, having_mac_src) != 0) return -1;
+        num_attr ++;
+    }
+
+    if( having_ip_dst == 0){
+        if (history_append_endpoint(h, ctx->pkt, YES, having_mac_dst) != 0) return -1;
+        num_attr ++;
+    }
+    return num_attr;
+}
+
+/* Wraps the event's JSON as "event_<id>":{...}, in place. */
+static void history_wrap_event(history_json_t *h, short event_id)
+{
+    size_t ev_len = strlen(h->buf) + 64;
+    char *ev_buf = xmalloc(ev_len);
+    if (ev_buf) {
+        snprintf(ev_buf, ev_len, "\"event_%d\":{%s},", event_id, h->buf );
+        size_t _l = strlen(ev_buf);
+        if (_l + 1 > h->cap) { char *nb = realloc(h->buf, _l+1); if (nb) { h->buf=nb; h->cap=_l+1; } }
+        if (_l + 1 <= h->cap) memcpy(h->buf, ev_buf, _l + 1);
+        xfree(ev_buf);
+    }
+}
+
+/* Appends the wrapped event to the rule's json_history; on an allocation
+ * failure the history is left as it was. */
+static void history_commit(const history_json_t *h, enum_operation_type context, rule *curr_rule)
+{
+    short c = 0;
+    if (context == BEFORE || context == AFTER || context == SAME) c = 1;
+    /* size_t: the history grows one event per satisfied condition — an int
+     * could wrap on a long-running probe (F-BUG-096, #209) */
+    size_t json_buff_size = strlen(h->buf) + 1 + (size_t) c;
+    if (curr_rule->json_history != NULL) {
+        json_buff_size = json_buff_size + strlen(curr_rule->json_history);
+        char *tmp = realloc(curr_rule->json_history, json_buff_size);
+        if(tmp!=NULL){
+            curr_rule->json_history = tmp;
+        }else{
+            return;
+        }
+    } else {
+        curr_rule->json_history = xcalloc(1, json_buff_size);
+        if (curr_rule->json_history == NULL){
+            return;
+        }
+    }
+
+    {
+        /* bounded append: json_buff_size was sized for exactly this */
+        size_t _off = strlen(curr_rule->json_history);
+        size_t _n = strlen(h->buf) + 1;
+        if (_off + _n <= json_buff_size)
+            memcpy(curr_rule->json_history + _off, h->buf, _n);
+    }
+}
+
+void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_rule, char *cause, short event_id )
+{
+    //store data on packet so that they can be printed if rule is satisfied
     struct timeval tvp;
-    size_t json_cap = 65536, json_cap1 = 8192;
-    char *json_buff=xcalloc(json_cap,1);
-    if(json_buff == NULL) return;
-    char *json_buff1=xcalloc(json_cap1,1);
-    if (json_buff1 == NULL) {
-        xfree(json_buff);
+    history_json_t h;
+    h.cap = 65536;
+    h.line_cap = 8192;
+    h.buf=xcalloc(h.cap,1);
+    if(h.buf == NULL) return;
+    h.line=xcalloc(h.line_cap,1);
+    if (h.line == NULL) {
+        xfree(h.buf);
         return;
     }
-    char *temp_MAC;
-    //mmt_header_line_t *hl;
-    void *data_ptr;
 
     tvp.tv_sec=0;
     tvp.tv_usec=0;
@@ -213,10 +638,7 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
         if (utime != NULL) tvp = *(struct timeval *) utime;
     }
 
-    snprintf(json_buff, json_cap, "\"timestamp\":%lu.%06lu", tvp.tv_sec, (unsigned long) tvp.tv_usec);
-
-    int having_ip_src = 0, having_ip_dst = 0, having_mac_src = 0, having_mac_dst = 0;
-    const char *proto_name, *att_name;
+    snprintf(h.buf, h.cap, "\"timestamp\":%lu.%06lu", tvp.tv_sec, (unsigned long) tvp.tv_usec);
 
     if (cause != NULL && *cause != '\0') {
         {
@@ -224,376 +646,27 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
              * like every other string value (F-BUG-209, #510) */
             char cause_esc[SIZE_CAUSE * 6 + 1];
             json_escape_into(cause_esc, sizeof cause_esc, cause, strnlen(cause, SIZE_CAUSE));
-            snprintf(json_buff1, json_cap1, ",\"description\":\"%s\"", cause_esc);
+            snprintf(h.line, h.line_cap, ",\"description\":\"%s\"", cause_esc);
         }
-        json_grow_append(&json_buff, &json_cap, json_buff1);
-        json_grow_append(&json_buff, &json_cap, ",\"attributes\":[");
+        json_grow_append(&h.buf, &h.cap, h.line);
+        json_grow_append(&h.buf, &h.cap, ",\"attributes\":[");
 
-        int num_attr = 0;
-        unsigned long tmp_lu=0;
-        //printout all the attributes
-        tuple * temp = ctx->curr_root->list_of_tuples_to_print;
-        while (temp) {
-            if(temp->protocol_id<1||temp->field_id<1){
-              temp=temp->next;
-              continue;
-            }
-            data1 = get_attribute_extracted_data(ctx->pkt, temp->protocol_id, temp->field_id);
-            if(data1 == NULL){
-              temp=temp->next;
-              continue;
-            }
-            num_attr ++;
-            
-            data_size  = get_data_size_by_proto_and_field_ids(temp->protocol_id, temp->field_id);
-            proto_name = get_protocol_name_by_id(temp->protocol_id);
-            att_name   = get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id);
-
-            //protocol IP
-            if( temp->protocol_id == 178 ){
-            	if( temp->field_id == 12 )
-            		having_ip_src = 1;
-            	else if( temp->field_id == 13 )
-            		having_ip_dst = 1;
-            }else if( temp->protocol_id == 99 ){ //Ethernet
-            	if( temp->field_id == 3 )
-            		having_mac_src = 1;
-            	else if( temp->field_id == 2 )
-            		having_mac_dst = 1;
-            }
-
-            type = temp->data_type_id;
-            switch (type) {
-                case MMT_DATA_IP6_ADDR: {
-                    char ip6_str[INET6_ADDRSTRLEN];
-                    if (inet_ntop(AF_INET6, data1, ip6_str, sizeof(ip6_str)) != NULL) {
-                        snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, ip6_str);
-                        json_grow_append(&json_buff, &json_cap, json_buff1);
-                    }
-                    break;
-                }
-                case MMT_DATA_FLOAT:
-                    /* %f prints nan/inf, which are not JSON values (#510) */
-                    if (isfinite(*(float*) (data1)))
-                        snprintf(json_buff1, json_cap1, "{\"%s.%s\":%f},", proto_name,
-                                att_name, (double) *(float*) (data1));
-                    else
-                        snprintf(json_buff1, json_cap1, "{\"%s.%s\":null},", proto_name, att_name);
-                    json_grow_append(&json_buff, &json_cap, json_buff1);
-                    break;
-                case MMT_DATA_MAC_ADDR:
-                    temp_MAC = xmalloc(22);
-                    if (temp_MAC == NULL) goto cleanup; /* F-BUG-096: one exit frees both JSON buffers */
-                    convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
-                    snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, temp_MAC);
-                    json_grow_append(&json_buff, &json_cap, json_buff1);
-                    xfree(temp_MAC);
-                    break;
-                case MMT_DATA_TIMEVAL: {
-                    struct timeval tv = *(struct timeval *) (data1);
-                    snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%lu.%06lu\"},", proto_name,
-                            att_name, tv.tv_sec, (unsigned long) tv.tv_usec);
-                    json_grow_append(&json_buff, &json_cap, json_buff1);
-                    break;
-                }
-                case MMT_DATA_IP_ADDR:
-                    if(proto_name!=NULL && att_name!=NULL && *((char*)data1)!=0){
-                       /* byte by byte: an LP64 unsigned long read 8 bytes (#511) */
-                       L1 = ((const uint8_t *) (data1))[0];
-                       L2 = ((const uint8_t *) (data1))[1];
-                       L3 = ((const uint8_t *) (data1))[2];
-                       L4 = ((const uint8_t *) (data1))[3];
-                       snprintf(json_buff1, json_cap1,"{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},", proto_name, att_name, L1, L2, L3, L4);
-                    }else
-                       snprintf(json_buff1, json_cap1,"{\"x.x\":\"0.0.0.0\"},");
-                    json_grow_append(&json_buff, &json_cap, json_buff1);
-                    break;
-                case MMT_U16_DATA:
-                    snprintf(json_buff1, json_cap1, "{\"%s.%s\":%u},", proto_name,
-                            att_name, *(unsigned short*) (data1));
-                    json_grow_append(&json_buff, &json_cap, json_buff1);
-                    break;
-                case MMT_U32_DATA:
-                    tmp_lu=*(uint32_t*) data1;
-                    snprintf(json_buff1, json_cap1, "{\"%s.%s\":%lu},", proto_name,
-                            att_name, tmp_lu);
-                    json_grow_append(&json_buff, &json_cap, json_buff1);
-                    break;
-                case MMT_U64_DATA:
-                case MMT_DATA_POINT:
-                    snprintf(json_buff1, json_cap1, "{\"%s.%s\":%"PRIu64"},", proto_name,
-                            att_name, *(uint64_t*) (data1));
-                    json_grow_append(&json_buff, &json_cap, json_buff1);
-                    break;
-                case MMT_U8_DATA:
-                case MMT_DATA_CHAR:
-                    snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%u\"},", proto_name,
-                            att_name, *(unsigned char*) (data1));
-                    json_grow_append(&json_buff, &json_cap, json_buff1);
-                    break;
-                case MMT_HEADER_LINE: {
-                	//parse_mmt_header_line( &data1, & data_size );
-                    int hl_len = ((mmt_header_line_t *)data1)->len;
-                    if (hl_len < 0) hl_len = 0;
-                    if (hl_len > 512) hl_len = 512;
-                    /* packet bytes: escaped, not copied raw (F-BUG-209, #510) */
-                    buff = xmalloc ((size_t) hl_len * 6 + 1);
-                    if(buff == NULL){
-                        /* F-BUG-096 (#209): the old `break` only left the
-                         * switch — the loop kept appending into the freed
-                         * json_buff and both buffers were freed again at the
-                         * bottom (use-after-free + double free). Every failure
-                         * path now reaches the single cleanup exit. */
-                        goto cleanup;
-                    }
-                    json_escape_into(buff, (size_t) hl_len * 6 + 1,
-                            ((mmt_header_line_t *)data1)->ptr, (size_t) hl_len);
-					snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%s\"},", proto_name,
-							att_name, (char *)buff);
-                    xfree(buff);
-					json_grow_append(&json_buff, &json_cap, json_buff1);
-					break;
-                }
-                case MMT_DATA_PATH:
-                case MMT_STRING_LONG_DATA:
-                case MMT_STRING_DATA: {
-                    /* declared prefix is packet-controlled: bound it by the
-                     * record size and by the stack buffer (F-BUG-091, #209) */
-                    int slen = *(int*)(data1);
-                    if (slen > data_size - (int)sizeof(int)) slen = data_size - (int)sizeof(int);
-                    if (slen > 512) slen = 512;
-                    if (slen < 0) slen = 0;
-                    /* packet bytes: escaped, not copied raw (F-BUG-209, #510) */
-                    char tmp_str[512 * 6 + 1];
-                    json_escape_into(tmp_str, sizeof tmp_str, (char*)(data1 + sizeof(int)), (size_t) slen);
-                    snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, tmp_str);
-                    json_grow_append(&json_buff, &json_cap, json_buff1);
-                    break;
-                }
-                case MMT_BINARY_DATA:
-                case MMT_BINARY_VAR_DATA:
-                    db1 = (mmt_binary_data_t *) (data1);
-                    /* db1->len is a packet-controlled record prefix — bound it
-                     * by the inline array the record actually carries, same
-                     * family as the int-prefix clamps above (F-BUG-091, #209) */
-                    data_size = db1->len;
-                    if (data_size > (int)(type == MMT_BINARY_VAR_DATA ? BINARY_1024DATA_LEN : BINARY_64DATA_LEN))
-                        data_size = (int)(type == MMT_BINARY_VAR_DATA ? BINARY_1024DATA_LEN : BINARY_64DATA_LEN);
-                    if (data_size < 0) data_size = 0;
-                    data2 = db1->data;
-                    if (data_size == 4) {
-                        /* byte by byte: an LP64 unsigned long read 8 bytes (#511) */
-                        L1 = ((const uint8_t *) (data2))[0];
-                        L2 = ((const uint8_t *) (data2))[1];
-                        L3 = ((const uint8_t *) (data2))[2];
-                        L4 = ((const uint8_t *) (data2))[3];
-                        snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},", proto_name, att_name, L1, L2, L3, L4);
-                        json_grow_append(&json_buff, &json_cap, json_buff1);
-                    } else if (data_size == 6) {
-                        int close_tag=NO;
-                        for (j = 0; j < data_size; j++) {
-                            if (j == 0) {
-                                snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%2.2X", proto_name,
-                                        att_name, *((unsigned char*) data2 + j));
-                                close_tag=YES;
-                            } else {
-                                snprintf(json_buff1, json_cap1, ":%2.2X", *((unsigned char*) data2 + j));
-                            }
-                            json_grow_append(&json_buff, &json_cap, json_buff1);
-                        }
-                        /* quoted: a bare AA:BB:.. is not a JSON value */
-                        if(close_tag==YES)
-                          json_grow_append(&json_buff, &json_cap, "\"},");
-                    } else {
-                        int close_tag=NO;
-                        for (j = 0; j < data_size; j++) {
-                            if (j == 0) {
-                                snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%02X", proto_name,
-                                        att_name, *((unsigned char*) data2 + j));
-                                close_tag=YES;
-                            } else {
-                                snprintf(json_buff1, json_cap1, ":%02X", *((unsigned char*) data2 + j));
-                            }
-                            json_grow_append(&json_buff, &json_cap, json_buff1);
-                        }
-                        //end attribute
-                        if(close_tag==YES)
-                          json_grow_append(&json_buff, &json_cap, "\"},");
-                    }
-                    break;
-                case MMT_DATA_POINTER:
-                    /* only tcp.p_payload (354.4098) has a printable form —
-                     * a generic pointer value is meaningless in a verdict. */
-               	 //check only if we are verifying tcp.p_payload
-               	 if( temp->protocol_id == 354  && temp->field_id == 4098 ){
-							  data_ptr = get_attribute_extracted_data_by_name(ctx->pkt, "tcp","payload_len");
-							  if( data_ptr != NULL ){
-								  data_pointer_size = *(int *) data_ptr;
-								  data_pointer = get_attribute_extracted_data_by_name(ctx->pkt, "tcp","p_payload");
-								  if( data_pointer != NULL ){
-									  new_data_pointer = convert_string_to_json_compatible (data_pointer, data_pointer_size);
-									  /* NULL on non-positive size or OOM — a NULL %s
-									   * argument is undefined; skip the attribute */
-									  if (new_data_pointer != NULL) {
-										  json_append_string_attr(&json_buff, &json_cap, proto_name, att_name, new_data_pointer, NULL);
-										  xfree (new_data_pointer);
-									  }
-								  }
-							  }
-               	  }
-                    break;
-                case MMT_STRING_DATA_POINTER:
-                    /* pointer-typed attribute: data1 is the string itself —
-                     * bound the scan by the string-record capacity */
-                    if ((char *) data1 != NULL) {
-                        char *esc = convert_string_to_json_compatible((char *) data1,
-                                (int) strnlen((char *) data1, STRING_DATA_LEN));
-                        if (esc != NULL) {
-                            json_append_string_attr(&json_buff, &json_cap, proto_name, att_name, esc, NULL);
-                            xfree(esc);
-                        }
-                    }
-                    break;
-                case MMT_GENERIC_HEADER_LINE: {
-                    /* RFC2822 header line: NUL-terminated field and value */
-                    mmt_generic_header_line_t *ghl = (mmt_generic_header_line_t *) (data1);
-                    if (ghl->hfield != NULL || ghl->hvalue != NULL) {
-                        char *esc = convert_string_to_json_compatible(
-                                ghl->hfield != NULL ? (char *) ghl->hfield : "",
-                                (int) (ghl->hfield != NULL ? strlen(ghl->hfield) : 0));
-                        char *esc2 = convert_string_to_json_compatible(
-                                ghl->hvalue != NULL ? (char *) ghl->hvalue : "",
-                                (int) (ghl->hvalue != NULL ? strlen(ghl->hvalue) : 0));
-                        json_append_string_attr(&json_buff, &json_cap, proto_name, att_name,
-                                esc != NULL ? esc : "", esc2 != NULL ? esc2 : "");
-                        if (esc != NULL) xfree(esc);
-                        if (esc2 != NULL) xfree(esc2);
-                    }
-                    break;
-                }
-                /* Types with no defined record representation — none is
-                 * emitted by extraction, so omitting the attribute is the
-                 * intended result (#326). */
-                case MMT_DATA_PORT:
-                case MMT_DATA_PORT_RANGE:
-                case MMT_DATA_DATE:
-                case MMT_DATA_LAYERID:
-                case MMT_DATA_TIMEARG:
-                case MMT_DATA_IP_NET:
-                case MMT_DATA_FILTER_STATE:
-                case MMT_UNDEFINED_TYPE:
-                case MMT_DATA_BUFFER:
-                case MMT_DATA_STRING_INDEX:
-                case MMT_DATA_PARENT:
-                case MMT_STATS:
-                    break;
-
-                default:
-                    (void)fprintf(stderr, "Error 15.2: Type not implemented yet. Data type unknown.\n");
-                    exit(-1);
-            }//end of switch
-            temp = temp->next;
-            data1 = NULL;
-        }
-        //ensure IP or MAC of src and dst are included in attribute
-        if( having_ip_src == 0){
-            data1 = NULL;
-        	data1 = get_attribute_extracted_data(ctx->pkt, 178, 12);
-            if(data1!= NULL && *((char*)data1)!=0){
-                /* byte by byte: an LP64 unsigned long read 8 bytes (#511) */
-                L1 = ((const uint8_t *) (data1))[0];
-                L2 = ((const uint8_t *) (data1))[1];
-                L3 = ((const uint8_t *) (data1))[2];
-                L4 = ((const uint8_t *) (data1))[3];
-        		snprintf(json_buff1, json_cap1,"{\"ip.src\":\"%lu.%lu.%lu.%lu\"},", L1, L2, L3, L4);
-        	    json_grow_append(&json_buff, &json_cap, json_buff1);
-       	   }else if( having_mac_src == 0 ){
-        		data1 = get_attribute_extracted_data(ctx->pkt, 99, 3);
-        		temp_MAC = xmalloc(22);
-        		if (temp_MAC == NULL) goto cleanup;
-				convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
-        		snprintf(json_buff1, json_cap1,"{\"eth.src\":\"%s\"},", temp_MAC );
-        		json_grow_append(&json_buff, &json_cap, json_buff1);
-        		xfree( temp_MAC );
-        	}
-        	num_attr ++;
-            data1 = NULL;
-        }
-
-        if( having_ip_dst == 0){
-            data1 = NULL;
-            data1 = get_attribute_extracted_data(ctx->pkt, 178, 13);
-            if(data1!=NULL && *((char*)data1)!=0){
-                /* byte by byte: an LP64 unsigned long read 8 bytes (#511) */
-                L1 = ((const uint8_t *) (data1))[0];
-                L2 = ((const uint8_t *) (data1))[1];
-                L3 = ((const uint8_t *) (data1))[2];
-                L4 = ((const uint8_t *) (data1))[3];
-				snprintf(json_buff1, json_cap1,"{\"ip.dst\":\"%lu.%lu.%lu.%lu\"},", L1, L2, L3, L4);
-			    json_grow_append(&json_buff, &json_cap, json_buff1);
-		    }else if( having_mac_dst == 0 ){
-				data1 = get_attribute_extracted_data(ctx->pkt, 99, 2);
-				temp_MAC = xmalloc(22);
-				if (temp_MAC == NULL) goto cleanup;
-				convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
-				snprintf(json_buff1, json_cap1,"{\"eth.dst\":\"%s\"},", temp_MAC);
-				json_grow_append(&json_buff, &json_cap, json_buff1);
-				xfree( temp_MAC );
-			}
-			num_attr ++;
-            data1 = NULL;
-		}
+        int num_attr = history_append_attributes(&h, ctx);
+        if (num_attr < 0) goto cleanup; /* F-BUG-096: one exit frees both JSON buffers */
 
         if( num_attr > 0 ){
         	//remove the last comma in "event: [{...},...,{..},"
-        	size_t _jlen = strlen(json_buff);
-        	if (_jlen > 0 && json_buff[_jlen - 1] == ',')
-        	    json_buff[_jlen - 1] = '\0';
+        	size_t _jlen = strlen(h.buf);
+        	if (_jlen > 0 && h.buf[_jlen - 1] == ',')
+        	    h.buf[_jlen - 1] = '\0';
         }
-        json_grow_append(&json_buff, &json_cap, "]");
-        {
-            size_t ev_len = strlen(json_buff) + 64;
-            char *ev_buf = xmalloc(ev_len);
-            if (ev_buf) {
-                snprintf(ev_buf, ev_len, "\"event_%d\":{%s},", event_id, json_buff );
-                size_t _l = strlen(ev_buf);
-                if (_l + 1 > json_cap) { char *nb = realloc(json_buff, _l+1); if (nb) { json_buff=nb; json_cap=_l+1; } }
-                if (_l + 1 <= json_cap) memcpy(json_buff, ev_buf, _l + 1);
-                xfree(ev_buf);
-            }
-        }
-
-        short c = 0;
-        if (context == BEFORE || context == AFTER || context == SAME) c = 1;
-        /* size_t: the history grows one event per satisfied condition — an int
-         * could wrap on a long-running probe (F-BUG-096, #209) */
-        size_t json_buff_size = strlen(json_buff) + 1 + (size_t) c;
-        if (curr_rule->json_history != NULL) {
-            json_buff_size = json_buff_size + strlen(curr_rule->json_history);
-            char *tmp = realloc(curr_rule->json_history, json_buff_size);
-            if(tmp!=NULL){
-                curr_rule->json_history = tmp;
-            }else{
-                goto cleanup;
-            }
-        } else {
-            curr_rule->json_history = xcalloc(1, json_buff_size);
-            if (curr_rule->json_history == NULL){
-                goto cleanup;
-            }
-        }
-
-        {
-            /* bounded append: json_buff_size was sized for exactly this */
-            size_t _off = strlen(curr_rule->json_history);
-            size_t _n = strlen(json_buff) + 1;
-            if (_off + _n <= json_buff_size)
-                memcpy(curr_rule->json_history + _off, json_buff, _n);
-        }
+        json_grow_append(&h.buf, &h.cap, "]");
+        history_wrap_event(&h, event_id);
+        history_commit(&h, context, curr_rule);
     }
 cleanup:
-    xfree(json_buff);
-    xfree(json_buff1);
+    xfree(h.buf);
+    xfree(h.line);
 }
 
 void store_tuples( verify_ctx_t *ctx, enum_operation_type context, rule *curr_rule, short event_id, char *cause )

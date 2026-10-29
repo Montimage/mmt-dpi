@@ -1337,6 +1337,188 @@ static void test_path_xc_membership(void)
           "path XC returns NOT_VALID for an absent needle");
 }
 
+/* #548: characterisation of compare_values() before it is split into
+ * per-type helpers. Each row pins the verdict for the six relational
+ * operators in the order NEQ EQ LT LTE GT GTE ('V' = VALID, '.' =
+ * NOT_VALID), quirks included — the rows are the current behaviour, not a
+ * specification. */
+static compare_value cv(int type, void *data, int size)
+{
+    compare_value v;
+    memset(&v, 0, sizeof v);
+    v.type = type;
+    v.found = FOUND;
+    v.size = size;
+    v.data = data;
+    return v;
+}
+
+static const char *cmp_row(compare_value v1, compare_value v2)
+{
+    static char row[7];
+    static const enum_operation ops[6] = { NEQ, EQ, LT, LTE, GT, GTE };
+    int k;
+    for (k = 0; k < 6; k++)
+        row[k] = compare_values(v1, v2, ops[k]) == VALID ? 'V' : '.';
+    row[6] = '\0';
+    return row;
+}
+
+#define CHECK_ROW(v1, v2, want, msg) do {                              \
+    const char *got_ = cmp_row((v1), (v2));                            \
+    if (strcmp(got_, (want)) == 0) { printf("ok - %s\n", (msg)); }     \
+    else { printf("FAIL - %s (got %s, want %s)\n", (msg), got_, (want)); failures++; } \
+} while (0)
+
+static void test_compare_values_integers(void)
+{
+    uint8_t u8a = 5, u8b = 5;
+    uint16_t u16a = 3, u16b = 9;
+    uint32_t u32a = 70000, u32b = 7;
+    uint64_t u64a = 0x100000000ULL, u64b = 0x100000000ULL;
+    char ca = 'a', cb = 'b', chi = (char) 0x80, clo = 0x01;
+
+    /* both operands unsigned of any width: widened to 64 bits */
+    CHECK_ROW(cv(MMT_U8_DATA, &u8a, 1), cv(MMT_U32_DATA, &u32b, 4), "V.VV..",
+              "u8 5 vs u32 7 compares widened");
+    CHECK_ROW(cv(MMT_U32_DATA, &u32a, 4), cv(MMT_U16_DATA, &u16b, 2), "V...VV",
+              "u32 70000 vs u16 9 compares widened");
+    CHECK_ROW(cv(MMT_U64_DATA, &u64a, 8), cv(MMT_U64_DATA, &u64b, 8), ".V.V.V",
+              "u64 equal operands");
+    CHECK(compare_values(cv(MMT_U8_DATA, &u8a, 1), cv(MMT_U8_DATA, &u8b, 1), XC) == NOT_VALID,
+          "a non-relational operator on unsigned operands is NOT_VALID");
+    /* per-type cases: reached when v2 is not one of the four unsigned types */
+    CHECK_ROW(cv(MMT_U16_DATA, &u16a, 2), cv(MMT_DATA_LAYERID, &u16b, 2), "V.VV..",
+              "u16 3 vs layer id 9 reads both as u16");
+    CHECK_ROW(cv(MMT_DATA_LAYERID, &u16b, 2), cv(MMT_DATA_LAYERID, &u16a, 2), "V...VV",
+              "layer id 9 vs layer id 3");
+    CHECK_ROW(cv(MMT_U32_DATA, &u32b, 4), cv(MMT_DATA_PORT, &u32a, 4), "V.VV..",
+              "u32 7 vs a port-typed operand reads both as u32");
+    CHECK_ROW(cv(MMT_DATA_POINT, &u64a, 8), cv(MMT_DATA_POINT, &u64b, 8), ".V.V.V",
+              "point operands compare as u64");
+    CHECK_ROW(cv(MMT_U64_DATA, &u64a, 8), cv(MMT_DATA_POINT, &u64b, 8), ".V.V.V",
+              "u64 vs point compares as u64");
+    CHECK_ROW(cv(MMT_U8_DATA, &u8a, 1), cv(MMT_DATA_CHAR, &cb, 1), "V.VV..",
+              "u8 5 vs char 'b' reads both as u8");
+    CHECK_ROW(cv(MMT_DATA_CHAR, &ca, 1), cv(MMT_DATA_CHAR, &cb, 1), "V.VV..",
+              "char 'a' vs char 'b'");
+    CHECK_ROW(cv(MMT_DATA_CHAR, &chi, 1), cv(MMT_DATA_CHAR, &clo, 1), "V...VV",
+              "char 0x80 vs 0x01 compares unsigned");
+}
+
+static void test_compare_values_float(void)
+{
+    float fa = 1.5f, fb = 2.5f, fc = 1.5f;
+    CHECK_ROW(cv(MMT_DATA_FLOAT, &fa, 4), cv(MMT_DATA_FLOAT, &fb, 4), "V.VV..",
+              "float 1.5 vs 2.5");
+    CHECK_ROW(cv(MMT_DATA_FLOAT, &fb, 4), cv(MMT_DATA_FLOAT, &fa, 4), "V...VV",
+              "float 2.5 vs 1.5");
+    CHECK_ROW(cv(MMT_DATA_FLOAT, &fa, 4), cv(MMT_DATA_FLOAT, &fc, 4), ".V.V.V",
+              "float equal operands");
+    CHECK(compare_values(cv(MMT_DATA_FLOAT, &fa, 4), cv(MMT_DATA_FLOAT, &fc, 4), XC) == NOT_VALID,
+          "float XC is NOT_VALID");
+}
+
+static void test_compare_values_time(void)
+{
+    struct timeval t0 = { 10, 500 }, t_usec = { 10, 900 }, t_sec = { 11, 0 }, t_eq = { 10, 500 };
+    mmt_date_t d0, d_eq, d_sec, d_year, d_wday;
+
+    CHECK_ROW(cv(MMT_DATA_TIMEVAL, &t0, sizeof t0), cv(MMT_DATA_TIMEVAL, &t_eq, sizeof t0), ".V.V.V",
+              "timeval equal operands");
+    CHECK_ROW(cv(MMT_DATA_TIMEVAL, &t0, sizeof t0), cv(MMT_DATA_TIMEVAL, &t_usec, sizeof t0), "V.VV..",
+              "timeval earlier by usec");
+    CHECK_ROW(cv(MMT_DATA_TIMEVAL, &t_sec, sizeof t0), cv(MMT_DATA_TIMEVAL, &t_usec, sizeof t0), "V...VV",
+              "timeval later by sec");
+
+    memset(&d0, 0, sizeof d0);
+    d0.sec = 30; d0.min = 20; d0.hour = 10; d0.mday = 5; d0.month = 6; d0.year = 2020; d0.wday = 3;
+    d_eq = d0;
+    d_sec = d0; d_sec.sec = 31;
+    d_year = d0; d_year.year = 2021;
+    d_wday = d0; d_wday.wday = 4;
+    CHECK_ROW(cv(MMT_DATA_DATE, &d0, sizeof d0), cv(MMT_DATA_DATE, &d_eq, sizeof d0), ".V.V.V",
+              "date equal operands");
+    CHECK_ROW(cv(MMT_DATA_DATE, &d0, sizeof d0), cv(MMT_DATA_DATE, &d_sec, sizeof d0), "V.VV..",
+              "date earlier by one second");
+    CHECK_ROW(cv(MMT_DATA_DATE, &d_sec, sizeof d0), cv(MMT_DATA_DATE, &d0, sizeof d0), "V...VV",
+              "date later by one second");
+    /* quirk: the GT/GTE year test is `<`, so an earlier year is both
+     * lower and greater, and a later year is neither */
+    CHECK_ROW(cv(MMT_DATA_DATE, &d0, sizeof d0), cv(MMT_DATA_DATE, &d_year, sizeof d0), "V.VVVV",
+              "date earlier by a year (GT/GTE year quirk)");
+    CHECK_ROW(cv(MMT_DATA_DATE, &d_year, sizeof d0), cv(MMT_DATA_DATE, &d0, sizeof d0), "V.....",
+              "date later by a year (GT/GTE year quirk)");
+    CHECK_ROW(cv(MMT_DATA_DATE, &d0, sizeof d0), cv(MMT_DATA_DATE, &d_wday, sizeof d0), "V.....",
+              "date differing only in week day is unordered");
+}
+
+static void test_compare_values_bytes(void)
+{
+    char abc[] = "abc", abd[] = "abd", abc2[] = "abc", ab[] = "ab", bc[] = "bc";
+    unsigned char bin1[4] = { 1, 2, 3, 4 }, bin2[4] = { 1, 2, 3, 4 };
+
+    CHECK_ROW(cv(MMT_STRING_DATA, abc, 3), cv(MMT_STRING_DATA, abd, 3), "V.VV..",
+              "string 'abc' vs 'abd' byte order");
+    CHECK_ROW(cv(MMT_STRING_DATA, abd, 3), cv(MMT_STRING_DATA, abc, 3), "V...VV",
+              "string 'abd' vs 'abc' byte order");
+    CHECK_ROW(cv(MMT_STRING_DATA, abc, 3), cv(MMT_STRING_DATA, abc2, 3), ".V.V.V",
+              "string equal operands");
+    /* different sizes: EQ/NEQ decide on the size, the others compare the
+     * common prefix */
+    CHECK_ROW(cv(MMT_STRING_DATA, ab, 2), cv(MMT_STRING_DATA, abc, 3), "V..V.V",
+              "string 'ab' vs 'abc' (size mismatch)");
+    CHECK_ROW(cv(MMT_STRING_DATA, ab, 0), cv(MMT_STRING_DATA, abc, 0), "......",
+              "zero-size strings never compare");
+    CHECK(compare_values(cv(MMT_STRING_DATA, abc, 3), cv(MMT_STRING_DATA, bc, 2), XC) == VALID,
+          "string XC finds the substring");
+    CHECK(compare_values(cv(MMT_STRING_DATA, abc, 3), cv(MMT_STRING_DATA, abd, 3), XCE) == NOT_VALID,
+          "string XCE without the substring is NOT_VALID");
+    CHECK(compare_values(cv(MMT_STRING_DATA, bc, 2), cv(MMT_STRING_DATA, abc, 3), XD) == VALID,
+          "string XD finds the first operand inside the second");
+    CHECK(compare_values(cv(MMT_STRING_DATA, abd, 3), cv(MMT_STRING_DATA, abc, 3), XDE) == NOT_VALID,
+          "string XDE without the substring is NOT_VALID");
+    CHECK(compare_values(cv(MMT_STRING_DATA, abc, 3), cv(MMT_STRING_DATA, abc2, 3), XE) == VALID,
+          "string XE on identical strings");
+    CHECK(compare_values(cv(MMT_STRING_DATA, abc, 3), cv(MMT_STRING_DATA, abd, 3), XE) == NOT_VALID,
+          "string XE on different strings");
+    CHECK(compare_values(cv(MMT_STRING_DATA, abc, 3), cv(MMT_STRING_DATA, abd, 3), XIN) == NOT_VALID,
+          "string XIN against a non-table operand is NOT_VALID");
+    CHECK_ROW(cv(MMT_BINARY_DATA, bin1, 4), cv(MMT_BINARY_DATA, bin2, 4), ".V.V.V",
+              "binary equal operands compare byte-wise");
+    CHECK_ROW(cv(MMT_DATA_IP_ADDR, bin1, 4), cv(MMT_DATA_IP_ADDR, abc, 3), "V.VV..",
+              "IPv4 operands of different sizes");
+}
+
+static void test_compare_values_unordered_types(void)
+{
+    int path[2] = { 7, 9 };
+    char needle[] = "9";
+    char *s1 = (char *) "beta", *s2 = (char *) "alpha", *snull = NULL;
+    uint32_t port = 80;
+
+    CHECK(compare_values(cv(MMT_DATA_PATH, path, (int) sizeof path), cv(MMT_DATA_PATH, needle, 2), EQ) == NOT_VALID,
+          "path EQ is NOT_VALID");
+    CHECK(compare_values(cv(MMT_DATA_PATH, path, 0), cv(MMT_DATA_PATH, needle, 2), XC) == NOT_VALID,
+          "path XC on an empty path is NOT_VALID");
+    CHECK(compare_values(cv(MMT_DATA_PATH, path, (int) sizeof path), cv(MMT_DATA_PATH, needle, 2), XCE) == VALID,
+          "path XCE finds the needle");
+    CHECK_ROW(cv(MMT_STRING_DATA_POINTER, &s1, sizeof s1), cv(MMT_STRING_DATA_POINTER, &s2, sizeof s2), "V...VV",
+              "string-pointer contents order");
+    CHECK(compare_values(cv(MMT_STRING_DATA_POINTER, &s2, sizeof s2), cv(MMT_STRING_DATA_POINTER, &s1, sizeof s1), XE) == NOT_VALID,
+          "string-pointer XE on different contents");
+    CHECK(compare_values(cv(MMT_STRING_DATA_POINTER, &s1, sizeof s1), cv(MMT_STRING_DATA_POINTER, &s1, sizeof s1), XDE) == VALID,
+          "string-pointer XDE on identical contents");
+    CHECK(compare_values(cv(MMT_STRING_DATA_POINTER, &s1, sizeof s1), cv(MMT_STRING_DATA_POINTER, &snull, sizeof s1), NEQ) == NOT_VALID,
+          "string-pointer with a NULL operand is NOT_VALID");
+    CHECK(compare_values(cv(MMT_STRING_DATA_POINTER, &s1, sizeof s1), cv(MMT_STRING_DATA_POINTER, &s1, sizeof s1), XIN) == NOT_VALID,
+          "string-pointer XIN is NOT_VALID");
+    CHECK_ROW(cv(MMT_DATA_PORT, &port, 4), cv(MMT_DATA_PORT, &port, 4), "......",
+              "port operands have no comparison");
+    CHECK_ROW(cv(MMT_DATA_TIMEARG, &port, 4), cv(MMT_DATA_TIMEARG, &port, 4), "......",
+              "time-argument operands have no comparison");
+}
+
 int main(void)
 {
     test_compute_zero_divisor();
@@ -1362,6 +1544,13 @@ int main(void)
     test_reference_string_outlives_packet();
     test_countout_window();
     test_path_xc_membership();
+
+    /* #548: compare_values() characterisation before its split */
+    test_compare_values_integers();
+    test_compare_values_float();
+    test_compare_values_time();
+    test_compare_values_bytes();
+    test_compare_values_unordered_types();
 
     if (failures) {
         printf("%d check(s) failed\n", failures);

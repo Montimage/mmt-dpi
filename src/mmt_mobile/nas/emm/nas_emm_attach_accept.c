@@ -65,6 +65,7 @@ static inline void _set_u8(nas_emm_attach_accept_t *acc, uint32_t bit,
 static int _decode_optional_ie(nas_emm_attach_accept_t *acc, const uint8_t *buffer, uint32_t len){
 	const uint8_t iei = buffer[0];
 	uint32_t hdr, value_len;
+	int rc;
 
 	if( iei >= 0x80 ){
 		if( (iei & 0xF0) == ATTACH_ACCEPT_ADDITIONAL_UPDATE_RESULT_IEI )
@@ -77,13 +78,17 @@ static int _decode_optional_ie(nas_emm_attach_accept_t *acc, const uint8_t *buff
 
 	switch( iei ){
 	case ATTACH_ACCEPT_LOCATION_AREA_IDENTIFICATION_IEI:
-		CHECK_LENGTH_DECODER( len, 6 );
+		rc = nas_check_length(len, 6);
+		if (unlikely(rc < 0))
+			return rc;
 		_set_octets( acc, NAS_EMM_ATTACH_ACCEPT_HAS_LAI, &acc->lai, buffer + 1, 5 );
 		return 6;
 	case ATTACH_ACCEPT_EMM_CAUSE_IEI:
 	case ATTACH_ACCEPT_T3402_VALUE_IEI:
 	case ATTACH_ACCEPT_T3423_VALUE_IEI:
-		CHECK_LENGTH_DECODER( len, 2 );
+		rc = nas_check_length(len, 2);
+		if (unlikely(rc < 0))
+			return rc;
 		if( iei == ATTACH_ACCEPT_EMM_CAUSE_IEI )
 			_set_u8( acc, NAS_EMM_ATTACH_ACCEPT_HAS_EMM_CAUSE, &acc->emm_cause, buffer[1] );
 		else if( iei == ATTACH_ACCEPT_T3402_VALUE_IEI )
@@ -95,15 +100,21 @@ static int _decode_optional_ie(nas_emm_attach_accept_t *acc, const uint8_t *buff
 
 	/* TLV (1-octet length) or TLV-E (2-octet length) */
 	if( (iei & 0xF0) == 0x70 ){
-		CHECK_LENGTH_DECODER( len, 3 );
+		rc = nas_check_length(len, 3);
+		if (unlikely(rc < 0))
+			return rc;
 		hdr       = 3;
 		value_len = ((uint32_t) buffer[1] << 8) | buffer[2];
 	}else{
-		CHECK_LENGTH_DECODER( len, 2 );
+		rc = nas_check_length(len, 2);
+		if (unlikely(rc < 0))
+			return rc;
 		hdr       = 2;
 		value_len = buffer[1];
 	}
-	CHECK_LENGTH_DECODER( len - hdr, value_len );
+	rc = nas_check_length(len - hdr, value_len);
+	if (unlikely(rc < 0))
+		return rc;
 
 	switch( iei ){
 	case ATTACH_ACCEPT_GUTI_IEI:
@@ -148,9 +159,14 @@ static int _decode_optional_ie(nas_emm_attach_accept_t *acc, const uint8_t *buff
 int nas_emm_decode_attach_accept(nas_emm_attach_accept_t *attach_accept, const uint8_t *buffer, uint32_t len){
   int decoded = 0;
   int ret = 0;
+  int rc;
 
   // Check if we got a NULL pointer and if buffer length is >= minimum length expected for the message.
-  CHECK_PDU_POINTER_AND_LENGTH_DECODER(buffer, NAS_EMM_ATTACH_ACCEPT_MIN_LEN, len);
+  rc = nas_check_pdu(buffer, NAS_EMM_ATTACH_ACCEPT_MIN_LEN, len);
+  if (unlikely(rc < 0)) {
+    NAS_LOG_PDU_CHECK(rc, NAS_EMM_ATTACH_ACCEPT_MIN_LEN, len);
+    return rc;
+  }
 
   /* Decoding mandatory fields */
   // F-BUG-214: pass buffer+decoded for t3412value (misreported attribute)
@@ -159,10 +175,14 @@ int nas_emm_decode_attach_accept(nas_emm_attach_accept_t *attach_accept, const u
   DECODE_U8( buffer + decoded, attach_accept->t3412value, decoded );
 
   ret = nas_decode_tracking_area_identity_list(&attach_accept->tailist, 0, buffer + decoded, len - decoded);
-  CHECK_RESULT_DECODER( ret, decoded );
+  if (unlikely(ret < 0))
+    return ret;
+  decoded += ret;
 
   ret = nas_decode_octet_string(&attach_accept->esm_message_container, 2, buffer + decoded, len - decoded);
-  CHECK_RESULT_DECODER( ret, decoded );
+  if (unlikely(ret < 0))
+    return ret;
+  decoded += ret;
 
   /* Decoding optional fields: issue #335 — walk every IE by its format
    * instead of scanning byte by byte for the GUTI IEI. An IE that overruns

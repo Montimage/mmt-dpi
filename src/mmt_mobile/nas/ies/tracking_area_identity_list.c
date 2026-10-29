@@ -109,21 +109,34 @@ int nas_decode_tracking_area_identity_list(nas_tracking_area_identity_list_t *ls
 {
   int decoded = 0;
   uint8_t ielen = 0;
+  int rc;
 
   /* F-BUG-083: validate pointer and length before the first read;
    * remainders are computed in a checked signed form. */
   if (iei > 0) {
-    CHECK_PDU_POINTER_AND_LENGTH_DECODER(buffer, 1, len);
-    CHECK_IEI_DECODER(iei, *buffer);
+    rc = nas_check_pdu(buffer, 1, len);
+    if (unlikely(rc < 0)) {
+      NAS_LOG_PDU_CHECK(rc, 1, len);
+      return rc;
+    }
+    NAS_LOG_IEI_MISMATCH(iei, *buffer);
     decoded++;
   }
 
-  CHECK_PDU_POINTER_AND_LENGTH_DECODER(buffer, decoded + 1, len);
+  rc = nas_check_pdu(buffer, decoded + 1, len);
+  if (unlikely(rc < 0)) {
+    NAS_LOG_PDU_CHECK(rc, decoded + 1, len);
+    return rc;
+  }
   ielen = *(buffer + decoded);
   decoded++;
-  CHECK_LENGTH_DECODER((int32_t)len - decoded, ielen);
+  rc = nas_check_length((int32_t)len - decoded, ielen);
+  if (unlikely(rc < 0))
+    return rc;
   // F-BUG-204: validate ielen>=6 (+IEI) for TAI lists (legal 0..5)
-  CHECK_LENGTH_DECODER(ielen, 6);
+  rc = nas_check_length(ielen, 6);
+  if (unlikely(rc < 0))
+    return rc;
 
   /* no stale header or first TAI survives a malformed first partial list */
   memset(lst, 0, sizeof(*lst));

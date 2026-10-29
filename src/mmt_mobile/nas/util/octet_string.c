@@ -10,8 +10,13 @@
 
 int nas_decode_octet_string( nas_octet_string_t *msg, uint8_t length_byte_size, const uint8_t *buffer, uint16_t len ){
 	int decoded = 0;
+	int rc;
 
-	CHECK_PDU_POINTER_AND_LENGTH_DECODER( buffer, NAS_OCTET_STRING_MINIMUM_LENGTH, len );
+	rc = nas_check_pdu(buffer, NAS_OCTET_STRING_MINIMUM_LENGTH, len);
+	if (unlikely(rc < 0)) {
+		NAS_LOG_PDU_CHECK(rc, NAS_OCTET_STRING_MINIMUM_LENGTH, len);
+		return rc;
+	}
 
 	switch( length_byte_size ){
 	case 1:
@@ -22,7 +27,9 @@ int nas_decode_octet_string( nas_octet_string_t *msg, uint8_t length_byte_size, 
 		break;
 	}
 
-	CHECK_LENGTH_DECODER(len - decoded, msg->len);
+	rc = nas_check_length(len - decoded, msg->len);
+	if (unlikely(rc < 0))
+		return rc;
 
 	msg->data = buffer + decoded;
 

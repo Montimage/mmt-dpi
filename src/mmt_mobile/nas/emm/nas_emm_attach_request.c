@@ -19,8 +19,13 @@ int nas_emm_decode_attach_request(nas_emm_attach_request_t *msg, const uint8_t *
 
 	int decoded = 0;
 	int ret = 0;
+	int rc;
 
-	CHECK_PDU_POINTER_AND_LENGTH_DECODER(buffer, 2, len);
+	rc = nas_check_pdu(buffer, 2, len);
+	if (unlikely(rc < 0)) {
+		NAS_LOG_PDU_CHECK(rc, 2, len);
+		return rc;
+	}
 
 	DECODE_U8(buffer+decoded, msg->eps_attach_type, decoded );
 

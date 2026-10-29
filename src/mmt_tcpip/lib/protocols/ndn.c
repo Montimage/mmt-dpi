@@ -615,6 +615,27 @@ char * ndn_TVL_get_name_components(ndn_tlv_t *name_com, char *payload, int total
     return ret;
 }
 
+/**
+ * String of the name component at nc_index in the list starting at
+ * name_com (index 0 is name_com itself), or NULL when the list is shorter.
+ */
+static char * ndn_name_component_string(ndn_tlv_t *name_com, char *payload, int total_length, int nc_index){
+    if(nc_index == 0){
+        return ndn_TLV_get_string(name_com,payload,total_length);
+    }
+    int current_index = 0;
+    ndn_tlv_t *temp = name_com->next;
+
+    while(temp != NULL){
+        current_index++;
+        if(current_index == nc_index){
+            return ndn_TLV_get_string(temp,payload,total_length);
+        }
+        temp = temp->next;
+    }
+    return NULL;
+}
+
 char * ndn_name_components_at_index(char *payload,int total_length , int nc_index){
 
     ndn_tlv_t * root = ndn_TLV_parser(payload,0,total_length);
@@ -648,23 +669,8 @@ char * ndn_name_components_at_index(char *payload,int total_length , int nc_inde
 
                 ndn_tlv_t * name_com = ndn_TLV_parser_name_comp(payload,total_length,new_offset,name_node->length);
                 if(name_com != NULL){
-                   if(nc_index == 0){
-                      ret = ndn_TLV_get_string(name_com,payload,total_length);
-                  }else{
-                      int current_index = 0;
-                      ndn_tlv_t *temp = name_com->next;
-
-                      while(temp != NULL){
-                          current_index++;
-                          if(current_index == nc_index){
-                              ret = ndn_TLV_get_string(temp,payload,total_length);
-                              break;
-                          }
-                          temp = temp->next;
-                      }
-                  }
-
-              }
+                    ret = ndn_name_component_string(name_com, payload, total_length, nc_index);
+                }
               ndn_TLV_free(name_com);
           }
 
@@ -1836,20 +1842,10 @@ void ndn_process_timed_out_session(ipacket_t *ipacket, unsigned index, ndn_sessi
 
 
 /**
- * Analysis packet data
- * @param  ipacket packet to analysis
- * @param  index   protocol index
- * @return         MMT_CONTINUE
- *                 MMT_SKIP
- *                 MMT_DROP
+ * Length of the NDN payload at offset: up to the end of the capture over
+ * Ethernet, the TCP payload length bounded by the capture otherwise.
  */
- int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
-
-
-    debug("NDN/NDN_HTTP: ndn_session_data_analysis");
-    int offset = get_packet_offset_at_index(ipacket, index);
-    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return MMT_CONTINUE;
-    char *payload = (char*)&ipacket->data[offset];
+static uint32_t ndn_session_payload_len(ipacket_t * ipacket, unsigned index, int offset){
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(index == 2){
@@ -1865,35 +1861,18 @@ void ndn_process_timed_out_session(ipacket_t *ipacket, unsigned index, ndn_sessi
         if ((uint64_t) offset + payload_len > ipacket->p_hdr->caplen)
             payload_len = (uint32_t) (ipacket->p_hdr->caplen - (uint64_t) offset);
     }
+    return payload_len;
+}
 
-    if(payload_len == 0) {
-        debug("NDN/NDN_HTTP: payload_len == 0 of ipacket : %lu",ipacket->packet_id);
-        return MMT_CONTINUE;
-    }
-    ndn_tlv_t * root = ndn_TLV_parser(payload, 0, payload_len);
-
-    if (root == NULL) {
-        debug("NDN/NDN_HTTP: ndn root node is NULL of ipacket : %lu",ipacket->packet_id);
-        return MMT_CONTINUE;
-    }
-    if(root->type != NDN_DATA_PACKET && root->type != NDN_INTEREST_PACKET){
-        debug("NDN/NDN_HTTP: Not NDN packet - ipacket : %lu",ipacket->packet_id);
-        ndn_TLV_free(root);
-        return MMT_CONTINUE;
-    }
-
-    // Create tuple3
-    
-    ndn_tuple3_t *t3 = ndn_new_tuple3();
-    
-    // Packet type of tuple3
-    t3->packet_type = root->type;
-    
-
+/**
+ * Fill the MAC addresses of t3 and, when the packet has them, its IP
+ * addresses, ports and transport protocol.
+ */
+static void ndn_tuple3_set_addresses(ndn_tuple3_t *t3, ipacket_t * ipacket){
     // Extract the MAC address
     t3->src_MAC = mmt_malloc(19);
     t3->dst_MAC = mmt_malloc(19);
-    
+
     unsigned char * src_MAC_addr = mmt_malloc(7);
     memcpy(src_MAC_addr,&ipacket->data[0],ETH_ALEN);
     src_MAC_addr[ETH_ALEN] = '\0';
@@ -1920,23 +1899,19 @@ void ndn_process_timed_out_session(ipacket_t *ipacket, unsigned index, ndn_sessi
                     t3->port_src = ipacket->internal_packet->udp->source;
                     t3->port_dst = ipacket->internal_packet->udp->dest;
                     t3->proto_over = PROTO_UDP;
-                }    
+                }
             }
         }
     }else{
         t3->proto_over = PROTO_ETHERNET;
     }
+}
 
-    // Extract name component
-    int name_offset = 2 + root->nb_octets;
-
-    if(root->data_offset == payload_len){
-        ndn_TLV_free(root);
-        ndn_free_tuple3(t3);
-        debug("NDN/NDN_HTTP: Not NDN packet - ipacket : %lu",ipacket->packet_id);
-        return MMT_CONTINUE;
-    }
-
+/**
+ * Name components ('/'-joined) of the Name TLV at name_offset, or NULL when
+ * there is no parsable Name. The parsed Name node is freed before returning.
+ */
+static char * ndn_session_name_component(char *payload, uint32_t payload_len, int name_offset){
     ndn_tlv_t * name_node = ndn_TLV_parser(payload, name_offset, payload_len);
 
     char * name_component = NULL;
@@ -1957,22 +1932,19 @@ void ndn_process_timed_out_session(ipacket_t *ipacket, unsigned index, ndn_sessi
 
     }
 
-    if(name_component == NULL){
-        ndn_TLV_free(name_node);
-        ndn_TLV_free(root);
-        ndn_free_tuple3(t3);
-        // log_err("NDN/NDN_HTTP: Cannot parse name component - ipacket : %lu",ipacket->packet_id);
-        return MMT_CONTINUE;
-    }   
-    
     ndn_TLV_free(name_node);
+    return name_component;
+}
 
-    t3->name = name_component;
-    // Created tuple3
+/**
+ * The NDN protocol context of the packet, with its dummy packet,
+ * proto_index and proto_id brought up to date; NULL when there is none.
+ */
+static ndn_proto_context_t * ndn_session_update_proto_context(ipacket_t * ipacket, unsigned index){
     ndn_proto_context_t * ndn_proto_context = ndn_get_proto_context(ipacket,index);
     if(ndn_proto_context == NULL){
         // log_err("\nNDN/NDN_HTTP: Cannot get NDN protocol context");
-        return MMT_CONTINUE;
+        return NULL;
     }
 
     // Update last ndn packet
@@ -1998,23 +1970,18 @@ void ndn_process_timed_out_session(ipacket_t *ipacket, unsigned index, ndn_sessi
     if(ndn_proto_context->proto_id == 0){
     	ndn_proto_context->proto_id = get_protocol_id_at_index(ipacket,index);
     }
+    return ndn_proto_context;
+}
 
-    // Update list NDN session
-    ndn_session_t *dummy_session = ndn_proto_context->dummy_session;
-
-    if(dummy_session == NULL){
-        // log_err("\nNDN/NDN_HTTP: Cannot get ndn dummy_session");
-        return MMT_CONTINUE;
-    }
-
-    if(dummy_session->next != NULL){
-        ndn_process_timed_out_session(ipacket,index,dummy_session->next,dummy_session,ndn_proto_context->proto_id);    
-    }else{
-        debug("\nNDN/NDN_HTTP: No session to process timed out");
-    }
-    
+/**
+ * The session of t3 in the list after dummy_session. A new session is
+ * created and takes ownership of t3 when there is none; otherwise t3 is
+ * freed and *direction tells whether the packet goes the session's way (0)
+ * or the reverse way (1).
+ */
+static ndn_session_t * ndn_session_find_or_create(ipacket_t * ipacket, ndn_tuple3_t *t3, ndn_session_t *dummy_session, int *direction){
     ndn_session_t *ndn_session = ndn_find_session_by_tuple3(t3, dummy_session);
-    int direction = 0;
+    *direction = 0;
     if(ndn_session == NULL){
         ndn_session = ndn_new_session();
         ndn_session->tuple3 = t3;
@@ -2033,118 +2000,220 @@ void ndn_process_timed_out_session(ipacket_t *ipacket, unsigned index, ndn_sessi
             dummy_session->next = ndn_session;
         }else{
             // debug("\nNDN/NDN_HTTP: Added to the existing session of the list: %lu",dummy_session->next->session_id);
-            ndn_session->next = dummy_session->next;    
+            ndn_session->next = dummy_session->next;
             dummy_session->next = ndn_session;
         }
     }else{
         // debug("\nNDN/NDN_HTTP: Updating the session: %lu",ndn_session->session_id);
         if(strcmp(t3->src_MAC, ndn_session->tuple3->src_MAC) == 0){
-            direction = 0;
+            *direction = 0;
         }else{
-            direction = 1;
+            *direction = 1;
         }
         ndn_free_tuple3(t3);
     }
+    return ndn_session;
+}
+
+/* Store the packet time in *last_time, allocating it on first use. */
+static void ndn_session_set_interest_time(struct timeval ** last_time, ipacket_t * ipacket){
+    if(*last_time == NULL){
+        *last_time = mmt_malloc(sizeof(struct timeval));
+    }
+    (*last_time)->tv_sec = ipacket->p_hdr->ts.tv_sec;
+    (*last_time)->tv_usec = ipacket->p_hdr->ts.tv_usec;
+}
+
+/* Interest packet: counters, lifetime and last Interest time of this direction. */
+static void ndn_session_update_interest(ndn_session_t *ndn_session, int direction, ipacket_t * ipacket, char *payload, uint32_t payload_len, ndn_tlv_t *root){
+    ndn_session->nb_interest_packet[direction]++;
+    ndn_session->data_volume_interest_packet[direction] += ipacket->p_hdr->len;
+    ndn_session->ndn_volume_interest_packet[direction] += root->length;
+
+    ndn_tlv_t *ndn_lifetime = ndn_find_node(payload, payload_len, root,NDN_INTEREST_LIFETIME);
+    if(ndn_lifetime != NULL){
+        ndn_session->interest_lifeTime[direction] = ndn_TLV_get_int(ndn_lifetime, payload, payload_len);
+        ndn_TLV_free(ndn_lifetime);
+    }
+    if(ndn_session->interest_lifeTime[direction] == 0){
+        ndn_session->interest_lifeTime[direction] = NDN_MAX_EXPIRED_TIME;
+    }
+
+    if(direction==0){
+        ndn_session_set_interest_time(&ndn_session->last_interest_packet_time_0, ipacket);
+    }else{
+        ndn_session_set_interest_time(&ndn_session->last_interest_packet_time_1, ipacket);
+    }
+}
+
+/**
+ * Data packet: response time (in ms) since the last Interest of the
+ * opposite direction, which is then reset so it is counted once.
+ */
+static void ndn_session_update_response_time(ndn_session_t *ndn_session, int direction, ipacket_t * ipacket){
+    int in_direction = direction==0?1:0;
+    struct timeval * last_interest_packet_time = NULL;
+    if(in_direction == 0){
+        last_interest_packet_time = ndn_session->last_interest_packet_time_0;
+    }else{
+        last_interest_packet_time = ndn_session->last_interest_packet_time_1;
+    }
+
+    if(last_interest_packet_time != NULL && last_interest_packet_time->tv_sec !=0 && last_interest_packet_time->tv_usec != 0){
+        uint32_t rtt = (ipacket->p_hdr->ts.tv_sec - last_interest_packet_time->tv_sec)*1000 + (ipacket->p_hdr->ts.tv_usec - last_interest_packet_time->tv_usec)/1000;
+        // Update Max responsed time
+        if(ndn_session->max_responsed_time[direction] == -1){
+            ndn_session->max_responsed_time[direction] = rtt;
+        }else{
+            ndn_session->max_responsed_time[direction] = ndn_session->max_responsed_time[direction] < rtt?rtt:ndn_session->max_responsed_time[direction];
+        }
+
+        // Update Min responsed time
+        if(ndn_session->min_responsed_time[direction]== -1 ){
+            ndn_session->min_responsed_time[direction] = rtt;
+        }else{
+            ndn_session->min_responsed_time[direction] = ndn_session->min_responsed_time[direction] > rtt ? rtt : ndn_session->min_responsed_time[direction];
+        }
+        // Update total responsed time
+        if(ndn_session->total_responsed_time[direction] == -1){
+            ndn_session->total_responsed_time[direction] = rtt;
+        }else{
+            ndn_session->total_responsed_time[direction] += rtt;
+        }
+        ndn_session->nb_responsed[direction] += 1;
+        // printf("NDN/NDN_HTTP: MINMAX session: %lu min_responsed_time: %zu max_responsed_time: %zu",ndn_session->session_id,ndn_session->min_responsed_time, ndn_session->max_responsed_time);
+        // mmt_free(last_interest_packet_time);
+        // last_interest_packet_time = NULL;
+        last_interest_packet_time->tv_sec = 0;
+        last_interest_packet_time->tv_usec = 0;
+    }
+}
+
+/* Data packet: counters, response time and freshness period of this direction. */
+static void ndn_session_update_data(ndn_session_t *ndn_session, int direction, ipacket_t * ipacket, char *payload, uint32_t payload_len, ndn_tlv_t *root){
+    ndn_session->nb_data_packet[direction]++;
+    ndn_session->data_volume_data_packet[direction] += ipacket->p_hdr->len;
+    ndn_session->ndn_volume_data_packet[direction] += root->length;
+
+    ndn_session_update_response_time(ndn_session, direction, ipacket);
+
+    ndn_tlv_t *ndn_metainfo = ndn_find_node(payload,payload_len,root, NDN_DATA_METAINFO);
+
+    ndn_tlv_t *ndn_freshness_period = ndn_find_node(payload, payload_len, ndn_metainfo,NDN_DATA_FRESHNESS_PERIOD);
+
+    ndn_session->data_freshnessPeriod[direction] = ndn_TLV_get_int(ndn_freshness_period, payload, payload_len);
+
+    ndn_TLV_free(ndn_freshness_period);
+
+    ndn_TLV_free(ndn_metainfo);
+}
+
+/**
+ * Analysis packet data
+ * @param  ipacket packet to analysis
+ * @param  index   protocol index
+ * @return         MMT_CONTINUE
+ *                 MMT_SKIP
+ *                 MMT_DROP
+ */
+ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
+
+
+    debug("NDN/NDN_HTTP: ndn_session_data_analysis");
+    int offset = get_packet_offset_at_index(ipacket, index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return MMT_CONTINUE;
+    char *payload = (char*)&ipacket->data[offset];
+    uint32_t payload_len = ndn_session_payload_len(ipacket, index, offset);
+
+    if(payload_len == 0) {
+        debug("NDN/NDN_HTTP: payload_len == 0 of ipacket : %lu",ipacket->packet_id);
+        return MMT_CONTINUE;
+    }
+    ndn_tlv_t * root = ndn_TLV_parser(payload, 0, payload_len);
+
+    if (root == NULL) {
+        debug("NDN/NDN_HTTP: ndn root node is NULL of ipacket : %lu",ipacket->packet_id);
+        return MMT_CONTINUE;
+    }
+    if(root->type != NDN_DATA_PACKET && root->type != NDN_INTEREST_PACKET){
+        debug("NDN/NDN_HTTP: Not NDN packet - ipacket : %lu",ipacket->packet_id);
+        ndn_TLV_free(root);
+        return MMT_CONTINUE;
+    }
+
+    // Create tuple3
+
+    ndn_tuple3_t *t3 = ndn_new_tuple3();
+
+    // Packet type of tuple3
+    t3->packet_type = root->type;
+
+    ndn_tuple3_set_addresses(t3, ipacket);
+
+    // Extract name component
+    int name_offset = 2 + root->nb_octets;
+
+    if(root->data_offset == payload_len){
+        ndn_TLV_free(root);
+        ndn_free_tuple3(t3);
+        debug("NDN/NDN_HTTP: Not NDN packet - ipacket : %lu",ipacket->packet_id);
+        return MMT_CONTINUE;
+    }
+
+    char * name_component = ndn_session_name_component(payload, payload_len, name_offset);
+
+    if(name_component == NULL){
+        ndn_TLV_free(root);
+        ndn_free_tuple3(t3);
+        // log_err("NDN/NDN_HTTP: Cannot parse name component - ipacket : %lu",ipacket->packet_id);
+        return MMT_CONTINUE;
+    }
+
+    t3->name = name_component;
+    // Created tuple3
+    ndn_proto_context_t * ndn_proto_context = ndn_session_update_proto_context(ipacket, index);
+    if(ndn_proto_context == NULL){
+        return MMT_CONTINUE;
+    }
+
+    // Update list NDN session
+    ndn_session_t *dummy_session = ndn_proto_context->dummy_session;
+
+    if(dummy_session == NULL){
+        // log_err("\nNDN/NDN_HTTP: Cannot get ndn dummy_session");
+        return MMT_CONTINUE;
+    }
+
+    if(dummy_session->next != NULL){
+        ndn_process_timed_out_session(ipacket,index,dummy_session->next,dummy_session,ndn_proto_context->proto_id);
+    }else{
+        debug("\nNDN/NDN_HTTP: No session to process timed out");
+    }
+
+    int direction = 0;
+    ndn_session_t *ndn_session = ndn_session_find_or_create(ipacket, t3, dummy_session, &direction);
     // Update s_last_activity_time
     if(ndn_session->s_last_activity_time == NULL ){
         ndn_session->s_last_activity_time = mmt_malloc(sizeof(struct timeval));
     }
 
     ndn_session->s_last_activity_time->tv_sec = ipacket->p_hdr->ts.tv_sec;
-    ndn_session->s_last_activity_time->tv_usec = ipacket->p_hdr->ts.tv_usec; 
+    ndn_session->s_last_activity_time->tv_usec = ipacket->p_hdr->ts.tv_usec;
     // debug("\nNDN/NDN_HTTP: Update last activity time: %lu Time: %lu.%06lu",ndn_session->session_id,ndn_session->s_last_activity_time->tv_sec,ndn_session->s_last_activity_time->tv_usec);
     // debug("\nNDN/NDN_HTTP: Last reported time: %lu Time: %lu.%06lu",ndn_session->session_id,ndn_session->last_reported_time->tv_sec,ndn_session->last_reported_time->tv_usec);
     ///--- UPDATE SESSION DATA --- ///
-    
+
     ndn_session->current_direction = direction;
 
     // Update Interest packet statistic
     if(root->type == NDN_INTEREST_PACKET){
-        ndn_session->nb_interest_packet[direction]++;
-        ndn_session->data_volume_interest_packet[direction] += ipacket->p_hdr->len;
-        ndn_session->ndn_volume_interest_packet[direction] += root->length;
-
-        ndn_tlv_t *ndn_lifetime = ndn_find_node(payload, payload_len, root,NDN_INTEREST_LIFETIME);
-        if(ndn_lifetime != NULL){
-            ndn_session->interest_lifeTime[direction] = ndn_TLV_get_int(ndn_lifetime, payload, payload_len);
-            ndn_TLV_free(ndn_lifetime);
-        }
-        if(ndn_session->interest_lifeTime[direction] == 0){
-            ndn_session->interest_lifeTime[direction] = NDN_MAX_EXPIRED_TIME;
-        }
-
-        if(direction==0){
-            if(ndn_session->last_interest_packet_time_0 == NULL){
-                ndn_session->last_interest_packet_time_0 = mmt_malloc(sizeof(struct timeval));
-                ndn_session->last_interest_packet_time_0->tv_sec = ipacket->p_hdr->ts.tv_sec;
-                ndn_session->last_interest_packet_time_0->tv_usec = ipacket->p_hdr->ts.tv_usec;
-            }else{
-                ndn_session->last_interest_packet_time_0->tv_sec = ipacket->p_hdr->ts.tv_sec;
-                ndn_session->last_interest_packet_time_0->tv_usec = ipacket->p_hdr->ts.tv_usec;
-            }
-        }else{
-            if(ndn_session->last_interest_packet_time_1 == NULL){
-                ndn_session->last_interest_packet_time_1 = mmt_malloc(sizeof(struct timeval));
-                ndn_session->last_interest_packet_time_1->tv_sec = ipacket->p_hdr->ts.tv_sec;
-                ndn_session->last_interest_packet_time_1->tv_usec = ipacket->p_hdr->ts.tv_usec;
-            }else{
-                ndn_session->last_interest_packet_time_1->tv_sec = ipacket->p_hdr->ts.tv_sec;
-                ndn_session->last_interest_packet_time_1->tv_usec = ipacket->p_hdr->ts.tv_usec;
-            }
-        }
+        ndn_session_update_interest(ndn_session, direction, ipacket, payload, payload_len, root);
     }
     // Update Data packet statistic
     if(root->type == NDN_DATA_PACKET){
-        ndn_session->nb_data_packet[direction]++;
-        ndn_session->data_volume_data_packet[direction] += ipacket->p_hdr->len;
-        ndn_session->ndn_volume_data_packet[direction] += root->length;
-        int in_direction = direction==0?1:0;
-        struct timeval * last_interest_packet_time = NULL;
-        if(in_direction == 0){
-            last_interest_packet_time = ndn_session->last_interest_packet_time_0;
-        }else{
-            last_interest_packet_time = ndn_session->last_interest_packet_time_1;
-        } 
+        ndn_session_update_data(ndn_session, direction, ipacket, payload, payload_len, root);
+    }
 
-        if(last_interest_packet_time != NULL && last_interest_packet_time->tv_sec !=0 && last_interest_packet_time->tv_usec != 0){
-            uint32_t rtt = (ipacket->p_hdr->ts.tv_sec - last_interest_packet_time->tv_sec)*1000 + (ipacket->p_hdr->ts.tv_usec - last_interest_packet_time->tv_usec)/1000;
-            // Update Max responsed time
-            if(ndn_session->max_responsed_time[direction] == -1){
-                ndn_session->max_responsed_time[direction] = rtt;
-            }else{
-                ndn_session->max_responsed_time[direction] = ndn_session->max_responsed_time[direction] < rtt?rtt:ndn_session->max_responsed_time[direction];    
-            }
-            
-            // Update Min responsed time
-            if(ndn_session->min_responsed_time[direction]== -1 ){
-                ndn_session->min_responsed_time[direction] = rtt;
-            }else{
-                ndn_session->min_responsed_time[direction] = ndn_session->min_responsed_time[direction] > rtt ? rtt : ndn_session->min_responsed_time[direction];
-            }
-            // Update total responsed time
-            if(ndn_session->total_responsed_time[direction] == -1){
-                ndn_session->total_responsed_time[direction] = rtt;
-            }else{
-                ndn_session->total_responsed_time[direction] += rtt;    
-            }
-            ndn_session->nb_responsed[direction] += 1;
-            // printf("NDN/NDN_HTTP: MINMAX session: %lu min_responsed_time: %zu max_responsed_time: %zu",ndn_session->session_id,ndn_session->min_responsed_time, ndn_session->max_responsed_time);
-            // mmt_free(last_interest_packet_time);
-            // last_interest_packet_time = NULL;
-            last_interest_packet_time->tv_sec = 0;
-            last_interest_packet_time->tv_usec = 0;
-        }    
-        ndn_tlv_t *ndn_metainfo = ndn_find_node(payload,payload_len,root, NDN_DATA_METAINFO);
-
-        ndn_tlv_t *ndn_freshness_period = ndn_find_node(payload, payload_len, ndn_metainfo,NDN_DATA_FRESHNESS_PERIOD);
-        
-        ndn_session->data_freshnessPeriod[direction] = ndn_TLV_get_int(ndn_freshness_period, payload, payload_len);
-
-        ndn_TLV_free(ndn_freshness_period);
-
-        ndn_TLV_free(ndn_metainfo);
-    }   
-    
     ndn_TLV_free(root);
 
     // debug("NDN/NDN_HTTP: ndn_update_session_for_ipacket: %lu",ipacket->packet_id);

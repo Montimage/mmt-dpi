@@ -16,23 +16,25 @@ static inline int _nas_msg_plain_decode(
 		int                             length)
 {
 	int size = 0, byte = 0;
+	int rc;
 
 	/* F-BUG-081: validate the length before reading the first header byte —
 	 * a minimum-size security-protected PDU reaches here with length == 0. */
-	CHECK_PDU_POINTER_AND_LENGTH_DECODER( buffer, 1, length );
+	rc = nas_check_pdu(buffer, 1, length);
+	if (unlikely(rc < 0)) {
+		NAS_LOG_PDU_CHECK(rc, 1, length);
+		return rc;
+	}
 
-	/* cppcheck 2.22 (issue #518) does not follow the macro's
-	 * `while (buffer == NULL) { ... return ...; }` guard above, so it reports
-	 * that test as redundant with a NULL dereference here; buffer is
-	 * non-NULL on this line. */
-	// cppcheck-suppress nullPointerRedundantCheck
 	DECODE_U8( buffer, *(uint8_t *)& msg->emm.header, size );
 
 	switch ( msg->emm.header.protocol_discriminator ){
 	case NAS_EPS_MOBILITY_MANAGEMENT_MESSAGE:
 		/* EMM header: one more byte for the message type. buffer is already
 		 * proven non-NULL above — only the length leg is still needed. */
-		CHECK_LENGTH_DECODER( length, size + 1 );
+		rc = nas_check_length(length, size + 1);
+		if (unlikely(rc < 0))
+			return rc;
 		DECODE_U8( buffer+size, msg->emm.header.message_type, size );
 
 		/* Decode EPS Mobility Management L3 message */
@@ -41,7 +43,11 @@ static inline int _nas_msg_plain_decode(
 	case NAS_EPS_SESSION_MANAGEMENT_MESSAGE:
 
 		/* ESM header: procedure transaction identity + message type */
-		CHECK_PDU_POINTER_AND_LENGTH_DECODER( buffer, size + 2, length );
+		rc = nas_check_pdu(buffer, size + 2, length);
+		if (unlikely(rc < 0)) {
+			NAS_LOG_PDU_CHECK(rc, size + 2, length);
+			return rc;
+		}
 		DECODE_U8( buffer+size, msg->esm.header.procedure_transaction_identity, size );
 		DECODE_U8( buffer+size, msg->esm.header.message_type, size );
 
@@ -127,8 +133,14 @@ static inline int _nas_msg_protected_decode(
 		int                            ciphering_algorithm
 )
 {
+	int rc;
+
 	//ensure buffer is big enough to contain nas_msg_security_header_t
-	CHECK_PDU_POINTER_AND_LENGTH_DECODER( buffer, NAS_MESSAGE_SECURITY_HEADER_SIZE, length );
+	rc = nas_check_pdu(buffer, NAS_MESSAGE_SECURITY_HEADER_SIZE, length);
+	if (unlikely(rc < 0)) {
+		NAS_LOG_PDU_CHECK(rc, NAS_MESSAGE_SECURITY_HEADER_SIZE, length);
+		return rc;
+	}
 
 	int size = 0;
 	int bytes = DECODE_BUFFER_TOO_SHORT;
@@ -179,9 +191,15 @@ int nas_decode( nas_msg_t *msg, const uint8_t *buffer, int length ){
 
 int nas_decode_ciphered( nas_msg_t *msg, const uint8_t *buffer, int length,
 		int ciphering_algorithm ){
+	int rc;
+
 	/* Decode the header */
 
-	CHECK_PDU_POINTER_AND_LENGTH_DECODER( buffer, 3, length );
+	rc = nas_check_pdu(buffer, 3, length);
+	if (unlikely(rc < 0)) {
+		NAS_LOG_PDU_CHECK(rc, 3, length);
+		return rc;
+	}
 
 	//1. if the message is security-protected?
 	nas_msg_header_t *header = &msg->header;

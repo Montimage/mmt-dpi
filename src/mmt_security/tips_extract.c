@@ -693,19 +693,196 @@ int compare_in_table(compare_value v1, compare_value v2, enum_operation ope)
     return NOT_VALID;
 }
 
-int compare_values(compare_value v1, compare_value v2, enum_operation ope)
+/* Both operands are unsigned integers of any width: widened to 64 bits. */
+static int compare_widened_unsigned(compare_value v1, compare_value v2, enum_operation ope)
+{
+    unsigned long long u64_1 = 0, u64_2 = 0;
+    if     (v1.type == MMT_U64_DATA) u64_1 = *((uint64_t *) (v1.data));
+    else if(v1.type == MMT_U32_DATA) u64_1 = *((uint32_t *)      (v1.data));
+    else if(v1.type == MMT_U16_DATA) u64_1 = *((uint16_t *)     (v1.data));
+    else u64_1 = *((uint8_t *)      (v1.data));
+    if     (v2.type == MMT_U64_DATA) u64_2 = *((uint64_t *) (v2.data));
+    else if(v2.type == MMT_U32_DATA) u64_2 = *((uint32_t *)      (v2.data));
+    else if(v2.type == MMT_U16_DATA) u64_2 = *((uint16_t *)     (v2.data));
+    else  u64_2 = *((uint8_t *)      (v2.data));
+    if ((ope == NEQ && u64_1 != u64_2) || (ope == EQ && u64_1 == u64_2) || (ope == LT && u64_1 < u64_2) || (ope == LTE && u64_1 <= u64_2) || (ope == GT && u64_1 > u64_2) ||
+            (ope == GTE && u64_1 >= u64_2)) return VALID;
+    else return NOT_VALID;
+}
+
+static int compare_timevals(compare_value v1, compare_value v2, enum_operation ope)
+{
+    struct timeval *tv_1, *tv_2;
+    tv_1 = (struct timeval *) (v1.data);
+    tv_2 = (struct timeval *) (v2.data);
+    if ((((ope == EQ) || (ope == LTE) || (ope == GTE)) && tv_1->tv_sec == tv_2->tv_sec && tv_1->tv_usec == tv_2->tv_usec)) return VALID;
+    else if ((ope == NEQ) && (tv_1->tv_sec != tv_2->tv_sec || tv_1->tv_usec != tv_2->tv_usec)) return VALID;
+    else if (((ope == LT) || (ope == LTE)) && ((tv_1->tv_sec < tv_2->tv_sec) || ((tv_1->tv_sec == tv_2->tv_sec) && (tv_1->tv_usec < tv_2->tv_usec)))) return VALID;
+    else if (((ope == GT) || (ope == GTE)) && ((tv_1->tv_sec > tv_2->tv_sec) || ((tv_1->tv_sec == tv_2->tv_sec) && (tv_1->tv_usec > tv_2->tv_usec)))) return VALID;
+    return NOT_VALID;
+}
+
+/* The GT/GTE year test reads `<` — pinned as is by the rule_engine suite
+ * (#548); this split does not change it. */
+static int compare_dates(compare_value v1, compare_value v2, enum_operation ope)
+{
+    mmt_date_t *date_1, *date_2;
+    date_1 = (mmt_date_t *) (v1.data);
+    date_2 = (mmt_date_t *) (v2.data);
+    if ((((ope == EQ) || (ope == LTE) || (ope == GTE)) && date_1->sec == date_2->sec && date_1->min == date_2->min && date_1->hour == date_2->hour && date_1->mday == date_2->mday &&
+            date_1->month == date_2->month && date_1->year == date_2->year && date_1->wday == date_2->wday)) return VALID;
+    else if ((ope == NEQ) && (date_1->sec != date_2->sec || date_1->min != date_2->min || date_1->hour != date_2->hour || date_1->mday != date_2->mday ||
+            date_1->month != date_2->month || date_1->year != date_2->year || date_1->wday != date_2->wday)) return VALID;
+    else if (((ope == LT) || (ope == LTE)) && ((date_1->year < date_2->year) || ((date_1->year == date_2->year) && (date_1->month < date_2->month)) ||
+            ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday < date_2->mday)) ||
+            ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday == date_2->mday) && (date_1->hour < date_2->hour)) ||
+            ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday == date_2->mday) && (date_1->hour == date_2->hour) && (date_1->min < date_2->min)) ||
+            ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday == date_2->mday) && (date_1->hour == date_2->hour) && (date_1->min == date_2->min) &&
+            (date_1->sec < date_2->sec))))
+        return VALID;
+    else if (((ope == GT) || (ope == GTE)) && ((date_1->year < date_2->year) || ((date_1->year == date_2->year) && (date_1->month > date_2->month)) ||
+            ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday > date_2->mday)) ||
+            ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday == date_2->mday) && (date_1->hour > date_2->hour)) ||
+            ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday == date_2->mday) && (date_1->hour == date_2->hour) && (date_1->min > date_2->min)) ||
+            ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday == date_2->mday) && (date_1->hour == date_2->hour) && (date_1->min == date_2->min) &&
+            (date_1->sec > date_2->sec))))
+        return VALID;
+    return NOT_VALID;
+}
+
+/* v1.size is the byte size of the int element array produced by
+ * clamp_path_count (count*sizeof(int)) and v1.data the array just past the
+ * record prefix — the search must scan every element (XC/XCE = "path
+ * contains needle"); other operators have no defined meaning on paths. */
+static int compare_path(compare_value v1, compare_value v2, enum_operation ope)
 {
     int idx = 0, needle = 0;
+    int size = v1.size;
+    char * data1 = (char*) v1.data;
+    char * data2 = (char*) v2.data;
+    if (ope == XC || ope == XCE) {
+      needle = atoi(data2);
+      if(size>0 && size < 20 * (int)sizeof (int)){
+        for(idx=0; idx + (int)sizeof (int) <= size; idx += (int)sizeof (int)){
+          if(needle == *(int*) (data1 + idx)) return VALID;
+        }
+        return NOT_VALID;
+      }
+    }
+    return NOT_VALID;
+}
+
+/* v1.data/v2.data hold the string pointer — compare the pointed-to
+ * contents, not the pointer values (#326). */
+static int compare_string_pointers(compare_value v1, compare_value v2, enum_operation ope)
+{
+    if (*(char **) (v1.data) == NULL || *(char **) (v2.data) == NULL) return NOT_VALID;
+    if (ope == XC || ope == XCE) {
+        return (strstr(*(char **) (v1.data), *(char **) (v2.data)) != NULL) ? VALID : NOT_VALID;
+    } else if (ope == XD || ope == XDE) {
+        return (strstr(*(char **) (v2.data), *(char **) (v1.data)) != NULL) ? VALID : NOT_VALID;
+    } else {
+        int sc = strcmp(*(char **) (v1.data), *(char **) (v2.data));
+        if ((ope == NEQ && sc != 0) || ((ope == EQ || ope == XE) && sc == 0) || (ope == LT && sc < 0) ||
+                (ope == LTE && sc <= 0) || (ope == GT && sc > 0) || (ope == GTE && sc >= 0)) return VALID;
+        return NOT_VALID;
+    }
+}
+
+/* Byte-wise relational walk over the common prefix of two byte operands:
+ * the first differing byte decides; equal prefixes decide on LTE/GTE. */
+static int compare_byte_prefix(char *data1, char *data2, int size, enum_operation ope)
+{
+    int idx;
+    for (idx = 0; idx < size; idx = idx + sizeof (char)) {
+        if (ope == EQ) {
+            if (((char *) (data1))[idx] != ((char *) (data2))[idx]) {
+                return NOT_VALID;
+            }
+            if (idx == size - 1) {
+                return VALID;
+            }
+        } else if (ope == NEQ) {
+            if (((char *) (data1))[idx] != ((char *) (data2))[idx]) {
+                return VALID;
+            }
+            if (idx == size - 1) {
+                return NOT_VALID;
+            }
+        } else if ((ope == LTE) || (ope == LT)) {
+            if (((char *) (data1))[idx] == ((char *) (data2))[idx]) {
+                if (idx == size - 1) {
+                    if (ope == LTE) return VALID;
+                    return NOT_VALID;
+                }
+                continue;
+            } else if (((char *) (data1))[idx] > ((char *) (data2))[idx]) {
+                return NOT_VALID;
+            } else if (((char *) (data1))[idx] < ((char *) (data2))[idx]) {
+                return VALID;
+            }
+        } else if ((ope == GTE) || (ope == GT)) {
+            if (((char *) (data1))[idx] == ((char *) (data2))[idx]) {
+                if (idx == size - 1) {
+                    if (ope == GTE) return VALID;
+                    return NOT_VALID;
+                }
+                continue;
+            } else if (((char *) (data1))[idx] < ((char *) (data2))[idx]) {
+                return NOT_VALID;
+            } else if (((char *) (data1))[idx] > ((char *) (data2))[idx]) {
+                return VALID;
+            }
+        }
+    }
+    return NOT_VALID;
+}
+
+/* String, binary, address and header-line operands: substring operators
+ * use strstr()/strcmp() (alloc_operand terminates every operand), the
+ * relational ones a byte-wise walk. */
+static int compare_bytes(compare_value v1, compare_value v2, enum_operation ope)
+{
+    int size = 0;
+    char * data1 = (char*) v1.data;
+    char * data2 = (char*) v2.data;
+    //if(v1.type == MMT_DATA_POINTER) (void)fprintf(stderr, "MMT_DATA_POINTER:2\n");
+#ifdef DEBUG
+    printf("\n compare[%s] %d [%s], %d, %d\n", data1, ope, data2, v1.size, v2.size);
+#endif
+    if (ope == EQ && v1.size != v2.size)
+        return NOT_VALID;
+    if(ope == NEQ && v1.size != v2.size)
+        return VALID;
+
+    size = v1.size > v2.size? v2.size : v1.size;
+
+    if (ope == XC || ope == XCE) {
+        if (strstr(data1, data2) != NULL)
+            return VALID;
+        else
+            return NOT_VALID;
+    } else if (ope == XD || ope == XDE) {
+        if (strstr(data2, data1) != NULL)
+            return VALID;
+        else
+            return NOT_VALID;
+    } else if (ope == XE) {
+        if (strcmp(data2, data1) == 0)
+            return VALID;
+        else
+            return NOT_VALID;
+    }
+    return compare_byte_prefix(data1, data2, size, ope);
+}
+
+int compare_values(compare_value v1, compare_value v2, enum_operation ope)
+{
     unsigned short u16_1 = 0, u16_2 = 0;
     uint32_t u32_1 = 0, u32_2 = 0;
     unsigned long long u64_1 = 0, u64_2 = 0;
     double fval_1 = 0, fval_2 = 0;
     unsigned char u8_1 = 0, u8_2 = 0;
-    mmt_date_t *date_1, *date_2;
-    struct timeval *tv_1, *tv_2;
-    int size = 0;
-    char * data1 = NULL;
-    char * data2 = NULL;
     //mmt_header_line_t *hl;
 
     //Special case: ope==XIN with v1 is some type and v2 is MMT_BINARY_VAR_DATA
@@ -714,54 +891,15 @@ int compare_values(compare_value v1, compare_value v2, enum_operation ope)
     }
     if((v1.type == MMT_U8_DATA || v1.type == MMT_U16_DATA || v1.type == MMT_U32_DATA || v1.type == MMT_U64_DATA) &&
       (v2.type == MMT_U8_DATA || v2.type == MMT_U16_DATA || v2.type == MMT_U32_DATA || v2.type == MMT_U64_DATA)){
-      if     (v1.type == MMT_U64_DATA) u64_1 = *((uint64_t *) (v1.data));
-      else if(v1.type == MMT_U32_DATA) u64_1 = *((uint32_t *)      (v1.data));
-      else if(v1.type == MMT_U16_DATA) u64_1 = *((uint16_t *)     (v1.data));
-      else u64_1 = *((uint8_t *)      (v1.data));
-      if     (v2.type == MMT_U64_DATA) u64_2 = *((uint64_t *) (v2.data));
-      else if(v2.type == MMT_U32_DATA) u64_2 = *((uint32_t *)      (v2.data));
-      else if(v2.type == MMT_U16_DATA) u64_2 = *((uint16_t *)     (v2.data));
-      else  u64_2 = *((uint8_t *)      (v2.data));
-      if ((ope == NEQ && u64_1 != u64_2) || (ope == EQ && u64_1 == u64_2) || (ope == LT && u64_1 < u64_2) || (ope == LTE && u64_1 <= u64_2) || (ope == GT && u64_1 > u64_2) ||
-                    (ope == GTE && u64_1 >= u64_2)) return VALID;
-      else return NOT_VALID;
+      return compare_widened_unsigned(v1, v2, ope);
     }
     //Line not to be used if using XE (included in): if (v1.type != v2.type || v1.size != v2.size) return NOT_VALID;
-    size = v1.size;
-    data1 = (char*) v1.data;
-    data2 = (char*) v2.data;
 
     switch (v1.type) {
         case MMT_DATA_TIMEVAL:
-            tv_1 = (struct timeval *) (v1.data);
-            tv_2 = (struct timeval *) (v2.data);
-            if ((((ope == EQ) || (ope == LTE) || (ope == GTE)) && tv_1->tv_sec == tv_2->tv_sec && tv_1->tv_usec == tv_2->tv_usec)) return VALID;
-            else if ((ope == NEQ) && (tv_1->tv_sec != tv_2->tv_sec || tv_1->tv_usec != tv_2->tv_usec)) return VALID;
-            else if (((ope == LT) || (ope == LTE)) && ((tv_1->tv_sec < tv_2->tv_sec) || ((tv_1->tv_sec == tv_2->tv_sec) && (tv_1->tv_usec < tv_2->tv_usec)))) return VALID;
-            else if (((ope == GT) || (ope == GTE)) && ((tv_1->tv_sec > tv_2->tv_sec) || ((tv_1->tv_sec == tv_2->tv_sec) && (tv_1->tv_usec > tv_2->tv_usec)))) return VALID;
-            break;
+            return compare_timevals(v1, v2, ope);
         case MMT_DATA_DATE:
-            date_1 = (mmt_date_t *) (v1.data);
-            date_2 = (mmt_date_t *) (v2.data);
-            if ((((ope == EQ) || (ope == LTE) || (ope == GTE)) && date_1->sec == date_2->sec && date_1->min == date_2->min && date_1->hour == date_2->hour && date_1->mday == date_2->mday &&
-                    date_1->month == date_2->month && date_1->year == date_2->year && date_1->wday == date_2->wday)) return VALID;
-            else if ((ope == NEQ) && (date_1->sec != date_2->sec || date_1->min != date_2->min || date_1->hour != date_2->hour || date_1->mday != date_2->mday ||
-                    date_1->month != date_2->month || date_1->year != date_2->year || date_1->wday != date_2->wday)) return VALID;
-            else if (((ope == LT) || (ope == LTE)) && ((date_1->year < date_2->year) || ((date_1->year == date_2->year) && (date_1->month < date_2->month)) ||
-                    ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday < date_2->mday)) ||
-                    ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday == date_2->mday) && (date_1->hour < date_2->hour)) ||
-                    ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday == date_2->mday) && (date_1->hour == date_2->hour) && (date_1->min < date_2->min)) ||
-                    ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday == date_2->mday) && (date_1->hour == date_2->hour) && (date_1->min == date_2->min) &&
-                    (date_1->sec < date_2->sec))))
-                return VALID;
-            else if (((ope == GT) || (ope == GTE)) && ((date_1->year < date_2->year) || ((date_1->year == date_2->year) && (date_1->month > date_2->month)) ||
-                    ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday > date_2->mday)) ||
-                    ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday == date_2->mday) && (date_1->hour > date_2->hour)) ||
-                    ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday == date_2->mday) && (date_1->hour == date_2->hour) && (date_1->min > date_2->min)) ||
-                    ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday == date_2->mday) && (date_1->hour == date_2->hour) && (date_1->min == date_2->min) &&
-                    (date_1->sec > date_2->sec))))
-                return VALID;
-            break;
+            return compare_dates(v1, v2, ope);
         case MMT_DATA_FLOAT:
             fval_1 = *((float *) (v1.data));
             fval_2 = *((float *) (v2.data));
@@ -801,36 +939,9 @@ int compare_values(compare_value v1, compare_value v2, enum_operation ope)
                 return VALID;
             break;
         case MMT_DATA_PATH:
-            /* v1.size is the byte size of the int element array produced by
-             * clamp_path_count (count*sizeof(int)) and data1 the array just
-             * past the record prefix — the search must scan every element
-             * (XC/XCE = "path contains needle"); other operators have no
-             * defined meaning on paths. */
-            if (ope == XC || ope == XCE) {
-              needle = atoi(data2);
-              if(size>0 && size < 20 * (int)sizeof (int)){
-                for(idx=0; idx + (int)sizeof (int) <= size; idx += (int)sizeof (int)){
-                  if(needle == *(int*) (data1 + idx)) return VALID;
-                }
-                return NOT_VALID;
-              }
-            }
-            break;
+            return compare_path(v1, v2, ope);
         case MMT_STRING_DATA_POINTER:
-            /* v1.data/v2.data hold the string pointer — compare the
-             * pointed-to contents, not the pointer values (#326). */
-            if (*(char **) (v1.data) == NULL || *(char **) (v2.data) == NULL) return NOT_VALID;
-            if (ope == XC || ope == XCE) {
-                return (strstr(*(char **) (v1.data), *(char **) (v2.data)) != NULL) ? VALID : NOT_VALID;
-            } else if (ope == XD || ope == XDE) {
-                return (strstr(*(char **) (v2.data), *(char **) (v1.data)) != NULL) ? VALID : NOT_VALID;
-            } else {
-                int sc = strcmp(*(char **) (v1.data), *(char **) (v2.data));
-                if ((ope == NEQ && sc != 0) || ((ope == EQ || ope == XE) && sc == 0) || (ope == LT && sc < 0) ||
-                        (ope == LTE && sc <= 0) || (ope == GT && sc > 0) || (ope == GTE && sc >= 0)) return VALID;
-                return NOT_VALID;
-            }
-            break;
+            return compare_string_pointers(v1, v2, ope);
         case MMT_HEADER_LINE:
         case MMT_DATA_POINTER:
         case MMT_STRING_DATA:
@@ -841,76 +952,7 @@ int compare_values(compare_value v1, compare_value v2, enum_operation ope)
         case MMT_DATA_MAC_ADDR:
         case MMT_BINARY_DATA:
         case MMT_BINARY_VAR_DATA:
-            //if(v1.type == MMT_DATA_POINTER) (void)fprintf(stderr, "MMT_DATA_POINTER:2\n");
-#ifdef DEBUG
-        	printf("\n compare[%s] %d [%s], %d, %d\n", data1, ope, data2, v1.size, v2.size);
-#endif
-        	if (ope == EQ && v1.size != v2.size)
-        		return NOT_VALID;
-        	if(ope == NEQ && v1.size != v2.size)
-        		return VALID;
-
-        	size = v1.size > v2.size? v2.size : v1.size;
-
-            if (ope == XC || ope == XCE) {
-                if (strstr(data1, data2) != NULL)
-                    return VALID;
-                else
-                    return NOT_VALID;
-            } else if (ope == XD || ope == XDE) {
-                if (strstr(data2, data1) != NULL)
-                    return VALID;
-                else
-                    return NOT_VALID;
-            } else if (ope == XE) {
-                if (strcmp(data2, data1) == 0)
-                    return VALID;
-                else
-                    return NOT_VALID;
-            } else {
-                for (idx = 0; idx < size; idx = idx + sizeof (char)) {
-                    if (ope == EQ) {
-                        if (((char *) (data1))[idx] != ((char *) (data2))[idx]) {
-                            return NOT_VALID;
-                        }
-                        if (idx == size - 1) {
-                            return VALID;
-                        }
-                    } else if (ope == NEQ) {
-                        if (((char *) (data1))[idx] != ((char *) (data2))[idx]) {
-                            return VALID;
-                        }
-                        if (idx == size - 1) {
-                            return NOT_VALID;
-                        }
-                    } else if ((ope == LTE) || (ope == LT)) {
-                        if (((char *) (data1))[idx] == ((char *) (data2))[idx]) {
-                            if (idx == size - 1) {
-                                if (ope == LTE) return VALID;
-                                return NOT_VALID;
-                            }
-                            continue;
-                        } else if (((char *) (data1))[idx] > ((char *) (data2))[idx]) {
-                            return NOT_VALID;
-                        } else if (((char *) (data1))[idx] < ((char *) (data2))[idx]) {
-                            return VALID;
-                        }
-                    } else if ((ope == GTE) || (ope == GT)) {
-                        if (((char *) (data1))[idx] == ((char *) (data2))[idx]) {
-                            if (idx == size - 1) {
-                                if (ope == GTE) return VALID;
-                                return NOT_VALID;
-                            }
-                            continue;
-                        } else if (((char *) (data1))[idx] < ((char *) (data2))[idx]) {
-                            return NOT_VALID;
-                        } else if (((char *) (data1))[idx] > ((char *) (data2))[idx]) {
-                            return VALID;
-                        }
-                    }
-                }
-            }
-            break;
+            return compare_bytes(v1, v2, ope);
         /* No scalar comparison can be defined for these types — NOT_VALID
          * is the intended answer (#326). */
         case MMT_DATA_PORT:
@@ -1148,11 +1190,113 @@ static void *alloc_operand(int size)
     return xcalloc(1, (unsigned long) size + 1);
 }
 
+/* Int-prefixed records ([int length or count][payload]) and header lines
+ * are compared on their payload: returns where it starts and sets v->size
+ * to its length. v->size holds the record size on entry — the clamps keep
+ * a packet-controlled prefix inside the record (F-BUG-091/093, #209). Other
+ * types are compared on the record itself. */
+static void *unwrap_operand(compare_value *v, void *data)
+{
+    if (v->type == MMT_STRING_DATA || v->type == MMT_STRING_LONG_DATA || v->type == MMT_BINARY_DATA || v->type == MMT_BINARY_VAR_DATA || v->type == MMT_DATA_PATH) {
+        if (v->type == MMT_DATA_PATH)
+            /* operand size is the element array's byte size — the
+             * record is [int count][count ints] */
+            v->size = clamp_path_count(*(int*) (data), v->size) * (int)sizeof (int);
+        else
+            v->size = clamp_prefixed_size(*(int*) (data), v->size);
+        return (char *) data + sizeof (int);
+    }
+    if (v->type == MMT_HEADER_LINE) {
+        //parse_mmt_header_line( &data, &v->size );
+        v->size = ((mmt_header_line_t *)data)->len;
+        return (void*)(((mmt_header_line_t *)data)->ptr);
+    }
+    return data;
+}
+
+/* A rule constant: scalar data of the type given by data_type_id that was
+ * obtained from <protocol, field>. Returns -1 when the copy cannot be
+ * allocated. */
+static int load_constant_operand(compare_value *v, const rule *r)
+{
+    void *data = r->t.data;
+    v->type = r->t.data_type_id;
+    v->found = FOUND;
+    v->size = r->t.data_size;
+    data = unwrap_operand(v, data);
+    v->data = (void *) alloc_operand(v->size);
+    if (v->data == NULL) {
+        return -1;
+    }
+    if (data != NULL && v->size > 0) memcpy(v->data, data, v->size);
+    return 0;
+}
+
+/* A PROTO.FIELD.EVENT reference: the first stored tuple of that event
+ * holding data. A tuple that cannot be copied ends the process with the
+ * `missing` diagnostic; no matching tuple leaves v NOT_FOUND. */
+static void load_reference_operand(compare_value *v, const rule *r, tuple *list, const char *missing)
+{
+    tuple *t;
+    for (t = list; t != NULL; t = t->next) {
+        if (v->found == NOT_FOUND && r->t.protocol_id == t->protocol_id && r->t.field_id == t->field_id
+                && t->event_id == r->t.event_id && t->data_size > 0 && t->data != NULL) {
+            void *data = t->data;
+            v->type = t->data_type_id;
+            v->found = FOUND;
+            v->size = t->data_size;
+            if (v->type == MMT_STRING_DATA_POINTER) {
+                /* the tuple owns a copy of the string (store_tuples);
+                 * the operand slot holds its char*, as for a packet
+                 * value — compare_values() dereferences it */
+                v->size = (int) sizeof (char *);
+                data = &t->data;
+            }
+            else data = unwrap_operand(v, data);
+            v->data = (void *) alloc_operand(v->size);
+            if (v->data == NULL || data == NULL) {
+                (void)fprintf(stderr, "%s", missing);
+                exit(-1);
+            }
+            memcpy(v->data, data, v->size);
+            return;
+        }
+    }
+}
+
+/* The attribute extracted from the current packet; an absent attribute
+ * leaves v NOT_FOUND. Returns -1 when the copy cannot be allocated. */
+static int load_packet_operand(compare_value *v, const ipacket_t *pkt, const rule *r)
+{
+    void *data = get_attribute_extracted_data( pkt, r->t.protocol_id, r->t.field_id );
+    if (data == NULL) return 0;
+    v->type = r->t.data_type_id;
+    v->found = FOUND;
+    v->size = get_data_size_by_proto_and_field_ids(r->t.protocol_id, r->t.field_id);
+    /* same clamps as the scalar/tuple paths: the record prefix is
+     * packet-controlled — a forged value must not drive a giant
+     * xcalloc or an over-reading memcpy (F-BUG-091/093, #209) */
+    data = unwrap_operand(v, data);
+    v->data = (void *) alloc_operand(v->size);
+    if (v->data == NULL) {
+        /* `data` is the attribute's internal storage — not ours to
+         * free (the old xfree(data) here also hit an interior
+         * pointer once the prefix was skipped) */
+        return -1;
+    }
+    if (data != NULL && v->size > 0) {
+        /* a pointer-typed attribute's datum is the pointer itself —
+         * store the pointer value, not `size` bytes of pointee */
+        if (v->type == MMT_STRING_DATA_POINTER) memcpy(v->data, &data, v->size);
+        else memcpy(v->data, data, v->size);
+    }
+    return 0;
+}
+
 int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_value, enum_operation operator, rule *r1, rule *r2)
 {
     int ret = 0;
     tuple *temp_tuple = ctx->list_of_tuples;
-    tuple *temp_tuple2 = NULL;
     compare_value v1;
     compare_value v2;
     compare_value *tmp_v;
@@ -1171,140 +1315,18 @@ int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_
     //need to test if it is scalar data and treat accordingly (t.data_type gives the type and t.data is a string that needs to be converted)
     //                      or reference data and search in stored data
     //                      or current packet data
-    if (r1->t.data != NULL) { //means that it is a scalar data of type given by data_type_id that was obtained from <protocol, field>
-        v1.type = r1->t.data_type_id;
-        v1.found = FOUND;
-        v1.size = r1->t.data_size;
-        void *data = r1->t.data;
-        if (v1.type == MMT_STRING_DATA || v1.type == MMT_STRING_LONG_DATA || v1.type == MMT_BINARY_DATA || v1.type == MMT_BINARY_VAR_DATA || v1.type == MMT_DATA_PATH) {
-            if (v1.type == MMT_DATA_PATH)
-                /* operand size is the element array's byte size — the
-                 * record is [int count][count ints] */
-                v1.size = clamp_path_count(*(int*) (data), r1->t.data_size) * (int)sizeof (int);
-            else
-                v1.size = clamp_prefixed_size(*(int*) (data), r1->t.data_size);
-            data = r1->t.data + sizeof (int);
-        }
-        else if (v1.type == MMT_HEADER_LINE) {
-            //parse_mmt_header_line( &data, &v1.size );
-            v1.size = ((mmt_header_line_t *)data)->len;
-            data = (void*)(((mmt_header_line_t *)data)->ptr);
-        }
-
-        v1.data = (void *) alloc_operand(v1.size);
-        if(v1.data == NULL){
-            return 0;
-        }
-        if (data != NULL && v1.size > 0) memcpy(v1.data, data, v1.size);
+    if (r1->t.data != NULL) {
+        if (load_constant_operand(&v1, r1) != 0) return 0;
     } else if (r1->t.event_id != 0) {
         if (ctx->skip_refs == YES) v1.found = SKIP;
-        else {
-            temp_tuple2 = temp_tuple;
-            while (temp_tuple2 != NULL) {
-                if (v1.found == NOT_FOUND && r1->t.protocol_id == temp_tuple2->protocol_id && r1->t.field_id == temp_tuple2->field_id
-                        && temp_tuple2->event_id == r1->t.event_id && temp_tuple2->data_size > 0 && temp_tuple2->data != NULL) {
-                    v1.type = temp_tuple2->data_type_id;
-                    v1.found = FOUND;
-                    v1.size = temp_tuple2->data_size;
-                    void *data = temp_tuple2->data;
-                    if (v1.type == MMT_STRING_DATA_POINTER) {
-                        /* the tuple owns a copy of the string (store_tuples);
-                         * the operand slot holds its char*, as for a packet
-                         * value — compare_values() dereferences it */
-                        v1.size = (int) sizeof (char *);
-                        data = &temp_tuple2->data;
-                    }
-                    else if (v1.type == MMT_STRING_DATA || v1.type == MMT_STRING_LONG_DATA || v1.type == MMT_BINARY_DATA || v1.type == MMT_BINARY_VAR_DATA || v1.type == MMT_DATA_PATH) {
-                        if (v1.type == MMT_DATA_PATH)
-                            v1.size = clamp_path_count(*(int*) (data), temp_tuple2->data_size) * (int)sizeof (int);
-                        else
-                            v1.size = clamp_prefixed_size(*(int*) (data), temp_tuple2->data_size);
-                        data = temp_tuple2->data + sizeof (int);
-                    }
-                    else if (v1.type == MMT_HEADER_LINE){
-                    	//parse_mmt_header_line( &(temp_tuple2->data), & v1.size );
-                        v1.size = ((mmt_header_line_t *)data)->len;
-                        data = (void*)(((mmt_header_line_t *)data)->ptr);
-                    }
-                    v1.data = (void *) alloc_operand(v1.size);
-                    if (v1.data == NULL || data == NULL) {
-                        (void)fprintf(stderr, "Error 18: Problem in stored reference. Data is not available.\n");
-                        exit(-1);
-                    }
-                    memcpy(v1.data, data, v1.size);
-                    break;
-                }
-                temp_tuple2 = temp_tuple2->next;
-            }
-        }
+        else load_reference_operand(&v1, r1, temp_tuple, "Error 18: Problem in stored reference. Data is not available.\n");
     }
-    if (r2->t.data != NULL) { //means that it is a scalar data of type given by data_type_id that was obtained from <protocol, field>
-        v2.type = r2->t.data_type_id;
-        v2.found = FOUND;
-        v2.size = r2->t.data_size;
-        void *data = r2->t.data;
-        if (v2.type == MMT_STRING_DATA || v2.type == MMT_STRING_LONG_DATA || v2.type == MMT_BINARY_DATA || v2.type == MMT_BINARY_VAR_DATA || v2.type == MMT_DATA_PATH) {
-            if (v2.type == MMT_DATA_PATH)
-                v2.size = clamp_path_count(*(int*) (data), r2->t.data_size) * (int)sizeof (int);
-            else
-                v2.size = clamp_prefixed_size(*(int*) (data), r2->t.data_size);
-            data = r2->t.data + sizeof (int);
-        }
-        else if (v2.type == MMT_HEADER_LINE){
-            //parse_mmt_header_line( &(r2->t.data), &v2.size );
-                        v2.size = ((mmt_header_line_t *)data)->len;
-                        data = (void*)(((mmt_header_line_t *)data)->ptr);
-        }
-
-        v2.data = (void *) alloc_operand(v2.size);
-        if (v2.data == NULL)
-        {
-            return 0;
-        }
-        if (data != NULL && v2.size > 0) memcpy(v2.data, data, v2.size);
+    if (r2->t.data != NULL) {
+        if (load_constant_operand(&v2, r2) != 0) return 0;
     } else if (r2->t.event_id != 0) {
+        /* marks v1, as it always has: either SKIP makes the leaf VALID below */
         if (ctx->skip_refs == YES) v1.found = SKIP;
-        else {
-            temp_tuple2 = temp_tuple;
-            while (temp_tuple2 != NULL) {
-                if (v2.found == NOT_FOUND)
-                    if (r2->t.protocol_id == temp_tuple2->protocol_id)
-                        if (r2->t.field_id == temp_tuple2->field_id)
-                            if (temp_tuple2->event_id == r2->t.event_id)
-                                if (temp_tuple2->data_size > 0)
-                                    if (temp_tuple2->data != NULL) {
-                                        v2.type = temp_tuple2->data_type_id;
-                                        v2.found = FOUND;
-                                        v2.size = temp_tuple2->data_size;
-                                        void *data = temp_tuple2->data;
-                                        if (v2.type == MMT_STRING_DATA_POINTER) {
-                                            /* same as v1: the slot holds the copy's char* */
-                                            v2.size = (int) sizeof (char *);
-                                            data = &temp_tuple2->data;
-                                        }
-                                        else if (v2.type == MMT_STRING_DATA ||v2.type == MMT_STRING_LONG_DATA || v2.type == MMT_BINARY_DATA || v2.type == MMT_BINARY_VAR_DATA || v2.type == MMT_DATA_PATH) {
-                                            if (v2.type == MMT_DATA_PATH)
-                                                v2.size = clamp_path_count(*(int*) (data), temp_tuple2->data_size) * (int)sizeof (int);
-                                            else
-                                                v2.size = clamp_prefixed_size(*(int*) (data), temp_tuple2->data_size);
-                                            data = temp_tuple2->data + sizeof (int);
-                                        }
-                                        else if (v2.type == MMT_HEADER_LINE){
-                                            //parse_mmt_header_line( &data, &v2.size );
-                        v2.size = ((mmt_header_line_t *)data)->len;
-                        data = (void*)(((mmt_header_line_t *)data)->ptr);
-                                        }
-                                        v2.data = (void *) alloc_operand(v2.size);
-                                        if (v2.data == NULL || data == NULL) {
-                                            (void)fprintf(stderr, "Error 19: Problem in stored reference. Data is not available.\n");
-                                            exit(-1);
-                                        }
-                                        memcpy(v2.data, data, v2.size);
-                                        break;
-                                    }
-                temp_tuple2 = temp_tuple2->next;
-            }
-        }
+        else load_reference_operand(&v2, r2, temp_tuple, "Error 19: Problem in stored reference. Data is not available.\n");
     }
     if (r1->value == XFUNCT) {
         tmp_r = r1;
@@ -1344,74 +1366,13 @@ int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_
             xfree(data);
     }
     if (v1.found == NOT_FOUND) {
-        tmp_r = r1;
-        tmp_v = &v1;
-        void *data = get_attribute_extracted_data( ctx->pkt, tmp_r->t.protocol_id, tmp_r->t.field_id );
-        if (data != NULL) {
-            tmp_v->type = tmp_r->t.data_type_id;
-            tmp_v->found = FOUND;
-            tmp_v->size = get_data_size_by_proto_and_field_ids(tmp_r->t.protocol_id, tmp_r->t.field_id);
-            if (tmp_v->type == MMT_STRING_DATA || tmp_v->type == MMT_STRING_LONG_DATA || tmp_v->type == MMT_BINARY_DATA || tmp_v->type == MMT_BINARY_VAR_DATA || tmp_v->type == MMT_DATA_PATH) {
-                /* same clamps as the scalar/tuple paths: the record prefix is
-                 * packet-controlled — a forged value must not drive a giant
-                 * xcalloc or an over-reading memcpy (F-BUG-091/093, #209) */
-                if (tmp_v->type == MMT_DATA_PATH)
-                    tmp_v->size = clamp_path_count(*(int*) (data), tmp_v->size) * (int)sizeof (int);
-                else
-                    tmp_v->size = clamp_prefixed_size(*(int*) (data), tmp_v->size);
-                data = data + sizeof (int);
-            }
-            else if (tmp_v->type == MMT_HEADER_LINE){
-                //parse_mmt_header_line( &data, &tmp_v->size );
-                        tmp_v->size = ((mmt_header_line_t *)data)->len;
-                        data = (void*)(((mmt_header_line_t *)data)->ptr);
-            }
-            tmp_v->data = alloc_operand(tmp_v->size);
-            if(tmp_v->data == NULL){
-                /* `data` is the attribute's internal storage — not ours to
-                 * free (the old xfree(data) here also hit an interior
-                 * pointer once the prefix was skipped) */
-                return 0;
-            }
-            if (data != NULL && tmp_v->size > 0) {
-                /* a pointer-typed attribute's datum is the pointer itself —
-                 * store the pointer value, not `size` bytes of pointee */
-                if (tmp_v->type == MMT_STRING_DATA_POINTER) memcpy(tmp_v->data, &data, tmp_v->size);
-                else memcpy(tmp_v->data, data, tmp_v->size);
-            }
-        }
+        if (load_packet_operand(&v1, ctx->pkt, r1) != 0) return 0;
     }
     if (v2.found == NOT_FOUND) {
-        tmp_r = r2;
-        tmp_v = &v2;
-        void *data = get_attribute_extracted_data( ctx->pkt, tmp_r->t.protocol_id, tmp_r->t.field_id );
-        if (data != NULL) {
-            tmp_v->type = tmp_r->t.data_type_id;
-            tmp_v->found = FOUND;
-            tmp_v->size = get_data_size_by_proto_and_field_ids(tmp_r->t.protocol_id, tmp_r->t.field_id);
-            if (tmp_v->type == MMT_STRING_DATA || tmp_v->type == MMT_STRING_LONG_DATA || tmp_v->type == MMT_BINARY_DATA || tmp_v->type == MMT_BINARY_VAR_DATA || tmp_v->type == MMT_DATA_PATH) {
-                /* same clamps as the scalar/tuple paths (F-BUG-091/093, #209) */
-                if (tmp_v->type == MMT_DATA_PATH)
-                    tmp_v->size = clamp_path_count(*(int*) (data), tmp_v->size) * (int)sizeof (int);
-                else
-                    tmp_v->size = clamp_prefixed_size(*(int*) (data), tmp_v->size);
-                data = data + sizeof (int);
-            }
-            else if (tmp_v->type == MMT_HEADER_LINE){
-            	//parse_mmt_header_line( &data, &tmp_v->size );
-                        tmp_v->size = ((mmt_header_line_t *)data)->len;
-                        data = (void*)(((mmt_header_line_t *)data)->ptr);
-            }
-            tmp_v->data = (void *) alloc_operand(tmp_v->size);
-            if(tmp_v->data == NULL){
-                xfree(v1.data);
-                xfree(v2.data);
-                return NOT_VALID;
-            }
-            if (data != NULL && tmp_v->size > 0) {
-                if (tmp_v->type == MMT_STRING_DATA_POINTER) memcpy(tmp_v->data, &data, tmp_v->size);
-                else memcpy(tmp_v->data, data, tmp_v->size);
-            }
+        if (load_packet_operand(&v2, ctx->pkt, r2) != 0) {
+            xfree(v1.data);
+            xfree(v2.data);
+            return NOT_VALID;
         }
     }
 

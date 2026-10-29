@@ -96,44 +96,67 @@ typedef enum {
 
 /* Issue #507 (F-BUG-220): the decoders return their error code; there is no
  * process-global error variable, which every decoding thread used to write. */
-#define CHECK_RESULT_DECODER( ret, decoded )                                   \
-		if( unlikely( ret <0 )) return ret;                                    \
-		else                    decoded += ret;
-
 #define RETURN(x, y)                                                           \
 		if(unlikely( x<0 )) return x;   /*error*/                              \
 		else                return (x+y);
-#define CHECK_PDU_POINTER_AND_LENGTH_DECODER(buffer, minimumlength, length)    \
-		while (unlikely( buffer == NULL ))                                     \
-        {                                                                      \
-                LOG("Got NULL pointer for the payload\n");                     \
-                return (DECODE_BUFFER_NULL);                                   \
-        }                                                                      \
-		while (unlikely( length < minimumlength))                              \
-        {                                                                      \
-                LOG("Expecting at least %d bytes, got %d\n",                   \
-                      (int) minimumlength, (int) length);                      \
-                return (DECODE_BUFFER_TOO_SHORT);                              \
-        }
 
-#define CHECK_LENGTH_DECODER(bufferlength, length)                             \
-        while (unlikely( bufferlength < length ))                              \
-        {                                                                      \
-                return (DECODE_BUFFER_TOO_SHORT);                              \
-        }
+/*
+ * Issue #548: the input checks are functions, and each call site spells out
+ * its own control flow: it stores the result of nas_check_pdu() or
+ * nas_check_length() and returns it when it is negative, after
+ * NAS_LOG_PDU_CHECK() for a nas_check_pdu() failure (a nas_check_length()
+ * failure is not logged). No macro hides a return any more.
+ *
+ * The functions only check. The LOG() lines stay in macros expanded at the
+ * call site: mmt_log_warn() records __FILE__/__LINE__ and keeps one
+ * rate-limit state per expansion (mmt_log.h), so a diagnostic still names
+ * the decoder that rejected the input, and each site is rate-limited on its
+ * own. Each operand is evaluated in its own type, then converted to int64_t,
+ * which holds every int/uint32_t value: the comparison gives the result the
+ * operands' own types gave when the checks were macros.
+ */
+
+/* DECODE_BUFFER_NULL when buffer is NULL, DECODE_BUFFER_TOO_SHORT when
+ * length < minimum_length, else 0. */
+static inline int nas_check_pdu(const void *buffer, int64_t minimum_length, int64_t length)
+{
+	if (unlikely( buffer == NULL ))
+		return DECODE_BUFFER_NULL;
+	if (unlikely( length < minimum_length ))
+		return DECODE_BUFFER_TOO_SHORT;
+	return 0;
+}
+
+/* DECODE_BUFFER_TOO_SHORT when buffer_length < length, else 0. */
+static inline int nas_check_length(int64_t buffer_length, int64_t length)
+{
+	if (unlikely( buffer_length < length ))
+		return DECODE_BUFFER_TOO_SHORT;
+	return 0;
+}
+
+/* The warning for a non-zero nas_check_pdu() result rc. */
+#define NAS_LOG_PDU_CHECK(rc, minimum_length, length) do {                    \
+		if ((rc) == DECODE_BUFFER_NULL)                                        \
+			LOG("Got NULL pointer for the payload\n");                         \
+		else                                                                   \
+			LOG("Expecting at least %d bytes, got %d\n",                       \
+				(int) (minimum_length), (int) (length));                       \
+	} while (0)
+
+/* Warns when the IEI read from the wire (got) is not the expected one; the
+ * decoder goes on either way. */
+#define NAS_LOG_IEI_MISMATCH(iei, got) do {                                   \
+		if (unlikely( (iei) != (got) ))                                        \
+			LOG("IEI is different than the one expected."                      \
+				"(Got: 0x%x, expecting: 0x%x)\n", (got), (iei));               \
+	} while (0)
 
 #define CHECK_MESSAGE_TYPE(message_type, buffer)                               \
 		while (unlikely( message_type != buffer ))                             \
 		{                                                                      \
 				return (DECODE_WRONG_MESSAGE_TYPE);                            \
 		}
-
-#define CHECK_IEI_DECODER(iei, buffer)                                         \
-        if( unlikely( iei != buffer ))                                         \
-        {                                                                      \
-                LOG("IEI is different than the one expected."                  \
-                "(Got: 0x%x, expecting: 0x%x)\n", buffer, iei);                \
-        }
 
 
 #endif /* SRC_MMT_5G_NAS_UTIL_DECODER_H_ */

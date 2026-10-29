@@ -688,6 +688,237 @@ static int climb_with_operator(mmt_handler_t *mmt, rule *a_rule, short value, ch
     return create_boolean_expression(mmt, NO, a_rule->father, rest);
 }
 
+/* A constant leaf takes the type of the right-handed LEAF it is compared
+ * with: the deepest first son of a_rule. */
+static rule *new_constant_leaf(rule *a_rule)
+{
+    rule *new_rule = create_rule();
+    if (new_rule == NULL) return NULL;
+    new_rule->type = LEAF;
+    new_rule->value = XCON;
+    //need to find a right handed LEAF to determine the type
+    rule * temp_rule = a_rule;
+    while (temp_rule->list_of_sons != NULL) {
+        temp_rule = temp_rule->list_of_sons;
+    }
+    new_rule->t.protocol_id = temp_rule->t.protocol_id;
+    new_rule->t.field_id = temp_rule->t.field_id;
+    new_rule->t.data_type_id = temp_rule->t.data_type_id;
+    new_rule->t.event_id = temp_rule->t.event_id;
+    new_rule->t.data_size = temp_rule->t.data_size;
+    new_rule->t.valid = VALID;
+    append_son(a_rule, new_rule);
+    return new_rule;
+}
+
+/* 'string' constant; temp points at the opening quote. */
+static int parse_string_constant(mmt_handler_t *mmt, rule *a_rule, char *temp, char *expression)
+{
+    char *temp2;
+    int i;
+    rule *new_rule;
+    temp++;
+    temp2 = temp;
+    i = 0;
+    while (*temp2 != '\'' && *temp2 != '\0' && i < 1000) {
+        temp2++;
+        i++;
+    }
+    if (i > 999 || *temp2 != '\'') {
+        (void)fprintf(stderr, "Error 3a: Incorrect string in boolean expression: %s\n", expression);
+        return -1;
+    }
+    i = temp2 - temp;
+    mmt_string_data_t s;
+    strncpy((char*)s.data, temp, i);
+    s.data[i] = '\0';
+    temp2++; //skip the last '\''
+    s.len = i + 1;
+    //create new_rule
+    new_rule = new_constant_leaf(a_rule);
+    if (new_rule == NULL) return -1;
+    new_rule->t.data = (void *) get_xdata(new_rule->t.data_type_id, new_rule->t.data_size, (void *) (&s), YES);
+    if (new_rule->t.data == NULL) {
+        (void)fprintf(stderr, "Error 3g: Constant '%s' cannot be read as the type of its operand in: %s\n", (char *)s.data, expression);
+        return -1;
+    }
+    return create_boolean_expression(mmt, NO, new_rule, temp2);
+}
+
+/* Numeric constant (1.0); temp points at its first digit. */
+static int parse_number_constant(mmt_handler_t *mmt, rule *a_rule, char *temp, char *expression)
+{
+    char *temp2;
+    char token[30];
+    int i;
+    rule *new_rule;
+    temp2 = temp;
+    while (isxdigit(*temp2) || *temp2 == '.')temp2++;
+    i = temp2 - temp;
+    /* F-BUG-103 (#209): a digit run longer than the 30-byte token buffer
+     * is rejected instead of overflowing it (same convention as the
+     * over-long quoted string above). */
+    if (i >= (int)sizeof(token)) {
+        (void)fprintf(stderr, "Error 3c: Number too long in boolean expression: %s\n", expression);
+        return -1;
+    }
+    strncpy(token, temp, i);
+    token[i] = '\0';
+
+    // create new_rule
+    new_rule = new_constant_leaf(a_rule);
+    if(new_rule == NULL) return -1;
+    new_rule->t.data = (void *) get_xdata(new_rule->t.data_type_id, new_rule->t.data_size, (void *) token, NO);
+    if (new_rule->t.data == NULL) {
+        (void)fprintf(stderr, "Error 3g: Constant %s cannot be read as the type of its operand in: %s\n", token, expression);
+        return -1;
+    }
+    return create_boolean_expression(mmt, NO, new_rule, temp2);
+}
+
+/* A PROTO.FIELD.EVENT reference (ref > 0) adds its <protocol, field, type,
+ * event> to the root rule's tuple list unless the top rule already holds
+ * it. Returns -1 when the tuple cannot be allocated. */
+static int register_reference_tuple(const rule *new_rule)
+{
+    tuple * a_tuple = (tuple *) xmalloc(sizeof (tuple));
+    if(a_tuple == NULL) {
+        return -1;
+    }
+    a_tuple->protocol_id = new_rule->t.protocol_id;
+    a_tuple->field_id = new_rule->t.field_id;
+    a_tuple->data_type_id = new_rule->t.data_type_id;
+    a_tuple->data_size = new_rule->t.data_size;
+    a_tuple->event_id = new_rule->t.event_id;
+    a_tuple->valid = NOT_YET; //set to valid when new values arrive, else set to NOT_YET
+    a_tuple->data = NULL;
+    a_tuple->next = NULL;
+    tuple *temp_tuple = sec_cur->top_rule->list_of_tuples;
+    int found = NO;
+    while (temp_tuple != NULL) {
+        if (a_tuple->protocol_id == temp_tuple->protocol_id && a_tuple->field_id == temp_tuple->field_id
+                && a_tuple->data_type_id == temp_tuple->data_type_id && a_tuple->event_id == temp_tuple->event_id) {
+            found = YES;
+            xfree(a_tuple);
+            break;
+        }
+        temp_tuple = temp_tuple->next;
+    }
+    if (found == NO) {
+        if (sec_cur->root_rule->list_of_tuples == NULL) {
+            sec_cur->root_rule->list_of_tuples = a_tuple;
+        } else {
+            a_tuple->next = sec_cur->root_rule->list_of_tuples;
+            sec_cur->root_rule->list_of_tuples = a_tuple;
+        }
+    }
+    return 0;
+}
+
+/* PROTO.FIELD[.EVENT] attribute leaf; temp points at its first letter. */
+static int parse_attribute(mmt_handler_t *mmt, rule *a_rule, char *temp, char *expression)
+{
+    char *temp2;
+    short ref = 0;
+    rule *new_rule;
+    //PROTO.FIELD.EVENT
+    temp2 = tokenize(temp, &sec_cur->token2, &sec_cur->token3, &ref);
+    if (temp2 == NULL) return -1;
+    //create new_rule
+    new_rule = create_rule();
+    if (new_rule == NULL) return -1;
+    new_rule->type = LEAF;
+    new_rule->value = XVAR;
+    new_rule->t.protocol_id = get_protocol_id_by_name(sec_cur->token2);
+    new_rule->t.field_id = get_attribute_id_by_protocol_id_and_attribute_name(new_rule->t.protocol_id, sec_cur->token3);
+    append_son(a_rule, new_rule);
+    if (new_rule->t.protocol_id <= 0 || new_rule->t.field_id <= 0) {
+        (void)fprintf(stderr, "Error 9a: Unknown attribute %s.%s in boolean expression: %s\n", sec_cur->token2, sec_cur->token3, expression);
+        return -1;
+    }
+    new_rule->t.data_type_id = mmt_attribute_get_data_type_typed(new_rule->t.protocol_id, new_rule->t.field_id);
+    int ret = 1;
+    if (is_registered_attribute(mmt, new_rule->t.protocol_id, new_rule->t.field_id) == 0) {
+        ret = register_extraction_attribute(mmt, new_rule->t.protocol_id, new_rule->t.field_id);
+    }
+    if (ret <= 0) {
+        (void)fprintf(stderr, "Error 9: in register_extraction_attribute proto=%ld, field=%ld.Value not available.\n", new_rule->t.protocol_id, new_rule->t.field_id);
+        return -1;
+    }
+    if (ref > 0) {
+        new_rule->t.event_id = ref;
+        if (register_reference_tuple(new_rule) != 0) return -1;
+    }
+    new_rule->t.data_size = get_data_size_by_proto_and_field_ids(new_rule->t.protocol_id, new_rule->t.field_id);
+    new_rule->t.valid = NOT_YET;
+    new_rule->t.data = NULL;
+    return create_boolean_expression(mmt, NO, new_rule, temp2);
+}
+
+/* Embedded function: #function_name(param1,param2,...) where param is a
+ * numeric constant or of the form PROTO.FIELD.EVENT_ID; temp points at the
+ * '#'. */
+static int parse_function_call(mmt_handler_t *mmt, rule *a_rule, char *temp)
+{
+    rule *new_rule;
+    char *what_to_do = temp;
+    char * funct_name = funct_extract_name(what_to_do);
+    //funct_name is a malloc that contains the name
+    int data_size = 0;
+    if (funct_name == NULL) return -1;
+
+    //create new_rule
+    //new_rule->t contains info on return value and new_rule->t.next... contains info on parameters
+    new_rule = create_rule();
+    if (new_rule == NULL) {
+        xfree(funct_name);
+        return -1;
+    }
+    new_rule->type = LEAF;
+    new_rule->value = XFUNCT;
+    new_rule->funct_name = funct_name; //do not free funct_name
+    append_son(a_rule, new_rule);
+
+    //#511: resolve the symbol and bound the arity once, here, instead
+    //of an unchecked dlsym() and an unbounded data[] on every packet
+    new_rule->funct = funct_check_call(what_to_do, funct_name);
+    if (new_rule->funct == NULL) return -1;
+    int return_type = funct_get_return_type_and_size(&data_size, funct_name);
+    if (return_type < 0) return -1;
+    char * command = strchr(what_to_do, '(');
+    command++;
+    while (*command == ' ') command++;
+    //command contains param1,param2...) or param1) or )
+
+    //tuple t holds info on return value
+    new_rule->t.protocol_id = -1; //not used
+    new_rule->t.field_id = -1; //not used
+    new_rule->t.event_id = -1; //not used
+    new_rule->t.data_type_id = return_type;
+    new_rule->t.data_size = data_size;
+    new_rule->t.valid = NOT_YET;
+    new_rule->t.data = NULL; //will be calculated
+
+    //t.next lists one tuple per parameter; an empty list leaves it
+    //NULL so the function is called without arguments
+    char * command2 = command;
+    tuple ** link = &new_rule->t.next;
+    enum_yes reg_tuple = YES;
+    while (*command2 != ')') {
+        tuple * new_tuple = new_param_tuple();
+        if (new_tuple == NULL) return -1;
+        *link = new_tuple;
+        link = &new_tuple->next;
+        if (funct_get_info_param( mmt, reg_tuple, command2, new_tuple, &command2 ) != 0) return -1;
+        if (new_tuple->protocol_id == -1 && new_tuple->data == NULL) {
+            (void)fprintf(stderr, "Error 3f: Empty parameter in function call: %s\n", what_to_do);
+            return -1;
+        }
+        if (command2 == NULL) break;
+    }
+    return create_boolean_expression(mmt, NO, new_rule, strchr(command, ')') + 1);
+}
+
 /* Returns 0, or -1 with the reason on stderr (#512: no more process exits).
  * Each node is linked into the tree as soon as it is created, so the caller
  * frees a failed expression by freeing the tree it belongs to. */
@@ -699,9 +930,6 @@ static int create_boolean_expression(mmt_handler_t *mmt, enum_yes first_time, ru
     //DE, DNE
     char *temp = expression;
     char *temp2 = expression;
-    char token[30];
-    int i;
-    short ref = 0;
     rule *new_rule;
 
     while (isspace(*temp))temp++;
@@ -752,205 +980,14 @@ static int create_boolean_expression(mmt_handler_t *mmt, enum_yes first_time, ru
         return climb_with_operator(mmt, a_rule, DNE, temp + 4);
     } else if (*temp == '\'') {
         // 'string'
-        temp++;
-        temp2 = temp;
-        i = 0;
-        while (*temp2 != '\'' && *temp2 != '\0' && i < 1000) {
-            temp2++;
-            i++;
-        }
-        if (i > 999 || *temp2 != '\'') {
-            (void)fprintf(stderr, "Error 3a: Incorrect string in boolean expression: %s\n", expression);
-            return -1;
-        }
-        i = temp2 - temp;
-        mmt_string_data_t s;
-        strncpy((char*)s.data, temp, i);
-        s.data[i] = '\0';
-        temp2++; //skip the last '\''
-        s.len = i + 1;
-        //create new_rule
-        new_rule = create_rule();
-        if (new_rule == NULL) return -1;
-        new_rule->type = LEAF;
-        new_rule->value = XCON;
-        //need to find a right handed LEAF to determine the type
-        rule * temp_rule = a_rule;
-        while (temp_rule->list_of_sons != NULL) {
-            temp_rule = temp_rule->list_of_sons;
-        }
-        new_rule->t.protocol_id = temp_rule->t.protocol_id;
-        new_rule->t.field_id = temp_rule->t.field_id;
-        new_rule->t.data_type_id = temp_rule->t.data_type_id;
-        new_rule->t.event_id = temp_rule->t.event_id;
-        new_rule->t.data_size = temp_rule->t.data_size;
-        new_rule->t.valid = VALID;
-        append_son(a_rule, new_rule);
-        new_rule->t.data = (void *) get_xdata(new_rule->t.data_type_id, new_rule->t.data_size, (void *) (&s), YES);
-        if (new_rule->t.data == NULL) {
-            (void)fprintf(stderr, "Error 3g: Constant '%s' cannot be read as the type of its operand in: %s\n", (char *)s.data, expression);
-            return -1;
-        }
-        return create_boolean_expression(mmt, NO, new_rule, temp2);
+        return parse_string_constant(mmt, a_rule, temp, expression);
     } else if (isalpha(*temp) || *temp == '_') {
-        //PROTO.FIELD.EVENT
-        temp2 = tokenize(temp, &sec_cur->token2, &sec_cur->token3, &ref);
-        if (temp2 == NULL) return -1;
-        //create new_rule
-        new_rule = create_rule();
-        if (new_rule == NULL) return -1;
-        new_rule->type = LEAF;
-        new_rule->value = XVAR;
-        new_rule->t.protocol_id = get_protocol_id_by_name(sec_cur->token2);
-        new_rule->t.field_id = get_attribute_id_by_protocol_id_and_attribute_name(new_rule->t.protocol_id, sec_cur->token3);
-        append_son(a_rule, new_rule);
-        if (new_rule->t.protocol_id <= 0 || new_rule->t.field_id <= 0) {
-            (void)fprintf(stderr, "Error 9a: Unknown attribute %s.%s in boolean expression: %s\n", sec_cur->token2, sec_cur->token3, expression);
-            return -1;
-        }
-        new_rule->t.data_type_id = mmt_attribute_get_data_type_typed(new_rule->t.protocol_id, new_rule->t.field_id);
-        int ret = 1;
-        if (is_registered_attribute(mmt, new_rule->t.protocol_id, new_rule->t.field_id) == 0) {
-            ret = register_extraction_attribute(mmt, new_rule->t.protocol_id, new_rule->t.field_id);
-        }
-        if (ret <= 0) {
-            (void)fprintf(stderr, "Error 9: in register_extraction_attribute proto=%ld, field=%ld.Value not available.\n", new_rule->t.protocol_id, new_rule->t.field_id);
-            return -1;
-        }
-        if (ref > 0) {
-            new_rule->t.event_id = ref;
-            tuple * a_tuple = (tuple *) xmalloc(sizeof (tuple));
-            if(a_tuple == NULL) {
-                return -1;
-            }
-            a_tuple->protocol_id = new_rule->t.protocol_id;
-            a_tuple->field_id = new_rule->t.field_id;
-            a_tuple->data_type_id = new_rule->t.data_type_id;
-            a_tuple->data_size = new_rule->t.data_size;
-            a_tuple->event_id = new_rule->t.event_id;
-            a_tuple->valid = NOT_YET; //set to valid when new values arrive, else set to NOT_YET
-            a_tuple->data = NULL;
-            a_tuple->next = NULL;
-            tuple *temp_tuple = sec_cur->top_rule->list_of_tuples;
-            int found = NO;
-            while (temp_tuple != NULL) {
-                if (a_tuple->protocol_id == temp_tuple->protocol_id && a_tuple->field_id == temp_tuple->field_id
-                        && a_tuple->data_type_id == temp_tuple->data_type_id && a_tuple->event_id == temp_tuple->event_id) {
-                    found = YES;
-                    xfree(a_tuple);
-                    break;
-                }
-                temp_tuple = temp_tuple->next;
-            }
-            if (found == NO) {
-                if (sec_cur->root_rule->list_of_tuples == NULL) {
-                    sec_cur->root_rule->list_of_tuples = a_tuple;
-                } else {
-                    a_tuple->next = sec_cur->root_rule->list_of_tuples;
-                    sec_cur->root_rule->list_of_tuples = a_tuple;
-                }
-            }
-        }
-        new_rule->t.data_size = get_data_size_by_proto_and_field_ids(new_rule->t.protocol_id, new_rule->t.field_id);
-        new_rule->t.valid = NOT_YET;
-        new_rule->t.data = NULL;
-        return create_boolean_expression(mmt, NO, new_rule, temp2);
+        return parse_attribute(mmt, a_rule, temp, expression);
     } else if (*temp == '#') {
-        //Embedded function: #function_name(param1,param2,...) where param is a numeric constant or of the form PROTO.FIELD.EVENT_ID
-        char *what_to_do = temp;
-        char * funct_name = funct_extract_name(what_to_do);
-        //funct_name is a malloc that contains the name
-        int data_size = 0;
-        if (funct_name == NULL) return -1;
-
-        //create new_rule
-        //new_rule->t contains info on return value and new_rule->t.next... contains info on parameters
-        new_rule = create_rule();
-        if (new_rule == NULL) {
-            xfree(funct_name);
-            return -1;
-        }
-        new_rule->type = LEAF;
-        new_rule->value = XFUNCT;
-        new_rule->funct_name = funct_name; //do not free funct_name
-        append_son(a_rule, new_rule);
-
-        //#511: resolve the symbol and bound the arity once, here, instead
-        //of an unchecked dlsym() and an unbounded data[] on every packet
-        new_rule->funct = funct_check_call(what_to_do, funct_name);
-        if (new_rule->funct == NULL) return -1;
-        int return_type = funct_get_return_type_and_size(&data_size, funct_name);
-        if (return_type < 0) return -1;
-        char * command = strchr(what_to_do, '(');
-        command++;
-        while (*command == ' ') command++;
-        //command contains param1,param2...) or param1) or )
-
-        //tuple t holds info on return value
-        new_rule->t.protocol_id = -1; //not used
-        new_rule->t.field_id = -1; //not used
-        new_rule->t.event_id = -1; //not used
-        new_rule->t.data_type_id = return_type;
-        new_rule->t.data_size = data_size;
-        new_rule->t.valid = NOT_YET;
-        new_rule->t.data = NULL; //will be calculated
-
-        //t.next lists one tuple per parameter; an empty list leaves it
-        //NULL so the function is called without arguments
-        char * command2 = command;
-        tuple ** link = &new_rule->t.next;
-        enum_yes reg_tuple = YES;
-        while (*command2 != ')') {
-            tuple * new_tuple = new_param_tuple();
-            if (new_tuple == NULL) return -1;
-            *link = new_tuple;
-            link = &new_tuple->next;
-            if (funct_get_info_param( mmt, reg_tuple, command2, new_tuple, &command2 ) != 0) return -1;
-            if (new_tuple->protocol_id == -1 && new_tuple->data == NULL) {
-                (void)fprintf(stderr, "Error 3f: Empty parameter in function call: %s\n", what_to_do);
-                return -1;
-            }
-            if (command2 == NULL) break;
-        }
-        return create_boolean_expression(mmt, NO, new_rule, strchr(command, ')') + 1);
+        return parse_function_call(mmt, a_rule, temp);
     } else if (isdigit(*temp)) {
         // 1.0
-        temp2 = temp;
-        while (isxdigit(*temp2) || *temp2 == '.')temp2++;
-        i = temp2 - temp;
-        /* F-BUG-103 (#209): a digit run longer than the 30-byte token buffer
-         * is rejected instead of overflowing it (same convention as the
-         * over-long quoted string above). */
-        if (i >= (int)sizeof(token)) {
-            (void)fprintf(stderr, "Error 3c: Number too long in boolean expression: %s\n", expression);
-            return -1;
-        }
-        strncpy(token, temp, i);
-        token[i] = '\0';
-
-        // create new_rule
-        new_rule = create_rule();
-        if(new_rule == NULL) return -1;
-        new_rule->type = LEAF;
-        new_rule->value = XCON;
-        // need to find a right handed LEAF to determine the type
-        rule * temp_rule = a_rule;
-        while (temp_rule->list_of_sons != NULL) {
-            temp_rule = temp_rule->list_of_sons;
-        }
-        new_rule->t.protocol_id = temp_rule->t.protocol_id;
-        new_rule->t.field_id = temp_rule->t.field_id;
-        new_rule->t.data_type_id = temp_rule->t.data_type_id;
-        new_rule->t.event_id = temp_rule->t.event_id;
-        new_rule->t.data_size = temp_rule->t.data_size;
-        new_rule->t.valid = VALID;
-        append_son(a_rule, new_rule);
-        new_rule->t.data = (void *) get_xdata(new_rule->t.data_type_id, new_rule->t.data_size, (void *) token, NO);
-        if (new_rule->t.data == NULL) {
-            (void)fprintf(stderr, "Error 3g: Constant %s cannot be read as the type of its operand in: %s\n", token, expression);
-            return -1;
-        }
-        return create_boolean_expression(mmt, NO, new_rule, temp2);
+        return parse_number_constant(mmt, a_rule, temp, expression);
     } else if (*temp == '=' && *(temp + 1) == '=') {
         // ==
         return climb_with_operator(mmt, a_rule, EQ, temp + 2);
