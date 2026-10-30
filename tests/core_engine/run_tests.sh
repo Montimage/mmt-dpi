@@ -22,6 +22,14 @@
 # per-site rate limit, counters under concurrent writers — under TSan in the
 # SANITIZE=tsan mode).
 #
+# Issue #554: test_ip_session_ids includes
+# src/mmt_tcpip/lib/protocols/ip_session_id_management.c (the IP session
+# store: interned address ids, get_session(), free_session_data() and the
+# per-protocol session counters) and links the suite's hash_utils.o and
+# memory.o. -Wl,--wrap on malloc, mmt_malloc, mmt_free, insert_key_value and
+# insert_session_into_protocol_context lets it fail each allocation and insert
+# get_session() makes and check the rollback releases what it created.
+#
 # Issue #525: the same library objects (plus mmt_attr_sprintf_compat.c and,
 # since #533, mmt_utils.c) also
 # link test_api_contracts — the public-API contract table, one entry per
@@ -111,6 +119,15 @@ objects+=("$SCRIPT_DIR/test_core_engine.o")
     -o "$SCRIPT_DIR/test_mmt_log" "$CORE_SRC/mmt_log.c" "$SCRIPT_DIR/test_mmt_log.c" \
     -lpthread
 
+# Issue #554: the IP session store, with link-time allocation/insert faults.
+"$CC" "${extra_cflags[@]}" -Wall -Wextra -Wno-unused-parameter -std=gnu11 "${INCS[@]}" \
+    -I"$PROJECT_DIR/src/mmt_tcpip/include" -I"$PROJECT_DIR/src/mmt_fuzz_engine" \
+    -c "$SCRIPT_DIR/test_ip_session_ids.c" -o "$SCRIPT_DIR/test_ip_session_ids.o"
+"$CC" "${extra_cflags[@]}" -Wl,--wrap=malloc -Wl,--wrap=mmt_malloc -Wl,--wrap=mmt_free \
+    -Wl,--wrap=insert_key_value -Wl,--wrap=insert_session_into_protocol_context \
+    -o "$SCRIPT_DIR/test_ip_session_ids" "$SCRIPT_DIR/test_ip_session_ids.o" \
+    "$SCRIPT_DIR/hash_utils.o" "$SCRIPT_DIR/memory.o" -lpthread
+
 # Run from a scratch directory: load_plugins() scans ./plugins first, and an
 # empty/missing one deterministically takes the no-plugin early return. The
 # engine prints verbose DEBUG lines; keep them in a log and only surface it
@@ -152,5 +169,15 @@ if ( cd "$WORK" && "$SCRIPT_DIR/test_mmt_log" > "$WORK/mmt_log.log" 2>&1 ); then
 else
     cat "$WORK/mmt_log.log"
     echo "Logger tests: FAILED"
+    exit 1
+fi
+
+echo "Running IP session store tests (issue #554)..."
+if ( cd "$WORK" && "$SCRIPT_DIR/test_ip_session_ids" > "$WORK/ip_session_ids.log" 2>&1 ); then
+    tail -n 1 "$WORK/ip_session_ids.log"
+    echo "IP session store tests: PASSED"
+else
+    cat "$WORK/ip_session_ids.log"
+    echo "IP session store tests: FAILED"
     exit 1
 fi

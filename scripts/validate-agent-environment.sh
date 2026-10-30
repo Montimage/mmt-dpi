@@ -203,7 +203,7 @@ tests/fault_injection/run_tests.sh:115-117	^ *make .* clean	^ *make .* install	f
 tests/fault_injection/run_tests.sh:97-102	^if .*SDK_BUILD_PROFILE	^fi	sanitizers skip fault injection engine leg	exit 0
 tests/run_all_tests.sh:397-401	json_file=	select\(	coverage restricts emitted records to src	/src/
 tests/run_all_tests.sh:458-472	Instrumented files	scope:	coverage summary exposes measured scope	instrumented_sources
-tests/coverage/floor.json:2-10	"library_line_pct": 73.7	  ]	coverage floor and required sources	"instrumented_files": 42
+tests/coverage/floor.json:2-10	"library_line_pct": 83.1	  ]	coverage floor and required sources	"instrumented_files": 47
 rules/common.mk:187-206	^SRCDIR	^SDKXAM	artifacts remain in checkout	SDKLIB
 CITATIONS
 

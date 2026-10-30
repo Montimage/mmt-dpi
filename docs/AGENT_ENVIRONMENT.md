@@ -447,7 +447,7 @@ Coverage includes only the `src/` files represented in emitted gcov data
 subset, so it must not be reported as whole-library coverage. The current
 run's exact scope is `instrumented_sources` and `instrumented_files` in
 `summary.json` (`tests/run_all_tests.sh:458-472`). The committed minimum is
-**42 instrumented files**, alongside a **73.7%** line floor and required
+**47 instrumented files**, alongside an **83.1%** line floor and required
 source names (`tests/coverage/floor.json:2-10`); the 30-file audit cohort
 does not change that floor. Consult a fresh summary for the current count.
 
@@ -476,10 +476,10 @@ of the audit, and the recorded exclusions: generated asn1c, vendored llhttp
 Assessed. The coverage CI job fails when a built handwritten source is
 missing from the records, a tracked one is neither built nor justified, a
 family measures nothing or drops below its `sdk.family_floors` entry
-(issue #524: core 85.3, tcpip 63.7 since issue #542 (65.2 at #531; #542 removed 2,530 near-fully covered stub lines from its denominator), mobile 74.3 since issue #532,
-business_app 88.8, dicom 88.1, security_fuzz 70.4), the original cohort drops below 82.9% or the
-whole SDK drops below `sdk.whole_sdk_line_pct` (measured 65.53% at issue
-#524 with the harness cohort, floor 64.5%). The same job runs
+(core 92.4, tcpip 65.1, dicom 88.7, security_fuzz 74.1 since issue #554;
+mobile 74.3 since issue #532; business_app 88.8 since issue #524), the original cohort drops below 82.9% or the
+whole SDK drops below `sdk.whole_sdk_line_pct` (measured 71.66% at issue
+#554 with the harness cohort, floor 70.6%). The same job runs
 `tools/ci/report-uncovered-runs.sh` as a gate: a contiguous run of more than
 10 uncovered lines in `coverage.info` fails it (issue #524).
 
