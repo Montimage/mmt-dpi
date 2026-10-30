@@ -276,10 +276,6 @@ static inline proto_statistics_internal_t * _create_protocol_stats_instance(prot
     return proto_stats;
 }
 
-proto_statistics_internal_t * create_protocol_stats_instance(protocol_instance_t * proto, proto_statistics_internal_t * parent_proto_stats) {
-	return _create_protocol_stats_instance( proto, parent_proto_stats);
-}
-
 /**
  * Returns a pointer to the protocol statistics of the child protocol identified by \child_proto_id
  * @param proto_stats pointer to the protocol stats instance
@@ -290,9 +286,6 @@ static inline proto_statistics_internal_t * _get_child_protocol_stats(proto_stat
     return (proto_statistics_internal_t *) find_int_key_value(proto_stats->encap_proto_stats, child_proto_id);
 }
 
-proto_statistics_internal_t * get_child_protocol_stats(proto_statistics_internal_t * proto_stats, uint32_t child_proto_id) {
-	return _get_child_protocol_stats( proto_stats, child_proto_id);
-}
 /**
  * Returns a pointer to the protocol statistics in the parent protocol encapsulated stats
  * @param proto pointer to the protocol instance
@@ -314,9 +307,6 @@ static inline proto_statistics_internal_t * _get_protocol_stats_from_parent(prot
     }
     return proto_stats;
 }
-proto_statistics_internal_t * get_protocol_stats_from_parent(protocol_instance_t * proto, proto_statistics_internal_t * parent_proto_stats) {
-	return _get_protocol_stats_from_parent( proto, parent_proto_stats);
-}
 
 /**
  * Prints the protocol stats tree rooted at the given protocol
@@ -324,20 +314,6 @@ proto_statistics_internal_t * get_protocol_stats_from_parent(protocol_instance_t
  * @param proto pointer to the root protocol
  */
 void print_protocol_stats_tree(FILE * f, protocol_instance_t * proto);
-
-/**
- * Prints the protocol stats for the given protocol
- * @param f file descriptor
- * @param proto pointer to the protocol
- */
-void print_protocol_stats(FILE * f, protocol_instance_t * proto) {
-    proto_statistics_internal_t * proto_stats = proto->proto_stats;
-    while (proto_stats) {
-        mmt_stream_printf(f, "Proto %u: \nnb\tpackets %"PRIu64" --- byte count %"PRIu64" --- sessions count %"PRIu64" --- timeout sessions count %"PRIu64"\n",
-                proto_stats->proto->protocol->proto_id, proto_stats->packets_count, proto_stats->data_volume, proto_stats->sessions_count, proto_stats->timedout_sessions_count);
-        proto_stats = proto_stats->next;
-    }
-}
 
 proto_statistics_t * get_protocol_stats(mmt_handler_t *mmt_handler, uint32_t proto_id) {
     if (mmt_handler == NULL) return NULL;

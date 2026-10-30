@@ -90,8 +90,6 @@ extern ip_dgram_t *ip_dgram_alloc        ( void );
 extern void        ip_dgram_free         ( ip_dgram_t * );
 extern int         ip_dgram_init         ( ip_dgram_t * );
 extern void        ip_dgram_cleanup      ( ip_dgram_t * );
-extern void        ip_dgram_dump         ( ip_dgram_t * );
-extern void        ip_dgram_dump_holes   ( ip_dgram_t * );
 
 extern int        ip_dgram_update       ( ip_dgram_t *, const mmt_una_iphdr_t *, unsigned ,unsigned);
 extern int        ip_dgram_update_holes ( ip_dgram_t *, const uint8_t *, unsigned, unsigned, int);

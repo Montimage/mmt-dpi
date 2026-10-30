@@ -480,24 +480,6 @@ ndn_proto_context_t * ndn_get_proto_context(ipacket_t *ipacket, unsigned index){
     }
 }
 
-/**
- * Get list of control session from session context
- * @param  ipacket packet
- * @param  index   protocol index
- * @return         the pointer to the first control_session
- */
- ndn_session_t * ndn_get_list_all_session(ipacket_t *ipacket, unsigned index){
-    protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
-    ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
-    ndn_proto_context_t * ndn_proto_context = (ndn_proto_context_t*)configured_protocol->args;
-    if(ndn_proto_context == NULL){
-        // log_err("Cannot get NDN protocol context");
-        return NULL;
-    }else{
-        return ndn_proto_context->dummy_session;
-    }
-}
-
 
 int ndn_packet_type_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){

@@ -120,31 +120,6 @@ int tls_get_number_records(const ipacket_t * ipacket){
     return nb_record;
 }
 
-/**
- * Check if a message_type value is a valid one
- * 
-    Message types
-    Code    Description
-    0   HelloRequest
-    1   ClientHello
-    2   ServerHello
-    4   NewSessionTicket
-    11  Certificate
-    12  ServerKeyExchange
-    13  CertificateRequest
-    14  ServerHelloDone
-    15  CertificateVerify
-    16  ClientKeyExchange
-    20  Finished
- * @param  message_type [description]
- * @return              [description]
- */
-int ssl_is_tls_message_type(int message_type){
-    return !(message_type < 0 
-        || message_type > 20 
-        || (message_type > 4 && message_type < 11)
-        || (message_type > 16 && message_type < 20));
-}
 //////////////// SSL attributes extraction routines.
 
 int ssl_server_name_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {

@@ -102,22 +102,6 @@ smb_session_t * smb_find_session_by_id(smb_session_t * root, uint64_t session_id
   return NULL;
 }
 
-smb_session_t * smb_remove_session_by_id(smb_session_t * root, uint64_t session_id) {
-  smb_session_t * head = root;
-  while (head != NULL) {
-    if (head->session_id == session_id) break;
-    head = head->next;
-  }
-  if (head == NULL) return NULL;
-  if (head->next != NULL) {
-    head->next->prev = head->prev;
-  }
-  if (head->prev != NULL) {
-    head->prev->next = head->next;
-  }
-  return head;
-}
-
 int smb_session_insert_file(smb_session_t * smb_ss, smb_file_t * file) {
   if (!smb_ss || !file) return 0;
   if (smb_ss->files == NULL) {

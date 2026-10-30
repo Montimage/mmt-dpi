@@ -41,7 +41,7 @@ MMTAPI int MMTCALL hex2int(char hc);
  *             never reads past it, so it is safe on non-NUL-terminated input.
  */
 MMTAPI int MMTCALL str_hex2int(char *hstr, int start_index, int end_index)
-    __attribute__((deprecated("use str_hex2int_n")));
+    __attribute__((deprecated("use str_hex2int_n; removal in 2.0.0")));
 
 /**
  * Length-bounded variant of str_hex2int()
@@ -77,7 +77,7 @@ MMTAPI char * MMTCALL str_hex2str(char *hstr, int start_index, int end_index);
  *             value of hexa number in decimal system
  */
 #define MMT_HEX2DEC_ERROR ULONG_MAX /**< issue #546: the value `return -1` used to produce */
-MMTAPI unsigned long MMTCALL hex2dec(char* str);
+MMTAPI unsigned long MMTCALL hex2dec(char* str) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 
 /**
@@ -110,7 +110,7 @@ MMTAPI char MMTCALL hex2char(char a, char b);
  *                	NULL if length of h_str is a number of: 2*n + 1
  *                 a string in ascii table
  */
-MMTAPI char * MMTCALL hex2str(char *h_str);
+MMTAPI char * MMTCALL hex2str(char *h_str) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 
  #define C_EASY_STR_MAX_ARRAY_SIZE 255
@@ -154,7 +154,7 @@ MMTAPI char * MMTCALL hex2str(char *h_str);
   *             never reads past it, so it is safe on non-NUL-terminated input.
   */		
  MMTAPI char * MMTCALL str_sub(char * str, int start_index, int end_index) // Passed
-    __attribute__((deprecated("use str_sub_n")));
+    __attribute__((deprecated("use str_sub_n; removal in 2.0.0")));
 
  /**
   * Length-bounded variant of str_sub()
@@ -206,7 +206,7 @@ MMTAPI char * MMTCALL hex2str(char *h_str);
  *             non-NUL-terminated input.
  */
 MMTAPI int * MMTCALL str_get_indexes(char *str, char *str1) // Passed
-    __attribute__((deprecated("use str_get_indexes_n")));
+    __attribute__((deprecated("use str_get_indexes_n; removal in 2.0.0")));
 
 /**
  * Length-bounded variant of str_get_indexes()
@@ -267,7 +267,7 @@ MMTAPI char * MMTCALL str_copy(char *str2);
  * Print string in an array of string until the first NULL element;
  * @param array array string
  */
-MMTAPI void MMTCALL str_print_array(char **array); // Passed
+MMTAPI void MMTCALL str_print_array(char **array) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0"))); // Passed
 
 #ifdef  __cplusplus
 }

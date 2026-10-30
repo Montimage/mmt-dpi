@@ -74,8 +74,6 @@ int smb_insert_session(smb_session_t ** root, smb_session_t * new_session);
 
 smb_session_t * smb_find_session_by_id(smb_session_t * root, uint64_t session_id);
 
-smb_session_t * smb_remove_session_by_id(smb_session_t * root, uint64_t session_id);
-
 smb_file_t * smb_file_new(void);
 void smb_file_free(smb_file_t * file);
 int smb_session_insert_file(smb_session_t * smb_ss, smb_file_t * file);

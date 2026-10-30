@@ -34,7 +34,6 @@ extern ip_frag_t *ip_frag_alloc   ( unsigned, unsigned );
 extern int        ip_frag_init    ( ip_frag_t *, unsigned, unsigned );
 extern void       ip_frag_free    ( ip_frag_t * );
 extern void       ip_frag_cleanup ( ip_frag_t * );
-extern void       ip_frag_dump    ( ip_frag_t * );
 
 
 #endif /* _MMT_IP_FRAG_H*/

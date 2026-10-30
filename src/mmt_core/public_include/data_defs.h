@@ -709,7 +709,7 @@ MMTAPI uint64_t MMTCALL get_session_dl_data_byte_count(
  */
 MMTAPI uint64_t MMTCALL get_session_total_packet_count(
     const mmt_session_t *session
-);
+) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
  * Returns the number of packets captured by this session
@@ -718,7 +718,7 @@ MMTAPI uint64_t MMTCALL get_session_total_packet_count(
  */
 MMTAPI uint64_t MMTCALL get_session_total_packet_cap_count(
     const mmt_session_t *session
-);
+) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 
 /**
@@ -728,7 +728,7 @@ MMTAPI uint64_t MMTCALL get_session_total_packet_cap_count(
  */
 MMTAPI uint64_t MMTCALL get_session_total_data_cap_volume(
     const mmt_session_t *session
-);
+) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
  * Returns the uplink number of packets seen by this session
@@ -746,7 +746,7 @@ MMTAPI uint64_t MMTCALL get_session_total_ul_packet_count(
  */
 MMTAPI uint64_t MMTCALL get_session_total_ul_cap_packet_count(
     const mmt_session_t *session
-);
+) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
  * Returns the downlink number of packets seen by this session
@@ -764,7 +764,7 @@ MMTAPI uint64_t MMTCALL get_session_total_dl_packet_count(
  */
 MMTAPI uint64_t MMTCALL get_session_total_dl_cap_packet_count(
     const mmt_session_t *session
-);
+) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
  * Returns total volume in bytes seen by this session
@@ -773,7 +773,7 @@ MMTAPI uint64_t MMTCALL get_session_total_dl_cap_packet_count(
  */
 MMTAPI uint64_t MMTCALL get_session_total_byte_count(
     const mmt_session_t *session
-);
+) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
  * Returns total uplink volume in bytes seen by this session
@@ -800,7 +800,7 @@ MMTAPI uint64_t MMTCALL get_session_total_dl_byte_count(
  */
 MMTAPI uint64_t MMTCALL get_session_total_ul_cap_byte_count(
     const mmt_session_t *session
-);
+) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
  * Returns total downlink volume in bytes captured by this session
@@ -809,7 +809,7 @@ MMTAPI uint64_t MMTCALL get_session_total_ul_cap_byte_count(
  */
 MMTAPI uint64_t MMTCALL get_session_total_dl_cap_byte_count(
     const mmt_session_t *session
-);
+) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
  * Returns the number of data packets seen by this session. <br>
@@ -820,7 +820,7 @@ MMTAPI uint64_t MMTCALL get_session_total_dl_cap_byte_count(
  */
 MMTAPI uint64_t MMTCALL get_session_total_data_packet_count(
     const mmt_session_t *session
-);
+) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
  * Returns the uplink number of data packets seen by this session. <br>
@@ -831,7 +831,7 @@ MMTAPI uint64_t MMTCALL get_session_total_data_packet_count(
  */
 MMTAPI uint64_t MMTCALL get_session_total_ul_data_packet_count(
     const mmt_session_t *session
-);
+) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
  * Returns the number of downlink data packets seen by this session. <br>
@@ -842,7 +842,7 @@ MMTAPI uint64_t MMTCALL get_session_total_ul_data_packet_count(
  */
 MMTAPI uint64_t MMTCALL get_session_total_dl_data_packet_count(
     const mmt_session_t *session
-);
+) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
  * Returns the total number of data bytes seen by this session. <br>
@@ -853,7 +853,7 @@ MMTAPI uint64_t MMTCALL get_session_total_dl_data_packet_count(
  */
 MMTAPI uint64_t MMTCALL get_session_total_data_byte_count(
     const mmt_session_t *session
-);
+) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
  * Returns the total uplink number of data bytes seen by this session. <br>
@@ -964,7 +964,7 @@ MMTAPI uint32_t MMTCALL get_session_retransmission_count(
  */
 MMTAPI uint32_t MMTCALL get_session_outoforder_count(
     const mmt_session_t *session
-);
+) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 
 /**
@@ -1044,21 +1044,21 @@ MMTAPI uint32_t MMTCALL get_attr_protocol_id( attribute_t * attr);
  * @param attr pointer to the attribute structure.
  * @return the identifier of the attribute.
  */
-MMTAPI uint32_t MMTCALL get_attr_id( attribute_t * attr);
+MMTAPI uint32_t MMTCALL get_attr_id( attribute_t * attr) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
  * Returns the index in the protocol where the given attribute is extracted.
  * @param attr pointer to the attribute structure.
  * @return the index in the protocol where the given attribute is extracted.
  */
-MMTAPI int MMTCALL get_attr_protocol_index( attribute_t * attr);
+MMTAPI int MMTCALL get_attr_protocol_index( attribute_t * attr) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
  * Returns the status of the given attribute.
  * @param attr pointer to the attribute structure.
  * @return the status of the attribute.
  */
-MMTAPI int MMTCALL get_attr_status( attribute_t * attr);
+MMTAPI int MMTCALL get_attr_status( attribute_t * attr) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
  * Returns the data type of the given attribute.
@@ -1072,7 +1072,7 @@ MMTAPI int MMTCALL get_attr_data_type( attribute_t * attr);
  * @param attr pointer to the attribute structure.
  * @return the data length in bytes of the given attribute.
  */
-MMTAPI int MMTCALL get_attr_data_len( attribute_t * attr);
+MMTAPI int MMTCALL get_attr_data_len( attribute_t * attr) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
  * Returns the relative offset in bytes of the given attribute with respect to its protocol header. <br>
@@ -1080,7 +1080,7 @@ MMTAPI int MMTCALL get_attr_data_len( attribute_t * attr);
  * @param attr pointer to the attribute structure.
  * @return the relative offset in bytes of the given attribute with respect to its protocol header.
  */
-MMTAPI int MMTCALL get_attr_offset( attribute_t * attr);
+MMTAPI int MMTCALL get_attr_offset( attribute_t * attr) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
  * Returns the scope of the given attribute.
@@ -1094,7 +1094,7 @@ MMTAPI int MMTCALL get_attr_scope( attribute_t * attr);
  * @param attr pointer to the attribute structure.
  * @return the pointer to the attribute extracted data.
  */
-MMTAPI void* MMTCALL get_attr_data( attribute_t * attr);
+MMTAPI void* MMTCALL get_attr_data( attribute_t * attr) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 //  - - - - - - - - - - - - - - - - - - - - -
 //  M M T   H A N D L E R   A C C E S S O R S
@@ -1105,7 +1105,7 @@ MMTAPI void* MMTCALL get_attr_data( attribute_t * attr);
  * @param handler the MMT handler structure.
  * @return timestamp corresponding to the last processed packet by the handler.
  */
-MMTAPI struct timeval MMTCALL get_last_activity_time( mmt_handler_t * handler );
+MMTAPI struct timeval MMTCALL get_last_activity_time( mmt_handler_t * handler ) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 
 /**
@@ -1121,7 +1121,7 @@ MMTAPI unsigned int MMTCALL htoi(
     size_t binary_data_cap,
     const char *hex_data,
     int len
-);
+) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
  * Returns the data size of the attribute given the protocol and attribute ids
@@ -1164,7 +1164,7 @@ MMTAPI int MMTCALL get_field_position_by_protocol_and_field_ids(
 MMTAPI bool MMTCALL is_protocol_attribute(
     mmt_proto_id_t proto_id,
     uint32_t attribute_id
-);
+) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
  * Returns the identifier of the protocol given its name
@@ -1238,7 +1238,7 @@ MMTAPI uint32_t MMTCALL short_time_diff(
  */
 MMTAPI uint32_t MMTCALL get_classification_threshold(
     void
-);
+) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
  * Transforms the given protocol hierarchy to string notation (bounded).
@@ -1330,7 +1330,7 @@ MMTAPI int MMTCALL mmt_strncasecmp(
 MMTAPI int MMTCALL mmt_strcmp(
     const char *first,
     const char *second
-);
+) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
  * Case insensitive comparison of strings (even for non-ascii).
@@ -1366,7 +1366,7 @@ MMTAPI int MMTCALL mmt_attr_format(FILE * f, attribute_t * attr);
  * If a writing error occurs, or the attribute's data type has no text form, a negative value is returned;
  * for a data type with no text form nothing is written.
  */
-MMTAPI int MMTCALL mmt_attr_fprintf(FILE * f, attribute_t * attr);
+MMTAPI int MMTCALL mmt_attr_fprintf(FILE * f, attribute_t * attr) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
  * Writes the string value of the attribute pointed by \attr to the C string pointed by \p.

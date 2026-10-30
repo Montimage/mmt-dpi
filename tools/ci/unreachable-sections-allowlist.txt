@@ -1,0 +1,106 @@
+# unreachable-sections-allowlist.txt — the sections
+# tools/ci/report-unreachable-sections.sh reports as unreachable from the
+# shared libraries but that stay in the source on purpose (issue #541,
+# F-DEAD-007). One row per section: "<source> <symbol> <tag>".
+#
+#   test       reached only from a unit suite (tests/) or a phase0 harness
+#              (tools/phase0/tests/) that links the static archive or
+#              compiles the source directly: a test hook (counter, seed,
+#              dump) or the code under test, plus the static helpers it calls
+#              (and the TU-local copies of header inlines it calls, such as
+#              mmt_memcmp from mmt_core.h)
+#   consumer   reached by a known consumer through the static archive:
+#              5Greplay links libmmt_tcpip.a and calls update_http2_data(),
+#              which reaches the other HTTP/2 rewrite helpers (http2.c)
+#   config     reached only in another build profile: the ngap.c and
+#              s1ap_common.c codec contexts under BUILD=asan
+#              (MMT_BUILD_ASAN), dummy_estimation() in proto_rtp.c without
+#              _MMT_BUILD_SDK
+#   generated  a static function of a generated asn1c header
+#              (asn_internal.h) the handwritten decoders include
+#   folded     a static const the compiler folds into every use at -O0, so
+#              its own .rodata section is never referenced
+#
+# The gate fails on an unreachable section missing here (delete the code,
+# or add a justified row) and on a row whose section is no longer
+# unreachable (delete the row). Regenerate the rows, keeping their tags:
+#   bash tools/ci/report-unreachable-sections.sh --emit-allowlist
+src/mmt_core/src/hash_utils.c delete_timeout_milestone test
+src/mmt_core/src/hash_utils.c mmt_oa_comp_call_count test
+src/mmt_core/src/hash_utils.c mmt_oa_equal_call_count test
+src/mmt_core/src/hash_utils.c mmt_oa_table_seed test
+src/mmt_core/src/hash_utils.c timeout_iteration_callback test
+src/mmt_core/src/hashmap.c hashmap_dump test
+src/mmt_core/src/hashmap.c hmap_dump_entry test
+src/mmt_core/src/hexdump.c fhexdump test
+src/mmt_core/src/hexdump.c hexdump test
+src/mmt_core/src/memory.c MMT_ARENA_HDR folded
+src/mmt_core/src/packet_pipeline.c mmt_caplen_guard_refused_count test
+src/mmt_core/src/packet_pipeline.c mmt_caplen_guard_stats_reset test
+src/mmt_core/src/packet_pipeline.c mmt_caplen_guard_total_count test
+src/mmt_core/src/packet_pipeline.c mmt_caplen_guard_unvalidated_count test
+src/mmt_core/src/packet_pipeline.c mmt_classify_checker_call_count test
+src/mmt_core/src/packet_pipeline.c mmt_classify_checker_calls_for_proto test
+src/mmt_core/src/packet_pipeline.c mmt_classify_direct_call_count test
+src/mmt_core/src/packet_pipeline.c mmt_classify_stats_reset test
+src/mmt_core/src/packet_pipeline.c mmt_classify_walk_skip_count test
+src/mmt_core/src/packet_pipeline.c mmt_reassembly_packet_alloc_count test
+src/mmt_core/src/packet_pipeline.c mmt_tcp_reasm_bytes_dropped test
+src/mmt_core/src/packet_pipeline.c mmt_tcp_reasm_bytes_moved test
+src/mmt_core/src/packet_pipeline.c mmt_tcp_reasm_insert_visits test
+src/mmt_core/src/packet_pipeline.c mmt_tcp_reasm_resident_bytes test
+src/mmt_core/src/packet_processing.c mmt_match_prefix test
+src/mmt_core/src/packet_processing.c mmt_memcmp test
+src/mmt_mobile/nas/ies/nas_tracking_area_identity.c nas_check_pdu test
+src/mmt_mobile/nas/ies/nas_tracking_area_identity.c nas_decode_tracking_area_identity test
+src/mmt_mobile/ngap/ngap.c ASN__STACK_OVERFLOW_CHECK generated
+src/mmt_mobile/ngap/ngap.c _aper_no_stack_ctx config
+src/mmt_mobile/proto_nas_5g.c ASN__STACK_OVERFLOW_CHECK generated
+src/mmt_mobile/proto_ngap.c ASN__STACK_OVERFLOW_CHECK generated
+src/mmt_mobile/proto_s1ap.c ASN__STACK_OVERFLOW_CHECK generated
+src/mmt_mobile/s1ap/s1ap_common.c ASN__STACK_OVERFLOW_CHECK generated
+src/mmt_mobile/s1ap/s1ap_common.c _aper_codec_ctx_storage config
+src/mmt_mobile/s1ap/s1ap_common.c s1ap_nas_ciphering_algorithm test
+src/mmt_tcpip/lib/avltree.c avltree_size test
+src/mmt_tcpip/lib/avltree.c avltree_valid test
+src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c _get_proto_id_by_hostname test
+src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c _mmt_case_insensitive_reverse_hostname_matching test
+src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c _mmt_case_sensitive_reverse_hostname_matching test
+src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c mmt_case_sensitive_reverse_hostname_matching test
+src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c mmt_hostname_trie_resident_bytes test
+src/mmt_tcpip/lib/protocols/http.c get_header_field_name_by_header_id test
+src/mmt_tcpip/lib/protocols/http.c get_header_id_by_field_name test
+src/mmt_tcpip/lib/protocols/http.c get_header_index_by_header_id test
+src/mmt_tcpip/lib/protocols/http.c get_request_method_uri_offset test
+src/mmt_tcpip/lib/protocols/http.c get_response_code_offset test
+src/mmt_tcpip/lib/protocols/http.c http_header_fields test
+src/mmt_tcpip/lib/protocols/http.c http_session_data_analysis test
+src/mmt_tcpip/lib/protocols/http.c http_session_data_cleanup test
+src/mmt_tcpip/lib/protocols/http.c http_session_data_init test
+src/mmt_tcpip/lib/protocols/http.c parse_message_header_lines test
+src/mmt_tcpip/lib/protocols/http2.c fuzz_payload consumer
+src/mmt_tcpip/lib/protocols/http2.c http2_can_write consumer
+src/mmt_tcpip/lib/protocols/http2.c inject_http2_packet consumer
+src/mmt_tcpip/lib/protocols/http2.c modify_get consumer
+src/mmt_tcpip/lib/protocols/http2.c restore_http2_packet consumer
+src/mmt_tcpip/lib/protocols/http2.c update_http2_data consumer
+src/mmt_tcpip/lib/protocols/http2.c update_stream_id consumer
+src/mmt_tcpip/lib/protocols/http2.c update_window_update consumer
+src/mmt_tcpip/lib/protocols/proto_ip_dgram.c _frag_drain_walker test
+src/mmt_tcpip/lib/protocols/proto_ip_dgram.c mmt_ip_frag_map_drain test
+src/mmt_tcpip/lib/protocols/proto_rtp.c dummy_estimation config
+src/mmt_tcpip/lib/protocols/proto_skype.c mmt_bitmask_compare test
+src/mmt_tcpip/lib/protocols/proto_skype.c mmt_check_skype_tcp test
+src/mmt_tcpip/lib/protocols/proto_skype.c mmt_check_skype_udp test
+src/mmt_tcpip/lib/protocols/rfc2822utils.c get_field_len test
+src/mmt_tcpip/lib/protocols/rfc2822utils.c get_next_header_line_length test
+src/mmt_tcpip/lib/protocols/rfc2822utils.c get_next_non_white_space_offset_no_limit test
+src/mmt_tcpip/lib/protocols/rfc2822utils.c get_next_white_space_offset_no_limit test
+src/mmt_tcpip/lib/protocols/rfc2822utils.c get_value_offset test
+src/mmt_tcpip/lib/protocols/rfc2822utils.c ignore_starting_crlf test
+src/mmt_tcpip/lib/protocols/rfc2822utils.c is_space_or_htab test
+src/mmt_tcpip/lib/protocols/rfc2822utils.c mmt_find_char_instance test
+src/mmt_tcpip/lib/protocols/tcp_segment.c tcp_seg_free test
+src/mmt_tcpip/lib/protocols/tcp_segment.c tcp_seg_free_list test
+src/mmt_tcpip/lib/protocols/tcp_segment.c tcp_seg_new_in_arena test
+src/mmt_tcpip/lib/protocols/tcp_segment.c tcp_seg_reassembly test

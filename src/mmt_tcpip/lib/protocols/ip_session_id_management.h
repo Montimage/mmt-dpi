@@ -83,14 +83,6 @@ extern "C" {
 //    int close_application_detection();
 
     /**
-     * Returns an mmt_ip4_id_t pointer for the given IP address
-     * @param tcpip_context pointer to the tcpip internal context where to look for the given ip
-     * @param ip pointer to the IPv4 address
-     * @return an mmt_ip4_id_t pointer for the given IP address
-     */
-    mmt_ip4_id_t * get_ip4_id(internal_ip_proto_context_t * tcpip_context, uint32_t * ip, uint32_t * is_new);
-
-    /**
      * Returns an mmt_ip6_id_t pointer for the given IP address
      * @param tcpip_context pointer to the tcpip internal context where to look for the given ip
      * @param ip pointer to the IPv6 address
@@ -108,7 +100,6 @@ extern "C" {
      */
     mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session_key, ipacket_t * ipacket, int * is_new);
 
-    bool ip_session_comp(void * key1, void * key2);
     /**
      * Frees the session data allocated memory
      * @param session the session to be freed
@@ -120,9 +111,6 @@ extern "C" {
 
     void free_ipv6_data(void * key, void * value, void * args);
 
-    int insertID4(internal_ip_proto_context_t * tcpip_context, mmt_ip4_id_t * ip_id);
-    mmt_ip4_id_t * findID4(internal_ip_proto_context_t * tcpip_context, uint32_t * ip);
-    int deleteID4(internal_ip_proto_context_t * tcpip_context, uint32_t * ip);
 
     int insertID6(internal_ip_proto_context_t * tcpip_context, mmt_ip6_id_t * ip_id);
     mmt_ip6_id_t * findID6(internal_ip_proto_context_t * tcpip_context, struct in6_addr * ip);

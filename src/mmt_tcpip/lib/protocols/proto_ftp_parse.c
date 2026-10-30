@@ -553,31 +553,6 @@ ftp_response_t * ftp_get_response(char* payload, int payload_len) {
     return res;
 }
 
-char * ftp_get_response_str_code(char* payload, int payload_len) {
-    char *str_code = NULL;
-    if (mmt_int_check_possible_ftp_reply(payload, payload_len)) {
-        // Get response code
-        str_code = (char*)malloc(4);
-        if (str_code == NULL)
-        {
-            return NULL;
-        }
-        memcpy(str_code, payload, 3);
-        str_code[3] = '\0';
-    } else {
-        if (mmt_int_check_possible_ftp_continuation_reply(payload, payload_len)) {
-            str_code = (char*)malloc(payload_len - 1);
-            if (str_code == NULL)
-            {
-                return NULL;
-            }
-            memcpy(str_code, payload, payload_len - 2);
-            str_code[payload_len - 2] = '\0';
-        }
-    }
-    return str_code;
-}
-
 char * ftp_get_response_value(char* payload, int payload_len) {
     char *str_value = NULL;
     if (mmt_int_check_possible_ftp_reply(payload, payload_len)) {

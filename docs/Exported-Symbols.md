@@ -51,6 +51,33 @@ one of those declarations, or misses one of them.
 > behaviour, defined alongside at `proto_irc.c:356`). The misspelled name is
 > scheduled for removal in release 2.0.0.
 
+> **Deprecation note (2026-10, #541):** 30 public `libmmt_core` functions have
+> no known caller: none in the SDK (`src/`, `src/examples/`), none in the user
+> documentation (`docs/*.md`, `README.md`), and none in the public `main`
+> branches of the three known consumers, mmt-probe, mmt-security and 5Greplay.
+> Functions added during the 2026 modernization are not counted
+> (`enable/disable_port_classify_payload_confirm`, `set_tcp_reassembly_limit`).
+> The 30 now carry `__attribute__((deprecated("no known caller (issue #541);
+> removal in 2.0.0")))` in `extraction_lib.h`, `data_defs.h`, `mmt_core.h` and
+> `mmt_utils.h`. Their exports and signatures are unchanged, so the ABI does
+> not change. The 30 are `general_short_extraction`; the six `get_attr_*`
+> accessors (`get_attr_data`, `get_attr_data_len`, `get_attr_id`,
+> `get_attr_offset`, `get_attr_protocol_index`, `get_attr_status`);
+> `get_classification_threshold`; `get_last_activity_time`;
+> `get_protocol_stack_name`; `get_session_outoforder_count`; the twelve
+> uncalled `get_session_total_*` counters (`byte_count`, `data_byte_count`,
+> `data_cap_volume`, `data_packet_count`, `dl_cap_byte_count`,
+> `dl_cap_packet_count`, `dl_data_packet_count`, `packet_cap_count`,
+> `packet_count`, `ul_cap_byte_count`, `ul_cap_packet_count`,
+> `ul_data_packet_count`); `hex2dec`; `hex2str`; `htoi`;
+> `is_protocol_attribute`; `mmt_attr_fprintf`; `mmt_strcmp`; and
+> `str_print_array`. The three `mmt_utils.h` functions that were already
+> deprecated in favour of their `_n` variants (`str_hex2int`, `str_sub`,
+> `str_get_indexes`) now name 2.0.0 as their removal release as well. The
+> consumer check could only read public code, so the removal waits for
+> confirmation from those consumers' maintainers (`docs/DECISIONS.md`,
+> 2026-10-30 entry).
+
 Symbol table
 
 

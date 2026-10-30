@@ -212,40 +212,11 @@ int ip_dgram_is_complete( ip_dgram_t *dg )
  * @param dg a pointer to a ip_dgram_t previously initialized with dgram_init()
  */
 
-void ip_dgram_dump( ip_dgram_t *dg )
-{
-   (void)mmt_stream_printf(stdout, "--- IP DATAGRAM ---\n" );
-   (void)mmt_stream_printf(stdout, "   id: %p\n", dg );
-   (void)mmt_stream_printf(stdout, "  len: %d\n", dg->len );
-
-   ip_dgram_dump_holes( dg );
-}
-
 /**
  * Dump a datagram as a list of holes
  *
  * @param dg a pointer to a ip_dgram_t previously initialized with dgram_init()
  */
-
-void ip_dgram_dump_holes( ip_dgram_t *dg )
-{
-   ip_frags_t *holes = &dg->holes;
-   ip_frag_t  *hole  = holes->lh_first;
-
-   (void)mmt_stream_printf(stdout, "holes:" );
-
-   if( hole == 0 ) {
-      (void)mmt_stream_printf(stdout, " none - datagram is complete\n" );
-      return;
-   }
-
-   while( hole ) {
-      ip_frag_dump( hole );
-      hole = hole->frags.le_next;
-   }
-
-   (void)mmt_stream_printf(stdout, "\n" );
-}
 
 /**
  * Update holes in a datagram

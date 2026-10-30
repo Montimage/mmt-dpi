@@ -54,11 +54,9 @@ extern "C" {
     // correct but slow constant-hash fallback.
     MMTAPI void * MMTCALL init_map_space(generic_comparison_fct comp_fct, generic_hash_fct hash_fct);
     void * init_int_map_space(generic_int_comparison_fct comp_fct);
-    int getmapsize(void * maplist);
 
     MMTAPI int MMTCALL insert_key_value(void * maplist, void * key, void * value);
     int insert_int_key_value(void * maplist, uint32_t key, void * value);
-    int update_key_value(void * maplist, void * key, void * new_value);
     MMTAPI void * MMTCALL find_key_value(void * maplist, void * key);
     void * find_int_key_value(void * maplist, uint32_t key);
     MMTAPI int MMTCALL delete_key_value(void * maplist, void * key);

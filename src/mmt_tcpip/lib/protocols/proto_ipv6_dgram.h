@@ -71,8 +71,6 @@ extern ipv6_dgram_t *ipv6_dgram_alloc(void);
 extern void ipv6_dgram_free(ipv6_dgram_t *);
 extern int ipv6_dgram_init(ipv6_dgram_t *);
 extern void ipv6_dgram_cleanup(ipv6_dgram_t *);
-extern void ipv6_dgram_dump(ipv6_dgram_t *);
-extern void ipv6_dgram_dump_holes(ipv6_dgram_t *);
 
 /* Issue #201 (F-BUG-037/040): payload_offset and ext_header_len are widened to
  * uint32_t — a long extension-header chain can push them past 65535.

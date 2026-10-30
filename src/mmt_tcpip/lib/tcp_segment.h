@@ -138,25 +138,6 @@ void tcp_seg_free(tcp_seg_t *seg);
 void tcp_seg_free_list(tcp_seg_t *head);
 
 /**
- * Insert a new node into a Link-list of tcp segment
- * @param  root current root of Link-list of tcp segment
- * @param  node new node to be inserted
- * @return      new root of the Link-list of tcp segment
- */
-tcp_seg_t *tcp_seg_insert(tcp_seg_t *root, tcp_seg_t *seg);
-
-/**
- * Issue #380 (F-PERF-002): locate the insert position for `seq` WITHOUT
- * allocating a node — the first segment of the seq-sorted list at `root`
- * whose seq does not sort before `seq` (wrap-aware). The caller treats an
- * equal seq as a duplicate and otherwise links the new node before the
- * returned one. Returns NULL when every segment sorts before `seq` (append
- * at the tail). Each node examined counts once in mmt_tcp_reasm_stat_visit(),
- * the same walk accounting as tcp_seg_insert().
- */
-tcp_seg_t *tcp_seg_locate(tcp_seg_t *root, uint64_t seq);
-
-/**
  * Issue #382 (F-PERF-003): balanced (AVL) index over a seq-sorted pending
  * list, so an out-of-order insert costs O(log n) node visits instead of an
  * O(n) list walk. The list stays the source of truth (drain order); the
@@ -209,34 +190,6 @@ void tcp_seg_idx_sync(tcp_seg_t **root, tcp_seg_t *head, tcp_seg_t *tail);
  * marked unindexed. O(list length), no visits counted.
  */
 void tcp_seg_idx_reset(tcp_seg_t **root, tcp_seg_t *head);
-
-/**
- * Search in the given Link-list of tcp segment a node which has the seq equals with given seq
- * @param  root root of Link-list of tcp segment
- * @param  key  key value to search the node
- * @return      NULL - if there isn't any node in given Link-list of tcp segment which has the given key value
- *                   a pointer points to the node which has given key value
- */
-tcp_seg_t *tcp_seg_find(tcp_seg_t *root, uint64_t seq);
-
-/**
- * Show current Link-list of tcp segment structure
- * @param node root of the Link-list of tcp segment
- */
-void tcp_seg_show_list(tcp_seg_t *node);
-
-/**
- * Show current TCP segment
- * @param node given node
- */
-void tcp_seg_show(tcp_seg_t *node);
-
-/**
- * Get the number of node in the tree
- * @param  node root of the tree
- * @return      number of seg in the Link-list
- */
-int tcp_seg_size(tcp_seg_t *node);
 
 int tcp_seg_reassembly(uint8_t *data, tcp_seg_t *root, uint32_t len);
 

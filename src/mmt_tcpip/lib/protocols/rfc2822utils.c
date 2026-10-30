@@ -70,19 +70,6 @@ int is_space_or_htab(char c) {
 }
 
 /**
- * Prints max characters from the given string.
- * @param str the string to print out.
- * @param max maximum number of characters to print.
- */
-void print_char_per_char(const char * str, int max) {
-    while (max) {
-        mmt_stream_printf(stdout, "%c", *str);
-        max--;
-        str++;
-    }
-}
-
-/**
  * Ignore any CRLF at the beginning of the message. Returns the number of ignored octets
  * """RFC 2616 - Section 4.1 - page 21: In the interest of robustness,
  * servers SHOULD ignore any empty line(s) received where a Request-Line is

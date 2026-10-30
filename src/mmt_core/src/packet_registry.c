@@ -724,17 +724,6 @@ void mmt_print_all_protocols() {
     }
 }
 
-generic_attribute_extraction_function getExtractionFunctionByProtocolAndFieldIds(uint32_t proto_id, uint32_t field_id) {
-#ifdef DEBUG
-    (void)mmt_debug_log( "Entering getExtractionFunctionByProtocolAndFieldIds proto %u --- field %u\n", proto_id, field_id );
-#endif
-    if (_is_registered_protocol(proto_id)) {
-        return configured_protocols[proto_id]->get_attribute_extraction_function(proto_id, field_id);
-    } else {
-        return silent_extraction;
-    }
-}
-
 int get_data_size_by_proto_and_field_ids(uint32_t proto_id, uint32_t field_id) {
 #ifdef DEBUG
     (void)mmt_debug_log( "Entering getExtractionDataSizeByProtocolAndFieldIds proto %u --- field %u\n", proto_id, field_id );

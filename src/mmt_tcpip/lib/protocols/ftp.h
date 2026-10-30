@@ -270,9 +270,7 @@ ftp_tuple6_t *ftp_new_tuple6(void);
 ftp_tuple6_t *ftp_copy_tupl6(ftp_tuple6_t *tuple6);
 void free_ftp_tuple6(ftp_tuple6_t *t6);
 ftp_tuple6_t *ftp_get_tuple6(const ipacket_t *ipacket);
-ftp_response_t *ftp_new_response(void);
 void free_ftp_response(ftp_response_t *res);
-ftp_command_t *ftp_new_command(void);
 void free_ftp_command(ftp_command_t *cmd);
 ftp_user_t *ftp_new_user(void);
 void free_ftp_user(ftp_user_t *user);
@@ -295,7 +293,6 @@ ftp_command_t *ftp_get_command(char *payload, int payload_len);
 char *ftp_get_command_param(char *payload, int payload_len);
 char *ftp_get_command_str(char *payload, int payload_len);
 ftp_response_t *ftp_get_response(char *payload, int payload_len);
-char *ftp_get_response_str_code(char *payload, int payload_len);
 char *ftp_get_response_value(char *payload, int payload_len);
 int ftp_get_response_code(char *payload, int payload_len);
 

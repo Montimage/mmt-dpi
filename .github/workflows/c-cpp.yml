@@ -609,6 +609,14 @@ jobs:
       run: |
         bash tools/ci/report-function-shape.sh
         bash tools/ci/report-param-count.sh
+    - name: Unreachable sections (blocking — issue #541)
+      # Builds the default SDK at -O0 in a temporary copy of the tree with
+      # -ffunction-sections and -Wl,--print-gc-sections, and fails on a
+      # section the linker drops as unreachable that is neither generated,
+      # vendored nor justified in tools/ci/unreachable-sections-allowlist.txt
+      # — and on an allowlist row whose section is reachable again. The
+      # checkout's sdk/ is not touched.
+      run: bash tools/ci/report-unreachable-sections.sh
     - name: Packet-path I/O lint (blocking — issue #246)
       # The gate condition holds — zero unconditional printf/fprintf on
       # packet paths — so this helper runs as an ordinary blocking step, not

@@ -313,10 +313,9 @@ typedef struct {
 static void reg_attr_cb(attribute_metadata_t *attr, uint32_t proto_id, void *args) {
     reg_ctx_t *c = (reg_ctx_t *)args;
     if (attr == NULL) return;
-    /* Some metadata entries declare no extraction_function at all (e.g. the
-     * tail entries of http_attributes_info in src/mmt_tcpip/lib/protocols/
-     * http.c). Registering one would leave a NULL call target in the
-     * registered attribute — a pre-existing latent crash, out of scope here. */
+    /* Some metadata entries declare no extraction_function at all.
+     * Registering one would leave a NULL call target in the registered
+     * attribute — a pre-existing latent crash, out of scope here. */
     if (attr->extraction_function == NULL) {
         c->skipped_null_fn++;
         return;

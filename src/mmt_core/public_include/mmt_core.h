@@ -238,7 +238,7 @@ MMTAPI uint64_t MMTCALL get_active_session_count(
  */
 MMTAPI const char* MMTCALL get_protocol_stack_name(
     uint32_t s_id
-);
+) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
  * Returns a positive value if the given packet handler id is already registered, 0 otherwise.

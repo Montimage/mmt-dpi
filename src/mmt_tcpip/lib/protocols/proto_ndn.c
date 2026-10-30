@@ -11,11 +11,6 @@ static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
 static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 
-static void mmt_int_ndn_add_connection(ipacket_t * ipacket) {
-    debug("NDN: mmt_int_ndn_add_connection");
-    mmt_internal_add_connection(ipacket, PROTO_NDN, MMT_REAL_PROTOCOL);
-}
-
 
 //////////////////////////// EXTRACTION ///////////////////////////////////////
 
@@ -50,47 +45,6 @@ static attribute_metadata_t ndn_attributes_metadata[NDN_ATTRIBUTES_NB] = {
 
 
 ///////////////////////////////// SESSION DATA ANALYSE ////////////////////////////////////////
-
-int mmt_check_ndn(ipacket_t * ipacket, unsigned index) {
-    // debug("[PROTO_NDN] mmt_check_ndn on packet: %lu at index: %d",ipacket->packet_id,index);
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
-            
-            // debug("NDN: checking ndn payload %lu",ipacket->packet_id);
-            int offset = get_packet_offset_at_index(ipacket, index + 1);
-            /* Issue #205: keep the parsed length inside the captured buffer —
-             * the TLV parser trusts total_length for every byte it reads. */
-            if (offset < 0 || ipacket->p_hdr == NULL || ipacket->data == NULL
-                    || (uint64_t) offset >= ipacket->p_hdr->caplen) {
-                MMT_ADD_PROTOCOL_TO_BITMASK(packet->flow->excluded_protocol_bitmask, PROTO_NDN);
-                return 0;
-            }
-            char * payload = (char*)&ipacket->data[offset];
-            uint64_t avail = ipacket->p_hdr->caplen - (uint64_t) offset;
-            uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
-            if ((uint64_t) payload_len > avail) {
-                payload_len = (uint32_t) avail;
-            }
-
-            if(payload_len==0){
-                // debug("NDN: payload_len == 0");
-                MMT_ADD_PROTOCOL_TO_BITMASK(packet->flow->excluded_protocol_bitmask, PROTO_NDN);
-                return 0;
-            }
-
-            if(mmt_check_ndn_payload(payload,payload_len)!=0){
-                // debug("NDN: found ndn packet %lu",ipacket->packet_id);
-                if(mmt_check_payload_ndn_http(payload,payload_len)==0){
-                    mmt_int_ndn_add_connection(ipacket);
-                    return 1;    
-                }
-            }
-    }
-    MMT_ADD_PROTOCOL_TO_BITMASK(packet->flow->excluded_protocol_bitmask, PROTO_NDN);
-    return 0;
-}
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 

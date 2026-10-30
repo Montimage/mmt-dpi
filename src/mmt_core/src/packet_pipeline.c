@@ -390,46 +390,6 @@ attribute_t * get_extracted_attribute_at_index(const ipacket_t * ipacket, uint32
     return NULL;
 }
 
-/**
- * Returns a pointer to the extracted data of the attribute identified by its protocol and field names. The extracted
- * data is not NULL if the attribute existed in the last processed message.
- * @param ipacket pointer to the internal from which to extract the attribute.
- * @param protocol_name the name of the protocol of the attribute.
- * @param attribute_name the name of the attribute itself.
- * @param index index of the protocol in the protocol path.
- * @return a pointer to the extracted data if it exists, NULL otherwise.
- */
-void * _get_attribute_extracted_data_at_index_by_name(const ipacket_t * ipacket, const char *protocol_name, const char *attribute_name, unsigned index) {
-    if ((int) index < 0 || index >= ipacket->proto_hierarchy->len) {
-        //the given index is not valid
-#ifdef DEBUG
-        (void)mmt_debug_log( "[debug] get_attribute_extracted_data_at_index_by_name(): invalid index - %"PRIu64", protocol_name - %s , attribute_name - %s, index - %u \n", ipacket->packet_id,protocol_name,attribute_name, index);
-#endif /*DEBUG*/
-        return NULL;
-    }
-
-    uint32_t proto_id, attribute_id;
-    proto_id = get_protocol_id_by_name(protocol_name);
-    if (!proto_id) {
-#ifdef DEBUG
-        (void)mmt_debug_log( "[debug] get_attribute_extracted_data_at_index_by_name(): unknown protocol name - %"PRIu64", protocol_name - %s , attribute_name - %s, index - %u \n", ipacket->packet_id,protocol_name,attribute_name, index);
-#endif /*DEBUG*/
-        return NULL;
-    }
-
-    attribute_id = get_attribute_id_by_protocol_id_and_attribute_name(proto_id, attribute_name);
-    if (!attribute_id) {
-#ifdef DEBUG
-        (void)mmt_debug_log( "[debug] get_attribute_extracted_data_at_index_by_name(): unknown attribute name - %"PRIu64", protocol_name - %s , attribute_name - %s, index - %u \n", ipacket->packet_id,protocol_name,attribute_name, index);
-#endif /*DEBUG*/
-        return NULL;
-    }
-#ifdef DEBUG
-        (void)mmt_debug_log( "[debug] _get_attribute_extracted_data_at_index_by_name: calling _get_attribute_extracted_data_at_index: packet - %"PRIu64", protocol_name - %s , attribute_name - %s, index - %u \n", ipacket->packet_id,protocol_name,attribute_name, index);
-#endif /*DEBUG*/
-    return _get_attribute_extracted_data_at_index(ipacket, proto_id, attribute_id, index);
-}
-
 attribute_t * get_extracted_attribute_at_index_by_name(const ipacket_t * ipacket, const char *protocol_name, const char *attribute_name, unsigned index) {
     if ((int) index < 0 || index >= ipacket->proto_hierarchy->len) {
         //the given index is not valid
@@ -1538,33 +1498,6 @@ int base_classify_next_proto(ipacket_t * ipacket, unsigned index) {
     classified_proto_t retval = (ipacket->mmt_handler)->link_layer_stack->stack_classify(ipacket);
     return set_classified_proto(ipacket, index + 1, retval);
     //return retval;
-}
-
-/**
- * generic packet processing
- */
-void generic_data_extraction(unsigned protocol_index, ipacket_t * ipacket) {
-    uint32_t proto_id = get_protocol_id_at_index(ipacket, protocol_index);
-    mmt_handler_t * mmt_handler = ipacket->mmt_handler;
-
-    if (!is_registered_protocol(proto_id)) return;
-    /* Issue #252 (F-PERF-017): contiguous frozen array of attribute pointers —
-     * the per-packet extraction walk indexes it instead of chasing ->next.
-     * Base and length are re-read every iteration because an extraction
-     * callback may register/unregister attributes, relocating or shifting
-     * the array (same contract as process_packet_handler()). */
-    for (uint32_t a = 0; a < mmt_handler->proto_registered_attributes_len[proto_id]; a++) {
-        struct attribute_internal_struct * tmp_attr_ref = mmt_handler->proto_registered_attributes[proto_id][a];
-        rearm_attribute_scratch(tmp_attr_ref);
-        if (tmp_attr_ref->extraction_function(ipacket, protocol_index, &tmp_attr_ref->pub) > 0) {
-            //We set the status of the protocol
-            tmp_attr_ref->status = ATTRIBUTE_SET;
-            //We update the packet id of the attribute
-            tmp_attr_ref->packet_id = mmt_handler->last_received_packet.packet_id;
-            //We set the index of the protocol
-            tmp_attr_ref->protocol_index = protocol_index;
-        }
-    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

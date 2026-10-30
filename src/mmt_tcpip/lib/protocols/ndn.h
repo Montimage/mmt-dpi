@@ -411,7 +411,6 @@ ndn_session_t * ndn_find_session_by_tuple3(ndn_tuple3_t *t3, ndn_session_t * lis
 uint8_t mmt_check_payload_ndn_http(char * payload, int payload_len);
 void ndn_process_timed_out(ipacket_t *ipacket, unsigned index, ndn_session_t *current_session, uint32_t proto_id);
 ndn_proto_context_t * ndn_get_proto_context(ipacket_t *ipacket, unsigned index);
-ndn_session_t * ndn_get_list_all_session(ipacket_t *ipacket, unsigned index);
 int ndn_packet_type_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data);
 uint32_t ndn_packet_length_extraction_payload(char* payload, int total_length);
 int ndn_packet_length_extraction(const ipacket_t * ipacket, unsigned proto_index,attribute_t * extracted_data);

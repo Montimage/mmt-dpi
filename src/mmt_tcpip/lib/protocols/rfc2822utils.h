@@ -130,8 +130,6 @@ extern "C" {
 
     const char * mmt_find_char_instance(const char * str, char char_to_find, int max);
 
-    void print_char_per_char(const char * str, int max);
-
     int get_value_offset(const char * msg, int line_len);
 
 #ifdef	_cplusplus

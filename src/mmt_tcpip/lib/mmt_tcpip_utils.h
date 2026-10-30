@@ -18,10 +18,6 @@ extern "C" {
 
 uint32_t mmt_bytestream_to_number(const uint8_t * str, uint16_t max_chars_to_read, uint16_t * bytes_read);
 
-uint64_t mmt_bytestream_to_number64(const uint8_t * str, uint16_t max_chars_to_read, uint16_t * bytes_read);
-
-uint32_t mmt_bytestream_dec_or_hex_to_number(const uint8_t * str, uint16_t max_chars_to_read, uint16_t * bytes_read);
-uint64_t mmt_bytestream_dec_or_hex_to_number64(const uint8_t * str, uint16_t max_chars_to_read, uint16_t * bytes_read);
 
 uint32_t mmt_bytestream_to_ipv4(const uint8_t * str, uint16_t max_chars_to_read, uint16_t * bytes_read);
 

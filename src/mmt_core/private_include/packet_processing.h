@@ -782,42 +782,11 @@ void free_registered_protocols();
 void process_outofmemory_force_sessions_timeout(mmt_handler_t *mmt_handler, ipacket_t * ipacket);
 
 /**
- * Creates a protocol statistics instance for the given protocol and the given parent stats
- * @param proto pointer to the protocol instance
- * @param parent_proto_stats pointer to the parent protocol stats
- * @return pointer to the created protocol statistics on success, NULL on failure
- */
-proto_statistics_internal_t * create_protocol_stats_instance(protocol_instance_t * proto, proto_statistics_internal_t * parent_proto_stats);
-
-/**
- * Returns a pointer to the protocol statistics in the parent protocol encapsulated stats
- * @param proto pointer to the protocol instance
- * @param parent_proto_stats pointer to the parent protocol stats instance
- * @return pointer to the protocol statistics. If it does not exist, it will be created.
- */
-proto_statistics_internal_t * get_protocol_stats_from_parent(protocol_instance_t * proto, proto_statistics_internal_t * parent_proto_stats);
-
-/**
- * Returns a pointer to the protocol statistics of the child protocol identified by \child_proto_id
- * @param proto_stats pointer to the protocol stats instance
- * @param child_proto_id identifier of the child protocol
- * @return pointer to the child protocol statistics if it exists, NULL otherwise.
- */
-proto_statistics_internal_t * get_child_protocol_stats(proto_statistics_internal_t * proto_stats, uint32_t child_proto_id);
-
-/**
  * Prints the protocol stats tree rooted at the given protocol
  * @param f file descriptor
  * @param proto pointer to the root protocol
  */
 void print_protocol_stats_tree(FILE * f, protocol_instance_t * proto);
-
-/**
- * Prints the protocol stats for the given protocol
- * @param f file descriptor
- * @param proto pointer to the protocol
- */
-void print_protocol_stats(FILE * f, protocol_instance_t * proto);
 
 /**
  * Iterates through the registered protocol stacks and calls the given callback function for every registered protocol stack.

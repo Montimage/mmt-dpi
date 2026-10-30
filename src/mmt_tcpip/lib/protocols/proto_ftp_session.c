@@ -152,16 +152,6 @@ ftp_tuple6_t *ftp_get_tuple6(const ipacket_t * ipacket) {
     return NULL;
 }
 
-ftp_response_t * ftp_new_response() {
-    ftp_response_t * res;
-    res = (ftp_response_t*)malloc(sizeof(ftp_response_t));
-    if(res == NULL) return NULL;
-    res->code = MMT_FTP_UNKNOWN_CODE;
-    res->value = NULL;
-    res->str_code = NULL;
-    return res;
-}
-
 void free_ftp_response(ftp_response_t *res) {
     debug("free_ftp_response is called \n");
     if (res == NULL) return;
@@ -175,16 +165,6 @@ void free_ftp_response(ftp_response_t *res) {
     }
 
     free(res);
-}
-
-ftp_command_t * ftp_new_command() {
-    ftp_command_t * cmd;
-    cmd = (ftp_command_t*)malloc(sizeof(ftp_command_t));
-    if(cmd == NULL) return NULL;
-    cmd->cmd = MMT_FTP_UNKNOWN_CMD;
-    cmd->str_cmd = NULL;
-    cmd->param = NULL;
-    return cmd;
 }
 
 void free_ftp_command(ftp_command_t *cmd) {

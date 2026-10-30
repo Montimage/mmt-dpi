@@ -66,24 +66,12 @@ static inline int _insertID4(internal_ip_proto_context_t * tcpip_context, mmt_ip
     return insert_key_value(tcpip_context->ips_map, (void *) &ip_id->ip, (void *) ip_id);
 }
 
-int insertID4(internal_ip_proto_context_t * tcpip_context, mmt_ip4_id_t * ip_id) {
-	return _insertID4( tcpip_context, ip_id );
-}
-
 static inline mmt_ip4_id_t * _findID4(internal_ip_proto_context_t * tcpip_context, uint32_t * ip) {
     return (mmt_ip4_id_t *) find_key_value(tcpip_context->ips_map, (void *) ip);
 }
 
-mmt_ip4_id_t * findID4(internal_ip_proto_context_t * tcpip_context, uint32_t * ip) {
-	return _findID4( tcpip_context, ip );
-}
-
 static inline int _deleteID4(internal_ip_proto_context_t * tcpip_context, uint32_t * ip) {
     return delete_key_value(tcpip_context->ips_map, (void *) ip);
-}
-
-int deleteID4(internal_ip_proto_context_t * tcpip_context, uint32_t * ip) {
-    return _deleteID4(tcpip_context, ip);
 }
 
 int insertID6(internal_ip_proto_context_t * tcpip_context, mmt_ip6_id_t * ip_id) {
@@ -223,9 +211,6 @@ static inline mmt_ip4_id_t * _get_ip4_id(internal_ip_proto_context_t * tcpip_con
         *is_new = 1;
     }
     return retval;
-}
-mmt_ip4_id_t * get_ip4_id(internal_ip_proto_context_t * tcpip_context, uint32_t * ip, uint32_t * is_new) {
-	return _get_ip4_id( tcpip_context, ip, is_new );
 }
 
 mmt_ip6_id_t * get_ip6_id(internal_ip_proto_context_t * tcpip_context, struct in6_addr * ip, uint32_t * is_new) {

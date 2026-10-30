@@ -70,7 +70,7 @@ MMTAPI int MMTCALL general_short_extraction(
     const ipacket_t *packet,
     mmt_proto_index_t proto_index,
     attribute_t     *extracted_data
-);
+) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 MMTAPI int MMTCALL general_int_extraction(
     const ipacket_t *packet,

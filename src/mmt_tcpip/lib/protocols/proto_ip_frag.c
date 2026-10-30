@@ -86,13 +86,4 @@ void ip_frag_cleanup( ip_frag_t *frag )
  * @param frag a pointer to a ip_frag_t previously initialized with ip_frag_init()
  */
 
-void ip_frag_dump( ip_frag_t *frag )
-{
-   if( frag == (ip_frag_t*)0 )
-      (void)mmt_stream_printf(stdout, " [nil]" );
-   else {
-      (void)mmt_stream_printf(stdout, " [%u;%u]", frag->loff, frag->roff );
-   }
-}
-
 /*EoF*/

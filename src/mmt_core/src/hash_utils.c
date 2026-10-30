@@ -943,12 +943,6 @@ void * init_int_map_space(generic_int_comparison_fct comp_fct) {
     return m;
 }
 
-int getmapsize(void * maplist) {
-    mmt_oa_table * t = (mmt_oa_table *) maplist;
-    if (t == NULL) return 0;
-    return (int) t->size;
-}
-
 int insert_key_value(void * maplist, void * key, void * value) {
     mmt_oa_table * t = (mmt_oa_table *) maplist;
     if (mmt_oa_insert(t, key, value) == 0) {
@@ -975,24 +969,6 @@ int insert_session_into_protocol_context(void * protocol_context, void * key, vo
         return 0;
     }
     return 1;
-}
-
-int update_key_value(void * maplist, void * key, void * new_value) {
-    mmt_oa_table * t = (mmt_oa_table *) maplist;
-    if (t == NULL || t->slots == NULL || t->cap == 0) return 0;
-    size_t mask = t->cap - 1;
-    size_t i = (size_t) mmt_oa_hash_of(t, key) & mask;
-    void * k;
-    for (size_t n = 0; n < t->cap; n++) {
-        k = t->slots[i].key;
-        if (k == MMT_SLOT_EMPTY) break;
-        if (k != MMT_SLOT_TOMB && mmt_oa_key_equal(t, k, key)) {
-            t->slots[i].value = new_value;
-            return 1;
-        }
-        i = (i + 1) & mask;
-    }
-    return 0;
 }
 
 void * find_key_value(void * maplist, void * key) {

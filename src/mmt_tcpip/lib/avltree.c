@@ -99,16 +99,6 @@ void avltree_free_tree(avltree_t * node) {
 };
 
 /**
- * Get the key of an AVL Tree node
- * @param  node AVL Tree node
- * @return      the key of given AVL Tree node
- */
-uint32_t avltree_get_key(avltree_t * node) {
-    if (node == NULL) return 0;
-    return node->key;
-};
-
-/**
  * Get the data of an AVL Tree node
  * @param  node AVL Tree node
  * @return      the pointer points to the data of given AVL Tree node

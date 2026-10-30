@@ -128,7 +128,6 @@
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_spotify, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_rtsp, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_tpkt, 50)
-    /* not registered: register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ndn, 60) */
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_ndn_http, 60)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_mqtt, 60)
 
@@ -207,5 +206,4 @@
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_armagetron, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_radius, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_eclipse_tcf, 50)
-    /* not registered: register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_ndn, 60) */
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_ndn_http, 60)

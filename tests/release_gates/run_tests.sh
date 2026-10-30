@@ -95,6 +95,12 @@
 # (issue #547), which drives both on a fixture git repository with fixture
 # ratchets (recorded, unrecorded, grown, stale and malformed rows; no SDK
 # build).
+# It also runs the unreachable-section probe self-test beside
+# tools/ci/report-unreachable-sections.sh (issue #541), which drives the real
+# probe on a fixture git repository with fixture linker logs and allowlists
+# (allowlisted, unlisted, stale and malformed rows, the generated/vendored and
+# anonymous exclusions, unmapped and ambiguous objects) and its build path
+# against a stub make (no SDK build).
 set -e
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/ci/tests"
 python3 "${TESTS_DIR}/test-release-gates.py" "$@"
@@ -122,3 +128,4 @@ bash "${TESTS_DIR}/test-ccache-launcher.sh"
 bash "${TESTS_DIR}/test-local-gates.sh"
 bash "${TESTS_DIR}/test-source-signing.sh"
 bash "${TESTS_DIR}/test-shape-ratchet.sh"
+bash "${TESTS_DIR}/test-unreachable-sections.sh"

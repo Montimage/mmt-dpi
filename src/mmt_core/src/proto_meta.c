@@ -109,16 +109,6 @@ int packet_id_extraction(const ipacket_t * packet, unsigned proto_index,
     return 1;
 }
 
-//This function is not used yet!
-
-void meta_session_data_init(ipacket_t * ipacket, unsigned index) {
-}
-
-void meta_session_data_analysis(ipacket_t * ipacket, unsigned index) {
-    //struct base_session_data_struct * base_session_data = ipacket->session->session_data[index];
-    //int offset = get_packet_offset_at_index(ipacket, index);
-}
-
 static attribute_metadata_t meta_attributes_metadata[META_ATTRIBUTES_NB] = {
     {META_PACKET_DIRECTION, META_PACKET_DIRECTION_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, packet_direction_extraction},
     {META_UARGS, META_UARGS_ALIAS, MMT_DATA_POINTER, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_PACKET, uargs_extraction},

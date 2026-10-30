@@ -32,30 +32,6 @@
 
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 
-bool ip_session_comp(void * key1, void * key2) {
-    mmt_session_key_t * l_session = (mmt_session_key_t *) key1;
-    mmt_session_key_t * r_session = (mmt_session_key_t *) key2;
-
-    if (l_session->ip_type != r_session->ip_type) return (l_session->ip_type < r_session->ip_type);
-
-    // both flows of the same type
-    int comp_val = mmt_memcmp(&l_session->next_proto, &r_session->next_proto, 5);
-    if (comp_val == 0) {
-        if (l_session->ip_type == 4) {
-            comp_val = mmt_memcmp(l_session->lower_ip, r_session->lower_ip, IPv4_ALEN);
-            if (comp_val == 0) {
-                comp_val = mmt_memcmp(l_session->higher_ip, r_session->higher_ip, IPv4_ALEN);
-            }
-        } else {
-            comp_val = mmt_memcmp(l_session->lower_ip, r_session->lower_ip, IPv6_ALEN);
-            if (comp_val == 0) {
-                comp_val = mmt_memcmp(l_session->higher_ip, r_session->higher_ip, IPv6_ALEN);
-            }
-        }
-    }
-    return comp_val < 0;
-}
-
 
 bool ipv4_session_comp(void * key1, void * key2) {
     mmt_session_key_t * l_session = (mmt_session_key_t *) key1;

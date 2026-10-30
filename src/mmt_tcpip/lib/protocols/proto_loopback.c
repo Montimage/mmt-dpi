@@ -33,14 +33,6 @@ int loopback_classify_next_proto(ipacket_t * ipacket, unsigned index) {
     //return retval;
 }
 
-classified_proto_t loopback_stack_classification(ipacket_t * ipacket) {
-    classified_proto_t retval;
-    retval.offset = 0;
-    retval.proto_id = PROTO_LOOPBACK;
-    retval.status = Classified;
-    return retval;
-}
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 int init_proto_loopback_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_LOOPBACK, PROTO_LOOPBACK_ALIAS);

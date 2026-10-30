@@ -800,33 +800,6 @@ int dns_get_auth_records_payload_offset(const ipacket_t * ipacket, unsigned prot
     return auth_records_payload_offset;
 }
 
-int dns_get_add_records_payload_offset(const ipacket_t * ipacket, unsigned proto_index){
-    if (ipacket == NULL || ipacket->p_hdr == NULL || ipacket->data == NULL) return 0;
-    /* Get the protocol offset */
-    
-    int proto_offset = get_packet_offset_at_index(ipacket, proto_index);
-    if (proto_offset < 0) return 0;
-    // Get number of answers
-    int add_records_payload_offset = dns_get_auth_records_payload_offset(ipacket,proto_index);
-    int nscount_offset = 8;
-    if ((size_t)proto_offset + (size_t)nscount_offset + 2 > ipacket->p_hdr->caplen) return add_records_payload_offset;
-    uint16_t nscount = bytes_to_int_extraction(ipacket->data + proto_offset + nscount_offset,2);
-    if(nscount>0){
-        const u_char * payload_end = ipacket->data + ipacket->p_hdr->caplen;
-        dns_answer_t * ns = dns_extract_answers(ipacket->data + proto_offset + add_records_payload_offset,nscount,ipacket->data + proto_offset,payload_end);
-        if(ns){
-            dns_answer_t * current_answer = ns;
-            while(current_answer){
-                add_records_payload_offset += current_answer->a_length;   
-                dns_answer_t * anext = current_answer->next;
-                dns_free_answer(current_answer);
-                current_answer = anext;
-            }
-        }
-    }
-    return add_records_payload_offset;
-}
-
 
 
 /*
@@ -1117,31 +1090,6 @@ int dns_auth_records_extraction(const ipacket_t * ipacket, unsigned proto_index,
     }
 }
 
-int dns_add_records_extraction(const ipacket_t * ipacket, unsigned proto_index,
-        attribute_t * extracted_data) {
-    if (ipacket == NULL || ipacket->p_hdr == NULL || ipacket->data == NULL || extracted_data == NULL) return 0;
-    /* Get the protocol offset */
-    int proto_offset = get_packet_offset_at_index(ipacket, proto_index);
-    if (proto_offset < 0) return 0;
-    // Get number of queries
-    int arcount_offset = 10;
-    if ((size_t)proto_offset + (size_t)arcount_offset + 2 > ipacket->p_hdr->caplen) return 0;
-    uint16_t arcount = bytes_to_int_extraction(ipacket->data + proto_offset + arcount_offset,2);
-    if(arcount == 0){
-        return 0;
-    }else{
-        int add_records_payload_offset = dns_get_add_records_payload_offset(ipacket,proto_index);
-        const u_char * payload_end = ipacket->data + ipacket->p_hdr->caplen;
-        dns_answer_t * da = dns_extract_answers(ipacket->data + proto_offset + add_records_payload_offset,arcount,ipacket->data + proto_offset,payload_end);
-        if(!mmt_packet_scratch_adopt(ipacket, da, dns_free_answer_list)){
-            return 0;
-        }else{
-            extracted_data->data = (void*)da;
-            return 1;
-        }
-    }
-}
-
 
 static attribute_metadata_t dns_attributes_metadata[DNS_ATTRIBUTES_NB] = {
     {DNS_TID, DNS_TID_ALIAS, MMT_U16_DATA, sizeof (uint16_t), 0, SCOPE_PACKET, general_short_extraction_with_ordering_change},
@@ -1162,21 +1110,7 @@ static attribute_metadata_t dns_attributes_metadata[DNS_ATTRIBUTES_NB] = {
     {DNS_QUERIES, DNS_QUERIES_ALIAS, MMT_DATA_POINTER, sizeof(void*), POSITION_NOT_KNOWN, SCOPE_PACKET, dns_queries_extraction},
     {DNS_ANSWERS, DNS_ANSWERS_ALIAS, MMT_DATA_POINTER, sizeof(void*), POSITION_NOT_KNOWN, SCOPE_PACKET, dns_answers_extraction},
     {DNS_AUTH_RECORDS, DNS_AUTH_RECORDS_ALIAS, MMT_DATA_POINTER, sizeof(void*), POSITION_NOT_KNOWN, SCOPE_PACKET, dns_auth_records_extraction},
-    // {DNS_ADD_RECORDS, DNS_ADD_RECORDS_ALIAS, MMT_DATA_POINTER, sizeof(void*), POSITION_NOT_KNOWN, SCOPE_PACKET, dns_add_records_extraction},
 };
-
-void dns_session_data_init(ipacket_t * ipacket, unsigned index) {
-    /* User specific code goes here */
-}
-
-void dns_session_data_cleanup(mmt_session_t * session, unsigned index) {
-    /* User specific code goes here */
-}
-
-int dns_session_data_analysis(ipacket_t * ipacket, unsigned index) {
-    /* User specific code goes here */
-    return MMT_CONTINUE;
-}
 
 static void mmt_int_dns_add_connection(ipacket_t * ipacket) {
     mmt_internal_add_connection(ipacket, PROTO_DNS, MMT_REAL_PROTOCOL);
@@ -1264,11 +1198,6 @@ int init_proto_dns_struct() {
         mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
                 &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
                 PROTO_UNKNOWN, PROTO_DNS);
-
-        /* Session context specific initializations */
-        // register_session_data_initialization_function(protocol_struct, dns_session_data_init);
-        // register_session_data_cleanup_function(protocol_struct, dns_session_data_cleanup);
-        // register_session_data_analysis_function(protocol_struct, dns_session_data_analysis);
 
         return register_protocol(protocol_struct, PROTO_DNS);
     } else {
