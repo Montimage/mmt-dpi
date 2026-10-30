@@ -137,6 +137,181 @@ int mmt_check_netbios_tcp(ipacket_t * ipacket, unsigned index) {
     return 0;
 }
 
+/*
+ * Helpers of mmt_check_netbios_udp() for the port 137 name-service checks,
+ * split out of it without behaviour change (issue #547): each returns 1
+ * after adding the NETBIOS connection (the caller then returns 1, as the
+ * original code did) and 0 when none of its tests matched.
+ */
+static int netbios_udp137_check_header(ipacket_t * ipacket, struct mmt_tcpip_internal_packet_struct *packet) {
+    if (ntohs(get_u16(packet->payload, 2)) == 0 &&
+            ntohs(get_u16(packet->payload, 4)) == 1 &&
+            ntohs(get_u16(packet->payload, 6)) == 0 &&
+            ntohs(get_u16(packet->payload, 8)) == 0 && ntohs(get_u16(packet->payload, 10)) == 0) {
+
+
+        mmt_int_netbios_add_connection(ipacket);
+        return 1;
+    }
+    if (packet->payload[2] == 0x80 &&
+            ntohs(get_u16(packet->payload, 4)) == 1 &&
+            ntohs(get_u16(packet->payload, 6)) == 0 &&
+            ntohs(get_u16(packet->payload, 8)) == 0 && ntohs(get_u16(packet->payload, 10)) == 1) {
+
+
+        mmt_int_netbios_add_connection(ipacket);
+        return 1;
+    }
+    if (ntohs(get_u16(packet->payload, 2)) == 0x4000 &&
+            ntohs(get_u16(packet->payload, 4)) == 1 &&
+            ntohs(get_u16(packet->payload, 6)) == 0 &&
+            ntohs(get_u16(packet->payload, 8)) == 0 && ntohs(get_u16(packet->payload, 10)) == 1) {
+
+
+        mmt_int_netbios_add_connection(ipacket);
+        return 1;
+    }
+    if (ntohs(get_u16(packet->payload, 2)) == 0x8400 &&
+            ntohs(get_u16(packet->payload, 4)) == 0 &&
+            ntohs(get_u16(packet->payload, 6)) == 1 &&
+            ntohs(get_u16(packet->payload, 8)) == 0 && ntohs(get_u16(packet->payload, 10)) == 0) {
+
+
+        mmt_int_netbios_add_connection(ipacket);
+        return 1;
+    }
+    if (ntohs(get_u16(packet->payload, 2)) == 0x8500 &&
+            ntohs(get_u16(packet->payload, 4)) == 0 &&
+            ntohs(get_u16(packet->payload, 6)) == 1 &&
+            ntohs(get_u16(packet->payload, 8)) == 0 && ntohs(get_u16(packet->payload, 10)) == 0) {
+
+
+        mmt_int_netbios_add_connection(ipacket);
+        return 1;
+    }
+    if (ntohs(get_u16(packet->payload, 2)) == 0x2910 &&
+            ntohs(get_u16(packet->payload, 4)) == 1 &&
+            ntohs(get_u16(packet->payload, 6)) == 0 &&
+            ntohs(get_u16(packet->payload, 8)) == 0 && ntohs(get_u16(packet->payload, 10)) == 1) {
+
+
+        mmt_int_netbios_add_connection(ipacket);
+        return 1;
+    }
+    if (ntohs(get_u16(packet->payload, 2)) == 0xAD86 &&
+            ntohs(get_u16(packet->payload, 4)) == 0 &&
+            ntohs(get_u16(packet->payload, 6)) == 1 &&
+            ntohs(get_u16(packet->payload, 8)) == 0 && ntohs(get_u16(packet->payload, 10)) == 0) {
+
+
+        mmt_int_netbios_add_connection(ipacket);
+        return 1;
+    }
+    if (ntohs(get_u16(packet->payload, 2)) == 0x0110 &&
+            ntohs(get_u16(packet->payload, 4)) == 1 &&
+            ntohs(get_u16(packet->payload, 6)) == 0 &&
+            ntohs(get_u16(packet->payload, 8)) == 0 && ntohs(get_u16(packet->payload, 10)) == 0) {
+
+
+        mmt_int_netbios_add_connection(ipacket);
+        return 1;
+    }
+    return 0;
+}
+
+static int netbios_udp137_check_name_query(ipacket_t * ipacket, struct mmt_tcpip_internal_packet_struct *packet) {
+    if ((ntohs(get_u16(packet->payload, 2)) & 0xf800) == 0) {
+
+
+        if (get_u16(packet->payload, 4) == htons(1) &&
+                get_u16(packet->payload, 6) == 0 &&
+                get_u16(packet->payload, 8) == 0 && get_u16(packet->payload, 10) == 0) {
+
+            /* name is encoded as described in rfc883 */
+            uint8_t name_length = packet->payload[12];
+
+
+            if (packet->payload_packet_len == 12 + 1 + name_length + 1 + 2 + 2) {
+
+
+                /* null terminated? */
+                if (packet->payload[12 + name_length + 1] == 0 &&
+                        get_u16(packet->payload, 12 + name_length + 2) == htons(0x0020) &&
+                        get_u16(packet->payload, 12 + name_length + 4) == htons(0x0001)) {
+
+                    mmt_int_netbios_add_connection(ipacket);
+                    return 1;
+                }
+            }
+        }
+    } else if ((ntohs(get_u16(packet->payload, 2)) & 0xf800) == 0x8000) {
+
+
+        if (get_u16(packet->payload, 4) == 0 &&
+                get_u16(packet->payload, 6) == htons(1) &&
+                get_u16(packet->payload, 8) == 0 && get_u16(packet->payload, 10) == 0) {
+
+            /* name is encoded as described in rfc883 */
+            uint8_t name_length = packet->payload[12];
+
+
+            if (packet->payload_packet_len >= 12 + 1 + name_length + 1 + 2 + 2) {
+
+
+                /* null terminated? */
+                if (packet->payload[12 + name_length + 1] == 0 &&
+                        get_u16(packet->payload, 12 + name_length + 2) == htons(0x0020) &&
+                        get_u16(packet->payload, 12 + name_length + 4) == htons(0x0001)) {
+
+                    mmt_int_netbios_add_connection(ipacket);
+                    return 1;
+                }
+            }
+        } else if (get_u16(packet->payload, 4) == 0 &&
+                get_u16(packet->payload, 6) == 0 &&
+                get_u16(packet->payload, 8) == 0 && get_u16(packet->payload, 10) == 0) {
+
+            /* name is encoded as described in rfc883 */
+            uint8_t name_length = packet->payload[12];
+
+
+            if (packet->payload_packet_len >= 12 + 1 + name_length + 1 + 2 + 2) {
+
+
+                /* null terminated? */
+                if (packet->payload[12 + name_length + 1] == 0 &&
+                        get_u16(packet->payload, 12 + name_length + 2) == htons(0x000A) &&
+                        get_u16(packet->payload, 12 + name_length + 4) == htons(0x0001)) {
+
+                    mmt_int_netbios_add_connection(ipacket);
+                    return 1;
+                }
+            }
+        } else if (get_u16(packet->payload, 4) == 0 &&
+                get_u16(packet->payload, 6) == 0 &&
+                get_u16(packet->payload, 8) == htons(1) && get_u16(packet->payload, 10) == htons(1)) {
+
+            /* name is encoded as described in rfc883 */
+            uint8_t name_length = packet->payload[12];
+
+
+            if (packet->payload_packet_len >= 12 + 1 + name_length + 1 + 2 + 2) {
+
+
+                /* null terminated? */
+                if (packet->payload[12 + name_length + 1] == 0 &&
+                        get_u16(packet->payload, 12 + name_length + 2) == htons(0x0002) &&
+                        get_u16(packet->payload, 12 + name_length + 4) == htons(0x0001)) {
+
+                    mmt_int_netbios_add_connection(ipacket);
+                    return 1;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
 int mmt_check_netbios_udp(ipacket_t * ipacket, unsigned index) {
     // debug("NETBIOS: mmt_check_netbios_udp of ipacket: %lu",ipacket->packet_id);
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
@@ -154,167 +329,12 @@ int mmt_check_netbios_udp(ipacket_t * ipacket, unsigned index) {
         /*check standard NETBIOS over udp to port 137 */
         if (dport == 137 && packet->payload_packet_len >= 50) {
 
-            if (ntohs(get_u16(packet->payload, 2)) == 0 &&
-                    ntohs(get_u16(packet->payload, 4)) == 1 &&
-                    ntohs(get_u16(packet->payload, 6)) == 0 &&
-                    ntohs(get_u16(packet->payload, 8)) == 0 && ntohs(get_u16(packet->payload, 10)) == 0) {
-
-
-                mmt_int_netbios_add_connection(ipacket);
-                return 1;
-            }
-            if (packet->payload[2] == 0x80 &&
-                    ntohs(get_u16(packet->payload, 4)) == 1 &&
-                    ntohs(get_u16(packet->payload, 6)) == 0 &&
-                    ntohs(get_u16(packet->payload, 8)) == 0 && ntohs(get_u16(packet->payload, 10)) == 1) {
-
-
-                mmt_int_netbios_add_connection(ipacket);
-                return 1;
-            }
-            if (ntohs(get_u16(packet->payload, 2)) == 0x4000 &&
-                    ntohs(get_u16(packet->payload, 4)) == 1 &&
-                    ntohs(get_u16(packet->payload, 6)) == 0 &&
-                    ntohs(get_u16(packet->payload, 8)) == 0 && ntohs(get_u16(packet->payload, 10)) == 1) {
-
-
-                mmt_int_netbios_add_connection(ipacket);
-                return 1;
-            }
-            if (ntohs(get_u16(packet->payload, 2)) == 0x8400 &&
-                    ntohs(get_u16(packet->payload, 4)) == 0 &&
-                    ntohs(get_u16(packet->payload, 6)) == 1 &&
-                    ntohs(get_u16(packet->payload, 8)) == 0 && ntohs(get_u16(packet->payload, 10)) == 0) {
-
-
-                mmt_int_netbios_add_connection(ipacket);
-                return 1;
-            }
-            if (ntohs(get_u16(packet->payload, 2)) == 0x8500 &&
-                    ntohs(get_u16(packet->payload, 4)) == 0 &&
-                    ntohs(get_u16(packet->payload, 6)) == 1 &&
-                    ntohs(get_u16(packet->payload, 8)) == 0 && ntohs(get_u16(packet->payload, 10)) == 0) {
-
-
-                mmt_int_netbios_add_connection(ipacket);
-                return 1;
-            }
-            if (ntohs(get_u16(packet->payload, 2)) == 0x2910 &&
-                    ntohs(get_u16(packet->payload, 4)) == 1 &&
-                    ntohs(get_u16(packet->payload, 6)) == 0 &&
-                    ntohs(get_u16(packet->payload, 8)) == 0 && ntohs(get_u16(packet->payload, 10)) == 1) {
-
-
-                mmt_int_netbios_add_connection(ipacket);
-                return 1;
-            }
-            if (ntohs(get_u16(packet->payload, 2)) == 0xAD86 &&
-                    ntohs(get_u16(packet->payload, 4)) == 0 &&
-                    ntohs(get_u16(packet->payload, 6)) == 1 &&
-                    ntohs(get_u16(packet->payload, 8)) == 0 && ntohs(get_u16(packet->payload, 10)) == 0) {
-
-
-                mmt_int_netbios_add_connection(ipacket);
-                return 1;
-            }
-            if (ntohs(get_u16(packet->payload, 2)) == 0x0110 &&
-                    ntohs(get_u16(packet->payload, 4)) == 1 &&
-                    ntohs(get_u16(packet->payload, 6)) == 0 &&
-                    ntohs(get_u16(packet->payload, 8)) == 0 && ntohs(get_u16(packet->payload, 10)) == 0) {
-
-
-                mmt_int_netbios_add_connection(ipacket);
+            if (netbios_udp137_check_header(ipacket, packet) != 0) {
                 return 1;
             }
 
-            if ((ntohs(get_u16(packet->payload, 2)) & 0xf800) == 0) {
-
-
-                if (get_u16(packet->payload, 4) == htons(1) &&
-                        get_u16(packet->payload, 6) == 0 &&
-                        get_u16(packet->payload, 8) == 0 && get_u16(packet->payload, 10) == 0) {
-
-                    /* name is encoded as described in rfc883 */
-                    uint8_t name_length = packet->payload[12];
-
-
-                    if (packet->payload_packet_len == 12 + 1 + name_length + 1 + 2 + 2) {
-
-
-                        /* null terminated? */
-                        if (packet->payload[12 + name_length + 1] == 0 &&
-                                get_u16(packet->payload, 12 + name_length + 2) == htons(0x0020) &&
-                                get_u16(packet->payload, 12 + name_length + 4) == htons(0x0001)) {
-
-                            mmt_int_netbios_add_connection(ipacket);
-                            return 1;
-                        }
-                    }
-                }
-            } else if ((ntohs(get_u16(packet->payload, 2)) & 0xf800) == 0x8000) {
-
-
-                if (get_u16(packet->payload, 4) == 0 &&
-                        get_u16(packet->payload, 6) == htons(1) &&
-                        get_u16(packet->payload, 8) == 0 && get_u16(packet->payload, 10) == 0) {
-
-                    /* name is encoded as described in rfc883 */
-                    uint8_t name_length = packet->payload[12];
-
-
-                    if (packet->payload_packet_len >= 12 + 1 + name_length + 1 + 2 + 2) {
-
-
-                        /* null terminated? */
-                        if (packet->payload[12 + name_length + 1] == 0 &&
-                                get_u16(packet->payload, 12 + name_length + 2) == htons(0x0020) &&
-                                get_u16(packet->payload, 12 + name_length + 4) == htons(0x0001)) {
-
-                            mmt_int_netbios_add_connection(ipacket);
-                            return 1;
-                        }
-                    }
-                } else if (get_u16(packet->payload, 4) == 0 &&
-                        get_u16(packet->payload, 6) == 0 &&
-                        get_u16(packet->payload, 8) == 0 && get_u16(packet->payload, 10) == 0) {
-
-                    /* name is encoded as described in rfc883 */
-                    uint8_t name_length = packet->payload[12];
-
-
-                    if (packet->payload_packet_len >= 12 + 1 + name_length + 1 + 2 + 2) {
-
-
-                        /* null terminated? */
-                        if (packet->payload[12 + name_length + 1] == 0 &&
-                                get_u16(packet->payload, 12 + name_length + 2) == htons(0x000A) &&
-                                get_u16(packet->payload, 12 + name_length + 4) == htons(0x0001)) {
-
-                            mmt_int_netbios_add_connection(ipacket);
-                            return 1;
-                        }
-                    }
-                } else if (get_u16(packet->payload, 4) == 0 &&
-                        get_u16(packet->payload, 6) == 0 &&
-                        get_u16(packet->payload, 8) == htons(1) && get_u16(packet->payload, 10) == htons(1)) {
-
-                    /* name is encoded as described in rfc883 */
-                    uint8_t name_length = packet->payload[12];
-
-
-                    if (packet->payload_packet_len >= 12 + 1 + name_length + 1 + 2 + 2) {
-
-
-                        /* null terminated? */
-                        if (packet->payload[12 + name_length + 1] == 0 &&
-                                get_u16(packet->payload, 12 + name_length + 2) == htons(0x0002) &&
-                                get_u16(packet->payload, 12 + name_length + 4) == htons(0x0001)) {
-
-                            mmt_int_netbios_add_connection(ipacket);
-                            return 1;
-                        }
-                    }
-                }
+            if (netbios_udp137_check_name_query(ipacket, packet) != 0) {
+                return 1;
             }
             /* Only the name query/response forms above are matched; the other
              * RFC 1002 name-service opcodes (registration, release, refresh,

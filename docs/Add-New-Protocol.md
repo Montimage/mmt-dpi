@@ -58,7 +58,11 @@ If a protocol needs a classification for example protocol rtp, we need to add a 
    
 ```
 A classifier for a service that has been shut down uses `MMT_INTER_PROTO_LEGACY(parent, fn, weight)` instead: it stays in the chain but runs only under the opt-in `legacy` DPI profile ([DPI-Profiles.md](DPI-Profiles.md), issue #540).
-Then update function **get_application_class_by_protocol_id** in **`src/mmt_tcpip/lib/mmt_tcpip_classes.c`** to include **lemonde** as a WEB protocol.
+Then add a row for **lemonde** to the **`application_class_by_protocol_id`** table in **`src/mmt_tcpip/lib/mmt_tcpip_classes.c`** (read by `get_application_class_by_protocol_id()`, issue #547), so it is a WEB protocol:
+
+```c
+    [PROTO_LEMONDE] = PROTO_CLASS_WEB,
+```
 
 ## 3- Add Classification for the Protocol
 

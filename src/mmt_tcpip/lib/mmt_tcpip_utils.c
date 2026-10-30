@@ -139,22 +139,10 @@ uint32_t mmt_bytestream_to_ipv4(const uint8_t * str, uint16_t max_chars_to_read,
     return htonl(val);
 }
 
-void _mmt_parse_packet_line_info(ipacket_t * ipacket){
+/* Issue #547: the per-call reset of _mmt_parse_packet_line_info() — every
+ * header field it can set starts empty and line 0 starts at the payload. */
+static void parse_line_info_reset(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-
-    /* Issue #212 (F-BUG-043): this helper is exported and computes
-     * payload_packet_len - 1 below — on a zero-length payload that uint16
-     * underflowed to 65535 and the line loop read out of bounds. The only
-     * in-tree caller (mmt_parse_packet_line_info) already guards, but the
-     * guard belongs here for direct callers. */
-    if ( unlikely( packet->payload_packet_len == 0 ))
-        return;
-
-    uint32_t a;
-    uint16_t line_length;
-    const uint8_t *str;
-
-    uint16_t end = packet->payload_packet_len - 1;
 
     packet->packet_lines_parsed_complete = 1;
     packet->parsed_lines = 0;
@@ -205,6 +193,178 @@ void _mmt_parse_packet_line_info(ipacket_t * ipacket){
     packet->line[packet->parsed_lines].ptr = packet->payload;
     packet->line[packet->parsed_lines].len = 0;
     packet->packet_id = ipacket->packet_id;
+}
+
+/* Issue #547: one non-empty header line of _mmt_parse_packet_line_info() —
+ * records where the value of a recognised header (or the response status)
+ * starts in str, a line_length-byte line of packet's payload. */
+static void parse_line_info_header(struct mmt_tcpip_internal_packet_struct *packet,
+        const uint8_t *str, uint16_t line_length) {
+    /*
+     * HTTP header-NAME matching is case-insensitive (issue #24 / M8).
+     * RFC 7230 §3.2 defines field names as case-insensitive, so
+     * lower- and mixed-case headers ("host:", "content-type:") must
+     * be recognised exactly like their canonical-cased forms. We
+     * dispatch on the upper-cased first byte and compare the rest of
+     * the name with mmt_strncasecmp(). Value byte-offsets depend only
+     * on the (case-independent) name length, so they are unchanged:
+     * this only ADDS recognition of differently-cased headers and
+     * never alters an already-matching header, so the classification
+     * fingerprint is preserved. The response status line ("HTTP/1.x")
+     * is always upper-case per RFC 7230 §3.1.2 and is kept byte-exact.
+     */
+    switch ( mmt_toupper(str[0]) ) {
+    case 'H':
+        if (str[0] == 'H' && str[1] == 'T') {
+            if (packet->parsed_lines == 0 && line_length >= 9 && str[2] == 'T' && str[3] == 'P' && str[4] == '/' && str[5] == '1' && str[6] == '.') {
+                // Start of response
+                // printf("start RESPONSE: %lu, %lu\n", ipacket->session->session_id, packet->packet_id);
+                packet->http_response.ptr = &str[9];
+                packet->http_response.len = packet->line[0].len - 9;
+            }
+        } else if (mmt_strncasecmp((const char *)(str + 1), "ost:", 4) == 0) {
+            if (str[5] == ' ') {
+                packet->host_line.ptr = &str[6];
+                packet->host_line.len = line_length - 6;
+            } else {
+                packet->host_line.ptr = &str[5];
+                packet->host_line.len = line_length - 5;
+            }
+        }
+        break;
+    case 'S':
+        if (
+            mmt_strncasecmp((const char *)(str + 1), "erver:", 6) == 0)
+        {
+            if (str[7] == ' ') {
+                packet->server_line.ptr = &str[8];
+                packet->server_line.len = line_length - 8;
+            } else {
+                packet->server_line.ptr = &str[7];
+                packet->server_line.len = line_length - 7;
+            }
+        }
+        break;
+    case 'C':
+        // str[8] is the discriminating byte for the Content-*/Connection/
+        // Cookie headers; guard the read so a truncated "C" line cannot
+        // dereference past the parsed line (and its trailing CRLF).
+        if (line_length < 9) {
+            break;
+        }
+        switch ( mmt_toupper(str[8]) ) {
+        case 'T':
+            if (
+                mmt_strncasecmp((const char *)(str + 1), "ontent-Type: ", 13) == 0) {
+                packet->content_line.ptr = &str[14];
+                packet->content_line.len = line_length - 14;
+            }
+            break;
+        case 'E':
+            if (
+                mmt_strncasecmp((const char *)(str + 1), "ontent-Encoding: ", 17) == 0) {
+                packet->http_encoding.ptr = &str[18];
+                packet->http_encoding.len = line_length - 18;
+            }
+            break;
+        case 'L':
+            if (
+                (mmt_strncasecmp((const char *)(str + 1), "ontent-Length: ", 15) == 0) ) {
+                packet->http_contentlen.ptr = &str[16];
+                packet->http_contentlen.len = line_length - 16;
+            }
+            break;
+        case 'O':
+            if (
+                (mmt_strncasecmp((const char *)(str + 1), "onnection: ", 11) == 0)) {
+                packet->connection_line.ptr = &str[12];
+                packet->connection_line.len = line_length - 12;
+            }
+            break;
+        default:
+            if (
+                mmt_strncasecmp((const char *)(str + 1), "ookie: ", 7) == 0) {
+                packet->http_cookie.ptr = &str[8];
+                packet->http_cookie.len = line_length - 8;
+            }
+            break;
+        }
+        break;
+    case 'A':
+        if (
+            mmt_strncasecmp((const char *)(str + 1), "ccept: ", 7) == 0)
+        {
+            packet->accept_line.ptr = &str[8];
+            packet->accept_line.len = line_length - 8;
+        }
+        break;
+
+    case 'R':
+        if (
+            mmt_strncasecmp((const char *)(str + 1), "eferer: ", 8) == 0)
+        {
+            packet->referer_line.ptr = &str[9];
+            packet->referer_line.len = line_length - 9;
+        }
+        break;
+    case 'U':
+        if (mmt_toupper(str[1]) == 'S') {
+            if (
+                (mmt_strncasecmp((const char *)(str + 2), "er-Agent: ", 10) == 0))
+            {
+                packet->user_agent_line.ptr = &str[12];
+                packet->user_agent_line.len = line_length - 12;
+            }
+        } else if (mmt_toupper(str[1]) == 'P') {
+            if (
+                (mmt_strncasecmp((const char *)(str + 2), "grade: ", 7) == 0))
+            {
+                packet->upgrade_line.ptr = &str[9];
+                packet->upgrade_line.len = line_length - 9;
+            }
+        }
+        break;
+    case 'T':
+        if (
+            mmt_strncasecmp((const char *)(str + 1), "ransfer-Encoding: ", 18) == 0) {
+            packet->http_transfer_encoding.ptr = &str[19];
+            packet->http_transfer_encoding.len = line_length - 19;
+        }
+
+        break;
+    case 'X':
+        if (
+            mmt_strncasecmp((const char *)(str + 1), "-Session-Type: ", 15) == 0) {
+            packet->http_x_session_type.ptr = &str[16];
+            packet->http_x_session_type.len = line_length - 16;
+        } else if (
+            mmt_strncasecmp((const char *)(str + 1), "-CDN", 4) == 0) {
+            packet->has_x_cdn_hdr = 1;
+        }
+        break;
+    default:
+        break;
+    }// End of switch
+}
+
+void _mmt_parse_packet_line_info(ipacket_t * ipacket){
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+
+    /* Issue #212 (F-BUG-043): this helper is exported and computes
+     * payload_packet_len - 1 below — on a zero-length payload that uint16
+     * underflowed to 65535 and the line loop read out of bounds. The only
+     * in-tree caller (mmt_parse_packet_line_info) already guards, but the
+     * guard belongs here for direct callers. */
+    if ( unlikely( packet->payload_packet_len == 0 ))
+        return;
+
+    uint32_t a;
+    uint16_t line_length;
+    const uint8_t *str;
+
+    uint16_t end = packet->payload_packet_len - 1;
+
+    parse_line_info_reset(ipacket);
 
     for (a = 0; likely( a < end ); a++) {
         /* Byte-wise CRLF test: the previous get_u16() read a uint16 at an
@@ -224,151 +384,7 @@ void _mmt_parse_packet_line_info(ipacket_t * ipacket){
             } else {
 
                 str = packet->line[packet->parsed_lines].ptr;
-                /*
-                 * HTTP header-NAME matching is case-insensitive (issue #24 / M8).
-                 * RFC 7230 §3.2 defines field names as case-insensitive, so
-                 * lower- and mixed-case headers ("host:", "content-type:") must
-                 * be recognised exactly like their canonical-cased forms. We
-                 * dispatch on the upper-cased first byte and compare the rest of
-                 * the name with mmt_strncasecmp(). Value byte-offsets depend only
-                 * on the (case-independent) name length, so they are unchanged:
-                 * this only ADDS recognition of differently-cased headers and
-                 * never alters an already-matching header, so the classification
-                 * fingerprint is preserved. The response status line ("HTTP/1.x")
-                 * is always upper-case per RFC 7230 §3.1.2 and is kept byte-exact.
-                 */
-                switch ( mmt_toupper(str[0]) ) {
-                case 'H':
-                    if (str[0] == 'H' && str[1] == 'T') {
-                        if (packet->parsed_lines == 0 && line_length >= 9 && str[2] == 'T' && str[3] == 'P' && str[4] == '/' && str[5] == '1' && str[6] == '.') {
-                            // Start of response
-                            // printf("start RESPONSE: %lu, %lu\n", ipacket->session->session_id, packet->packet_id);
-                            packet->http_response.ptr = &str[9];
-                            packet->http_response.len = packet->line[0].len - 9;
-                        }
-                    } else if (mmt_strncasecmp((const char *)(str + 1), "ost:", 4) == 0) {
-                        if (str[5] == ' ') {
-                            packet->host_line.ptr = &str[6];
-                            packet->host_line.len = line_length - 6;
-                        } else {
-                            packet->host_line.ptr = &str[5];
-                            packet->host_line.len = line_length - 5;
-                        }
-                    }
-                    break;
-                case 'S':
-                    if (
-                        mmt_strncasecmp((const char *)(str + 1), "erver:", 6) == 0)
-                    {
-                        if (str[7] == ' ') {
-                            packet->server_line.ptr = &str[8];
-                            packet->server_line.len = line_length - 8;
-                        } else {
-                            packet->server_line.ptr = &str[7];
-                            packet->server_line.len = line_length - 7;
-                        }
-                    }
-                    break;
-                case 'C':
-                    // str[8] is the discriminating byte for the Content-*/Connection/
-                    // Cookie headers; guard the read so a truncated "C" line cannot
-                    // dereference past the parsed line (and its trailing CRLF).
-                    if (line_length < 9) {
-                        break;
-                    }
-                    switch ( mmt_toupper(str[8]) ) {
-                    case 'T':
-                        if (
-                            mmt_strncasecmp((const char *)(str + 1), "ontent-Type: ", 13) == 0) {
-                            packet->content_line.ptr = &str[14];
-                            packet->content_line.len = line_length - 14;
-                        }
-                        break;
-                    case 'E':
-                        if (
-                            mmt_strncasecmp((const char *)(str + 1), "ontent-Encoding: ", 17) == 0) {
-                            packet->http_encoding.ptr = &str[18];
-                            packet->http_encoding.len = line_length - 18;
-                        }
-                        break;
-                    case 'L':
-                        if (
-                            (mmt_strncasecmp((const char *)(str + 1), "ontent-Length: ", 15) == 0) ) {
-                            packet->http_contentlen.ptr = &str[16];
-                            packet->http_contentlen.len = line_length - 16;
-                        }
-                        break;
-                    case 'O':
-                        if (
-                            (mmt_strncasecmp((const char *)(str + 1), "onnection: ", 11) == 0)) {
-                            packet->connection_line.ptr = &str[12];
-                            packet->connection_line.len = line_length - 12;
-                        }
-                        break;
-                    default:
-                        if (
-                            mmt_strncasecmp((const char *)(str + 1), "ookie: ", 7) == 0) {
-                            packet->http_cookie.ptr = &str[8];
-                            packet->http_cookie.len = line_length - 8;
-                        }
-                        break;
-                    }
-                    break;
-                case 'A':
-                    if (
-                        mmt_strncasecmp((const char *)(str + 1), "ccept: ", 7) == 0)
-                    {
-                        packet->accept_line.ptr = &str[8];
-                        packet->accept_line.len = line_length - 8;
-                    }
-                    break;
-
-                case 'R':
-                    if (
-                        mmt_strncasecmp((const char *)(str + 1), "eferer: ", 8) == 0)
-                    {
-                        packet->referer_line.ptr = &str[9];
-                        packet->referer_line.len = line_length - 9;
-                    }
-                    break;
-                case 'U':
-                    if (mmt_toupper(str[1]) == 'S') {
-                        if (
-                            (mmt_strncasecmp((const char *)(str + 2), "er-Agent: ", 10) == 0))
-                        {
-                            packet->user_agent_line.ptr = &str[12];
-                            packet->user_agent_line.len = line_length - 12;
-                        }
-                    } else if (mmt_toupper(str[1]) == 'P') {
-                        if (
-                            (mmt_strncasecmp((const char *)(str + 2), "grade: ", 7) == 0))
-                        {
-                            packet->upgrade_line.ptr = &str[9];
-                            packet->upgrade_line.len = line_length - 9;
-                        }
-                    }
-                    break;
-                case 'T':
-                    if (
-                        mmt_strncasecmp((const char *)(str + 1), "ransfer-Encoding: ", 18) == 0) {
-                        packet->http_transfer_encoding.ptr = &str[19];
-                        packet->http_transfer_encoding.len = line_length - 19;
-                    }
-
-                    break;
-                case 'X':
-                    if (
-                        mmt_strncasecmp((const char *)(str + 1), "-Session-Type: ", 15) == 0) {
-                        packet->http_x_session_type.ptr = &str[16];
-                        packet->http_x_session_type.len = line_length - 16;
-                    } else if (
-                        mmt_strncasecmp((const char *)(str + 1), "-CDN", 4) == 0) {
-                        packet->has_x_cdn_hdr = 1;
-                    }
-                    break;
-                default:
-                    break;
-                }// End of switch
+                parse_line_info_header(packet, str, line_length);
             }// End of unlikely( line_length == 0 )
             if ( unlikely( packet->parsed_lines >= (MMT_MAX_PARSE_LINES_PER_PACKET - 1))) {
                 return;

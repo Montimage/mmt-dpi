@@ -90,6 +90,11 @@
 # tools/ci/sign-source-tarball.sh (issue #538), which drives the real script
 # on fixture debian/ trees (key/watch pairing, the key/secret refusals; no
 # OpenPGP key is created) and pins its place in the release job.
+# It also runs the shape-ratchet self-test beside
+# tools/ci/report-function-shape.sh and tools/ci/report-param-count.sh
+# (issue #547), which drives both on a fixture git repository with fixture
+# ratchets (recorded, unrecorded, grown, stale and malformed rows; no SDK
+# build).
 set -e
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/ci/tests"
 python3 "${TESTS_DIR}/test-release-gates.py" "$@"
@@ -116,3 +121,4 @@ bash "${TESTS_DIR}/test-weak-types.sh"
 bash "${TESTS_DIR}/test-ccache-launcher.sh"
 bash "${TESTS_DIR}/test-local-gates.sh"
 bash "${TESTS_DIR}/test-source-signing.sh"
+bash "${TESTS_DIR}/test-shape-ratchet.sh"

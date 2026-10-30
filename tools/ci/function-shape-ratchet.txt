@@ -1,0 +1,21 @@
+# Function-shape ratchet (issue #547, F-CLEAN-008/F-CLEAN-018).
+# Every tracked src/ C source — generated asn1c (src/mmt_mobile/asn1c/) and
+# the vendored list (tools/ci/vendor-paths.txt) excluded — is held to
+# ≤200 lines and nesting depth ≤6 per function by
+# `bash tools/ci/report-function-shape.sh` (no FILE argument), which the
+# verify-helpers job runs. The functions still beyond either limit are
+# recorded below, one per row: `path name lines depth`. A recorded function
+# passes at no more lines and no greater depth than its row; a new or grown
+# offender fails, and so does a row whose function is within the limits or
+# gone — delete the row in that change — and so does a row above
+# today's measure: tighten it. Same-named functions of one file share a
+# row. Issues #548 and #547 left no function over 200 lines; the rows
+# are depth-only, mmt_classify_oscar sitting at exactly 200 lines.
+# Measured on 8fa3a816 + issue #547. Regenerate the rows with:
+#   bash tools/ci/report-function-shape.sh --emit-ratchet
+src/mmt_mobile/s1ap/s1ap_common.c _s1ap_decode_e_rabtobesetuplistctxtsureq 101 8
+src/mmt_mobile/s1ap/s1ap_common.c _decode_s1ap_initialuemessageies 119 8
+src/mmt_tcpip/lib/mmt_tcpip_utils.c _mmt_check_for_email_address 66 9
+src/mmt_tcpip/lib/protocols/proto_bittorrent.c mmt_check_bittorrent_udp 65 7
+src/mmt_tcpip/lib/protocols/proto_dropbox.c mmt_check_dropbox_udp 36 7
+src/mmt_tcpip/lib/protocols/proto_oscar.c mmt_classify_oscar 200 8

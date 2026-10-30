@@ -17,6 +17,110 @@ static void mmt_int_direct_download_link_add_connection(ipacket_t * ipacket) {
     flow->l4.tcp.ddlink_server_direction = ipacket->session->last_packet_direction;
 }
 
+/* Direct-download hosts (issue #547, F-CLEAN-008): the suffixes the
+ * generated 640-line suffix trie of search_ddl_domains() matched, one row per
+ * accepting branch, in the trie's order. A Host line matches a row when it
+ * ends with the suffix (after the ":port" strip) and the character before
+ * the suffix is ' ' or '.', so "www.rapidshare.com" matches "rapidshare.com"
+ * while "rapidshare.com" alone or "myrapidshare.com" does not — exactly the
+ * trie's test. */
+#define DDL_HOST_SUFFIX(s) { (s), sizeof(s) - 1 }
+static const struct ddl_host_suffix {
+    const char *suffix;
+    uint16_t len;
+} ddl_host_suffixes[] = {
+    DDL_HOST_SUFFIX("4shared.com"),
+    DDL_HOST_SUFFIX("filecloud.com"),
+    DDL_HOST_SUFFIX("files-upload.com"),
+    DDL_HOST_SUFFIX("megaupload.com"),
+    DDL_HOST_SUFFIX("rapidupload.com"),
+    DDL_HOST_SUFFIX("turboupload.com"),
+    DDL_HOST_SUFFIX("badongo.com"),
+    DDL_HOST_SUFFIX("fileho.com"),
+    DDL_HOST_SUFFIX("bestsharing.com"),
+    DDL_HOST_SUFFIX("quicksharing.com"),
+    DDL_HOST_SUFFIX("uploading.com"),
+    DDL_HOST_SUFFIX("sharebig.com"),
+    DDL_HOST_SUFFIX("bigfilez.com"),
+    DDL_HOST_SUFFIX("chinamofile.com"),
+    DDL_HOST_SUFFIX("mofile.com"),
+    DDL_HOST_SUFFIX("hotfile.com"),
+    DDL_HOST_SUFFIX("keepmyfile.com"),
+    DDL_HOST_SUFFIX("savefile.com"),
+    DDL_HOST_SUFFIX("sendmefile.com"),
+    DDL_HOST_SUFFIX("sharebigfile.com"),
+    DDL_HOST_SUFFIX("up-file.com"),
+    DDL_HOST_SUFFIX("easy-share.com"),
+    DDL_HOST_SUFFIX("fast-share.com"),
+    DDL_HOST_SUFFIX("live-share.com"),
+    DDL_HOST_SUFFIX("ftp2share.com"),
+    DDL_HOST_SUFFIX("gigeshare.com"),
+    DDL_HOST_SUFFIX("megashare.com"),
+    DDL_HOST_SUFFIX("rapidshare.com"),
+    DDL_HOST_SUFFIX("mediafire.com"),
+    DDL_HOST_SUFFIX("gigasize.com"),
+    DDL_HOST_SUFFIX("sendspace.com"),
+    DDL_HOST_SUFFIX("sharebee.com"),
+    DDL_HOST_SUFFIX("sharebigflie.com"),
+    DDL_HOST_SUFFIX("fileserve.com"),
+    DDL_HOST_SUFFIX("depositfiles.com"),
+    DDL_HOST_SUFFIX("megashares.com"),
+    DDL_HOST_SUFFIX("fileupyours.com"),
+    DDL_HOST_SUFFIX("filefactory.com"),
+    DDL_HOST_SUFFIX("filefront.com"),
+    DDL_HOST_SUFFIX("uploadingit.com"),
+    DDL_HOST_SUFFIX("yourfilehost.com"),
+    DDL_HOST_SUFFIX("mytempdir.com"),
+    DDL_HOST_SUFFIX("uploadpower.com"),
+    DDL_HOST_SUFFIX("mega.1280.com"),
+    DDL_HOST_SUFFIX("filesonic.com"),
+    DDL_HOST_SUFFIX("badongo.net"),
+    DDL_HOST_SUFFIX("fast-load.net"),
+    DDL_HOST_SUFFIX("file-upload.net"),
+    DDL_HOST_SUFFIX("simpleupload.net"),
+    DDL_HOST_SUFFIX("wiiupload.net"),
+    DDL_HOST_SUFFIX("filesend.net"),
+    DDL_HOST_SUFFIX("filer.net"),
+    DDL_HOST_SUFFIX("livedepot.net"),
+    DDL_HOST_SUFFIX("mofile.net"),
+    DDL_HOST_SUFFIX("odsiebie.najlepsze.net"),
+    DDL_HOST_SUFFIX("zshare.net"),
+    DDL_HOST_SUFFIX("data.hu"),
+    DDL_HOST_SUFFIX("filearchiv.ru"),
+    DDL_HOST_SUFFIX("filepost.ru"),
+    DDL_HOST_SUFFIX("ifolder.ru"),
+    DDL_HOST_SUFFIX("filehost.tv"),
+    DDL_HOST_SUFFIX("filesafe.to"),
+    DDL_HOST_SUFFIX("sharebase.to"),
+    DDL_HOST_SUFFIX("files.to"),
+    DDL_HOST_SUFFIX("file-upload.to"),
+    DDL_HOST_SUFFIX("load.to"),
+    DDL_HOST_SUFFIX("uploaded.to"),
+    DDL_HOST_SUFFIX("leteckaposta.cz"),
+    DDL_HOST_SUFFIX("yourfiles.biz"),
+    DDL_HOST_SUFFIX("netload.in"),
+    DDL_HOST_SUFFIX("4shared.vn"),
+    DDL_HOST_SUFFIX("megashare.vn"),
+    DDL_HOST_SUFFIX("rapidshare.de"),
+    DDL_HOST_SUFFIX("ultrashare.de"),
+    DDL_HOST_SUFFIX("uploadyourfiles.de"),
+    DDL_HOST_SUFFIX("speedshare.org"),
+};
+
+/* 1 when host[0..len) ends with a ddl_host_suffixes row on a label boundary */
+static uint8_t ddl_host_matches(const uint8_t *host, uint16_t len) {
+    size_t i;
+    for (i = 0; i < sizeof(ddl_host_suffixes) / sizeof(ddl_host_suffixes[0]); i++) {
+        const struct ddl_host_suffix *row = &ddl_host_suffixes[i];
+        if (len >= row->len + 1
+                && mmt_memcmp(&host[len - row->len], row->suffix, row->len) == 0
+                && (host[len - row->len - 1] == ' ' || host[len - row->len - 1] == '.')) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 /*
   return 0 if nothing has been detected
   return 1 if it is a megaupload packet
@@ -55,7 +159,6 @@ uint8_t search_ddl_domains(ipacket_t * ipacket) {
             || mmt_memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) != 0) {
         goto end_ddl_nothing_found;
     }
-    // BEGIN OF AUTOMATED CODE GENERATION
     // first see if we have ':port' at the end of the line
     host_line_len_without_port = packet->host_line.len;
     if (host_line_len_without_port >= i && packet->host_line.ptr[host_line_len_without_port - i] >= '0'
@@ -69,585 +172,9 @@ uint8_t search_ddl_domains(ipacket_t * ipacket) {
             host_line_len_without_port = host_line_len_without_port - i;
         }
     }
-    // then start automated code generation
-
-    if (host_line_len_without_port >= 0 + 4
-            && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 0 - 4], ".com", 4) == 0) {
-        if (host_line_len_without_port >= 4 + 1 && packet->host_line.ptr[host_line_len_without_port - 4 - 1] == 'd') {
-            if (host_line_len_without_port >= 5 + 6 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 6], "4share", 6) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 5 - 6 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 5 - 6 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            if (host_line_len_without_port >= 5 + 8 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 8], "fileclou", 8) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 5 - 8 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 5 - 8 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            if (host_line_len_without_port >= 5 + 5
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 5], "uploa", 5) == 0) {
-                if (host_line_len_without_port >= 10 + 6 + 1
-                        && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 10 - 6], "files-", 6) == 0
-                        && (packet->host_line.ptr[host_line_len_without_port - 10 - 6 - 1] == ' '
-                        || packet->host_line.ptr[host_line_len_without_port - 10 - 6 - 1] == '.')) {
-                    goto end_ddl_found;
-                }
-                if (host_line_len_without_port >= 10 + 4 + 1
-                        && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 10 - 4], "mega", 4) == 0
-                        && (packet->host_line.ptr[host_line_len_without_port - 10 - 4 - 1] == ' '
-                        || packet->host_line.ptr[host_line_len_without_port - 10 - 4 - 1] == '.')) {
-                    goto end_ddl_found;
-                }
-                if (host_line_len_without_port >= 10 + 5 + 1
-                        && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 10 - 5], "rapid", 5) == 0
-                        && (packet->host_line.ptr[host_line_len_without_port - 10 - 5 - 1] == ' '
-                        || packet->host_line.ptr[host_line_len_without_port - 10 - 5 - 1] == '.')) {
-                    goto end_ddl_found;
-                }
-                if (host_line_len_without_port >= 10 + 5 + 1
-                        && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 10 - 5], "turbo", 5) == 0
-                        && (packet->host_line.ptr[host_line_len_without_port - 10 - 5 - 1] == ' '
-                        || packet->host_line.ptr[host_line_len_without_port - 10 - 5 - 1] == '.')) {
-                    goto end_ddl_found;
-                }
-                goto end_ddl_nothing_found;
-            }
-            goto end_ddl_nothing_found;
-        }
-        if (host_line_len_without_port >= 4 + 1 && packet->host_line.ptr[host_line_len_without_port - 4 - 1] == 'o') {
-            if (host_line_len_without_port >= 5 + 6 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 6], "badong", 6) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 5 - 6 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 5 - 6 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            if (host_line_len_without_port >= 5 + 5 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 5], "fileh", 5) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 5 - 5 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 5 - 5 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            goto end_ddl_nothing_found;
-        }
-        if (host_line_len_without_port >= 4 + 1 && packet->host_line.ptr[host_line_len_without_port - 4 - 1] == 'g') {
-            if (host_line_len_without_port >= 5 + 2
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 2], "in", 2) == 0) {
-                if (host_line_len_without_port >= 7 + 4
-                        && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 7 - 4], "shar", 4) == 0) {
-                    if (host_line_len_without_port >= 11 + 4 + 1
-                            && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 11 - 4], "best", 4) == 0
-                            && (packet->host_line.ptr[host_line_len_without_port - 11 - 4 - 1] == ' '
-                            || packet->host_line.ptr[host_line_len_without_port - 11 - 4 - 1] == '.')) {
-                        goto end_ddl_found;
-                    }
-                    if (host_line_len_without_port >= 11 + 5 + 1
-                            && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 11 - 5], "quick", 5) == 0
-                            && (packet->host_line.ptr[host_line_len_without_port - 11 - 5 - 1] == ' '
-                            || packet->host_line.ptr[host_line_len_without_port - 11 - 5 - 1] == '.')) {
-                        goto end_ddl_found;
-                    }
-                    goto end_ddl_nothing_found;
-                }
-                if (host_line_len_without_port >= 7 + 6 + 1
-                        && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 7 - 6], "upload", 6) == 0
-                        && (packet->host_line.ptr[host_line_len_without_port - 7 - 6 - 1] == ' '
-                        || packet->host_line.ptr[host_line_len_without_port - 7 - 6 - 1] == '.')) {
-                    goto end_ddl_found;
-                }
-                goto end_ddl_nothing_found;
-            }
-            if (host_line_len_without_port >= 5 + 7 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 7], "sharebi", 7) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 5 - 7 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 5 - 7 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            goto end_ddl_nothing_found;
-        }
-        if (host_line_len_without_port >= 4 + 8 + 1
-                && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 4 - 8], "bigfilez", 8) == 0
-                && (packet->host_line.ptr[host_line_len_without_port - 4 - 8 - 1] == ' '
-                || packet->host_line.ptr[host_line_len_without_port - 4 - 8 - 1] == '.')) {
-            goto end_ddl_found;
-        }
-        if (host_line_len_without_port >= 4 + 1 && packet->host_line.ptr[host_line_len_without_port - 4 - 1] == 'e') {
-            if (host_line_len_without_port >= 5 + 3
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 3], "fil", 3) == 0) {
-                if (host_line_len_without_port >= 8 + 2
-                        && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 8 - 2], "mo", 2) == 0) {
-                    if (host_line_len_without_port >= 10 + 5 + 1
-                            && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 10 - 5], "china", 5) == 0
-                            && (packet->host_line.ptr[host_line_len_without_port - 10 - 5 - 1] == ' '
-                            || packet->host_line.ptr[host_line_len_without_port - 10 - 5 - 1] == '.')) {
-                        goto end_ddl_found;
-                    }
-                    if (host_line_len_without_port >= 8 + 2 + 1
-                            && (packet->host_line.ptr[host_line_len_without_port - 8 - 2 - 1] == ' '
-                            || packet->host_line.ptr[host_line_len_without_port - 8 - 2 - 1] == '.')) {
-                        goto end_ddl_found;
-                    }
-                }
-                if (host_line_len_without_port >= 8 + 3 + 1
-                        && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 8 - 3], "hot", 3) == 0
-                        && (packet->host_line.ptr[host_line_len_without_port - 8 - 3 - 1] == ' '
-                        || packet->host_line.ptr[host_line_len_without_port - 8 - 3 - 1] == '.')) {
-                    goto end_ddl_found;
-                }
-                if (host_line_len_without_port >= 8 + 6 + 1
-                        && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 8 - 6], "keepmy", 6) == 0
-                        && (packet->host_line.ptr[host_line_len_without_port - 8 - 6 - 1] == ' '
-                        || packet->host_line.ptr[host_line_len_without_port - 8 - 6 - 1] == '.')) {
-                    goto end_ddl_found;
-                }
-                if (host_line_len_without_port >= 8 + 1
-                        && packet->host_line.ptr[host_line_len_without_port - 8 - 1] == 'e') {
-                    if (host_line_len_without_port >= 9 + 3 + 1
-                            && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 9 - 3], "sav", 3) == 0
-                            && (packet->host_line.ptr[host_line_len_without_port - 9 - 3 - 1] == ' '
-                            || packet->host_line.ptr[host_line_len_without_port - 9 - 3 - 1] == '.')) {
-                        goto end_ddl_found;
-                    }
-                    if (host_line_len_without_port >= 9 + 5 + 1
-                            && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 9 - 5], "sendm", 5) == 0
-                            && (packet->host_line.ptr[host_line_len_without_port - 9 - 5 - 1] == ' '
-                            || packet->host_line.ptr[host_line_len_without_port - 9 - 5 - 1] == '.')) {
-                        goto end_ddl_found;
-                    }
-                    goto end_ddl_nothing_found;
-                }
-                if (host_line_len_without_port >= 8 + 8 + 1
-                        && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 8 - 8], "sharebig", 8) == 0
-                        && (packet->host_line.ptr[host_line_len_without_port - 8 - 8 - 1] == ' '
-                        || packet->host_line.ptr[host_line_len_without_port - 8 - 8 - 1] == '.')) {
-                    goto end_ddl_found;
-                }
-                if (host_line_len_without_port >= 8 + 3 + 1
-                        && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 8 - 3], "up-", 3) == 0
-                        && (packet->host_line.ptr[host_line_len_without_port - 8 - 3 - 1] == ' '
-                        || packet->host_line.ptr[host_line_len_without_port - 8 - 3 - 1] == '.')) {
-                    goto end_ddl_found;
-                }
-                goto end_ddl_nothing_found;
-            }
-            if (host_line_len_without_port >= 5 + 1 && packet->host_line.ptr[host_line_len_without_port - 5 - 1] == 'r') {
-                if (host_line_len_without_port >= 6 + 3
-                        && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 6 - 3], "sha", 3) == 0) {
-                    if (host_line_len_without_port >= 9 + 1
-                            && packet->host_line.ptr[host_line_len_without_port - 9 - 1] == '-') {
-                        if (host_line_len_without_port >= 10 + 4 + 1
-                                && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 10 - 4], "easy",
-                                4) == 0 && (packet->host_line.ptr[host_line_len_without_port - 10 - 4 - 1] == ' '
-                                || packet->host_line.ptr[host_line_len_without_port - 10 - 4 - 1] ==
-                                '.')) {
-                            goto end_ddl_found;
-                        }
-                        if (host_line_len_without_port >= 10 + 4 + 1
-                                && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 10 - 4], "fast",
-                                4) == 0 && (packet->host_line.ptr[host_line_len_without_port - 10 - 4 - 1] == ' '
-                                || packet->host_line.ptr[host_line_len_without_port - 10 - 4 - 1] ==
-                                '.')) {
-                            goto end_ddl_found;
-                        }
-                        if (host_line_len_without_port >= 10 + 4 + 1
-                                && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 10 - 4], "live",
-                                4) == 0 && (packet->host_line.ptr[host_line_len_without_port - 10 - 4 - 1] == ' '
-                                || packet->host_line.ptr[host_line_len_without_port - 10 - 4 - 1] ==
-                                '.')) {
-                            goto end_ddl_found;
-                        }
-                        goto end_ddl_nothing_found;
-                    }
-                    if (host_line_len_without_port >= 9 + 4 + 1
-                            && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 9 - 4], "ftp2", 4) == 0
-                            && (packet->host_line.ptr[host_line_len_without_port - 9 - 4 - 1] == ' '
-                            || packet->host_line.ptr[host_line_len_without_port - 9 - 4 - 1] == '.')) {
-                        goto end_ddl_found;
-                    }
-                    if (host_line_len_without_port >= 9 + 4 + 1
-                            && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 9 - 4], "gige", 4) == 0
-                            && (packet->host_line.ptr[host_line_len_without_port - 9 - 4 - 1] == ' '
-                            || packet->host_line.ptr[host_line_len_without_port - 9 - 4 - 1] == '.')) {
-                        goto end_ddl_found;
-                    }
-                    if (host_line_len_without_port >= 9 + 4 + 1
-                            && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 9 - 4], "mega", 4) == 0
-                            && (packet->host_line.ptr[host_line_len_without_port - 9 - 4 - 1] == ' '
-                            || packet->host_line.ptr[host_line_len_without_port - 9 - 4 - 1] == '.')) {
-                        goto end_ddl_found;
-                    }
-                    if (host_line_len_without_port >= 9 + 5 + 1
-                            && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 9 - 5], "rapid", 5) == 0
-                            && (packet->host_line.ptr[host_line_len_without_port - 9 - 5 - 1] == ' '
-                            || packet->host_line.ptr[host_line_len_without_port - 9 - 5 - 1] == '.')) {
-                        goto end_ddl_found;
-                    }
-                    goto end_ddl_nothing_found;
-                }
-                if (host_line_len_without_port >= 6 + 7 + 1
-                        && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 6 - 7], "mediafi", 7) == 0
-                        && (packet->host_line.ptr[host_line_len_without_port - 6 - 7 - 1] == ' '
-                        || packet->host_line.ptr[host_line_len_without_port - 6 - 7 - 1] == '.')) {
-                    goto end_ddl_found;
-                }
-                goto end_ddl_nothing_found;
-            }
-            if (host_line_len_without_port >= 5 + 7 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 7], "gigasiz", 7) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 5 - 7 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 5 - 7 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            if (host_line_len_without_port >= 5 + 8 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 8], "sendspac", 8) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 5 - 8 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 5 - 8 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            if (host_line_len_without_port >= 5 + 7 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 7], "sharebe", 7) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 5 - 7 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 5 - 7 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            if (host_line_len_without_port >= 5 + 11 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 11], "sharebigfli", 11) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 5 - 11 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 5 - 11 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            if (host_line_len_without_port >= 5 + 8 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 8], "fileserv", 8) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 5 - 8 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 5 - 8 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            goto end_ddl_nothing_found;
-        }
-        if (host_line_len_without_port >= 4 + 1 && packet->host_line.ptr[host_line_len_without_port - 4 - 1] == 's') {
-            if (host_line_len_without_port >= 5 + 1 && packet->host_line.ptr[host_line_len_without_port - 5 - 1] == 'e') {
-                if (host_line_len_without_port >= 6 + 10 + 1
-                        && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 6 - 10], "depositfil",
-                        10) == 0 && (packet->host_line.ptr[host_line_len_without_port - 6 - 10 - 1] == ' '
-                        || packet->host_line.ptr[host_line_len_without_port - 6 - 10 - 1] == '.')) {
-                    goto end_ddl_found;
-                }
-                if (host_line_len_without_port >= 6 + 8 + 1
-                        && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 6 - 8], "megashar", 8) == 0
-                        && (packet->host_line.ptr[host_line_len_without_port - 6 - 8 - 1] == ' '
-                        || packet->host_line.ptr[host_line_len_without_port - 6 - 8 - 1] == '.')) {
-                    goto end_ddl_found;
-                }
-                goto end_ddl_nothing_found;
-            }
-            if (host_line_len_without_port >= 5 + 10 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 10], "fileupyour", 10) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 5 - 10 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 5 - 10 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            goto end_ddl_nothing_found;
-        }
-        if (host_line_len_without_port >= 4 + 11 + 1
-                && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 4 - 11], "filefactory", 11) == 0
-                && (packet->host_line.ptr[host_line_len_without_port - 4 - 11 - 1] == ' '
-                || packet->host_line.ptr[host_line_len_without_port - 4 - 11 - 1] == '.')) {
-            goto end_ddl_found;
-        }
-        if (host_line_len_without_port >= 4 + 1 && packet->host_line.ptr[host_line_len_without_port - 4 - 1] == 't') {
-            if (host_line_len_without_port >= 5 + 8 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 8], "filefron", 8) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 5 - 8 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 5 - 8 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            if (host_line_len_without_port >= 5 + 10 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 10], "uploadingi", 10) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 5 - 10 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 5 - 10 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            if (host_line_len_without_port >= 5 + 11 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 11], "yourfilehos", 11) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 5 - 11 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 5 - 11 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            goto end_ddl_nothing_found;
-        }
-        if (host_line_len_without_port >= 4 + 1 && packet->host_line.ptr[host_line_len_without_port - 4 - 1] == 'r') {
-            if (host_line_len_without_port >= 5 + 8 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 8], "mytempdi", 8) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 5 - 8 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 5 - 8 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            if (host_line_len_without_port >= 5 + 10 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 10], "uploadpowe", 10) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 5 - 10 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 5 - 10 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            goto end_ddl_nothing_found;
-        }
-        if (host_line_len_without_port >= 4 + 9 + 1
-                && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 4 - 9], "mega.1280", 9) == 0
-                && (packet->host_line.ptr[host_line_len_without_port - 4 - 9 - 1] == ' '
-                || packet->host_line.ptr[host_line_len_without_port - 4 - 9 - 1] == '.')) {
-            goto end_ddl_found;
-        }
-        if (host_line_len_without_port >= 4 + 9 + 1
-                && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 4 - 9], "filesonic", 9) == 0
-                && (packet->host_line.ptr[host_line_len_without_port - 4 - 9 - 1] == ' '
-                || packet->host_line.ptr[host_line_len_without_port - 4 - 9 - 1] == '.')) {
-            goto end_ddl_found;
-        }
-        goto end_ddl_nothing_found;
-    }
-    if (host_line_len_without_port >= 0 + 4
-            && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 0 - 4], ".net", 4) == 0) {
-        if (host_line_len_without_port >= 4 + 7 + 1
-                && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 4 - 7], "badongo", 7) == 0
-                && (packet->host_line.ptr[host_line_len_without_port - 4 - 7 - 1] == ' '
-                || packet->host_line.ptr[host_line_len_without_port - 4 - 7 - 1] == '.')) {
-            goto end_ddl_found;
-        }
-        if (host_line_len_without_port >= 4 + 1 && packet->host_line.ptr[host_line_len_without_port - 4 - 1] == 'd') {
-            if (host_line_len_without_port >= 5 + 3
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 3], "loa", 3) == 0) {
-                if (host_line_len_without_port >= 8 + 5 + 1
-                        && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 8 - 5], "fast-", 5) == 0
-                        && (packet->host_line.ptr[host_line_len_without_port - 8 - 5 - 1] == ' '
-                        || packet->host_line.ptr[host_line_len_without_port - 8 - 5 - 1] == '.')) {
-                    goto end_ddl_found;
-                }
-                if (host_line_len_without_port >= 8 + 2
-                        && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 8 - 2], "up", 2) == 0) {
-                    if (host_line_len_without_port >= 10 + 5 + 1
-                            && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 10 - 5], "file-", 5) == 0
-                            && (packet->host_line.ptr[host_line_len_without_port - 10 - 5 - 1] == ' '
-                            || packet->host_line.ptr[host_line_len_without_port - 10 - 5 - 1] == '.')) {
-                        goto end_ddl_found;
-                    }
-                    if (host_line_len_without_port >= 10 + 6 + 1
-                            && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 10 - 6], "simple",
-                            6) == 0 && (packet->host_line.ptr[host_line_len_without_port - 10 - 6 - 1] == ' '
-                            || packet->host_line.ptr[host_line_len_without_port - 10 - 6 - 1] ==
-                            '.')) {
-                        goto end_ddl_found;
-                    }
-                    if (host_line_len_without_port >= 10 + 3 + 1
-                            && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 10 - 3], "wii", 3) == 0
-                            && (packet->host_line.ptr[host_line_len_without_port - 10 - 3 - 1] == ' '
-                            || packet->host_line.ptr[host_line_len_without_port - 10 - 3 - 1] == '.')) {
-                        goto end_ddl_found;
-                    }
-                    goto end_ddl_nothing_found;
-                }
-                goto end_ddl_nothing_found;
-            }
-            if (host_line_len_without_port >= 5 + 7 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 7], "filesen", 7) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 5 - 7 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 5 - 7 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            goto end_ddl_nothing_found;
-        }
-        if (host_line_len_without_port >= 4 + 5 + 1
-                && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 4 - 5], "filer", 5) == 0
-                && (packet->host_line.ptr[host_line_len_without_port - 4 - 5 - 1] == ' '
-                || packet->host_line.ptr[host_line_len_without_port - 4 - 5 - 1] == '.')) {
-            goto end_ddl_found;
-        }
-        if (host_line_len_without_port >= 4 + 9 + 1
-                && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 4 - 9], "livedepot", 9) == 0
-                && (packet->host_line.ptr[host_line_len_without_port - 4 - 9 - 1] == ' '
-                || packet->host_line.ptr[host_line_len_without_port - 4 - 9 - 1] == '.')) {
-            goto end_ddl_found;
-        }
-        if (host_line_len_without_port >= 4 + 1 && packet->host_line.ptr[host_line_len_without_port - 4 - 1] == 'e') {
-            if (host_line_len_without_port >= 5 + 5 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 5], "mofil", 5) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 5 - 5 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 5 - 5 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            if (host_line_len_without_port >= 5 + 17 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 17], "odsiebie.najlepsz",
-                    17) == 0 && (packet->host_line.ptr[host_line_len_without_port - 5 - 17 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 5 - 17 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            if (host_line_len_without_port >= 5 + 5 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 5 - 5], "zshar", 5) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 5 - 5 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 5 - 5 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            goto end_ddl_nothing_found;
-        }
-        goto end_ddl_nothing_found;
-    }
-    if (host_line_len_without_port >= 0 + 1 && packet->host_line.ptr[host_line_len_without_port - 0 - 1] == 'u') {
-        if (host_line_len_without_port >= 1 + 6 + 1
-                && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 1 - 6], "data.h", 6) == 0
-                && (packet->host_line.ptr[host_line_len_without_port - 1 - 6 - 1] == ' '
-                || packet->host_line.ptr[host_line_len_without_port - 1 - 6 - 1] == '.')) {
-            goto end_ddl_found;
-        }
-        if (host_line_len_without_port >= 1 + 2
-                && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 1 - 2], ".r", 2) == 0) {
-            if (host_line_len_without_port >= 3 + 10 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 3 - 10], "filearchiv", 10) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 3 - 10 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 3 - 10 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            if (host_line_len_without_port >= 3 + 8 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 3 - 8], "filepost", 8) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 3 - 8 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 3 - 8 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            if (host_line_len_without_port >= 3 + 7 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 3 - 7], "ifolder", 7) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 3 - 7 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 3 - 7 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            goto end_ddl_nothing_found;
-        }
-        goto end_ddl_nothing_found;
-    }
-    if (host_line_len_without_port >= 0 + 11 + 1
-            && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 0 - 11], "filehost.tv", 11) == 0
-            && (packet->host_line.ptr[host_line_len_without_port - 0 - 11 - 1] == ' '
-            || packet->host_line.ptr[host_line_len_without_port - 0 - 11 - 1] == '.')) {
+    if (ddl_host_matches(packet->host_line.ptr, host_line_len_without_port)) {
         goto end_ddl_found;
     }
-    if (host_line_len_without_port >= 0 + 3
-            && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 0 - 3], ".to", 3) == 0) {
-        if (host_line_len_without_port >= 3 + 1 && packet->host_line.ptr[host_line_len_without_port - 3 - 1] == 'e') {
-            if (host_line_len_without_port >= 4 + 7 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 4 - 7], "filesaf", 7) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 4 - 7 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 4 - 7 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            if (host_line_len_without_port >= 4 + 8 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 4 - 8], "sharebas", 8) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 4 - 8 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 4 - 8 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            goto end_ddl_nothing_found;
-        }
-        if (host_line_len_without_port >= 3 + 5 + 1
-                && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 3 - 5], "files", 5) == 0
-                && (packet->host_line.ptr[host_line_len_without_port - 3 - 5 - 1] == ' '
-                || packet->host_line.ptr[host_line_len_without_port - 3 - 5 - 1] == '.')) {
-            goto end_ddl_found;
-        }
-        if (host_line_len_without_port >= 3 + 1 && packet->host_line.ptr[host_line_len_without_port - 3 - 1] == 'd') {
-            if (host_line_len_without_port >= 4 + 3
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 4 - 3], "loa", 3) == 0) {
-                if (host_line_len_without_port >= 7 + 7 + 1
-                        && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 7 - 7], "file-up", 7) == 0
-                        && (packet->host_line.ptr[host_line_len_without_port - 7 - 7 - 1] == ' '
-                        || packet->host_line.ptr[host_line_len_without_port - 7 - 7 - 1] == '.')) {
-                    goto end_ddl_found;
-                }
-                if (host_line_len_without_port >= 4 + 3 + 1
-                        && (packet->host_line.ptr[host_line_len_without_port - 4 - 3 - 1] == ' '
-                        || packet->host_line.ptr[host_line_len_without_port - 4 - 3 - 1] == '.')) {
-                    goto end_ddl_found;
-                }
-            }
-            if (host_line_len_without_port >= 4 + 7 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 4 - 7], "uploade", 7) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 4 - 7 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 4 - 7 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            goto end_ddl_nothing_found;
-        }
-        goto end_ddl_nothing_found;
-    }
-    if (host_line_len_without_port >= 0 + 1 && packet->host_line.ptr[host_line_len_without_port - 0 - 1] == 'z') {
-        if (host_line_len_without_port >= 1 + 14 + 1
-                && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 1 - 14], "leteckaposta.c", 14) == 0
-                && (packet->host_line.ptr[host_line_len_without_port - 1 - 14 - 1] == ' '
-                || packet->host_line.ptr[host_line_len_without_port - 1 - 14 - 1] == '.')) {
-            goto end_ddl_found;
-        }
-        if (host_line_len_without_port >= 1 + 12 + 1
-                && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 1 - 12], "yourfiles.bi", 12) == 0
-                && (packet->host_line.ptr[host_line_len_without_port - 1 - 12 - 1] == ' '
-                || packet->host_line.ptr[host_line_len_without_port - 1 - 12 - 1] == '.')) {
-            goto end_ddl_found;
-        }
-        goto end_ddl_nothing_found;
-    }
-    if (host_line_len_without_port >= 0 + 1 && packet->host_line.ptr[host_line_len_without_port - 0 - 1] == 'n') {
-        if (host_line_len_without_port >= 1 + 9 + 1
-                && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 1 - 9], "netload.i", 9) == 0
-                && (packet->host_line.ptr[host_line_len_without_port - 1 - 9 - 1] == ' '
-                || packet->host_line.ptr[host_line_len_without_port - 1 - 9 - 1] == '.')) {
-            goto end_ddl_found;
-        }
-        if (host_line_len_without_port >= 1 + 2
-                && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 1 - 2], ".v", 2) == 0) {
-            if (host_line_len_without_port >= 3 + 7 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 3 - 7], "4shared", 7) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 3 - 7 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 3 - 7 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            if (host_line_len_without_port >= 3 + 9 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 3 - 9], "megashare", 9) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 3 - 9 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 3 - 9 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            goto end_ddl_nothing_found;
-        }
-        goto end_ddl_nothing_found;
-    }
-    if (host_line_len_without_port >= 0 + 3
-            && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 0 - 3], ".de", 3) == 0) {
-        if (host_line_len_without_port >= 3 + 5
-                && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 3 - 5], "share", 5) == 0) {
-            if (host_line_len_without_port >= 8 + 5 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 8 - 5], "rapid", 5) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 8 - 5 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 8 - 5 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            if (host_line_len_without_port >= 8 + 5 + 1
-                    && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 8 - 5], "ultra", 5) == 0
-                    && (packet->host_line.ptr[host_line_len_without_port - 8 - 5 - 1] == ' '
-                    || packet->host_line.ptr[host_line_len_without_port - 8 - 5 - 1] == '.')) {
-                goto end_ddl_found;
-            }
-            goto end_ddl_nothing_found;
-        }
-        if (host_line_len_without_port >= 3 + 15 + 1
-                && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 3 - 15], "uploadyourfiles", 15) == 0
-                && (packet->host_line.ptr[host_line_len_without_port - 3 - 15 - 1] == ' '
-                || packet->host_line.ptr[host_line_len_without_port - 3 - 15 - 1] == '.')) {
-            goto end_ddl_found;
-        }
-        goto end_ddl_nothing_found;
-    }
-    if (host_line_len_without_port >= 0 + 14 + 1
-            && mmt_memcmp((void *) &packet->host_line.ptr[host_line_len_without_port - 0 - 14], "speedshare.org", 14) == 0
-            && (packet->host_line.ptr[host_line_len_without_port - 0 - 14 - 1] == ' '
-            || packet->host_line.ptr[host_line_len_without_port - 0 - 14 - 1] == '.')) {
-        goto end_ddl_found;
-    }
-    // END OF AUTOMATED CODE GENERATION
 
     /* This is the hard way. We do this in order to find the download of services when other
        domains are involved. This is not significant if ddl is blocked. --> then the link can not be started because

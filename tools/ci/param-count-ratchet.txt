@@ -1,0 +1,15 @@
+# Parameter-count ratchet (issue #547, F-CLEAN-008/F-CLEAN-018).
+# Every tracked src/ C source — generated asn1c (src/mmt_mobile/asn1c/) and
+# the vendored list (tools/ci/vendor-paths.txt) excluded — is held to ≤6
+# parameters per function by `bash tools/ci/report-param-count.sh` (no FILE
+# argument), which the verify-helpers job runs. The functions still above
+# it are recorded below, one per row: `path name params`. A recorded
+# function passes at no more parameters than its row; a new or wider
+# offender fails, and so does a row whose function is within the limit or
+# gone — delete the row in that change — and so does a row above
+# today's measure: tighten it.
+# Measured on 8fa3a816 + issue #547. Regenerate the rows with:
+#   bash tools/ci/report-param-count.sh --emit-ratchet
+src/mmt_tcpip/lib/protocols/proto_ipv6_dgram.c ipv6_dgram_update 7
+src/mmt_tcpip/lib/protocols/proto_tcp.c tcp_reasm_offer 7
+src/mmt_tcpip/lib/protocols/tcp_segment.c tcp_seg_new_in_arena 7

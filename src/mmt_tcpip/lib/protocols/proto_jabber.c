@@ -40,6 +40,153 @@ static void check_content_type_and_change_protocol(ipacket_t * ipacket, uint16_t
     return;
 }
 
+/*
+ * Helpers of mmt_classify_jabber_tcp(), split out of it without behaviour
+ * change (issue #547). Each one is called right before a "return;" of the
+ * caller, so its own "return;" statements end the caller as the original
+ * ones did.
+ */
+static void jabber_check_file_transfer_ports(ipacket_t * ipacket,
+        struct mmt_internal_tcpip_id_struct *src, struct mmt_internal_tcpip_id_struct *dst) {
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+
+    if (src != NULL && src->jabber_file_transfer_port[0] != 0) {
+        if (((MMT_INTERNAL_TIMESTAMP_TYPE)
+                (packet->tick_timestamp - src->jabber_stun_or_ft_ts)) >= jabber_file_transfer_timeout) {
+            src->jabber_file_transfer_port[0] = 0;
+            src->jabber_file_transfer_port[1] = 0;
+        } else if (src->jabber_file_transfer_port[0] == packet->tcp->dest
+                || src->jabber_file_transfer_port[0] == packet->tcp->source
+                || src->jabber_file_transfer_port[1] == packet->tcp->dest
+                || src->jabber_file_transfer_port[1] == packet->tcp->source) {
+
+            mmt_int_jabber_add_connection(ipacket, PROTO_UNENCRYPED_JABBER, MMT_CORRELATED_PROTOCOL);
+        }
+    }
+    if (dst != NULL && dst->jabber_file_transfer_port[0] != 0) {
+        if (((MMT_INTERNAL_TIMESTAMP_TYPE)
+                (packet->tick_timestamp - dst->jabber_stun_or_ft_ts)) >= jabber_file_transfer_timeout) {
+            dst->jabber_file_transfer_port[0] = 0;
+            dst->jabber_file_transfer_port[1] = 0;
+        } else if (dst->jabber_file_transfer_port[0] == packet->tcp->dest
+                || dst->jabber_file_transfer_port[0] == packet->tcp->source
+                || dst->jabber_file_transfer_port[1] == packet->tcp->dest
+                || dst->jabber_file_transfer_port[1] == packet->tcp->source) {
+
+            mmt_int_jabber_add_connection(ipacket,
+                    PROTO_UNENCRYPED_JABBER, MMT_CORRELATED_PROTOCOL);
+        }
+    }
+}
+
+static void jabber_parse_iq_from_ports(struct mmt_tcpip_internal_packet_struct *packet,
+        struct mmt_internal_tcpip_id_struct *src, struct mmt_internal_tcpip_id_struct *dst) {
+    uint16_t x;
+    uint16_t lastlen;
+    uint16_t j_port = 0;
+
+    lastlen = packet->payload_packet_len - 11;
+    for (x = 10; x < lastlen; x++) {
+        if (packet->payload[x] == 'p') {
+            if (mmt_mem_cmp(&packet->payload[x], "port=", 5) == 0) {
+                if (src != NULL) {
+                    src->jabber_stun_or_ft_ts = packet->tick_timestamp;
+                }
+
+                if (dst != NULL) {
+                    dst->jabber_stun_or_ft_ts = packet->tick_timestamp;
+                }
+                x += 6;
+                j_port = ntohs_mmt_bytestream_to_number(&packet->payload[x], packet->payload_packet_len, &x);
+                if (src != NULL) {
+                    if (src->jabber_file_transfer_port[0] == 0 || src->jabber_file_transfer_port[0] == j_port) {
+                        src->jabber_file_transfer_port[0] = j_port;
+                    } else {
+                        src->jabber_file_transfer_port[1] = j_port;
+                    }
+                }
+                if (dst != NULL) {
+                    if (dst->jabber_file_transfer_port[0] == 0 || dst->jabber_file_transfer_port[0] == j_port) {
+                        dst->jabber_file_transfer_port[0] = j_port;
+                    } else {
+                        dst->jabber_file_transfer_port[1] = j_port;
+                    }
+                }
+            }
+
+
+        }
+    }
+}
+
+static void jabber_parse_iq_to_ports(struct mmt_tcpip_internal_packet_struct *packet,
+        struct mmt_internal_tcpip_id_struct *src, struct mmt_internal_tcpip_id_struct *dst) {
+    uint16_t x;
+    uint16_t lastlen;
+    uint16_t j_port = 0;
+
+    lastlen = packet->payload_packet_len - 21;
+    for (x = 8; x < lastlen; x++) {
+        /* invalid character */
+        if (packet->payload[x] < 32 || packet->payload[x] > 127) {
+            return;
+        }
+        if (packet->payload[x] == '@') {
+            break;
+        }
+    }
+    if (x >= lastlen) {
+        return;
+    }
+
+    lastlen = packet->payload_packet_len - 10;
+    for (; x < lastlen; x++) {
+        if (packet->payload[x] == 'p') {
+            if (mmt_mem_cmp(&packet->payload[x], "port=", 5) == 0) {
+                if (src != NULL) {
+                    src->jabber_stun_or_ft_ts = packet->tick_timestamp;
+                }
+
+                if (dst != NULL) {
+                    dst->jabber_stun_or_ft_ts = packet->tick_timestamp;
+                }
+
+                x += 6;
+                j_port = ntohs_mmt_bytestream_to_number(&packet->payload[x], packet->payload_packet_len, &x);
+
+                if (src != NULL && src->jabber_voice_stun_used_ports < JABBER_MAX_STUN_PORTS - 1) {
+                    if (packet->payload[5] == 'o') {
+                        src->jabber_voice_stun_port[src->jabber_voice_stun_used_ports++]
+                                = j_port;
+                    } else {
+                        if (src->jabber_file_transfer_port[0] == 0
+                                || src->jabber_file_transfer_port[0] == j_port) {
+                            src->jabber_file_transfer_port[0] = j_port;
+                        } else {
+                            src->jabber_file_transfer_port[1] = j_port;
+                        }
+                    }
+                }
+
+                if (dst != NULL && dst->jabber_voice_stun_used_ports < JABBER_MAX_STUN_PORTS - 1) {
+                    if (packet->payload[5] == 'o') {
+                        dst->jabber_voice_stun_port[dst->jabber_voice_stun_used_ports++]
+                                = j_port;
+                    } else {
+                        if (dst->jabber_file_transfer_port[0] == 0
+                                || dst->jabber_file_transfer_port[0] == j_port) {
+                            dst->jabber_file_transfer_port[0] = j_port;
+                        } else {
+                            dst->jabber_file_transfer_port[1] = j_port;
+                        }
+                    }
+                }
+                return;
+            }
+        }
+    }
+}
+
 void mmt_classify_jabber_tcp(ipacket_t * ipacket, unsigned index) {
     
 
@@ -55,33 +202,7 @@ void mmt_classify_jabber_tcp(ipacket_t * ipacket, unsigned index) {
     /* search for jabber file transfer */
     /* this part is working asymmetrically */
     if (packet->tcp != NULL && packet->tcp->syn != 0 && packet->payload_packet_len == 0) {
-        if (src != NULL && src->jabber_file_transfer_port[0] != 0) {
-            if (((MMT_INTERNAL_TIMESTAMP_TYPE)
-                    (packet->tick_timestamp - src->jabber_stun_or_ft_ts)) >= jabber_file_transfer_timeout) {
-                src->jabber_file_transfer_port[0] = 0;
-                src->jabber_file_transfer_port[1] = 0;
-            } else if (src->jabber_file_transfer_port[0] == packet->tcp->dest
-                    || src->jabber_file_transfer_port[0] == packet->tcp->source
-                    || src->jabber_file_transfer_port[1] == packet->tcp->dest
-                    || src->jabber_file_transfer_port[1] == packet->tcp->source) {
-
-                mmt_int_jabber_add_connection(ipacket, PROTO_UNENCRYPED_JABBER, MMT_CORRELATED_PROTOCOL);
-            }
-        }
-        if (dst != NULL && dst->jabber_file_transfer_port[0] != 0) {
-            if (((MMT_INTERNAL_TIMESTAMP_TYPE)
-                    (packet->tick_timestamp - dst->jabber_stun_or_ft_ts)) >= jabber_file_transfer_timeout) {
-                dst->jabber_file_transfer_port[0] = 0;
-                dst->jabber_file_transfer_port[1] = 0;
-            } else if (dst->jabber_file_transfer_port[0] == packet->tcp->dest
-                    || dst->jabber_file_transfer_port[0] == packet->tcp->source
-                    || dst->jabber_file_transfer_port[1] == packet->tcp->dest
-                    || dst->jabber_file_transfer_port[1] == packet->tcp->source) {
-
-                mmt_int_jabber_add_connection(ipacket,
-                        PROTO_UNENCRYPED_JABBER, MMT_CORRELATED_PROTOCOL);
-            }
-        }
+        jabber_check_file_transfer_ports(ipacket, src, dst);
         return;
     }
 
@@ -103,8 +224,6 @@ void mmt_classify_jabber_tcp(ipacket_t * ipacket, unsigned index) {
 
     /* this part parses a packet and searches for port=. it works asymmetrically. */
     if (packet->detected_protocol_stack[0] == PROTO_UNENCRYPED_JABBER) {
-        uint16_t lastlen;
-        uint16_t j_port = 0;
         /* check for google jabber voip connections ... */
         /* need big packet */
         if (packet->payload_packet_len < 100) {
@@ -112,101 +231,10 @@ void mmt_classify_jabber_tcp(ipacket_t * ipacket, unsigned index) {
         }
         /* need message to or type for file-transfer */
         if (mmt_memcmp(packet->payload, "<iq from=\"", 10) == 0 || mmt_memcmp(packet->payload, "<iq from=\'", 10) == 0) {
-            lastlen = packet->payload_packet_len - 11;
-            for (x = 10; x < lastlen; x++) {
-                if (packet->payload[x] == 'p') {
-                    if (mmt_mem_cmp(&packet->payload[x], "port=", 5) == 0) {
-                        if (src != NULL) {
-                            src->jabber_stun_or_ft_ts = packet->tick_timestamp;
-                        }
-
-                        if (dst != NULL) {
-                            dst->jabber_stun_or_ft_ts = packet->tick_timestamp;
-                        }
-                        x += 6;
-                        j_port = ntohs_mmt_bytestream_to_number(&packet->payload[x], packet->payload_packet_len, &x);
-                        if (src != NULL) {
-                            if (src->jabber_file_transfer_port[0] == 0 || src->jabber_file_transfer_port[0] == j_port) {
-                                src->jabber_file_transfer_port[0] = j_port;
-                            } else {
-                                src->jabber_file_transfer_port[1] = j_port;
-                            }
-                        }
-                        if (dst != NULL) {
-                            if (dst->jabber_file_transfer_port[0] == 0 || dst->jabber_file_transfer_port[0] == j_port) {
-                                dst->jabber_file_transfer_port[0] = j_port;
-                            } else {
-                                dst->jabber_file_transfer_port[1] = j_port;
-                            }
-                        }
-                    }
-
-
-                }
-            }
-
+            jabber_parse_iq_from_ports(packet, src, dst);
         } else if (mmt_memcmp(packet->payload, "<iq to=\"", 8) == 0 || mmt_memcmp(packet->payload, "<iq to=\'", 8) == 0
                 || mmt_memcmp(packet->payload, "<iq type=", 9) == 0) {
-            lastlen = packet->payload_packet_len - 21;
-            for (x = 8; x < lastlen; x++) {
-                /* invalid character */
-                if (packet->payload[x] < 32 || packet->payload[x] > 127) {
-                    return;
-                }
-                if (packet->payload[x] == '@') {
-                    break;
-                }
-            }
-            if (x >= lastlen) {
-                return;
-            }
-
-            lastlen = packet->payload_packet_len - 10;
-            for (; x < lastlen; x++) {
-                if (packet->payload[x] == 'p') {
-                    if (mmt_mem_cmp(&packet->payload[x], "port=", 5) == 0) {
-                        if (src != NULL) {
-                            src->jabber_stun_or_ft_ts = packet->tick_timestamp;
-                        }
-
-                        if (dst != NULL) {
-                            dst->jabber_stun_or_ft_ts = packet->tick_timestamp;
-                        }
-
-                        x += 6;
-                        j_port = ntohs_mmt_bytestream_to_number(&packet->payload[x], packet->payload_packet_len, &x);
-
-                        if (src != NULL && src->jabber_voice_stun_used_ports < JABBER_MAX_STUN_PORTS - 1) {
-                            if (packet->payload[5] == 'o') {
-                                src->jabber_voice_stun_port[src->jabber_voice_stun_used_ports++]
-                                        = j_port;
-                            } else {
-                                if (src->jabber_file_transfer_port[0] == 0
-                                        || src->jabber_file_transfer_port[0] == j_port) {
-                                    src->jabber_file_transfer_port[0] = j_port;
-                                } else {
-                                    src->jabber_file_transfer_port[1] = j_port;
-                                }
-                            }
-                        }
-
-                        if (dst != NULL && dst->jabber_voice_stun_used_ports < JABBER_MAX_STUN_PORTS - 1) {
-                            if (packet->payload[5] == 'o') {
-                                dst->jabber_voice_stun_port[dst->jabber_voice_stun_used_ports++]
-                                        = j_port;
-                            } else {
-                                if (dst->jabber_file_transfer_port[0] == 0
-                                        || dst->jabber_file_transfer_port[0] == j_port) {
-                                    dst->jabber_file_transfer_port[0] = j_port;
-                                } else {
-                                    dst->jabber_file_transfer_port[1] = j_port;
-                                }
-                            }
-                        }
-                        return;
-                    }
-                }
-            }
+            jabber_parse_iq_to_ports(packet, src, dst);
         }
         return;
     }

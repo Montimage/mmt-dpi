@@ -154,63 +154,67 @@ static uint8_t check_for_http(ipacket_t * ipacket) {
 
 }
 
-static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
-    
+/* Result of a mmt_search_gadugadu_tcp() stage: GADUGADU_STAGE_CONTINUE
+ * falls through to the next stage, GADUGADU_STAGE_DONE is the original
+ * `return;`. */
+enum gadugadu_stage_result {
+    GADUGADU_STAGE_CONTINUE,
+    GADUGADU_STAGE_DONE
+};
+
+/* A flow already classified Gadu-Gadu: refresh the peers' timers and the
+ * file-transfer/voice state. */
+static void mmt_gadugadu_track_detected_flow(ipacket_t * ipacket) {
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
+    struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
+
+    if (src != NULL)
+        src->gg_timeout = packet->tick_timestamp;
+    if (dst != NULL)
+        dst->gg_timeout = packet->tick_timestamp;
+
+    if (packet->payload_packet_len == 311) {
+        if (packet->payload[28] != 0 && packet->tcp!=NULL) {
+            if (src != NULL) {
+                src->gg_timeout = packet->tick_timestamp;
+                if (ntohs(packet->tcp->dest) == 8074 || ntohs(packet->tcp->dest) == 443)
+                    src->gadu_gadu_ft_direction = 0;
+                else
+                    src->gadu_gadu_ft_direction = 1;
+                src->gadu_gadu_voice = 0;
+
+            }
+            if (dst != NULL) {
+                dst->gg_timeout = packet->tick_timestamp;
+                if (ntohs(packet->tcp->dest) == 8074 || ntohs(packet->tcp->dest) == 443)
+                    dst->gadu_gadu_ft_direction = 0;
+                else
+                    dst->gadu_gadu_ft_direction = 1;
+                dst->gadu_gadu_voice = 0;
+
+            }
+
+
+        } else {
+            if (src != NULL) {
+                src->gadu_gadu_voice = 1;
+                src->gg_timeout = packet->tick_timestamp;
+            }
+            if (dst != NULL) {
+                dst->gadu_gadu_voice = 1;
+                dst->gg_timeout = packet->tick_timestamp;
+            }
+        }
+    }
+}
+
+/* Gadu-Gadu server ports (443/8074): the login packet sequence. */
+static enum gadugadu_stage_result mmt_gadugadu_search_server_ports(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
     struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
-
-    if (packet->detected_protocol_stack[0] == PROTO_GADUGADU) {
-        if (src != NULL)
-            src->gg_timeout = packet->tick_timestamp;
-        if (dst != NULL)
-            dst->gg_timeout = packet->tick_timestamp;
-
-        if (packet->payload_packet_len == 311) {
-            if (packet->payload[28] != 0 && packet->tcp!=NULL) {
-                if (src != NULL) {
-                    src->gg_timeout = packet->tick_timestamp;
-                    if (ntohs(packet->tcp->dest) == 8074 || ntohs(packet->tcp->dest) == 443)
-                        src->gadu_gadu_ft_direction = 0;
-                    else
-                        src->gadu_gadu_ft_direction = 1;
-                    src->gadu_gadu_voice = 0;
-
-                }
-                if (dst != NULL) {
-                    dst->gg_timeout = packet->tick_timestamp;
-                    if (ntohs(packet->tcp->dest) == 8074 || ntohs(packet->tcp->dest) == 443)
-                        dst->gadu_gadu_ft_direction = 0;
-                    else
-                        dst->gadu_gadu_ft_direction = 1;
-                    dst->gadu_gadu_voice = 0;
-
-                }
-
-
-            } else {
-                if (src != NULL) {
-                    src->gadu_gadu_voice = 1;
-                    src->gg_timeout = packet->tick_timestamp;
-                }
-                if (dst != NULL) {
-                    dst->gadu_gadu_voice = 1;
-                    dst->gg_timeout = packet->tick_timestamp;
-                }
-            }
-        }
-        return;
-    }
-#ifdef PROTO_HTTP
-    if (packet->detected_protocol_stack[0] == PROTO_HTTP) {
-#endif
-        if (packet->tcp != NULL && ntohs(packet->tcp->dest) == 80)
-            if (check_for_http(ipacket))
-                return;
-#ifdef PROTO_HTTP
-    }
-#endif
 
     /* the following code is implemented asymmetrically. */
     if (packet->tcp != NULL &&
@@ -266,10 +270,18 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
 
                 mmt_int_gadugadu_add_connection(ipacket, MMT_REAL_PROTOCOL);
             }
-            return;
+            return GADUGADU_STAGE_DONE;
         }
 
     }
+    return GADUGADU_STAGE_CONTINUE;
+}
+
+/* Peer connections announced to the source host. */
+static enum gadugadu_stage_result mmt_gadugadu_search_src_peer(ipacket_t * ipacket) {
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
+
     /*mirinda file detection */
     if (packet->tcp != NULL && src != NULL) {
         if (MMT_COMPARE_PROTOCOL_TO_BITMASK
@@ -280,7 +292,7 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
 
                 mmt_int_gadugadu_add_connection(ipacket, MMT_REAL_PROTOCOL);
 
-                return;
+                return GADUGADU_STAGE_DONE;
             } else {
                 src->gg_ft_ip_address = 0;
                 src->gg_ft_port = 0;
@@ -297,7 +309,7 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
 
                 mmt_int_gadugadu_add_connection(ipacket, MMT_REAL_PROTOCOL);
 
-                return;
+                return GADUGADU_STAGE_DONE;
             } else {
 
             }
@@ -316,11 +328,18 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
 
                 mmt_int_gadugadu_add_connection(ipacket, MMT_REAL_PROTOCOL);
 
-                return;
+                return GADUGADU_STAGE_DONE;
             } else {
             }
         }
     }
+    return GADUGADU_STAGE_CONTINUE;
+}
+
+/* Peer connections announced to the destination host. */
+static enum gadugadu_stage_result mmt_gadugadu_search_dst_peer(ipacket_t * ipacket) {
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
 
     if (packet->tcp != NULL && dst != NULL) {
         if (MMT_COMPARE_PROTOCOL_TO_BITMASK
@@ -331,7 +350,7 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
 
                 mmt_int_gadugadu_add_connection(ipacket, MMT_REAL_PROTOCOL);
 
-                return;
+                return GADUGADU_STAGE_DONE;
             } else {
                 dst->gg_ft_ip_address = 0;
                 dst->gg_ft_port = 0;
@@ -348,7 +367,7 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
 
                 mmt_int_gadugadu_add_connection(ipacket, MMT_REAL_PROTOCOL);
 
-                return;
+                return GADUGADU_STAGE_DONE;
             } else {
 
             }
@@ -367,10 +386,42 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
 
                 mmt_int_gadugadu_add_connection(ipacket, MMT_REAL_PROTOCOL);
 
-                return;
+                return GADUGADU_STAGE_DONE;
             } else {
             }
         }
+    }
+    return GADUGADU_STAGE_CONTINUE;
+}
+
+static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
+    
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
+
+    if (packet->detected_protocol_stack[0] == PROTO_GADUGADU) {
+        mmt_gadugadu_track_detected_flow(ipacket);
+        return;
+    }
+#ifdef PROTO_HTTP
+    if (packet->detected_protocol_stack[0] == PROTO_HTTP) {
+#endif
+        if (packet->tcp != NULL && ntohs(packet->tcp->dest) == 80)
+            if (check_for_http(ipacket))
+                return;
+#ifdef PROTO_HTTP
+    }
+#endif
+
+    if (mmt_gadugadu_search_server_ports(ipacket) == GADUGADU_STAGE_DONE) {
+        return;
+    }
+    if (mmt_gadugadu_search_src_peer(ipacket) == GADUGADU_STAGE_DONE) {
+        return;
+    }
+
+    if (mmt_gadugadu_search_dst_peer(ipacket) == GADUGADU_STAGE_DONE) {
+        return;
     }
     /** newly added start **/
     if (packet->tcp != NULL && ((ntohs(packet->tcp->dest) == 80) || (ntohs(packet->tcp->source) == 80))) {

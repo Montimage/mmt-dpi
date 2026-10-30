@@ -265,9 +265,228 @@ static int _extraction_int_cloud_gaming_report_att(const cloud_gaming_data_t *p_
 
 	return NOT_FOUND;
 }
+/* State _extraction_int_report_att() shares with its helpers: the
+ * instruction-bit flags, the hop parse cursor and the per-hop arrays. */
+typedef struct {
+	uint8_t is_switches_id;
+	uint8_t is_in_e_port_ids;
+	uint8_t is_hop_latencies;
+	uint8_t is_queue_occups;
+	uint8_t is_ingr_times;
+	uint8_t is_egr_times;
+	uint8_t is_lv2_in_e_port_ids;
+	uint8_t is_tx_utilizes;
+	uint8_t is_l4s_mark_drop;
+	uint8_t is_cloud_gaming_meta;
+	bool is_lv2_spec_layout;
+	const u_char *cursor, *end_cursor;
+	size_t hop_stride;
+	uint32_t total_latency;
+	struct {
+		mmt_u32_array_t
+		sw_ids,
+		in_port_ids, e_port_ids,
+		hop_latencies,
+		queue_ids, queue_occups,
+		lv2_in_port_ids, lv2_e_port_ids,
+		tx_utilizes,
+		l4s_mark,
+		l4s_drop,
+		l4s_mark_probability;
+		mmt_u64_array_t ingress_times, egress_times;
+	}data;
+} int_report_ctx_t;
+
+/* Return value of the _extraction_int_report_att() helpers below meaning
+ * "not decided yet: carry on" (issue #547); FOUND and NOT_FOUND are passed
+ * back unchanged by the caller, as the original single function returned them. */
+enum { INT_EXTRACT_CONTINUE = -1 };
+
+//INT_IS_* attributes: FOUND/NOT_FOUND, or INT_EXTRACT_CONTINUE for other ids
+static int _int_extract_ins_flag(const int_report_ctx_t *r, attribute_t * extracted_data) {
+	switch( extracted_data->field_id ){
+	case INT_IS_SWITCH_ID:
+		extract_u8( r->is_switches_id );
+	case INT_IS_IN_EGRESS_PORT_ID:
+		extract_u8( r->is_in_e_port_ids );
+	case INT_IS_HOP_LATENCY:
+		extract_u8( r->is_hop_latencies );
+	case INT_IS_QUEUE_ID_OCCUP:
+		extract_u8( r->is_queue_occups );
+	case INT_IS_INGRESS_TIME:
+		extract_u8( r->is_ingr_times );
+	case INT_IS_EGRESS_TIME:
+		extract_u8( r->is_egr_times );
+	case INT_IS_LV2_IN_EGRESS_PORT_ID:
+		extract_u8( r->is_lv2_in_e_port_ids );
+	case INT_IS_TX_UTILIZE:
+		extract_u8( r->is_tx_utilizes );
+	case INT_IS_L4S_MARK_DROP:
+		extract_u8( r->is_l4s_mark_drop );
+	case INT_IS_CLOUD_GAMING:
+		extract_u8( r->is_cloud_gaming_meta );
+	default:
+		break;
+	}
+	return INT_EXTRACT_CONTINUE;
+}
+
+//Parses hop i at r->cursor and advances r->cursor to the next hop: NOT_FOUND
+// when the hop is truncated, FOUND when its cloud-gaming data answers the
+// attribute, INT_EXTRACT_CONTINUE otherwise
+static int _int_parse_hop(int_report_ctx_t *r, int i, const ipacket_t *ipacket, unsigned index,
+		attribute_t * extracted_data) {
+	const u_char *cursor = r->cursor, *end_cursor = r->end_cursor;
+	uint32_t *u32;
+	uint64_t *u64;
+	const u_char *hop_start = cursor;
+	if( r->is_switches_id ){
+		advance_pointer( u32, uint32_t, cursor, end_cursor, "No SW_IDS");
+		r->data.sw_ids.data[i] = ntohl( get_u32(u32, 0) );
+	}
+
+	if( r->is_in_e_port_ids ){
+		advance_pointer( u32, uint32_t, cursor, end_cursor, "No In Egress port IDs");
+		r->data.in_port_ids.data[i] = (ntohl( get_u32(u32, 0) ) >> 16) & 0xffff;
+		r->data.e_port_ids.data[i]  = (ntohl( get_u32(u32, 0) ) ) & 0xffff;
+	}
+
+	if( r->is_hop_latencies ){
+		advance_pointer( u32, uint32_t, cursor, end_cursor, "No Hop latencies");
+		r->data.hop_latencies.data[i] = ntohl( get_u32(u32, 0) );
+		r->total_latency += ntohl( get_u32(u32, 0) );
+	}
+
+	if( r->is_queue_occups ){
+		advance_pointer( u32, uint32_t, cursor, end_cursor, "No queue occups");
+		r->data.queue_ids.data[i]    = (ntohl( get_u32(u32, 0) ) >> 24) & 0xffff;
+		r->data.queue_occups.data[i] = (ntohl( get_u32(u32, 0) ) ) & 0xffff;
+	}
+
+	//Some implementation uses 64 bit to store timestamp
+	//https://github.com/GEANT-DataPlaneProgramming/int-platforms/blob/master/p4src/int_v1.0/include/headers.p4#L124
+	if( r->is_ingr_times ){
+		advance_pointer( u64, uint64_t, cursor, end_cursor, "No Ingress time");
+		r->data.ingress_times.data[i] = ntohll( get_u64(u64, 0) );
+	}
+
+	if( r->is_egr_times ){
+		advance_pointer( u64, uint64_t, cursor, end_cursor, "No Egress Time");
+		r->data.egress_times.data[i] = ntohll( get_u64(u64, 0) );
+	}
+
+	if( r->is_lv2_in_e_port_ids ){
+		//4.7 INT Hop-by-Hop Metadata Header Format (page 15)
+		//Level 2 Ingress Port ID + Egress Port ID (4 bytes each)
+		//
+		//This implementation uses 16 bits for ingress and 16 bits for egress:
+		//https://github.com/GEANT-DataPlaneProgramming/int-platforms/blob/master/p4src/int_v1.0/include/headers.p4#L131
+		//Hop ML selects the layout (see is_lv2_spec_layout)
+		advance_pointer( u32, uint32_t, cursor, end_cursor, "No LV2 Ingress");
+		if( r->is_lv2_spec_layout ){
+			r->data.lv2_in_port_ids.data[i] = ntohl( get_u32(u32, 0) );
+			advance_pointer( u32, uint32_t, cursor, end_cursor, "No LV2 Egress");
+			r->data.lv2_e_port_ids.data[i]  = ntohl( get_u32(u32, 0) );
+		} else {
+			r->data.lv2_in_port_ids.data[i] = (ntohl( get_u32(u32, 0) ) >> 16) & 0xffff;
+			r->data.lv2_e_port_ids.data[i]  = (ntohl( get_u32(u32, 0) ) ) & 0xffff;
+		}
+	}
+
+	if( r->is_tx_utilizes ){
+		advance_pointer( u32, uint32_t, cursor, end_cursor, "No TX Utilize");
+		r->data.tx_utilizes.data[i] = ntohl( get_u32(u32, 0) );
+	}
+	if( r->is_l4s_mark_drop ){
+		advance_pointer( u32, uint32_t, cursor, end_cursor, "No L4S Mark-Drop");
+		r->data.l4s_mark.data[i] = (ntohl( get_u32(u32, 0) ) >> 16) & 0xffff;
+		r->data.l4s_drop.data[i] = (ntohl( get_u32(u32, 0) ) ) & 0xffff;
+
+		advance_pointer( u32, uint32_t, cursor, end_cursor, "No L4S Mark Probability");
+		r->data.l4s_mark_probability.data[i] = ntohl( get_u32(u32, 0) );
+	}
+
+	//specific data for cloudgaming reports
+	if( r->is_cloud_gaming_meta ){
+		const cloud_gaming_data_t *p_cg;
+		cloud_gaming_data_t cg;
+		advance_pointer( p_cg, cloud_gaming_data_t, cursor, end_cursor, "No CloudGaming data" );
+		//copy out: the packet bytes are not aligned for cloud_gaming_data_t
+		memcpy( &cg, p_cg, sizeof(cg) );
+		if( _extraction_int_cloud_gaming_report_att(&cg, ipacket, index, extracted_data) == FOUND)
+			return FOUND;
+	}
+
+	//Hop ML covers the parsed fields: the next hop starts Hop ML words after
+	// this one (fields this dissector does not parse are skipped). A smaller
+	// Hop ML keeps the parsed fields as the stride.
+	if( r->hop_stride != 0 && r->hop_stride >= (size_t)(cursor - hop_start) ){
+		if( r->hop_stride > (size_t)(end_cursor - hop_start) )
+			cursor = end_cursor;
+		else
+			cursor = hop_start + r->hop_stride;
+	}
+	r->cursor = cursor;
+	return INT_EXTRACT_CONTINUE;
+}
+
+//Per-hop array attributes and the total hop latency, from the parsed hops
+static int _int_extract_hop_att(int_report_ctx_t *r, int num_hops, attribute_t * extracted_data) {
+	mmt_u32_array_t *ptr = NULL;
+	mmt_u64_array_t *ptr64 = NULL;
+	switch( extracted_data->field_id ){
+	//total latency of all hops
+	case INT_HOP_LATENCY:
+		if( !r->is_hop_latencies )
+			return NOT_FOUND;
+		(*(uint32_t *) extracted_data->data) = r->total_latency;
+		return FOUND;
+	case INT_HOP_SWITCH_IDS:
+		assign_if( r->is_switches_id, ptr, &r->data.sw_ids );
+	case INT_HOP_INGRESS_PORT_IDS:
+		assign_if( r->is_in_e_port_ids, ptr, &r->data.in_port_ids );
+	case INT_HOP_EGRESS_PORT_IDS:
+		assign_if( r->is_in_e_port_ids, ptr, &r->data.e_port_ids );
+	case INT_HOP_LATENCIES:
+		assign_if( r->is_hop_latencies, ptr, &r->data.hop_latencies );
+	case INT_HOP_QUEUE_IDS:
+		assign_if( r->is_queue_occups, ptr, &r->data.queue_ids );
+	case INT_HOP_QUEUE_OCCUPS:
+		assign_if( r->is_queue_occups, ptr, &r->data.queue_occups );
+	case INT_HOP_INGRESS_TIMES:
+		assign_if( r->is_ingr_times, ptr64, &r->data.ingress_times );
+	case INT_HOP_EGRESS_TIMES:
+		assign_if( r->is_egr_times, ptr64, &r->data.egress_times );
+	case INT_HOP_LV2_INGRESS_PORT_IDS:
+		assign_if( r->is_lv2_in_e_port_ids, ptr, &r->data.lv2_in_port_ids );
+	case INT_HOP_LV2_EGRESS_PORT_IDS:
+		assign_if( r->is_lv2_in_e_port_ids, ptr, &r->data.lv2_e_port_ids );
+	case INT_HOP_TX_UTILIZES:
+		assign_if( r->is_tx_utilizes, ptr, &r->data.tx_utilizes );
+	case INT_HOP_L4S_MARK:
+		assign_if( r->is_l4s_mark_drop, ptr, &r->data.l4s_mark );
+	case INT_HOP_L4S_DROP:
+		assign_if( r->is_l4s_mark_drop, ptr, &r->data.l4s_drop );
+	case INT_HOP_L4S_MARK_PROBABILITY:
+		assign_if( r->is_l4s_mark_drop, ptr, &r->data.l4s_mark_probability );
+	default:
+		break;
+	}
+	if( ptr != NULL ){
+		ptr->len = num_hops;
+		memcpy( extracted_data->data, ptr, sizeof(mmt_u32_array_t) );
+		return FOUND;
+	} else if( ptr64 != NULL ){
+		ptr64->len = num_hops;
+		memcpy( extracted_data->data, ptr64, sizeof(mmt_u64_array_t) );
+		return FOUND;
+	}
+	return NOT_FOUND;
+}
+
 static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 		attribute_t * extracted_data) {
-	int i, offset = get_packet_offset_at_index(ipacket, index);
+	int i, ret, offset = get_packet_offset_at_index(ipacket, index);
 	if( offset < 0 || !mmt_have_bytes(ipacket, (size_t)offset, INT_SHIM_MD_HEADER_LENGTH) )
 		return NOT_FOUND;
 	const u_char *cursor = &ipacket->data[offset], *end_cursor = &ipacket->data[ipacket->p_hdr->caplen];
@@ -305,69 +524,34 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 		break;
 	}
 
-	uint8_t is_switches_id       = (ins_bits >> 15) & 0x1;
-	uint8_t is_in_e_port_ids     = (ins_bits >> 14) & 0x1;
-	uint8_t is_hop_latencies     = (ins_bits >> 13) & 0x1;
-	uint8_t is_queue_occups      = (ins_bits >> 12) & 0x1;
-	uint8_t is_ingr_times        = (ins_bits >> 11) & 0x1;
-	uint8_t is_egr_times         = (ins_bits >> 10) & 0x1;
-	uint8_t is_lv2_in_e_port_ids = (ins_bits >>  9) & 0x1;
-	uint8_t is_tx_utilizes       = (ins_bits >>  8) & 0x1;
-	uint8_t is_l4s_mark_drop     = (ins_bits >>  7) & 0x1;
-	uint8_t is_cloud_gaming_meta = (ins_bits >>  6) & 0x1;
+	int_report_ctx_t r;
+
+	r.is_switches_id       = (ins_bits >> 15) & 0x1;
+	r.is_in_e_port_ids     = (ins_bits >> 14) & 0x1;
+	r.is_hop_latencies     = (ins_bits >> 13) & 0x1;
+	r.is_queue_occups      = (ins_bits >> 12) & 0x1;
+	r.is_ingr_times        = (ins_bits >> 11) & 0x1;
+	r.is_egr_times         = (ins_bits >> 10) & 0x1;
+	r.is_lv2_in_e_port_ids = (ins_bits >>  9) & 0x1;
+	r.is_tx_utilizes       = (ins_bits >>  8) & 0x1;
+	r.is_l4s_mark_drop     = (ins_bits >>  7) & 0x1;
+	r.is_cloud_gaming_meta = (ins_bits >>  6) & 0x1;
 
 	//Words (4 bytes) per hop with a 4-byte LV2 Ingress+Egress Port ID word
 	// (16 bits each, as the GEANT int-platforms implementation does)
-	unsigned hop_words = is_switches_id + is_in_e_port_ids + is_hop_latencies + is_queue_occups
-			+ 2 * is_ingr_times + 2 * is_egr_times + is_lv2_in_e_port_ids + is_tx_utilizes
-			+ 2 * is_l4s_mark_drop + is_cloud_gaming_meta * (sizeof(cloud_gaming_data_t) / 4);
+	unsigned hop_words = r.is_switches_id + r.is_in_e_port_ids + r.is_hop_latencies + r.is_queue_occups
+			+ 2 * r.is_ingr_times + 2 * r.is_egr_times + r.is_lv2_in_e_port_ids + r.is_tx_utilizes
+			+ 2 * r.is_l4s_mark_drop + r.is_cloud_gaming_meta * (sizeof(cloud_gaming_data_t) / 4);
 	//The INT spec (4.7) gives LV2 Ingress and Egress Port IDs 4 bytes each:
 	// one more word per hop, which the Hop ML field tells apart
-	bool is_lv2_spec_layout = is_lv2_in_e_port_ids && hbh_report->hop_ml == hop_words + 1;
+	r.is_lv2_spec_layout = r.is_lv2_in_e_port_ids && hbh_report->hop_ml == hop_words + 1;
 
 
-	switch( extracted_data->field_id ){
-	case INT_IS_SWITCH_ID:
-		extract_u8( is_switches_id );
-	case INT_IS_IN_EGRESS_PORT_ID:
-		extract_u8( is_in_e_port_ids );
-	case INT_IS_HOP_LATENCY:
-		extract_u8( is_hop_latencies );
-	case INT_IS_QUEUE_ID_OCCUP:
-		extract_u8( is_queue_occups );
-	case INT_IS_INGRESS_TIME:
-		extract_u8( is_ingr_times );
-	case INT_IS_EGRESS_TIME:
-		extract_u8( is_egr_times );
-	case INT_IS_LV2_IN_EGRESS_PORT_ID:
-		extract_u8( is_lv2_in_e_port_ids );
-	case INT_IS_TX_UTILIZE:
-		extract_u8( is_tx_utilizes );
-	case INT_IS_L4S_MARK_DROP:
-		extract_u8( is_l4s_mark_drop );
-	case INT_IS_CLOUD_GAMING:
-		extract_u8( is_cloud_gaming_meta );
-	default:
-		break;
-	}
+	ret = _int_extract_ins_flag( &r, extracted_data );
+	if( ret != INT_EXTRACT_CONTINUE )
+		return ret;
 
-	uint32_t *u32;
-	uint64_t *u64;
-	struct {
-		mmt_u32_array_t
-		sw_ids,
-		in_port_ids, e_port_ids,
-		hop_latencies,
-		queue_ids, queue_occups,
-		lv2_in_port_ids, lv2_e_port_ids,
-		tx_utilizes,
-		l4s_mark,
-		l4s_drop,
-		l4s_mark_probability;
-		mmt_u64_array_t ingress_times, egress_times;
-	}data;
-
-	memset( &data, 0, sizeof(data) );
+	memset( &r.data, 0, sizeof(r.data) );
 
 	//The hop count is capped at 64 (BINARY_64DATA_LEN), the capacity of the
 	// "data" arrays of mmt_u32_array_t/mmt_u64_array_t: that is further than
@@ -375,151 +559,20 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 	if( num_hops > BINARY_64DATA_LEN )
 		num_hops = BINARY_64DATA_LEN;
 
-	uint32_t total_latency = 0;
+	r.total_latency = 0;
 
 	//bytes of one hop given by Hop ML
-	size_t hop_stride = (size_t)hbh_report->hop_ml * 4;
+	r.hop_stride = (size_t)hbh_report->hop_ml * 4;
+	r.cursor = cursor;
+	r.end_cursor = end_cursor;
 
 	for( i=0; i<num_hops; i++ ){
-		const u_char *hop_start = cursor;
-		if( is_switches_id ){
-			advance_pointer( u32, uint32_t, cursor, end_cursor, "No SW_IDS");
-			data.sw_ids.data[i] = ntohl( get_u32(u32, 0) );
-		}
-
-		if( is_in_e_port_ids ){
-			advance_pointer( u32, uint32_t, cursor, end_cursor, "No In Egress port IDs");
-			data.in_port_ids.data[i] = (ntohl( get_u32(u32, 0) ) >> 16) & 0xffff;
-			data.e_port_ids.data[i]  = (ntohl( get_u32(u32, 0) ) ) & 0xffff;
-		}
-
-		if( is_hop_latencies ){
-			advance_pointer( u32, uint32_t, cursor, end_cursor, "No Hop latencies");
-			data.hop_latencies.data[i] = ntohl( get_u32(u32, 0) );
-			total_latency += ntohl( get_u32(u32, 0) );
-		}
-
-		if( is_queue_occups ){
-			advance_pointer( u32, uint32_t, cursor, end_cursor, "No queue occups");
-			data.queue_ids.data[i]    = (ntohl( get_u32(u32, 0) ) >> 24) & 0xffff;
-			data.queue_occups.data[i] = (ntohl( get_u32(u32, 0) ) ) & 0xffff;
-		}
-
-		//Some implementation uses 64 bit to store timestamp
-		//https://github.com/GEANT-DataPlaneProgramming/int-platforms/blob/master/p4src/int_v1.0/include/headers.p4#L124
-		if( is_ingr_times ){
-			advance_pointer( u64, uint64_t, cursor, end_cursor, "No Ingress time");
-			data.ingress_times.data[i] = ntohll( get_u64(u64, 0) );
-		}
-
-		if( is_egr_times ){
-			advance_pointer( u64, uint64_t, cursor, end_cursor, "No Egress Time");
-			data.egress_times.data[i] = ntohll( get_u64(u64, 0) );
-		}
-
-		if( is_lv2_in_e_port_ids ){
-			//4.7 INT Hop-by-Hop Metadata Header Format (page 15)
-			//Level 2 Ingress Port ID + Egress Port ID (4 bytes each)
-			//
-			//This implementation uses 16 bits for ingress and 16 bits for egress:
-			//https://github.com/GEANT-DataPlaneProgramming/int-platforms/blob/master/p4src/int_v1.0/include/headers.p4#L131
-			//Hop ML selects the layout (see is_lv2_spec_layout)
-			advance_pointer( u32, uint32_t, cursor, end_cursor, "No LV2 Ingress");
-			if( is_lv2_spec_layout ){
-				data.lv2_in_port_ids.data[i] = ntohl( get_u32(u32, 0) );
-				advance_pointer( u32, uint32_t, cursor, end_cursor, "No LV2 Egress");
-				data.lv2_e_port_ids.data[i]  = ntohl( get_u32(u32, 0) );
-			} else {
-				data.lv2_in_port_ids.data[i] = (ntohl( get_u32(u32, 0) ) >> 16) & 0xffff;
-				data.lv2_e_port_ids.data[i]  = (ntohl( get_u32(u32, 0) ) ) & 0xffff;
-			}
-		}
-
-		if( is_tx_utilizes ){
-			advance_pointer( u32, uint32_t, cursor, end_cursor, "No TX Utilize");
-			data.tx_utilizes.data[i] = ntohl( get_u32(u32, 0) );
-		}
-		if( is_l4s_mark_drop ){
-			advance_pointer( u32, uint32_t, cursor, end_cursor, "No L4S Mark-Drop");
-			data.l4s_mark.data[i] = (ntohl( get_u32(u32, 0) ) >> 16) & 0xffff;
-			data.l4s_drop.data[i] = (ntohl( get_u32(u32, 0) ) ) & 0xffff;
-
-			advance_pointer( u32, uint32_t, cursor, end_cursor, "No L4S Mark Probability");
-			data.l4s_mark_probability.data[i] = ntohl( get_u32(u32, 0) );
-		}
-
-		//specific data for cloudgaming reports
-		if( is_cloud_gaming_meta ){
-			const cloud_gaming_data_t *p_cg;
-			cloud_gaming_data_t cg;
-			advance_pointer( p_cg, cloud_gaming_data_t, cursor, end_cursor, "No CloudGaming data" );
-			//copy out: the packet bytes are not aligned for cloud_gaming_data_t
-			memcpy( &cg, p_cg, sizeof(cg) );
-			if( _extraction_int_cloud_gaming_report_att(&cg, ipacket, index, extracted_data) == FOUND)
-				return FOUND;
-		}
-
-		//Hop ML covers the parsed fields: the next hop starts Hop ML words after
-		// this one (fields this dissector does not parse are skipped). A smaller
-		// Hop ML keeps the parsed fields as the stride.
-		if( hop_stride != 0 && hop_stride >= (size_t)(cursor - hop_start) ){
-			if( hop_stride > (size_t)(end_cursor - hop_start) )
-				cursor = end_cursor;
-			else
-				cursor = hop_start + hop_stride;
-		}
+		ret = _int_parse_hop( &r, i, ipacket, index, extracted_data );
+		if( ret != INT_EXTRACT_CONTINUE )
+			return ret;
 	}
 
-	mmt_u32_array_t *ptr = NULL;
-	mmt_u64_array_t *ptr64 = NULL;
-	switch( extracted_data->field_id ){
-	//total latency of all hops
-	case INT_HOP_LATENCY:
-		if( !is_hop_latencies )
-			return NOT_FOUND;
-		(*(uint32_t *) extracted_data->data) = total_latency;
-		return FOUND;
-	case INT_HOP_SWITCH_IDS:
-		assign_if( is_switches_id, ptr, &data.sw_ids );
-	case INT_HOP_INGRESS_PORT_IDS:
-		assign_if( is_in_e_port_ids, ptr, &data.in_port_ids );
-	case INT_HOP_EGRESS_PORT_IDS:
-		assign_if( is_in_e_port_ids, ptr, &data.e_port_ids );
-	case INT_HOP_LATENCIES:
-		assign_if( is_hop_latencies, ptr, &data.hop_latencies );
-	case INT_HOP_QUEUE_IDS:
-		assign_if( is_queue_occups, ptr, &data.queue_ids );
-	case INT_HOP_QUEUE_OCCUPS:
-		assign_if( is_queue_occups, ptr, &data.queue_occups );
-	case INT_HOP_INGRESS_TIMES:
-		assign_if( is_ingr_times, ptr64, &data.ingress_times );
-	case INT_HOP_EGRESS_TIMES:
-		assign_if( is_egr_times, ptr64, &data.egress_times );
-	case INT_HOP_LV2_INGRESS_PORT_IDS:
-		assign_if( is_lv2_in_e_port_ids, ptr, &data.lv2_in_port_ids );
-	case INT_HOP_LV2_EGRESS_PORT_IDS:
-		assign_if( is_lv2_in_e_port_ids, ptr, &data.lv2_e_port_ids );
-	case INT_HOP_TX_UTILIZES:
-		assign_if( is_tx_utilizes, ptr, &data.tx_utilizes );
-	case INT_HOP_L4S_MARK:
-		assign_if( is_l4s_mark_drop, ptr, &data.l4s_mark );
-	case INT_HOP_L4S_DROP:
-		assign_if( is_l4s_mark_drop, ptr, &data.l4s_drop );
-	case INT_HOP_L4S_MARK_PROBABILITY:
-		assign_if( is_l4s_mark_drop, ptr, &data.l4s_mark_probability );
-	default:
-		break;
-	}
-	if( ptr != NULL ){
-		ptr->len = num_hops;
-		memcpy( extracted_data->data, ptr, sizeof(mmt_u32_array_t) );
-		return FOUND;
-	} else if( ptr64 != NULL ){
-		ptr64->len = num_hops;
-		memcpy( extracted_data->data, ptr64, sizeof(mmt_u64_array_t) );
-		return FOUND;
-	}
-	return NOT_FOUND;
+	return _int_extract_hop_att( &r, num_hops, extracted_data );
 }
 
 
