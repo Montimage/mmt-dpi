@@ -296,13 +296,14 @@ def load_chain(path):
 
 def parse_chain(text, path):
     """Ordered distinct classifiers registered in the default TCP/UDP chains:
-    every MMT_INTER_PROTO(PROTO_TCP|PROTO_UDP, fn, weight) row outside a
-    comment. MMT_INTER_PROTO_LEGACY rows (issue #540) are not matched: they
-    run only under the opt-in `legacy` DPI profile."""
+    every MMT_INTER_PROTO(PROTO_TCP|PROTO_UDP, fn, weight[, excluded_proto])
+    row outside a comment (the fourth column is issue #560's; a base ref
+    older than it has three). MMT_INTER_PROTO_LEGACY rows (issue #540) are
+    not matched: they run only under the opt-in `legacy` DPI profile."""
     text = re.sub(r"/\*.*?\*/", " ", text, flags=re.S)
     text = re.sub(r"//[^\n]*", " ", text)
     rows = re.findall(r"\bMMT_INTER_PROTO\s*\(\s*PROTO_(TCP|UDP)\s*,"
-                      r"\s*(\w+)\s*,\s*\d+\s*\)", text)
+                      r"\s*(\w+)\s*,\s*\d+\s*(?:,\s*\w+\s*)?\)", text)
     chain = {}
     for transport, fn in rows:
         chain.setdefault(fn, []).append(transport.lower())

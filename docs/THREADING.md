@@ -67,8 +67,25 @@ Each global has a dedicated `pthread_mutex_t`:
 - `configured_handlers_map_mutex` guards the `mmt_configured_handlers_map`
   mutations in `mmt_init_handler()` (insert) and `mmt_close_handler()` (delete),
   making concurrent handler create/destroy race-free.
+- `classify_freeze_mutex` (`src/mmt_core/src/packet_registry_classify.c`,
+  issue #560) serialises the classification-chain freeze `mmt_init_handler()`
+  runs after allocating the handler: each protocol's weight-sorted checker
+  list is copied, in list order, into one contiguous array that the walk in
+  `proto_packet_classify_next()` reads. Unlike the descriptor snapshot below,
+  the chains are shared by every handler through the global `protocol_t`. The
+  array is published with a release store and read with an acquire load, so
+  handlers created concurrently, from cold, freeze it once and walk it
+  race-free. A registration (or a `mmt_classifier_mark_legacy()` /
+  `mmt_classifier_set_guard()` call) after the freeze moves the array onto a
+  retired list, freed only at teardown, and the walk uses the list until the
+  next `mmt_init_handler()` freezes it again — so a registration made after
+  handlers exist but while no worker runs (rule 3) is walked by every handler
+  from its next packet. A registration while workers run stays unsupported:
+  the list insert itself is not synchronised against a walk.
 
-The locks are never held nested, so there is no lock-ordering hazard:
+The locks are never held nested, so there is no lock-ordering hazard
+(`classify_freeze_mutex` is released before `mmt_init_handler()` takes
+`configured_handlers_map_mutex`):
 `load_plugin()` releases the plugin-list lock around `init_proto_fct()`, which is
 the call that may take `configured_protocols_mutex` via `register_protocol()`;
 `configured_handlers_map_mutex` is held only around the single map insert/delete
@@ -119,8 +136,8 @@ currently-benign data race that required a prior single-threaded
 finalize the then-shared flags.
 
 These mutexes are taken **only** on the (un)registration/teardown mutation
-paths. They are deliberately **not** taken on the per-packet processing hot
-path. That is safe because:
+paths and in `mmt_init_handler()` / `mmt_close_handler()`. They are
+deliberately **not** taken on the per-packet processing hot path. That is safe because:
 
 - `init_extraction()` allocates the descriptor table once, before workers start.
 - `mmt_init_handler()` copies (snapshots) the descriptor pointers from the
@@ -248,7 +265,7 @@ so they need no locking as long as the "one handler per worker" rule holds:
    `close_extraction()` once, on a single thread. It force-closes any handler
    still registered and runs the internal `close_plugins()` /
    `free_registered_protocols()` steps itself
-   (`src/mmt_core/src/packet_registry.c:667-679`); a handler must not be
+   (`src/mmt_core/src/packet_registry.c:675-687`); a handler must not be
    used or closed after it returns. The single-threaded embedding sequence is
    in [USER_GUIDE.md §3](./USER_GUIDE.md#3-minimum-embedding-pattern).
 

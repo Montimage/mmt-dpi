@@ -42,19 +42,19 @@ CITING_DOCS=(docs/USER_GUIDE.md docs/THREADING.md docs/Global-Handler.md docs/MM
 # <path>:<start>[-<end>] <TAB> <regex the start line must match>
 #   [<TAB> <regex the end line must match>]
 CITATIONS="$(cat <<'TABLE'
-src/mmt_core/src/packet_registry.c:616	^bool init_extraction\(\)
-src/mmt_core/src/packet_registry.c:658-659	^ *if \(!init_plugins\(\)\) return 0;	if \(!init_handlers_map\(\)\)
-src/mmt_core/src/packet_registry_handler.c:410	mmt_configured_handlers_map = init_map_space
+src/mmt_core/src/packet_registry.c:624	^bool init_extraction\(\)
+src/mmt_core/src/packet_registry.c:666-667	^ *if \(!init_plugins\(\)\) return 0;	if \(!init_handlers_map\(\)\)
+src/mmt_core/src/packet_registry_handler.c:414	mmt_configured_handlers_map = init_map_space
 src/mmt_core/src/packet_registry_handler.c:116	^mmt_handler_t \*mmt_init_handler\(
-src/mmt_core/src/packet_registry_handler.c:265	insert_key_value\(mmt_configured_handlers_map
-src/mmt_core/src/packet_pipeline.c:1482	^bool packet_process\(
-src/mmt_core/src/packet_registry_handler.c:298	^void mmt_close_handler\(mmt_handler_t
-src/mmt_core/src/packet_registry_handler.c:348	delete_key_value\(mmt_configured_handlers_map
-src/mmt_core/src/packet_registry.c:667	^void close_extraction\(\)
-src/mmt_core/src/packet_registry.c:667-679	^void close_extraction\(\)	^\}$
-src/mmt_core/src/packet_registry.c:670	^ *close_handlers_map\(\);
-src/mmt_core/src/packet_registry_handler.c:416	iterate_through_mmt_handlers\(mmt_close_handler_internal
-src/mmt_core/src/packet_registry.c:678	^ *close_plugins\(\);
+src/mmt_core/src/packet_registry_handler.c:269	insert_key_value\(mmt_configured_handlers_map
+src/mmt_core/src/packet_pipeline.c:1525	^bool packet_process\(
+src/mmt_core/src/packet_registry_handler.c:302	^void mmt_close_handler\(mmt_handler_t
+src/mmt_core/src/packet_registry_handler.c:352	delete_key_value\(mmt_configured_handlers_map
+src/mmt_core/src/packet_registry.c:675	^void close_extraction\(\)
+src/mmt_core/src/packet_registry.c:675-687	^void close_extraction\(\)	^\}$
+src/mmt_core/src/packet_registry.c:678	^ *close_handlers_map\(\);
+src/mmt_core/src/packet_registry_handler.c:420	iterate_through_mmt_handlers\(mmt_close_handler_internal
+src/mmt_core/src/packet_registry.c:686	^ *close_plugins\(\);
 src/examples/packet_handler.c:63	if *\(!init_extraction\(\)\)
 src/examples/packet_handler.c:69	mmt_handler = mmt_init_handler\(
 src/examples/packet_handler.c:100	if *\(!packet_process\(mmt_handler

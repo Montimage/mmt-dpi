@@ -30,6 +30,10 @@
 # insert_session_into_protocol_context lets it fail each allocation and insert
 # get_session() makes and check the rollback releases what it created.
 #
+# Issue #560: test_classify_freeze links the same library objects and checks
+# the classification chain frozen at mmt_init_handler(): list order in both
+# views, late registration, a failed freeze and concurrent handler creation.
+#
 # Issue #566: check_hostname_table.sh fails the suite when the committed
 # hostname-suffix .inc is not what tools/gen-hostname-table.py generates from
 # data/hostnames.txt, and checks the generator rejects malformed data.
@@ -112,6 +116,14 @@ objects+=("$SCRIPT_DIR/test_core_engine.o")
 "$CC" "${extra_cflags[@]}" -Wl,--wrap=malloc -Wl,--wrap=calloc -Wl,--wrap=realloc \
     -o "$SCRIPT_DIR/test_core_engine" "${objects[@]}" -lm -lpthread -ldl
 
+# Issue #560: the frozen classification chain — freeze order, late
+# registration, the plugins' list mutators, a failed freeze and concurrent
+# handler creation; --wrap=malloc fails the freeze's allocation.
+"$CC" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${INCS[@]}" \
+    -c "$SCRIPT_DIR/test_classify_freeze.c" -o "$SCRIPT_DIR/test_classify_freeze.o"
+"$CC" "${extra_cflags[@]}" -Wl,--wrap=malloc -o "$SCRIPT_DIR/test_classify_freeze" \
+    "${lib_objects[@]}" "$SCRIPT_DIR/test_classify_freeze.o" -lm -lpthread -ldl
+
 # Issue #557: the IP-range differential test — the interval-array lookup
 # against the former per-prefix AVL forest, rebuilt from the table's prefixes,
 # which tools/gen-ip-range-table.py writes from data/ip_ranges.txt.
@@ -166,6 +178,16 @@ if ( cd "$WORK" && "$SCRIPT_DIR/test_core_engine" > "$WORK/core_engine.log" 2>&1
 else
     cat "$WORK/core_engine.log"
     echo "Core-engine tests: FAILED"
+    exit 1
+fi
+
+echo "Running classifier-chain freeze tests (issue #560)..."
+if ( cd "$WORK" && "$SCRIPT_DIR/test_classify_freeze" > "$WORK/classify_freeze.log" 2>&1 ); then
+    tail -n 1 "$WORK/classify_freeze.log"
+    echo "Classifier-chain freeze tests: PASSED"
+else
+    cat "$WORK/classify_freeze.log"
+    echo "Classifier-chain freeze tests: FAILED"
     exit 1
 fi
 

@@ -11,7 +11,7 @@
 # oracle with --base HEAD^1, so only a newly registered classifier may enter.
 #
 # Format: <classifier>  # <why it is pending>
-mmt_check_rtp_tcp                      # RFC 4571-framed RTP is checked only after STUN is detected (proto_rtp.c:823-832), and the pipeline then dispatches the flow to mmt_check_stun_tcp alone (packet_pipeline.c:709-727); the only other route is a defunct Yahoo framing (proto_rtp.c:812-818)
+mmt_check_rtp_tcp                      # RFC 4571-framed RTP is checked only after STUN is detected (proto_rtp.c:823-832), and the pipeline then dispatches the flow to mmt_check_stun_tcp alone (packet_pipeline.c:771-789); the only other route is a defunct Yahoo framing (proto_rtp.c:812-818)
 mmt_check_edonkey                      # no reviewed case yet; #540 kept it in the default chains (its service is still operated)
 mmt_check_gnutella                     # no reviewed case yet; #540 kept it in the default chains (its service is still operated)
 mmt_check_winmx                        # no reviewed case yet; #540 kept it in the default chains (its service is still operated)

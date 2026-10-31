@@ -201,11 +201,25 @@
 #                               address, through mmt_init_handler +
 #                               packet_process.
 #
+# Issue #560 adds the "chain" fixture: mmt_init_handler() freezes every
+# classification chain into a contiguous array, and init_tcpip_plugin()
+# stores each inter_proto_classif_list.def row's guard inputs in its node.
+#
+#   test_classifier_chain_api.c — with the plugins loaded, every frozen
+#                               chain is its registration list in list order
+#                               (both DPI-profile views), and the TCP/UDP
+#                               nodes carrying a guard are the .def rows with
+#                               an excluded protocol, in the file's
+#                               weight-sorted order.
+#   check_inter_proto_excluded.py — each .def row's excluded_proto column is
+#                               the id its checker's source passes to
+#                               mmt_init_classify_bitmasks*().
+#
 # Usage: tests/parser_boundaries/run_tests.sh [fixture ...]
 #   no arguments runs every fixture; "udp"/"dtls"/"dns-soa"/"dns-txt"/"dns-names"/"nfs"/"int"/
 #   "tcp-options"/"radius-dns"/"quic"/"gre"/"classifier-audit"/"tcp-events"/"s1ap-integer"/
-#   "classify"/"registration"/"ftp-sessions"/"classification-method" select a
-#   fixture family.
+#   "classify"/"registration"/"ftp-sessions"/"classification-method"/"chain"
+#   select a fixture family.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -213,7 +227,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # --- fixture selection -----------------------------------------------------
 FIXTURES=( "$@" )
-[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method)
+[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain)
 UNIT_TESTS=()
 API_TESTS=()
 MOBILE_TESTS=()
@@ -274,8 +288,13 @@ for f in "${FIXTURES[@]}"; do
         classification-method)
             API_TESTS+=(classification_method_api)
             ;;
+        chain)
+            API_TESTS+=(classifier_chain_api)
+            # The .def column against the checkers' sources (no SDK needed).
+            python3 -I "${SCRIPT_DIR}/check_inter_proto_excluded.py" "${REPO_ROOT}" || exit 1
+            ;;
         *)
-            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method)" >&2
+            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain)" >&2
             exit 2
             ;;
     esac
@@ -416,4 +435,4 @@ if [ "${rc}" -ne 0 ]; then
     echo "✗ parser boundary tests failed" >&2
     exit 1
 fi
-echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455, #505, #513, #531, #542, #544, #567)"
+echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455, #505, #513, #531, #542, #544, #560, #567)"

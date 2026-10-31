@@ -7,6 +7,8 @@
 # without a recorded justification. Issue #531 deleted the commented-out
 # netbios_type lines of proto_netbios.c: 120 blocks, 291 lines. Issue #541
 # deleted unreachable functions and their commented-out lines: 117 blocks,
-# 283 lines.
+# 283 lines. Issue #560 replaced the classifier walk loop of
+# packet_pipeline.c, with its commented-out debug print: 116 blocks,
+# 281 lines.
 # Re-measure: bash tools/ci/lint-commented-code.sh
-117
+116

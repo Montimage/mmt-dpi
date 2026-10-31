@@ -28,6 +28,39 @@ int mmt_register_classifier(uint32_t parent_proto,
     return 1;
 }
 
+/* Issue #560 (F-PERF-005): the selection mask each protocol translation
+ * unit's mmt_init_classify_bitmasks*() call set, recorded under the protocol
+ * id its excluded bitmask holds (unique per unit). The protocol inits of
+ * init_tcpip_plugin() run before its inter_proto_table[] loop, which copies
+ * the entry of each row's excluded_proto into the checker's chain node. */
+static MMT_SELECTION_BITMASK_PROTOCOL_SIZE checker_selection[PROTO_MAX_IDENTIFIER];
+
+void mmt_tcpip_record_checker_guard(uint32_t excluded_proto,
+        MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_mask) {
+    if (excluded_proto != PROTO_UNKNOWN && excluded_proto < PROTO_MAX_IDENTIFIER) {
+        checker_selection[excluded_proto] = selection_mask;
+    }
+}
+
+/* Store one inter_proto_table[] row's guard inputs in its chain node; 0 (an
+ * init failure, like a failed legacy mark) when the row names an excluded
+ * protocol no translation unit recorded — a wrong excluded_proto column. */
+static int mmt_set_inter_proto_guard(protocol_t *parent,
+        generic_classification_function classify_fn, uint32_t excluded_proto,
+        const char *name) {
+    if (excluded_proto == PROTO_UNKNOWN) {
+        return 1;
+    }
+    if (excluded_proto >= PROTO_MAX_IDENTIFIER || checker_selection[excluded_proto] == 0
+            || !mmt_classifier_set_guard(parent, classify_fn,
+                    checker_selection[excluded_proto], excluded_proto)) {
+        mmt_stderr_log("Error recording the guard of classification function %s (excluded protocol %u)\n Exiting\n",
+                name, (unsigned) excluded_proto);
+        return 0;
+    }
+    return 1;
+}
+
 /* Issue #542 (F-CLEAN-012): the registration a MMT_PROTO_SIMPLE row of
  * proto_init_list.def stands for — the body of each of the 506 identical
  * proto_*.c stubs it replaced, so the registry is built by the same calls in
@@ -104,32 +137,39 @@ int init_tcpip_plugin() {
      * data expressed as code). Order is registration order again.
      * Issue #540 (F-BUG-311): a MMT_INTER_PROTO_LEGACY row registers the
      * same way, in the same place, and its chain node is then marked legacy
-     * — walked only under the opt-in `legacy` DPI profile. */
+     * — walked only under the opt-in `legacy` DPI profile.
+     * Issue #560: every row's chain node also gets its checker's guard
+     * inputs (excluded_proto and the recorded selection mask). */
     static const struct {
         uint32_t parent;
         generic_classification_function classify_fn;
         int weight;
         const char *name;
         int legacy;
+        uint32_t excluded_proto;
     } inter_proto_table[] = {
-#define MMT_INTER_PROTO(parent, fn, w) { parent, fn, w, #fn, 0 },
-#define MMT_INTER_PROTO_LEGACY(parent, fn, w) { parent, fn, w, #fn, 1 },
+#define MMT_INTER_PROTO(parent, fn, w, ex) { parent, fn, w, #fn, 0, ex },
+#define MMT_INTER_PROTO_LEGACY(parent, fn, w, ex) { parent, fn, w, #fn, 1, ex },
 #include "inter_proto_classif_list.def"
 #undef MMT_INTER_PROTO_LEGACY
 #undef MMT_INTER_PROTO
     };
     for (size_t i = 0; i < sizeof(inter_proto_table)/sizeof(inter_proto_table[0]); i++) {
+        protocol_t *parent;
         if (!mmt_register_classifier(inter_proto_table[i].parent,
                     inter_proto_table[i].classify_fn,
                     inter_proto_table[i].weight, inter_proto_table[i].name)) {
             return 0;
         }
+        parent = get_protocol_struct_by_id(inter_proto_table[i].parent);
         if (inter_proto_table[i].legacy
-                && !mmt_classifier_mark_legacy(
-                    get_protocol_struct_by_id(inter_proto_table[i].parent),
-                    inter_proto_table[i].classify_fn)) {
+                && !mmt_classifier_mark_legacy(parent, inter_proto_table[i].classify_fn)) {
             mmt_stderr_log("Error marking legacy classification function %s for parent protocol %u\n Exiting\n",
                     inter_proto_table[i].name, (unsigned) inter_proto_table[i].parent);
+            return 0;
+        }
+        if (!mmt_set_inter_proto_guard(parent, inter_proto_table[i].classify_fn,
+                    inter_proto_table[i].excluded_proto, inter_proto_table[i].name)) {
             return 0;
         }
     }

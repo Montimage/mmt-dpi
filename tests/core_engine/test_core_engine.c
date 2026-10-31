@@ -617,7 +617,12 @@ static void test_handler_bootstrap_oom(void) {
      *   #7 A's session table (malloc)  + A's slots (calloc)
      *   #8 B's session table (malloc)  + B's slots (calloc)
      * Budgets 0..7 all fail; 8 lets the whole call through.
+     * Issue #560: mmt_init_handler() also freezes each classification chain
+     * not frozen yet (one malloc per chain, once); freeze them here so the
+     * sweep counts only the handler's own allocations — a failed freeze is
+     * tests/core_engine/test_classify_freeze.c's.
      */
+    mmt_classify_chains_freeze();
     for (long b = 0; b <= 8; b++) {
         g_malloc_budget = b;
         mmt_handler_t *h = mmt_init_handler(TEST_STACK_ID, 0, errbuf);

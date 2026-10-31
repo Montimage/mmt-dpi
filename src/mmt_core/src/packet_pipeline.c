@@ -658,6 +658,68 @@ int set_classified_proto(ipacket_t * ipacket, unsigned index, classified_proto_t
     return retval;
 }
 
+/* Issue #540 (F-BUG-311): the defunct-service checkers (MMT_INTER_PROTO_LEGACY
+ * rows) stay in the chain but are walked only under the opt-in `legacy` DPI
+ * profile. */
+static inline uint8_t classify_walks_legacy(const ipacket_t *ipacket) {
+    return (ipacket->mmt_handler != NULL) ? ipacket->mmt_handler->legacy_classify : 0;
+}
+
+/* One checker probe of the walk. Issue #327: the verdict is checked — a
+ * MATCHED verdict (MMT_CLASSIFY_MATCHED_MASK) stops the walk with this
+ * checker as winner; anything else tries the next checker. Returns nonzero
+ * on a match; *status gets the verdict. */
+static inline int classify_probe(ipacket_t *ipacket, const protocol_t *proto,
+        mmt_classify_proto_t *node, generic_classification_function fn,
+        unsigned index, mmt_classify_verdict_t *status) {
+#if MMT_CLASSIFY_STATS
+    __atomic_add_fetch(&mmt_classify_checker_calls, 1, __ATOMIC_RELAXED);
+    __atomic_add_fetch(&mmt_classify_checker_calls_by_proto[proto->proto_id], 1, __ATOMIC_RELAXED);
+#else
+    (void) proto;
+#endif
+    ipacket_internal(ipacket)->mmt_current_classifier = node;
+    *status = fn(ipacket, index);
+    return (*status & MMT_CLASSIFY_MATCHED_MASK) != 0;
+}
+
+/* Issue #560 (F-PERF-005, checker walk part 1): the walk over a frozen chain
+ * — one contiguous array, in the list's order, with the legacy checkers
+ * already left out of the default view, so no checker is tested for the
+ * profile. Returns the winning node (NULL when none matched). */
+static inline mmt_classify_proto_t *classify_walk_frozen(ipacket_t *ipacket,
+        const protocol_t *proto, const mmt_classify_chain_t *chain, unsigned index,
+        mmt_classify_verdict_t *status) {
+    const mmt_classify_entry_t *e = chain->default_entries;
+    const mmt_classify_entry_t *end = e + chain->default_count;
+    if (classify_walks_legacy(ipacket)) {
+        e = chain->entries;
+        end = e + chain->count;
+    }
+    for (; e < end; e++) {
+        if (classify_probe(ipacket, proto, e->node, e->classify_me, index, status)) {
+            return e->node;
+        }
+    }
+    return NULL;
+}
+
+/* The walk over the registration list: a chain not frozen yet (no handler
+ * created, a late registration since the last freeze, or the freeze ran out of
+ * memory). Same checkers, same order, same verdicts as classify_walk_frozen(). */
+static mmt_classify_proto_t *classify_walk_list(ipacket_t *ipacket,
+        const protocol_t *proto, unsigned index, mmt_classify_verdict_t *status) {
+    const uint8_t walk_legacy = classify_walks_legacy(ipacket);
+    mmt_classify_proto_t *n;
+    for (n = proto->classify_next.classify_protos; n != NULL; n = n->next) {
+        if ((!n->legacy || walk_legacy)
+                && classify_probe(ipacket, proto, n, n->classify_me, index, status)) {
+            return n;
+        }
+    }
+    return NULL;
+}
+
 /**
  * Try to classify the next encapsulated protocol
  * @param ipacket             packet to classify
@@ -727,33 +789,14 @@ int proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * config
                 classif_status = direct->classify_me(ipacket, index);
                 pi->mmt_current_classifier = NULL;
             } else {
-                mmt_classify_proto_t * temp = configured_protocol->protocol->classify_next.classify_protos;
-                /* Issue #540 (F-BUG-311): the defunct-service checkers
-                 * (MMT_INTER_PROTO_LEGACY rows) stay in the chain but are
-                 * walked only under the opt-in `legacy` DPI profile. */
-                const uint8_t walk_legacy = (ipacket->mmt_handler != NULL)
-                        ? ipacket->mmt_handler->legacy_classify : 0;
-                for (; temp != NULL; temp = temp->next) {
-                    if (temp->legacy && !walk_legacy) {
-                        continue;
-                    }
-#if MMT_CLASSIFY_STATS
-                    __atomic_add_fetch(&mmt_classify_checker_calls, 1, __ATOMIC_RELAXED);
-                    __atomic_add_fetch(&mmt_classify_checker_calls_by_proto[configured_protocol->protocol->proto_id], 1, __ATOMIC_RELAXED);
-#endif
-                    pi->mmt_current_classifier = temp;
-                    /* Issue #327: the verdict is checked — a MATCHED verdict
-                     * (MMT_CLASSIFY_MATCHED_MASK) stops the walk with this
-                     * node as winner; anything else tries the next checker. */
-                    classif_status = temp->classify_me(ipacket, index);
-                    // // LN: check if the classify return 1-> do not need to go to check other protocol
-                    if(classif_status & MMT_CLASSIFY_MATCHED_MASK){ // Short for classif_status == 1 || classif_status == 2 || classif_status == 3
-                        // mmt_stream_printf(stdout, "\n-]> Classified for protocol %d: %"PRIu64" - %d - %p - %u\n",classif_status,ipacket->packet_id,index,temp,temp->weight);
-                        winner = temp;
-                        break;
-                    }
-                    // // End of LN
-                }
+                /* Issue #560 (F-PERF-005): walk the chain frozen at
+                 * mmt_init_handler(); the list only until then, or after a
+                 * late registration until the next freeze. */
+                const mmt_classify_chain_t *chain = __atomic_load_n(
+                        &configured_protocol->protocol->classify_next.frozen, __ATOMIC_ACQUIRE);
+                winner = (chain != NULL)
+                        ? classify_walk_frozen(ipacket, configured_protocol->protocol, chain, index, &classif_status)
+                        : classify_walk_list(ipacket, configured_protocol->protocol, index, &classif_status);
                 pi->mmt_current_classifier = NULL;
             }
 

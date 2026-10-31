@@ -198,6 +198,10 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
         return NULL;
     }
 
+    /* Issue #560: every plugin has registered its checkers by now
+     * (docs/THREADING.md), so freeze the classification chains the walk
+     * reads; a no-op for the chains an earlier handler froze. */
+    mmt_classify_chains_freeze();
     for (i = 0; i < PROTO_MAX_IDENTIFIER; i++) {
         new_handler->configured_protocols[i].protocol = get_protocol_slot(i);
         new_handler->configured_protocols[i].sessions_map = NULL;

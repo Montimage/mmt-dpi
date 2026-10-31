@@ -297,6 +297,14 @@ typedef struct udphdr __attribute__((aligned(1))) mmt_una_udphdr_t;
      * exported symbol, so deleting the 106 wrappers drops libmmt_tcpip.so's
      * exported `_init` symbols by exactly 106. Issue #227 folded the remaining
      * richer wrappers through the multi-add variant below. */
+    /* Issue #560 (F-PERF-005): both helpers below also report the unit's
+     * selection mask under its excluded protocol id to init_tcpip_plugin()
+     * (configured_protocols.c), which stores them in the frozen classifier
+     * chain. Weak, so a test that compiles a protocol unit without
+     * configured_protocols.c still links (the call is then skipped). */
+    void mmt_tcpip_record_checker_guard(uint32_t excluded_proto,
+        MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_mask) __attribute__((weak));
+
     static inline void mmt_init_classify_bitmasks(
         MMT_SELECTION_BITMASK_PROTOCOL_SIZE *selection_bitmask,
         MMT_PROTOCOL_BITMASK *detection_bitmask,
@@ -309,6 +317,9 @@ typedef struct udphdr __attribute__((aligned(1))) mmt_una_udphdr_t;
             MMT_ADD_PROTOCOL_TO_BITMASK(*detection_bitmask, detection_add);
         }
         MMT_SAVE_AS_BITMASK(*excluded_protocol_bitmask, excluded_proto);
+        if (mmt_tcpip_record_checker_guard != NULL) {
+            mmt_tcpip_record_checker_guard(excluded_proto, selection_value);
+        }
     }
 
     /* Issue #227 (F-DEAD-011): multi-add variant for the protocols whose
@@ -332,6 +343,9 @@ typedef struct udphdr __attribute__((aligned(1))) mmt_una_udphdr_t;
             MMT_ADD_PROTOCOL_TO_BITMASK(*detection_bitmask, detection_adds[_mmt_add_i]);
         }
         MMT_SAVE_AS_BITMASK(*excluded_protocol_bitmask, excluded_proto);
+        if (mmt_tcpip_record_checker_guard != NULL) {
+            mmt_tcpip_record_checker_guard(excluded_proto, selection_value);
+        }
     }
 
     /* safe src/dst protocol check macros... */

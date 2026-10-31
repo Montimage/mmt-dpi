@@ -492,6 +492,12 @@ with Scratch() as s:
           rc == 1 and "mmt_check_new_one" in out, out)
 
 with Scratch() as s:
+    rc, out = s.offline("--chain",
+                        s.chain("MMT_INTER_PROTO(PROTO_TCP, mmt_check_new_one, 50, PROTO_HTTP)\n"))
+    check("a row with the excluded_proto column (issue #560) is required",
+          rc == 1 and "mmt_check_new_one" in out, out)
+
+with Scratch() as s:
     rc, out = s.offline("--chain", s.chain(
         "/* MMT_INTER_PROTO(PROTO_TCP, mmt_check_off1, 50) */\n"
         "// MMT_INTER_PROTO(PROTO_UDP, mmt_check_off2, 50)\n"))

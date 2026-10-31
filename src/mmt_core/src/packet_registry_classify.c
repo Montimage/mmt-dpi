@@ -72,8 +72,92 @@ int register_classification_function_internal(protocol_t * proto, generic_classi
             temp_list->next = temp;
         }
     }
+    /* Issue #560: a registration after the freeze (a late plugin, an
+     * embedder's own checker) drops the frozen copy; the walk uses the list
+     * until the next mmt_init_handler() re-freezes it. */
+    mmt_classify_chain_invalidate(&proto->classify_next);
 
     return 1;
+}
+
+/* Issue #560 (F-PERF-005, checker walk part 1): freezing. Serialises the
+ * freezes of handlers created concurrently (docs/THREADING.md: creating
+ * handlers from several threads is supported); never taken per packet. */
+static pthread_mutex_t classify_freeze_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static void classify_entry_fill(mmt_classify_entry_t *e, mmt_classify_proto_t *n) {
+    e->classify_me = n->classify_me;
+    e->node = n;
+    e->selection_mask = n->selection_mask;
+    e->excluded_proto = (uint16_t) n->excluded_proto;
+    e->legacy = n->legacy;
+}
+
+/**
+ * Freeze a chain: copy its weight-sorted list, in list order, into one
+ * contiguous mmt_classify_chain_t and publish it. Every checker goes into
+ * entries[]; the non-legacy ones, in the same relative order, also into
+ * default_entries[], so both walks visit exactly the checkers — in exactly
+ * the order — the list walk did.
+ * @return 1 when the chain is frozen (or empty), 0 when out of memory — the
+ *         walk then keeps using the list, so nothing is lost but speed
+ */
+int mmt_classify_chain_freeze(mmt_classify_next_t *cn) {
+    mmt_classify_proto_t *n;
+    mmt_classify_chain_t *chain;
+    uint32_t count = 0, default_count = 0, i = 0, j = 0;
+
+    if (__atomic_load_n(&cn->frozen, __ATOMIC_ACQUIRE) != NULL || cn->classify_protos == NULL) {
+        return 1;
+    }
+    for (n = cn->classify_protos; n != NULL; n = n->next) {
+        count++;
+        default_count += n->legacy ? 0 : 1;
+    }
+    chain = mmt_malloc(sizeof (*chain) + (size_t) (count + default_count) * sizeof (chain->entries[0]));
+    if (chain == NULL) {
+        return 0;
+    }
+    chain->retired_next = NULL;
+    chain->count = count;
+    chain->default_count = default_count;
+    chain->default_entries = chain->entries + count;
+    for (n = cn->classify_protos; n != NULL; n = n->next) {
+        classify_entry_fill(&chain->entries[i++], n);
+        if (!n->legacy) {
+            classify_entry_fill(&chain->default_entries[j++], n);
+        }
+    }
+    __atomic_store_n(&cn->frozen, chain, __ATOMIC_RELEASE);
+    return 1;
+}
+
+/* Freeze every registered protocol's chain that is not frozen yet. Called by
+ * mmt_init_handler(): after init_extraction() and every plugin registration
+ * (the docs/THREADING.md order), and again after a late registration. */
+void mmt_classify_chains_freeze(void) {
+    uint32_t i;
+    pthread_mutex_lock(&classify_freeze_mutex);
+    for (i = 0; i < PROTO_MAX_IDENTIFIER; i++) {
+        protocol_t *proto = get_protocol_struct_by_id(i);
+        if (proto != NULL) {
+            (void) mmt_classify_chain_freeze(&proto->classify_next);
+        }
+    }
+    pthread_mutex_unlock(&classify_freeze_mutex);
+}
+
+/* Free a chain's frozen copy and the copies later registrations retired. */
+void mmt_classify_chain_release(mmt_classify_next_t *cn) {
+    mmt_classify_chain_t *chain;
+    mmt_classify_chain_invalidate(cn); /* the frozen copy joins the retired list */
+    chain = cn->retired;
+    cn->retired = NULL;
+    while (chain != NULL) {
+        mmt_classify_chain_t *next = chain->retired_next;
+        mmt_free(chain);
+        chain = next;
+    }
 }
 
 /**

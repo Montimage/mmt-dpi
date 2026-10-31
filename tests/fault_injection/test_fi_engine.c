@@ -103,6 +103,15 @@ static void t_init_handler_sweep(void)
 {
     char errbuf[1024];
 
+    /* Issue #560: the first mmt_init_handler() also freezes the
+     * process-wide classifier chains, which live until close_extraction(),
+     * not until mmt_close_handler(). Create and close one handler outside
+     * the window so the measurement counts only the handler's own blocks. */
+    mmt_handler_t *warm = mmt_init_handler(DLT_EN10MB, 0, errbuf);
+    CHECK(warm != NULL, "warm-up mmt_init_handler failed: %s", errbuf);
+    if (warm)
+        mmt_close_handler(warm);
+
     /* Measure + success-path balance: init inside the window, close inside
      * the window, net outstanding must be zero. */
     int64_t before = fi_window_leaked();

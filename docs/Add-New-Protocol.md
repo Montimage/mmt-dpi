@@ -57,10 +57,11 @@ If a protocol needs a classification for example protocol rtp, we need to add a 
 
 ```c
     
-  MMT_INTER_PROTO(PROTO_UDP, mmt_check_rtp_udp, 50)
+  MMT_INTER_PROTO(PROTO_UDP, mmt_check_rtp_udp, 50, PROTO_RTP)
    
 ```
-A classifier for a service that has been shut down uses `MMT_INTER_PROTO_LEGACY(parent, fn, weight)` instead: it stays in the chain but runs only under the opt-in `legacy` DPI profile ([DPI-Profiles.md](DPI-Profiles.md), issue #540).
+The fourth column is the protocol id the checker's source file passes as the last argument of its `mmt_init_classify_bitmasks()` call (the id its excluded bitmask holds), or `PROTO_UNKNOWN` when the checker has no such call. `init_tcpip_plugin()` stores it, with that call's selection mask, in the checker's entry of the frozen chain, and fails when no protocol source recorded the id (issue #560).
+A classifier for a service that has been shut down uses `MMT_INTER_PROTO_LEGACY(parent, fn, weight, excluded_proto)` instead: it stays in the chain but runs only under the opt-in `legacy` DPI profile ([DPI-Profiles.md](DPI-Profiles.md), issue #540).
 Then add a row for **lemonde** to the **`application_class_by_protocol_id`** table in **`src/mmt_tcpip/lib/mmt_tcpip_classes.c`** (read by `get_application_class_by_protocol_id()`, issue #547), so it is a WEB protocol:
 
 ```c
