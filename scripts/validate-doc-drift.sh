@@ -25,6 +25,27 @@
 #               and the clean-code metrics read the list — exclusion by
 #               configuration, not convention.
 #
+# Issue #559 (F-DOCS-010/011/012 of the modernization audit — not the
+# F-DOCS-010 above):
+#   catalogue   every file:line link of docs/Phase2-Heuristics.md lands on
+#               the code its entry names (a needle per entry and file), and
+#               every entry H1-H8 carries at least one such link.
+#   add-proto   docs/Add-New-Protocol.md states both proto_init_list.def row
+#               forms exactly as the list's header comment does.
+#   listing     tools/ci/check-protocol-count.sh passes (docs/PROTOCOLS.md
+#               current, the landing-page chip quoting its count).
+# Issue #578 (F-UX-010..013), the landing page's claims:
+#   line rate   no unmeasured "line rate" claim in the site or README; the
+#               measured claim that replaces it quotes the bigFlows rows of
+#               tools/phase0/baseline/perf/throughput.txt and links them and
+#               the instruction-count gate (issue #555).
+#   distros     the distro stat is the number of supported distributions in
+#               .github/workflows/install-smoke.yml, and both the stat and
+#               the platform FAQ link that workflow.
+#   plugins     the plugin FAQ names the loader's init symbol and directory
+#               variable as src/mmt_core/private_include/plugins_engine.h
+#               defines them, and no longer says "drop it in".
+#
 # Same check-only contract as the other scripts/validate-*.sh: findings are
 # reported, the script exits non-zero when any check fails.
 #
@@ -225,6 +246,203 @@ for s in tools/ci/report-function-shape.sh tools/ci/lint-markers.sh \
           "grep -q 'vendor-paths.txt' $s \
            && grep -q '^\. \"\$ROOT/tools/ci/vendor-paths-lib\.sh\"' $s"
 done
+
+# --- #559: heuristics catalogue, add-protocol guide, protocol listing --------
+echo ""
+echo "-- #559: heuristics catalogue, add-protocol guide, listing --"
+
+# One needle list per (entry, file): each link of the entry into that file
+# must land on a line holding one of them, and each needle must be hit by a
+# link. Moving code means updating the line numbers in the doc only; removing
+# or changing the code an entry describes fails here until the entry is
+# re-verified.
+cite_rc=0
+cite_out="$(python3 - <<'PYEOF' 2>&1
+import os
+import re
+import sys
+
+DOC = "docs/Phase2-Heuristics.md"
+BASE = "https://github.com/montimage-projects/mmt-dpi/blob/main/"
+NEEDLES = {
+    ("H1", "plugin_defs.h"): ["uint16_t status; /**< the status of the classified protocol"],
+    ("H1", "proto_tcp.c"): ['Issue #87: the "different strategies"'],
+    ("H1", "proto_udp.c"): ['Issue #87: the "different strategies"'],
+    ("H1", "mmt_tcpip_plugin_internal.c"): ["int mmt_payload_confirms_proto("],
+    ("H2", "proto_tcp.c"): ["mmt_guess_protocol_by_port_number(ipacket)"],
+    ("H2", "proto_udp.c"): ["mmt_guess_protocol_by_port_number(ipacket)"],
+    ("H2", "mmt_tcpip_plugin_internal.c"): ["port_classify_payload_confirm != 0"],
+    ("H3", "mmt_tcpip_classif_proto_ip_address.inc"): ["static const proto_based_ip_t proto_ip_address[] = {"],
+    ("H3", "proto_tcp.c"): ["get_proto_id_from_address(ipacket)"],
+    ("H3", "proto_udp.c"): ["get_proto_id_from_address(ipacket)"],
+    ("H3", "mmt_tcpip_classif_utils.c"): ['getenv("MMT_DPI_IP_RANGES_FILE")'],
+    ("H4", "proto_udp.c"): ["packet_count > (CFG_CLASSIFICATION_THRESHOLD * 2)",
+                            "packet_count <= (CFG_CLASSIFICATION_THRESHOLD * 2)"],
+    ("H4", "proto_tcp.c"): ["packet_count > (CFG_CLASSIFICATION_THRESHOLD * 2)"],
+    ("H4", "cfg_defaults.h"): ["#define CFG_CLASSIFICATION_THRESHOLD     20"],
+    ("H5", "proto_udp.c"): ["if (packet->tcp_retransmission == 0)"],
+    ("H5", "mmt_tcpip_plugin_internal.h"): ["packet->tcp_retransmission = 0;",
+                                            "packet->tcp_retransmission = 1;"],
+    ("H6", "proto_tcp.c"): ["retval.proto_id == PROTO_GTP"],
+    ("H7", "proto_udp.c"): ["packet->flow == NULL && packet->udp != NULL"],
+    ("H8", "proto_tcp.c"): ["memset(packet->flow, 0, sizeof (*(packet->flow)));"],
+}
+LINK = re.compile(r"\[`([^`:]+):(\d+)`\]\(([^)#]+)#L(\d+)\)")
+ANY_LINE_LINK = re.compile(r"\]\(([^)]*#L[^)]*)\)")
+
+text = open(DOC, encoding="utf-8").read()
+entries = re.split(r"^### (H\d)\b", text, flags=re.M)
+bad = 0
+hit = set()
+seen_entries = set()
+for i in range(1, len(entries), 2):
+    entry, body = entries[i], entries[i + 1]
+    checked = {m.group(0) for m in LINK.finditer(body)}
+    for m in ANY_LINE_LINK.finditer(body):
+        start = body.rfind("[", 0, m.start())
+        if body[start:m.end()] not in checked:
+            print(f"✗ {entry}: unchecked citation form {body[start:m.end()]!r} "
+                  "(cite one line as [`file:N`](...#LN))")
+            bad += 1
+    for name, line, url, anchor in LINK.findall(body):
+        where = f"{entry} {name}:{line}"
+        if line != anchor or not url.startswith(BASE):
+            print(f"✗ {where}: link text and target disagree ({url}#L{anchor})")
+            bad += 1
+            continue
+        path = url[len(BASE):]
+        if os.path.basename(path) != name or not os.path.isfile(path):
+            print(f"✗ {where}: {path} is not the cited file")
+            bad += 1
+            continue
+        needles = NEEDLES.get((entry, name))
+        if needles is None:
+            print(f"✗ {where}: no needle recorded for this entry and file")
+            bad += 1
+            continue
+        lines = open(path, encoding="utf-8", errors="replace").read().splitlines()
+        n = int(line)
+        src = lines[n - 1] if 0 < n <= len(lines) else ""
+        found = [x for x in needles if x in src]
+        if not found:
+            print(f"✗ {where}: line no longer holds {needles!r}: {src.strip()!r}")
+            bad += 1
+            continue
+        hit.update((entry, name, x) for x in found)
+        seen_entries.add(entry)
+for (entry, name), needles in NEEDLES.items():
+    for x in needles:
+        if (entry, name, x) not in hit:
+            print(f"✗ {entry} {name}: no link lands on {x!r}")
+            bad += 1
+for entry in (f"H{k}" for k in range(1, 9)):
+    if entry not in seen_entries:
+        print(f"✗ {entry}: no checked file:line citation")
+        bad += 1
+sys.exit(1 if bad else 0)
+PYEOF
+)" || cite_rc=$?
+[ -n "$cite_out" ] && printf '%s\n' "$cite_out" | sed 's/^/    /'
+check "docs/Phase2-Heuristics.md: every H1-H8 file:line link lands on the code it names" \
+      "[ $cite_rc -eq 0 ]"
+
+DEF=src/mmt_tcpip/lib/proto_init_list.def
+for form in 'MMT_PROTO_INIT(init_function, "display_name")' \
+            'MMT_PROTO_SIMPLE(PROTO_ID, PROTO_ID_ALIAS, "display_name")'; do
+    check "docs/Add-New-Protocol.md states the row form $form as $DEF does" \
+          "grep -qF '$form' $DEF && grep -qF '$form' docs/Add-New-Protocol.md"
+done
+check "docs/Add-New-Protocol.md says to regenerate the listing" \
+      "grep -qF 'bash tools/gen-protocol-list.sh' docs/Add-New-Protocol.md"
+check "docs/PROTOCOLS.md lists no header-comment placeholder" \
+      "! grep -qF 'display_name' docs/PROTOCOLS.md"
+check "tools/ci/check-protocol-count.sh passes (listing current, chip agrees)" \
+      "bash tools/ci/check-protocol-count.sh"
+
+# --- #578: landing-page claims ------------------------------------------------
+echo ""
+echo "-- #578: landing-page claims --"
+
+SMOKE_URL='https://github.com/montimage-projects/mmt-dpi/actions/workflows/install-smoke.yml'
+check "no unmeasured \"line rate\" claim in docs/index.html, docs/_config.yml or README.md" \
+      "test -f docs/index.html && test -f docs/_config.yml && test -f README.md \
+       && ! grep -qiE 'line[- ]?rate' docs/index.html docs/_config.yml README.md"
+
+perf_rc=0
+perf_out="$(python3 - <<'PYEOF' 2>&1
+import re
+import sys
+
+BASE = "https://github.com/montimage-projects/mmt-dpi/"
+pps = {}
+for row in open("tools/phase0/baseline/perf/throughput.txt", encoding="utf-8"):
+    f = row.rstrip("\n").split("\t")
+    if len(f) > 6 and f[0] == "bigFlows.pcap":
+        pps[f[1]] = int(f[6])
+if "bare" not in pps or "attrs8" not in pps:
+    print("✗ throughput.txt has no bigFlows.pcap bare/attrs8 rows")
+    sys.exit(1)
+site = open("docs/index.html", encoding="utf-8").read()
+faq = re.search(r"<summary>What exactly is MMT-DPI\?</summary>\s*<p>(.*?)</p>", site, re.S)
+faq = faq.group(1) if faq else ""
+want = [f"about {pps['bare'] / 1e6:.1f} million packets per second",
+        f"{pps['attrs8'] / 1e6:.1f} million with eight fetched",
+        f'href="{BASE}blob/main/tools/phase0/baseline/perf/throughput.txt"',
+        f'href="{BASE}actions/workflows/phase0-baseline.yml"']
+missing = [w for w in want if w not in faq]
+for w in missing:
+    print(f"✗ the 'What exactly' FAQ lacks {w!r}")
+sys.exit(1 if missing else 0)
+PYEOF
+)" || perf_rc=$?
+[ -n "$perf_out" ] && printf '%s\n' "$perf_out" | sed 's/^/    /'
+check "the performance claim quotes tools/phase0/baseline/perf/throughput.txt and links it and the instruction gate" \
+      "[ $perf_rc -eq 0 ]"
+
+distro_rc=0
+distro_out="$(python3 - "$SMOKE_URL" <<'PYEOF' 2>&1
+import re
+import sys
+
+url = sys.argv[1]
+wf = open(".github/workflows/install-smoke.yml", encoding="utf-8").read()
+legs = re.findall(r"\{\s*name:\s*([A-Za-z0-9.-]+),\s*tier:\s*supported\b", wf)
+distros = sorted({leg.split("-")[0] for leg in legs})
+site = open("docs/index.html", encoding="utf-8").read()
+m = re.search(r'<div class="num">(\d+)</div><div class="lbl"><a href="([^"]+)">'
+              r'Linux distros smoke-tested</a>', site)
+if not distros:
+    print("✗ no supported leg found in install-smoke.yml")
+    sys.exit(1)
+if not m:
+    print("✗ docs/index.html has no linked 'Linux distros smoke-tested' stat")
+    sys.exit(1)
+if int(m.group(1)) != len(distros) or m.group(2) != url:
+    print(f"✗ stat says {m.group(1)} -> {m.group(2)}; the workflow's supported "
+          f"distributions are {len(distros)}: {', '.join(distros)}")
+    sys.exit(1)
+print(f"supported distributions ({len(distros)}): {', '.join(distros)}")
+PYEOF
+)" || distro_rc=$?
+[ -n "$distro_out" ] && printf '%s\n' "$distro_out" | sed 's/^/    /'
+check "the distro stat counts install-smoke.yml's supported distributions and links it" \
+      "[ $distro_rc -eq 0 ]"
+check "the platform FAQ links the install smoke workflow" \
+      "grep -F 'smoke-tested in CI' docs/index.html | grep -qF 'href=\"$SMOKE_URL\"'"
+
+ENGINE_H=src/mmt_core/private_include/plugins_engine.h
+init_sym="$(sed -nE 's/^#define PLUGIN_INIT_FUNCTION_NAME "([^"]+)".*/\1/p' "$ENGINE_H")"
+dir_env="$(sed -nE 's/^#define PLUGINS_DIR_ENV "([^"]+)".*/\1/p' "$ENGINE_H")"
+plugin_faq="$(grep -F 'Adding New Protocols' docs/index.html || true)"
+faq_loader_rc=0
+{ [ -n "$init_sym" ] && [ -n "$dir_env" ] \
+  && grep -qF "<code>$init_sym()</code>" <<<"$plugin_faq" \
+  && grep -qF "<code>$dir_env</code>" <<<"$plugin_faq"; } || faq_loader_rc=1
+faq_drop_rc=0
+grep -qi 'drop it in' <<<"$plugin_faq" && faq_drop_rc=1
+check "the plugin FAQ names the loader's init symbol (${init_sym:-?}) and directory variable (${dir_env:-?})" \
+      "[ $faq_loader_rc -eq 0 ]"
+check "the plugin FAQ no longer says \"drop it in\"" "[ $faq_drop_rc -eq 0 ]"
 
 echo ""
 if [ $ERRORS -eq 0 ]; then

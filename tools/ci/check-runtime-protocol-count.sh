@@ -15,10 +15,11 @@
 #   sudo make -C sdk install                      # default prefix /opt/mmt
 #   make -C sdk install MMT_BASE=$PWD/local_install  # or a local prefix
 # MMT_BASE may be overridden in the environment to match a non-default
-# prefix. The enumerator is run from a scratch directory whose plugins/ is
-# populated with every installed plugin .so, which is what
-# plugins_engine.h's loader consults first — so the count is the full
-# core+plugins figure a real deployment reports.
+# prefix. The enumerator loads every installed plugin .so from a scratch
+# plugins/ directory named by MMT_DPI_PLUGINS_DIR — since issue #503 the
+# loader reads only that variable or the compiled-in directory, never the
+# working directory (src/mmt_core/src/plugins_engine.c, plugins_directory) —
+# so the count is the full core+plugins figure a real deployment reports.
 #
 # Exit codes: 0 = quoted counts match the SDK, 1 = mismatch,
 #             2 = prerequisite missing / helper broken.
@@ -58,16 +59,16 @@ cc -O2 -o "$tmpdir/mmt_export_info" src/examples/mmt_export_info.c \
     -I"$MMT_INC" -L"$MMT_LIB" -Wl,-rpath,"$MMT_LIB" -lmmt_core -ldl \
     || { echo "✗ mmt_export_info.c failed to compile against $MMT_INC" >&2; exit 2; }
 
-# Stage every installed plugin under a scratch plugins/ — the loader checks
-# the CWD-local plugins/ before PLUGINS_REPOSITORY_OPT, so this also covers
-# SDKs built with a non-default MMT_BASE.
+# Stage every installed plugin under a scratch plugins/ and point the loader
+# at it with MMT_DPI_PLUGINS_DIR, so the count does not depend on the
+# directory compiled into the library.
 mkdir -p "$tmpdir/plugins"
 shopt -s nullglob
 plugins=("$MMT_PLUGINS"/*.so)
 [ ${#plugins[@]} -gt 0 ] || { echo "✗ no plugin .so under $MMT_PLUGINS" >&2; exit 2; }
 for so in "${plugins[@]}"; do ln -s "$(readlink -f "$so")" "$tmpdir/plugins/"; done
 
-( cd "$tmpdir" && ./mmt_export_info ) > "$tmpdir/export.csv" \
+( cd "$tmpdir" && MMT_DPI_PLUGINS_DIR="$tmpdir/plugins" ./mmt_export_info ) > "$tmpdir/export.csv" \
     || { echo "✗ mmt_export_info failed to run" >&2; exit 2; }
 
 export EXPORT_CSV="$tmpdir/export.csv"

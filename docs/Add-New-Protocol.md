@@ -50,6 +50,8 @@ In the protocol-init list **`src/mmt_tcpip/lib/proto_init_list.def`** (included 
 ```
 A protocol with its own source file uses `MMT_PROTO_INIT(init_proto_<name>_struct, "proto_<name>")` instead.
 
+So each row has one of the two forms the list's header comment documents, `MMT_PROTO_INIT(init_function, "display_name")` or `MMT_PROTO_SIMPLE(PROTO_ID, PROTO_ID_ALIAS, "display_name")`, and starts its own line. Then regenerate the published listing with `bash tools/gen-protocol-list.sh` (it rewrites `docs/PROTOCOLS.md` and reads only rows that start a line, so the header comment's examples are not listed) and update the count on the landing page's `PROTOCOLS.html` chip in `docs/index.html`: `bash tools/ci/check-protocol-count.sh` fails while either lags the list (issue #559).
+
 If a protocol needs a classification for example protocol rtp, we need to add a classification function entry in the inter-protocol list **`src/mmt_tcpip/lib/inter_proto_classif_list.def`** (expanded into `inter_proto_table[]` in the same function):
 
 ```c

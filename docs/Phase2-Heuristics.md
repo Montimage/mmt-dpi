@@ -29,67 +29,81 @@ for its own measured, fingerprint-gated follow-up.
 
 ## Catalogue
 
-### H1 — No graded classification confidence (`best_effort`) — *highest impact*
-- **Where:** [`proto_tcp.c:662`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_tcp.c#L662),
-  [`proto_udp.c:97`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_udp.c#L97)
-  — `//BW - TODO: We should have different strategies: best_effort = …`
-- **Why weak:** `classified_proto_t`
-  ([`plugin_defs.h`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_core/public_include/plugin_defs.h)) carries only a
-  binary `status` (Classified / NonClassified) and no confidence score, so the
-  engine cannot distinguish a payload-proven verdict from a port-only guess.
+Every `file:line` link below is checked by
+[`scripts/validate-doc-drift.sh`](https://github.com/montimage-projects/mmt-dpi/blob/main/scripts/validate-doc-drift.sh): the cited
+line must still hold the code the entry names, so a refactor that moves it fails
+the `doc-validators` job until the citation is updated (issue #559). The
+statuses were last re-verified against the sources for issue #559.
+
+### H1 — No graded classification confidence — *highest impact*
+- **Where:** `classified_proto_t`'s binary `status` field
+  ([`plugin_defs.h:129`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_core/public_include/plugin_defs.h#L129)); the address/port fallbacks of
+  [`proto_tcp.c:1141`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_tcp.c#L1141) and [`proto_udp.c:152`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_udp.c#L152).
+- **Why weak:** the verdict is Classified / NonClassified with no confidence
+  score, so the engine cannot distinguish a payload-proven verdict from a
+  port-only guess.
+- **Status:** the fallbacks' old `best_effort` TODO ("we should have different
+  strategies") was answered by the DPI profiles (issue #87,
+  [DPI-Profiles.md](DPI-Profiles.md)): each heuristic lever is now a profile
+  toggle on the handler. A graded confidence is still missing.
 - **Next step:** introduce a confidence/score concept. This is an ABI change to a
   public struct used across many plugins — large, must be staged. #75's
-  payload-confirm predicate (`mmt_payload_confirms_proto`) is a side-effect-free
-  building block toward this.
+  payload-confirm predicate (`mmt_payload_confirms_proto`,
+  [`mmt_tcpip_plugin_internal.c:452`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c#L452)) is a side-effect-free building block
+  toward this.
 
 ### H2 — Port-only attribution accepted without payload evidence — *mitigated by #75*
-- **Where:** [`proto_tcp.c:667-668`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_tcp.c#L667),
-  [`proto_udp.c:104-105`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_udp.c#L104)
+- **Where:** `mmt_guess_protocol_by_port_number` in the fallbacks
+  ([`proto_tcp.c:1149`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_tcp.c#L1149), [`proto_udp.c:162`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_udp.c#L162)); the demotion gate
+  [`mmt_tcpip_plugin_internal.c:529`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c#L529).
 - **Why weak:** a port number alone is the weakest signal; services move ports
   and ports get squatted.
 - **Status:** addressed by the default-off `enable_port_classify_payload_confirm()`
   flag (issue #75) — see [`External-Attribution.md`](External-Attribution.md).
-  Remaining work: extend the confirmation set beyond the current 7 protocols and
-  enable-by-default once precision/recall on port-only captures proves the gain.
+  Remaining work: extend the confirmation set beyond the current 7 protocols
+  (HTTP, TLS, SSH, SMTP, POP, IMAP, FTP) and enable-by-default once
+  precision/recall on port-only captures proves the gain.
 
 ### H3 — Stale compiled-in IP ranges — *mitigated by #26 / #74 / #75*
-- **Where:** `proto_ip_address[]` in
-  [`mmt_tcpip_classif_utils.c`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c)
-  (~10k ranges), consulted via `get_proto_id_from_address`
-  ([`proto_tcp.c:665`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_tcp.c#L665),
-  [`proto_udp.c:101`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_udp.c#L101)).
+- **Where:** `proto_ip_address[]`
+  ([`mmt_tcpip_classif_proto_ip_address.inc:1`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_classif_proto_ip_address.inc#L1), ~10k ranges, included by
+  `mmt_tcpip_classif_utils.c`), consulted via `get_proto_id_from_address`
+  ([`proto_tcp.c:1146`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_tcp.c#L1146), [`proto_udp.c:158`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_udp.c#L158)).
 - **Why weak:** CDN/cloud allocations drift; compiled-in ranges go stale and
   misattribute.
-- **Status:** external `MMT_DPI_IP_RANGES_FILE` (extend/override, IPv4+IPv6) plus
-  the refreshable [`data/ip_ranges.cdn.txt`](https://github.com/montimage-projects/mmt-dpi/blob/main/data/ip_ranges.cdn.txt) and
+- **Status:** external `MMT_DPI_IP_RANGES_FILE` (extend/override, IPv4+IPv6,
+  read at [`mmt_tcpip_classif_utils.c:562`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c#L562)) plus the refreshable
+  [`data/ip_ranges.cdn.txt`](https://github.com/montimage-projects/mmt-dpi/blob/main/data/ip_ranges.cdn.txt) and
   [`tools/refresh_cdn_ranges.sh`](https://github.com/montimage-projects/mmt-dpi/blob/main/tools/refresh_cdn_ranges.sh) (issue #75).
 
-### H4 — Magic-number classification window, asymmetric TCP vs UDP
-- **Where:** [`proto_udp.c:71`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_udp.c#L71)
-  (`packet_count > CFG_CLASSIFICATION_THRESHOLD * 2` → stop) and
-  [`proto_udp.c:92`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_udp.c#L92)
-  (`<= CFG_CLASSIFICATION_THRESHOLD * 2` → attempt fallback); TCP
-  ([`proto_tcp.c:657`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_tcp.c#L657)) uses no
-  such packet-count window.
+### H4 — Magic-number classification window
+- **Where:** UDP stops classifying past `CFG_CLASSIFICATION_THRESHOLD * 2`
+  packets ([`proto_udp.c:126`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_udp.c#L126)) and attempts the address/port fallback only
+  within that window ([`proto_udp.c:147`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_udp.c#L147)); TCP gives up on a still-unknown
+  flow past the same window ([`proto_tcp.c:982`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_tcp.c#L982), [`proto_tcp.c:1113`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_tcp.c#L1113)).
 - **Why weak:** `CFG_CLASSIFICATION_THRESHOLD` is `20`
-  ([`cfg_defaults.h:24`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_core/private_include/cfg_defaults.h#L24)); the
-  `* 2` factor is an unexplained constant and the TCP/UDP asymmetry is
-  undocumented. Long flows that only become classifiable after 40 packets are
-  silently abandoned on UDP.
+  ([`cfg_defaults.h:24`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_core/private_include/cfg_defaults.h#L24)) and the `* 2` factor is an unexplained constant.
+  Long flows that only become classifiable after 40 packets are silently
+  abandoned.
+- **Status:** the TCP/UDP asymmetry this entry first recorded is gone: issue #99
+  gave TCP the UDP window, gated on the flow still being unknown so that
+  classified flows keep their per-packet path. The constant itself is unchanged.
 - **Next step:** document the rationale or make the window configurable; measure
   recall impact of widening it on long-flow captures.
 
 ### H5 — `tcp_retransmission == 0` gate on UDP packets
-- **Where:** [`proto_udp.c:67`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_udp.c#L67)
-  — `if (packet->tcp_retransmission == 0) { … } //TODO: do we need to keep this???`
+- **Where:** [`proto_udp.c:122`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_udp.c#L122).
 - **Why weak:** a TCP-named field is consulted in the UDP path to set
-  `MMT_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION`; intent is unclear and
-  the author flagged it for review.
+  `MMT_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION`. On UDP the gate is
+  always taken: `mmt_connection_tracking` clears the field on every packet
+  ([`mmt_tcpip_plugin_internal.h:318`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.h#L318)) and only the TCP sequence check sets
+  it ([`mmt_tcpip_plugin_internal.h:440`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.h#L440)). The author's "do we need to keep
+  this???" TODO was removed by the marker triage (issue #232) without an answer.
 - **Next step:** trace which selection-bitmask consumers depend on this bit for
-  UDP; remove or rename if it is vestigial.
+  UDP; drop the `if` (behaviour-neutral) or rename the bit if it is vestigial.
 
 ### H6 — GTP forced re-classification special-case
-- **Where:** [`proto_tcp.c:657`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_tcp.c#L657)
+- **Where:** [`proto_tcp.c:1136`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_tcp.c#L1136)
   — `if (retval.proto_id == PROTO_UNKNOWN || retval.proto_id == PROTO_GTP)`
 - **Why weak:** GTP is singled out by id to re-enter the address/port fallback
   path; the reason is undocumented and the pattern does not generalise to other
@@ -98,37 +112,38 @@ for its own measured, fingerprint-gated follow-up.
   carrier" protocol class.
 
 ### H7 — `flow == NULL` early return drops UDP classification
-- **Where:** [`proto_udp.c:50-51`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_udp.c#L50)
-  — `return (PROTO_UNKNOWN); //TODO: check this out`
+- **Where:** [`proto_udp.c:105`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_udp.c#L105) — returns `MMT_CLASSIFY_SKIP`.
 - **Why weak:** when connection tracking yields no flow the packet is abandoned
-  as unknown with a standing `TODO`; the conditions under which this happens are
-  not characterised.
+  as unknown; the conditions under which this happens are not characterised.
+- **Status:** issue #150 replaced the old `return (PROTO_UNKNOWN)` — a protocol
+  id used as a verdict — with the named verdict and dropped its "check this
+  out" TODO; the investigation itself is still open.
 - **Next step:** determine when `packet->flow` is NULL post-`mmt_connection_tracking`
   and whether stateless attribution is still possible.
 
-### H8 — Speculative `memset` of the flow on SYN
-- **Where:** [`proto_tcp.c:481`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_tcp.c#L481),
-  [`proto_tcp.c:572`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_tcp.c#L572)
-  — `//BW - TODO: Is this memset needed? the syn should be …`
-- **Why weak:** correctness/perf heuristic flagged by the author as possibly
-  unnecessary; not strictly a *classification* heuristic but surfaced in the same
-  audit and worth resolving.
-- **Next step:** confirm whether the flow is already zero-initialised on first
-  use; drop the `memset` if redundant (perf), keep with a comment if required.
+### H8 — Speculative `memset` of the flow on SYN — *resolved by #330*
+- **Where:** [`proto_tcp.c:945`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_tcp.c#L945), [`proto_tcp.c:1063`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_tcp.c#L1063).
+- **Why it was flagged:** the author asked whether the `memset` was needed; not
+  strictly a *classification* heuristic but surfaced in the same audit.
+- **Status:** the marker audit (issue #330) found it redundant on a flow fresh
+  from allocation, which is zeroed there, and kept it with that justification
+  in a comment: one `memset` per new flow guarantees a clean detection state
+  whatever ran on the packet before. This is the "keep with a comment" outcome
+  the entry proposed; nothing is left to do.
 
 ## Priority
 
 | Item | Theme | Status | Suggested order |
 | ---- | ----- | ------ | --------------- |
-| H1 | confidence model | open (ABI) | after H2 proven |
+| H1 | confidence model | open (ABI); profiles landed (#87) | after H2 proven |
 | H2 | port-only demotion | flag landed (#75) | enable-by-default once measured |
 | H3 | stale IP ranges | data file landed (#75) | ongoing refresh |
-| H4 | magic window | open | measure then tune |
+| H4 | magic window | open; TCP/UDP symmetric (#99) | measure then tune |
 | H5 | UDP retransmission bit | open | low risk cleanup |
 | H6 | GTP special-case | open | document first |
-| H7 | NULL-flow drop | open | investigate |
-| H8 | SYN memset | open | low risk cleanup |
+| H7 | NULL-flow drop | open; verdict named (#150) | investigate |
+| H8 | SYN memset | resolved (#330) | — |
 
 H1–H3 are the substantive accuracy levers and are the M9 focus; H2 and H3 are
-addressed (behind a flag / as a data file) by issue #75. H4–H8 are smaller,
+addressed (behind a flag / as a data file) by issue #75. H4–H7 are smaller,
 mostly-documentation or low-risk cleanups suitable as standalone follow-ups.
