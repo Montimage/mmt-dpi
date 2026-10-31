@@ -68,7 +68,7 @@ void mmt_change_internal_packet_protocol(ipacket_t * ipacket, uint16_t detected_
 /* ------------------------------------------------------------------------
  * M9 (issue #26): externally-updatable IP-range / port attribution.
  *
- * The hardcoded proto_ip_address[] table (mmt_tcpip_classif_utils.c) and the
+ * The compiled-in IP-range table (data/ip_ranges.txt, issue #557) and the
  * built-in port switch (mmt_tcpip_plugin_internal.c) remain the bundled
  * default/fallback. In addition, operators can supply plain-text data files,
  * pointed to by environment variables, whose entries are loaded ON TOP of the
@@ -76,7 +76,7 @@ void mmt_change_internal_packet_protocol(ipacket_t * ipacket, uint16_t detected_
  * what CI uses) nothing extra is loaded and classification is byte-identical to
  * the compiled-in baseline.
  *
- *   MMT_DPI_IP_RANGES_FILE : CIDR -> protocol attribution (extends the AVL trees)
+ *   MMT_DPI_IP_RANGES_FILE : CIDR -> protocol attribution (extends the table)
  *   MMT_DPI_PORT_MAP_FILE  : L4 port -> protocol *hint* (extends the port switch)
  *
  * All loaders run single-threaded during init_extraction()/init_tcpip_plugin(),

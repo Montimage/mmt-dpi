@@ -96,7 +96,7 @@ in [Agent Environment Notes §4 `MMT_BASE` Install-Prefix Behavior](./AGENT_ENVI
 | `MMT_DPI_PROFILES_FILE` | File of custom DPI profiles, loaded before `MMT_DPI_PROFILE` is resolved — see [DPI Profiles](./DPI-Profiles.md) | `src/mmt_core/src/dpi_profiles.c:254` |
 | `MMT_DPI_PROFILE` | Name of the DPI profile each new handler applies; an unknown name keeps the built-in defaults — see [DPI Profiles](./DPI-Profiles.md) | `src/mmt_core/src/dpi_profiles.c:265` |
 | `MMT_DPI_PORT_MAP_FILE` | File of external port hints — see [External Attribution](./External-Attribution.md) | `src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c:669` |
-| `MMT_DPI_IP_RANGES_FILE` | File of external IP-range attribution rules — see [External Attribution](./External-Attribution.md) | `src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c:562` |
+| `MMT_DPI_IP_RANGES_FILE` | File of external IP-range attribution rules — see [External Attribution](./External-Attribution.md) | `src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c:570` |
 | `MMT_DETERMINISTIC_SEED` | Test and reproducibility knob: any non-empty value but `0` makes the hash-table seeds the fixed legacy sequence instead of a per-process random one. ⚠ It gives up the seeds' resistance to hash flooding — never set it in production. A set-uid/set-gid process (`AT_SECURE`) ignores it | `src/mmt_core/src/hash_utils.c:232-234` |
 | `MMT_SEC_REACTION_DIR` | `ENABLESEC=1` security engine only: absolute folder for the reaction files, instead of the compiled-in `$(MMT_BASE)/probe/conf`; read with `secure_getenv()` | `src/mmt_security/tips_report.c:970` |
 

@@ -65,14 +65,15 @@ statuses were last re-verified against the sources for issue #559.
   precision/recall on port-only captures proves the gain.
 
 ### H3 — Stale compiled-in IP ranges — *mitigated by #26 / #74 / #75*
-- **Where:** `proto_ip_address[]`
-  ([`mmt_tcpip_classif_proto_ip_address.inc:1`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_classif_proto_ip_address.inc#L1), ~10k ranges, included by
+- **Where:** `ip_range_intervals[]`
+  ([`mmt_tcpip_classif_proto_ip_address.inc:11`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_classif_proto_ip_address.inc#L11), ~10k ranges generated from
+  `data/ip_ranges.txt` since #557, included by
   `mmt_tcpip_classif_utils.c`), consulted via `get_proto_id_from_address`
   ([`proto_tcp.c:1226`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_tcp.c#L1226), [`proto_udp.c:160`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_udp.c#L160)).
 - **Why weak:** CDN/cloud allocations drift; compiled-in ranges go stale and
   misattribute.
 - **Status:** external `MMT_DPI_IP_RANGES_FILE` (extend/override, IPv4+IPv6,
-  read at [`mmt_tcpip_classif_utils.c:562`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c#L562)) plus the refreshable
+  read at [`mmt_tcpip_classif_utils.c:570`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c#L570)) plus the refreshable
   [`data/ip_ranges.cdn.txt`](https://github.com/montimage-projects/mmt-dpi/blob/main/data/ip_ranges.cdn.txt) and
   [`tools/refresh_cdn_ranges.sh`](https://github.com/montimage-projects/mmt-dpi/blob/main/tools/refresh_cdn_ranges.sh) (issue #75).
 

@@ -338,7 +338,7 @@ NEEDLES = {
     ("H2", "proto_tcp.c"): ["mmt_guess_protocol_by_port_number(ipacket)"],
     ("H2", "proto_udp.c"): ["mmt_guess_protocol_by_port_number(ipacket)"],
     ("H2", "mmt_tcpip_plugin_internal.c"): ["port_classify_payload_confirm != 0"],
-    ("H3", "mmt_tcpip_classif_proto_ip_address.inc"): ["static const proto_based_ip_t proto_ip_address[] = {"],
+    ("H3", "mmt_tcpip_classif_proto_ip_address.inc"): ["static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {"],
     ("H3", "proto_tcp.c"): ["get_proto_id_from_address(ipacket)"],
     ("H3", "proto_udp.c"): ["get_proto_id_from_address(ipacket)"],
     ("H3", "mmt_tcpip_classif_utils.c"): ['getenv("MMT_DPI_IP_RANGES_FILE")'],

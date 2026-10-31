@@ -54,9 +54,9 @@ int cleanup_tcpip_plugin(){
     // if(!cleanup_proto_tcp_struct()){
     //     mmt_stderr_log( "No cleanup function for protocol proto_tcp\n");
     // }
-    // M9 (issue #26): release the externally-loaded port-hint table. The IP-range
-    // AVL trees (built-in + external) are freed by the library destructor via
-    // _free_proto_avltrees().
+    // M9 (issue #26): release the externally-loaded port-hint table. The
+    // external IP-range AVL trees are freed by the library destructor via
+    // _free_proto_avltrees() (the built-in table is const, issue #557).
     mmt_tcpip_free_external_port_map();
     return 1;
 }

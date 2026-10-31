@@ -12,6 +12,13 @@ Historically MMT-DPI shipped ~10,000 IP ranges and a fixed set of L4 ports
 `src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c`). Refreshing a stale CDN/cloud range or adding a
 port hint meant editing C and rebuilding the library.
 
+Since issue #557 the compiled-in IPv4 ranges come from the versioned data file
+[`data/ip_ranges.txt`](https://github.com/montimage-projects/mmt-dpi/blob/main/data/ip_ranges.txt):
+`python3 tools/gen-ip-range-table.py` flattens its prefixes into the const,
+sorted array of disjoint intervals the `.inc` holds (one binary search per
+address, longest prefix inside nested ranges), and the `core_engine` suite
+fails when the committed `.inc` is not the generator's output.
+
 M9 makes this attribution data **externally updatable**. The compiled-in tables
 remain the bundled **default/fallback**, and operators can additionally supply
 plain-text data files whose entries are merged on top of the built-in tables at
@@ -40,8 +47,8 @@ Each line is `<addr>/<prefixlen>  <PROTOCOL>  [override]`:
 ```
 
 * The address is **IPv4** (`A.B.C.D`) or **IPv6** (`x:x:…`, detected by a `:`).
-* `prefixlen` must be in `[1, 30]` for IPv4 (it indexes the per-prefix AVL
-  trees) or `[1, 128]` for IPv6.
+* `prefixlen` must be in `[1, 32]` for IPv4 (it indexes the per-prefix AVL
+  trees of the external rules) or `[1, 128]` for IPv6.
 * `<PROTOCOL>` is a registered protocol name (resolved via
   `get_protocol_id_by_name`) or a bare numeric protocol id.
 * Invalid lines are skipped with a warning.
@@ -50,10 +57,11 @@ Each line is `<addr>/<prefixlen>  <PROTOCOL>  [override]`:
 
 By default a rule **extends** the attribution tables:
 
-* For **IPv4**, an extend rule is added to the same per-prefix AVL trees as the
-  compiled-in table. Lookup is longest-prefix-first, so a *more-specific*
-  external rule already wins over a broader built-in one — but an extend rule
-  **cannot displace** a built-in entry at the *same* prefix+network.
+* For **IPv4**, an extend rule is added to per-prefix AVL trees that are
+  matched together with the compiled-in table. Lookup is longest-prefix-first,
+  so a *more-specific* external rule already wins over a broader built-in
+  one — but an extend rule **cannot displace** a built-in entry at the *same*
+  prefix+network (the built-in match wins the tie).
 * For **IPv6** (which has no compiled-in table) extend rules are simply the
   attribution source, matched longest-prefix-first.
 
@@ -71,7 +79,7 @@ See [`data/ip_ranges.example.txt`](https://github.com/montimage-projects/mmt-dpi
 ### Refreshing high-impact CDN/cloud ranges (issue #75)
 
 CDN/cloud allocations change often, so they are shipped as a **refreshable data
-file** rather than baked into the compiled-in `proto_ip_address[]` table. A
+file** rather than baked into the compiled-in table. A
 ready-to-use bundle lives at
 [`data/ip_ranges.cdn.txt`](https://github.com/montimage-projects/mmt-dpi/blob/main/data/ip_ranges.cdn.txt); load it the same way:
 
@@ -170,6 +178,11 @@ contract in [`THREADING.md`](THREADING.md) (init-time writers, hot-path
 readers). Heap allocations are released by `_free_proto_avltrees()` (IPv4 extend
 + override trees and the IPv6 range list) and `cleanup_tcpip_plugin()` →
 `mmt_tcpip_free_external_port_map()` (port hints, extend + override).
+
+`get_proto_id_from_address()` memoises its verdict on the flow, once per
+address orientation (issue #557): a flow keeps its two addresses, so the
+ranges are looked up at most once per flow direction. Rules are loaded before
+any flow exists, so a memoised verdict always reflects them.
 
 ## Measuring accuracy — the precision/recall harness (issue #74)
 

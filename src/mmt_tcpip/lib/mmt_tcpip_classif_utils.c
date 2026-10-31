@@ -104,26 +104,51 @@ static inline uint32_t get_proto_id_from_ak_cdn(ipacket_t * ipacket, char *hostn
     return PROTO_AKAMAI; //This is akamai anyway
 }
 
-/* Generated protocol-match data: IPv4 prefix table, ~10k ranges (issue #250).
- * Included as a data unit so this file holds only classification logic.
+/* Generated protocol-match data: the IPv4 prefix table, ~10k ranges (issue
+ * #250), flattened into a const sorted array of disjoint intervals (issue
+ * #557) by tools/gen-ip-range-table.py from data/ip_ranges.txt. Included as
+ * a data unit so this file holds only classification logic.
  */
 #include "mmt_tcpip_classif_proto_ip_address.inc"
 
-// ~10.000 IP ranges
+/* Issue #557: longest-prefix match of one address over the compiled-in table:
+ * one binary search for the last interval starting at or below `addr` (the
+ * first interval starts at 0, so there always is one). Sets the matched
+ * prefix length (0 = no prefix) and returns its protocol. */
+static inline int _builtin_ip_range_lpm(uint32_t addr, int *prefix_len) {
+    uint32_t lo = 0, hi = IP_RANGE_INTERVAL_COUNT;
+    while (hi - lo > 1) {
+        uint32_t mid = lo + (hi - lo) / 2;
+        if (ip_range_intervals[mid].start <= addr) {
+            lo = mid;
+        } else {
+            hi = mid;
+        }
+    }
+    *prefix_len = ip_range_intervals[lo].prefix_len;
+    return ip_range_intervals[lo].proto_id;
+}
+
+/* External extend rules: per-prefix AVL trees holding only the rules loaded
+ * from MMT_DPI_IP_RANGES_FILE (the compiled-in table no longer seeds them,
+ * issue #557). The *_lengths bitmaps record which prefix lengths hold a rule,
+ * so the default path (no external file) skips both tree sets entirely. */
 static avltree_t * proto_avltrees[NETMASK_MAX_NB];
+static uint64_t    proto_avltrees_lengths;
 
 /* ------------------------------------------------------------------------
  * M9 (issue #26 / #74): externally-updatable IP-range attribution.
  *
  * Extra CIDR->protocol rules loaded from MMT_DPI_IP_RANGES_FILE are merged ON
- * TOP of the compiled-in proto_ip_address[] table. Two precedence classes are
+ * TOP of the compiled-in table (ip_range_intervals[]). Two precedence classes are
  * supported (issue #74):
  *
- *   - "extend" rules (the default, and the only mode in #26) are appended to the
- *     same per-prefix AVL trees as the built-in table. Longest-prefix-first
- *     lookup means a more-specific external rule already wins over a broader
+ *   - "extend" rules (the default, and the only mode in #26) are kept in
+ *     per-prefix AVL trees and matched together with the built-in table,
+ *     longest prefix first: a more-specific external rule wins over a broader
  *     built-in one, but an extend rule can never displace a built-in entry at
- *     the *same* prefix+network.
+ *     the *same* prefix+network (the built-in match wins a prefix-length tie,
+ *     issue #557).
  *   - "override" rules (issue #74) are kept in a SEPARATE per-prefix tree set
  *     that is consulted *before* the built-in/extend trees, so they take
  *     precedence over a compiled-in mapping (replace, not just extend).
@@ -136,6 +161,7 @@ static avltree_t * proto_avltrees[NETMASK_MAX_NB];
  * stays byte-identical to the compiled-in baseline.
  * ------------------------------------------------------------------------ */
 static avltree_t * proto_avltrees_override[NETMASK_MAX_NB];
+static uint64_t    proto_avltrees_override_lengths;
 
 typedef struct _dyn_ip_range_node {
     proto_based_ip_t            entry;
@@ -178,27 +204,16 @@ static int _insert_dynamic_ip_range(int netmask_nb, uint32_t netmask_address,
     // the unlinked node, orphaning the whole subtree — avltree_insert() now
     // returns the existing root, but the explicit in-place update is still
     // required for the last-rule-wins semantics.)
+    //
+    // Per the extend/override contract (docs/External-Attribution.md) an
+    // *extend* rule must never displace a compiled-in entry at the same
+    // prefix+network — only an `override` rule may. The built-in table is not
+    // in these trees (issue #557): _find_proto_id_by_address() lets the
+    // built-in match win a prefix-length tie with an extend match, and a tie
+    // for one address means the same prefix+network, so such an extend rule
+    // stays a no-op, as when it was dropped here.
     avltree_t * existing = avltree_find(trees[netmask_nb], dyn->entry.ip_address);
     if (existing != NULL) {
-        // Per the extend/override contract (docs/External-Attribution.md): an
-        // *extend* rule must never displace a compiled-in entry at the same
-        // prefix+network — only an `override` rule may. The extend tree set
-        // (proto_avltrees) is seeded with the static proto_ip_address[] nodes,
-        // so a same-CIDR extend collision can land on a built-in node. Detect
-        // that (data pointer inside the static built-in table) and drop the
-        // extend rule rather than overwriting the built-in attribution. The
-        // override tree set holds no built-ins, so override collisions never
-        // match here and fall through to the last-rule-wins update below.
-        uintptr_t hit = (uintptr_t) existing->data;
-        uintptr_t lo  = (uintptr_t) proto_ip_address;
-        uintptr_t hi  = (uintptr_t) (proto_ip_address +
-                            sizeof(proto_ip_address) / sizeof(proto_ip_address[0]));
-        if (hit >= lo && hit < hi) {
-            // Built-in stays authoritative; the extend rule is a no-op. Treated
-            // as an accepted (valid) line so the loader's rule count is unchanged.
-            mmt_free(dyn);
-            return 1;
-        }
         // Collision with an earlier dynamic rule of the same class: last rule
         // wins. The superseded entry stays tracked in the cleanup list.
         existing->data = (void *) &dyn->entry;
@@ -213,6 +228,11 @@ static int _insert_dynamic_ip_range(int netmask_nb, uint32_t netmask_address,
         return 0;
     }
     trees[netmask_nb] = avltree_insert(trees[netmask_nb], node);
+    if (is_override) {
+        proto_avltrees_override_lengths |= (uint64_t) 1 << netmask_nb;
+    } else {
+        proto_avltrees_lengths |= (uint64_t) 1 << netmask_nb;
+    }
 
     // Keep the heap entry alive and tracked for cleanup.
     dyn->next = _dyn_ip_ranges;
@@ -318,95 +338,81 @@ int _find_proto_id_by_address6(const uint8_t ip_src[16], const uint8_t ip_dest[1
 }
 
 /**
- * Initialize protocol AVL Trees
+ * Reset the external-rule tree sets (issue #557: the compiled-in table is a
+ * const interval array and needs no initialization).
  */
 void _init_proto_avltrees() {
-    // mmt_debug_log("[debug] _init_proto_avltrees ... \n");
-    int i = 0 , nb_nodes = 0;
+    int i;
     for (i = NETMASK_MAX_NB - 1 ; i >= 0; i--) {
         proto_avltrees[i] = 0x0;
         proto_avltrees_override[i] = 0x0; // M9 (#74): external override tree set
     }
-
-    i = 0;
-
-    while (proto_ip_address[i].netmask_nb != 0) {
-        uint32_t key = proto_ip_address[i].ip_address;
-        int tree_index = proto_ip_address[i].netmask_nb;
-        /* Issue #212 (F-BUG-028): the index came straight from the generated
-         * table — a malformed entry would index proto_avltrees[] out of bounds.
-         * Range-check it like the external-rule loader does. */
-        if (tree_index <= 0 || tree_index >= NETMASK_MAX_NB) {
-            mmt_stderr_log( "[mmt-dpi] proto_ip_address[%d]: prefix length %d out of range [1,%d] - entry skipped\n",
-                    i, tree_index, NETMASK_MAX_NB - 1);
-            i++;
-            continue;
-        }
-        // mmt_debug_log("[debug] %d new node key = %u, tree_index = %d\n", i, key, tree_index);
-        avltree_t * node = avltree_create(key, (void*)&proto_ip_address[i]);
-        if (node != NULL) {
-            int is_duplicate = 0;
-            proto_avltrees[tree_index] = avltree_insert_ex(proto_avltrees[tree_index], node, &is_duplicate);
-            if (is_duplicate) {
-                /* A duplicate table key must not silently orphan the subtree
-                 * (F-BUG-027); the unlinked node stays ours — free it. */
-                mmt_stderr_log( "[mmt-dpi] proto_ip_address[%d]: duplicate key %u - entry skipped\n",
-                        i, key);
-                avltree_free_node(node);
-            } else {
-                nb_nodes++;
-            }
-            // mmt_debug_log("[debug] new node has been added into tree: %d\n", tree_index);
-            // avltree_show_node(node);
-        }
-        i++;
-    }
-#ifdef DEBUG
-    mmt_debug_log("AVLTrees - total number of nodes: %d\n",nb_nodes);
-    mmt_debug_log("Index\t Height \t Size\n");
-    for (i = 0; i < NETMASK_MAX_NB; i ++) {
-        if(proto_avltrees[i] != NULL){
-            mmt_debug_log("%d\t %d \t %d\n",i,avltree_get_height(proto_avltrees[i],1),avltree_size(proto_avltrees[i]));
-        }
-    }
-#endif    
+    proto_avltrees_lengths = 0;
+    proto_avltrees_override_lengths = 0;
 }
 
-/* Longest-prefix-first lookup over one IPv4 per-prefix AVL tree set, applied to
- * the source then the destination address. Returns the matched protocol id or
- * -1 when nothing matches. */
-static int _find_proto_id_in_trees(avltree_t * const trees[], uint32_t ip_src,
-                                   uint32_t ip_dest) {
-    int i;
-    for (i = NETMASK_MAX_NB - 1 ; i >= 0; i--) {
-        if (trees[i] != NULL) {
-            proto_based_ip_t * proto = (proto_based_ip_t * ) avltree_get_data(trees[i]);
-            // Check the source address
-            uint32_t key_src = ip_src & proto->netmask_address;
-            avltree_t * node_src = avltree_find(trees[i],key_src);
-            if(node_src != NULL){
-                proto_based_ip_t * found_proto = (proto_based_ip_t * ) avltree_get_data(node_src);
-                return found_proto->proto_id;
-            }
-            // Check the destination address
-            uint32_t key_dest = ip_dest & proto->netmask_address;
-            avltree_t * node_dest = avltree_find(trees[i],key_dest);
-            if(node_dest != NULL){
-                proto_based_ip_t * found_proto = (proto_based_ip_t * ) avltree_get_data(node_dest);
-                return found_proto->proto_id;
-            }
+/* Longest-prefix match of one address over one external-rule tree set, longest
+ * populated prefix length first. Sets the matched prefix length (0 = none) and
+ * returns the protocol, or -1 when nothing matches. */
+static int _dyn_ip_range_lpm(avltree_t * const trees[], uint64_t lengths,
+                             uint32_t addr, int *prefix_len) {
+    while (lengths != 0) {
+        int i = 63 - __builtin_clzll(lengths);
+        uint32_t mask = 0xFFFFFFFFu << (32 - i);
+        avltree_t * node = avltree_find(trees[i], addr & mask);
+        if (node != NULL) {
+            *prefix_len = i;
+            return ((proto_based_ip_t *) avltree_get_data(node))->proto_id;
         }
+        lengths &= ~((uint64_t) 1 << i);
     }
+    *prefix_len = 0;
     return -1;
 }
 
-int _find_proto_id_by_address(uint32_t ip_src,uint32_t ip_dest){
-    // M9 (#74): operator-supplied override rules win over the compiled-in table.
-    int proto_id = _find_proto_id_in_trees(proto_avltrees_override, ip_src, ip_dest);
-    if (proto_id != -1) {
-        return proto_id;
+/* The longer of the source and the destination match wins; the source wins a
+ * tie. This is the order the per-prefix forest was walked in before issue
+ * #557 (each prefix length from /32 down, the source probed before the
+ * destination). Returns -1 when neither address matched. */
+static inline int _pick_ip_range_match(int src_proto, int src_len,
+                                       int dst_proto, int dst_len) {
+    if (src_len == 0 && dst_len == 0) {
+        return -1;
     }
-    return _find_proto_id_in_trees(proto_avltrees, ip_src, ip_dest);
+    return (src_len >= dst_len) ? src_proto : dst_proto;
+}
+
+int _find_proto_id_by_address(uint32_t ip_src,uint32_t ip_dest){
+    int src_len, dst_len, src_proto, dst_proto;
+    // M9 (#74): operator-supplied override rules win over the compiled-in table.
+    if (unlikely(proto_avltrees_override_lengths != 0)) {
+        src_proto = _dyn_ip_range_lpm(proto_avltrees_override,
+                proto_avltrees_override_lengths, ip_src, &src_len);
+        dst_proto = _dyn_ip_range_lpm(proto_avltrees_override,
+                proto_avltrees_override_lengths, ip_dest, &dst_len);
+        int proto_id = _pick_ip_range_match(src_proto, src_len, dst_proto, dst_len);
+        if (proto_id != -1) {
+            return proto_id;
+        }
+    }
+    src_proto = _builtin_ip_range_lpm(ip_src, &src_len);
+    dst_proto = _builtin_ip_range_lpm(ip_dest, &dst_len);
+    if (unlikely(proto_avltrees_lengths != 0)) {
+        // Extend rules join the built-in table; a built-in match wins a
+        // prefix-length tie (the same prefix+network, see the loader).
+        int len, proto_id;
+        proto_id = _dyn_ip_range_lpm(proto_avltrees, proto_avltrees_lengths, ip_src, &len);
+        if (len > src_len) {
+            src_proto = proto_id;
+            src_len = len;
+        }
+        proto_id = _dyn_ip_range_lpm(proto_avltrees, proto_avltrees_lengths, ip_dest, &len);
+        if (len > dst_len) {
+            dst_proto = proto_id;
+            dst_len = len;
+        }
+    }
+    return _pick_ip_range_match(src_proto, src_len, dst_proto, dst_len);
 }
 
 void _free_proto_avltrees(){
@@ -418,6 +424,8 @@ void _free_proto_avltrees(){
         avltree_free_tree(proto_avltrees_override[i]); // M9 (#74) override set
         proto_avltrees_override[i] = NULL;
     }
+    proto_avltrees_lengths = 0;
+    proto_avltrees_override_lengths = 0;
     // Release the heap-allocated externally-loaded IPv4 IP-range entries
     // (issue #26 extend rules + issue #74 override rules — both tracked here).
     _dyn_ip_range_node_t * dyn = _dyn_ip_ranges;
@@ -570,9 +578,8 @@ void mmt_tcpip_load_external_ip_ranges(void) {
     }
 }
 
-uint32_t get_proto_id_from_address(ipacket_t * ipacket) {
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-
+/* The attribution of the packet's address pair, uncached. */
+static uint32_t _get_proto_id_from_address(const struct mmt_tcpip_internal_packet_struct *packet) {
     if (packet->iph /* IPv4 */) {
         int proto_id = _find_proto_id_by_address(ntohl(packet->iph->saddr),ntohl(packet->iph->daddr));
 
@@ -593,6 +600,38 @@ uint32_t get_proto_id_from_address(ipacket_t * ipacket) {
     }
 #endif
     return PROTO_UNKNOWN;
+}
+
+/* Issue #557: the verdict depends only on the packet's two addresses, which
+ * the flow keeps, so it is computed once per address orientation of a flow
+ * and memoised on it (the classifiers calling this run per packet until the
+ * flow is classified). The external rules are loaded at init, before any
+ * flow exists (docs/THREADING.md), so a memo never outlives them; a flow is
+ * owned by one handler's thread, so the memo needs no synchronization. */
+uint32_t get_proto_id_from_address(ipacket_t * ipacket) {
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
+    int slot;
+
+    if (flow == NULL) {
+        return _get_proto_id_from_address(packet);
+    }
+    if (packet->iph != NULL) {
+        slot = packet->iph->saddr > packet->iph->daddr;
+    }
+#ifdef MMT_SUPPORT_IPV6
+    else if (packet->iphv6 != NULL) {
+        slot = memcmp(packet->iphv6->saddr.mmt_v6_addr,
+                      packet->iphv6->daddr.mmt_v6_addr, 16) > 0;
+    }
+#endif
+    else {
+        return PROTO_UNKNOWN; // no IP header: nothing to attribute
+    }
+    if (flow->ip_range_verdict[slot] == 0) {
+        flow->ip_range_verdict[slot] = (uint16_t) (_get_proto_id_from_address(packet) + 1);
+    }
+    return (uint32_t) flow->ip_range_verdict[slot] - 1;
 }
 
 uint32_t _get_proto_id_by_hostname(ipacket_t * ipacket, char *hostname, u_int hostname_len) {
@@ -838,8 +877,8 @@ static inline _hn_node_t * _ensure_tree(void){
 
 __attribute__((constructor)) void _constructor () {
 	/* Issue #253 (F-PERF-007): the hostname trie no longer builds here — it
-	 * materialises on first use in _ensure_tree(). The IP-range AVL trees
-	 * stay eager: they are consulted on every IPv4 packet. */
+	 * materialises on first use in _ensure_tree(). This only resets the
+	 * external IP-range rule trees: the built-in table is const (#557). */
     _init_proto_avltrees();
 }
 

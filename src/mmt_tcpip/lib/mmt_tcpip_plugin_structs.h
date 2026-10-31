@@ -25,6 +25,16 @@ typedef struct proto_based_ip_struct {
     int proto_id;
 } proto_based_ip_t;
 
+/* Issue #557: one interval of the compiled-in IPv4 attribution table that
+ * tools/gen-ip-range-table.py generates (mmt_tcpip_classif_proto_ip_address.inc).
+ * It runs from `start` to the next interval's start and carries the protocol
+ * and the length of the longest table prefix containing it (0 = none). */
+typedef struct ip_range_interval_struct {
+    uint32_t start;
+    uint16_t proto_id;
+    uint8_t  prefix_len;
+} ip_range_interval_t;
+
 struct mmt_ip6_addr {
 
     union {
@@ -547,6 +557,11 @@ typedef struct mmt_internal_tcpip_session_struct {
 // #ifdef PROTO_FTP_CONTROL
 //   uint32_t ftp_control_stage:2;
 // #endif
+    /* Issue #557: get_proto_id_from_address()'s verdict, memoised per address
+     * orientation of the flow ([0]: saddr <= daddr, [1]: saddr > daddr, both
+     * as the IP header holds them): 0 = not computed yet, else proto id + 1.
+     * The verdict depends only on the two addresses, which a flow keeps. */
+    uint16_t ip_range_verdict[2];
 } mmt_internal_tcpip_session_t;
 
 typedef struct mmt_int_one_line_struct {
