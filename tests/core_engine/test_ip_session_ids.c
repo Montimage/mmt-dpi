@@ -403,10 +403,11 @@ static void test_rollback(int ip_type) {
         return;
     }
     internal_ip_proto_context_t *ctx = ctx_of(p);
-    uint32_t a4 = 0x0a000001, b4 = 0x0a000002, c4 = 0x0a000003;
-    struct in6_addr a6 = addr6(1), b6 = addr6(2), c6 = addr6(3);
+    uint32_t a4 = 0x0a000001, b4 = 0x0a000002, c4 = 0x0a000003, z4 = 0x0a000000;
+    struct in6_addr a6 = addr6(1), b6 = addr6(2), c6 = addr6(3), z6 = addr6(0);
     mmt_session_key_t k  = ip_type == 4 ? key4(&a4, &b4, 1, 2) : key6(&a6, &b6, 1, 2);
     mmt_session_key_t kc = ip_type == 4 ? key4(&a4, &c4, 3, 4) : key6(&a6, &c6, 3, 4);
+    mmt_session_key_t kz = ip_type == 4 ? key4(&z4, &b4, 5, 6) : key6(&z6, &b6, 5, 6);
 #define COUNT(x4, x6) (ip_type == 4 ? id4_count(p, (x4)) : id6_count(p, &(x6)))
 #define FOUND(x4, x6) (ip_type == 4 ? (void *) _findID4(ctx, &(x4)) \
                                     : (void *) findID6(ctx, &(x6)))
@@ -459,11 +460,21 @@ static void test_rollback(int ip_type) {
     CHECK("a failed session-map insert with a shared lower id returns NULL",
           get_session(p, &kc, NULL, &is_new) == NULL);
     fail_insert_session = 0;
-    /* The shared id's count is not checked here: get_session() raises both
-     * counts before the insert and does not lower a pre-existing id's count
-     * on this failure (issue #707). */
     CHECK("... and frees only the new higher id",
           FOUND(a4, a6) == ida && FOUND(c4, c6) == NULL
+          && ctx->ips_count == 2 && ctx->sessions_count == 1);
+    /* Issue #707: the counts are raised only once the session is in the map,
+     * so the failure leaves the shared id's count as the live session set it. */
+    CHECK("... and keeps the shared lower id's count (issue #707)",
+          COUNT(a4, a6) == 1);
+    void *idb = FOUND(b4, b6);
+    fail_insert_session = 1;
+    CHECK("a failed session-map insert with a shared higher id returns NULL",
+          get_session(p, &kz, NULL, &is_new) == NULL);
+    fail_insert_session = 0;
+    CHECK("... and frees only the new lower id, keeping the shared higher "
+          "id's count (issue #707)",
+          FOUND(b4, b6) == idb && COUNT(b4, b6) == 1 && FOUND(z4, z6) == NULL
           && ctx->ips_count == 2 && ctx->sessions_count == 1);
 
     pctx_destroy(p, ip_type);

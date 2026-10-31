@@ -377,8 +377,6 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
                 free(retval);
                 return NULL;
             }
-            ((mmt_ip4_id_t *) ((mmt_session_key_t *) retval->session_key)->lower_ip)->count++;
-            ((mmt_ip4_id_t *) ((mmt_session_key_t *) retval->session_key)->higher_ip)->count++;
         } else {
             ((mmt_session_key_t *) retval->session_key)->lower_ip = get_ip6_id(tcpip_context, (struct in6_addr *) session_key->lower_ip, &isl_new);
             if ( unlikely( ((mmt_session_key_t *) retval->session_key)->lower_ip == NULL )) {
@@ -406,8 +404,6 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
                 free(retval);
                 return NULL;
             }
-            ((mmt_ip6_id_t *) ((mmt_session_key_t *) retval->session_key)->lower_ip)->count++;
-            ((mmt_ip6_id_t *) ((mmt_session_key_t *) retval->session_key)->higher_ip)->count++;
         }
 
         retval->setup_packet_direction = session_key->is_lower_initiator;
@@ -450,6 +446,17 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
             // mmt_free(session_key->higher_ip);
             free(retval);
             return NULL;
+        }
+        /* Issue #707: raise the ids' reference counts only once the session
+         * is in the map — the failure branch above frees only the ids this
+         * call created, so an earlier increment left a pre-existing id shared
+         * with a live session one count too high, and it was never released. */
+        if (session_key->ip_type == 4) {
+            ((mmt_ip4_id_t *) ((mmt_session_key_t *) retval->session_key)->lower_ip)->count++;
+            ((mmt_ip4_id_t *) ((mmt_session_key_t *) retval->session_key)->higher_ip)->count++;
+        } else {
+            ((mmt_ip6_id_t *) ((mmt_session_key_t *) retval->session_key)->lower_ip)->count++;
+            ((mmt_ip6_id_t *) ((mmt_session_key_t *) retval->session_key)->higher_ip)->count++;
         }
         tcpip_context->sessions_count += 1;
         tcpip_context->active_sessions_count += 1;
