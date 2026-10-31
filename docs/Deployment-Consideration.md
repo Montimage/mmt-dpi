@@ -5,7 +5,8 @@ title: "Deployment Considerations"
 
 # Deployment Considerations
 
-[TOC]
+* TOC
+{:toc}
 
 ------------------
 

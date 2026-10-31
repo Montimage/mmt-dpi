@@ -5,7 +5,8 @@ title: "Protocol Model"
 
 # Protocol Model
 
-[TOC]
+* TOC
+{:toc}
 
 ------------------
 

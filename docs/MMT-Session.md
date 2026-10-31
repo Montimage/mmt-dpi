@@ -5,7 +5,8 @@ title: "MMT Sessions"
 
 # MMT Sessions #
 
-[TOC]
+* TOC
+{:toc}
 
 ------------------
 

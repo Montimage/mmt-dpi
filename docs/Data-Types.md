@@ -6,7 +6,8 @@ title: "MMT Data Types"
 # MMT Data Types #
 ## Definition ##
 
-[TOC]
+* TOC
+{:toc}
 
 ------------------
 

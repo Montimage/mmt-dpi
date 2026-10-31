@@ -301,7 +301,9 @@ over fake suites with a stub `make`, and the weak-type ratchet self-test
 `test-weak-types.sh`, issue #539, which proves the `opaque` metric of
 `tools/ci/count-weak-types.sh` fails on fixture headers, and the
 source-signing self-test `test-source-signing.sh`, issue #538, which drives
-`tools/ci/sign-source-tarball.sh` on fixture `debian/` trees) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
+`tools/ci/sign-source-tarball.sh` on fixture `debian/` trees, and the
+site-navigation self-test `test-site-links.sh`, issue #579, which runs
+`tools/ci/check-site-links.sh` on fixture source trees and built sites) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
 #387); the first three build nothing, `sdk_coverage` builds its own
 `BUILD=coverage` SDK whatever the mode and cleans `sdk/` afterwards. `installed_consumer` (issue #374) drives the
 other

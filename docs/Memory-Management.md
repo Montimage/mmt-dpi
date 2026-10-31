@@ -5,7 +5,8 @@ title: "Memory Management"
 
 # Memory Management #
 
-[TOC]
+* TOC
+{:toc}
 
 ------------------
 

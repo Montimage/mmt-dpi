@@ -101,6 +101,11 @@
 # (allowlisted, unlisted, stale and malformed rows, the generated/vendored and
 # anonymous exclusions, unmapped and ambiguous objects) and its build path
 # against a stub make (no SDK build).
+# It also runs the site-navigation self-test beside
+# tools/ci/check-site-links.sh (issue #579), which drives the real checker on
+# fixture source trees and built sites (a [TOC] line, a guide without layout
+# or title, a docs-index label that names another title, a page without a
+# link to the site root or the docs index; no Jekyll).
 set -e
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/ci/tests"
 python3 "${TESTS_DIR}/test-release-gates.py" "$@"
@@ -129,3 +134,4 @@ bash "${TESTS_DIR}/test-local-gates.sh"
 bash "${TESTS_DIR}/test-source-signing.sh"
 bash "${TESTS_DIR}/test-shape-ratchet.sh"
 bash "${TESTS_DIR}/test-unreachable-sections.sh"
+bash "${TESTS_DIR}/test-site-links.sh"

@@ -5,7 +5,8 @@ title: "Attribute Conditions"
 
 # Attribute Conditions #
 
-[TOC]
+* TOC
+{:toc}
 
 ------------------
 

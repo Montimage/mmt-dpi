@@ -24,6 +24,21 @@
 #     targets (localhost/127.0.0.1/[::1]) are exempt — demo consoles are
 #     served over plain HTTP by design
 #
+# Site-navigation guards (issue #579, F-UX-008/F-UX-009/F-UX-017):
+#   - source tree (DIR holds _config.yml): no top-level guide (*.md) carries
+#     a literal `[TOC]` line — Python-Markdown syntax kramdown prints as text;
+#     use `* TOC` + `{:toc}` — and every one declares `layout: default` and a
+#     `title:`, so it renders with the guide layout (docs/_layouts/default.html)
+#     and its breadcrumb; every `[label](./page.md)` entry of the docs index
+#     (the page with `permalink: /docs/`) names its target's title: label and
+#     title, lowercased with punctuation folded to spaces, are equal or one
+#     contains the other as whole words
+#   - built site (DIR holds docs/index.html, the docs index): no page shows a
+#     `<p>[TOC]</p>`, and every page except the landing page (DIR/index.html,
+#     its own design) links to the site root and to the docs index
+#   Templates under _layouts/ and _includes/ are not pages: their Liquid
+#   hrefs are checked through the rendered pages of the built-site pass.
+#
 # Exit codes: 0 = all links resolve, 1 = broken/unsafe link(s), 2 = helper
 # broken (missing dir, no html files).
 #
@@ -54,7 +69,8 @@ pages = sorted(glob.glob(os.path.join(root, "**", "*.html"), recursive=True))
 # never scan nested jekyll output, bundled gems (setup-ruby's bundler-cache
 # installs under docs/vendor/bundle on CI), caches or VCS dirs — those are
 # build artifacts, not site source
-SKIP_DIRS = {"_site", "vendor", ".jekyll-cache", ".bundle", ".git"}
+SKIP_DIRS = {"_site", "vendor", ".jekyll-cache", ".bundle", ".git",
+             "_layouts", "_includes"}
 pages = [p for p in pages
          if not SKIP_DIRS.intersection(
              os.path.relpath(p, root).split(os.sep))]
@@ -129,6 +145,21 @@ def resolve(page, path):
     return None, "target file does not exist"
 
 
+root_real = os.path.normpath(root)
+docs_index_dir = os.path.join(root_real, "docs")
+links_home = set()
+links_docs = set()
+
+
+def note_nav(page, target):
+    """Record a page linking the site root or the docs index (built site)."""
+    target = os.path.normpath(target)
+    if target in (root_real, os.path.join(root_real, "index.html")):
+        links_home.add(page)
+    if target in (docs_index_dir, os.path.join(docs_index_dir, "index.html")):
+        links_docs.add(page)
+
+
 for page in pages:
     text = open(page, encoding="utf-8", errors="replace").read()
     for raw in ATTR.findall(text):
@@ -157,6 +188,7 @@ for page in pages:
             if err:
                 fail(page, ref, err)
                 continue
+            note_nav(page, target)
             if os.path.isdir(target):
                 continue
         if frag:
@@ -166,11 +198,91 @@ for page in pages:
             if frag not in anchors:
                 fail(page, ref, f"anchor #{frag} not found in {target}")
 
+# --- site-navigation guards (issue #579) ---------------------------------
+TOC_MARKER = re.compile(r'^\[TOC\]\s*$', re.M)
+FRONT = re.compile(r'\A---\n(.*?)\n---\n', re.S)
+INDEX_LINK = re.compile(r'^\s*[*-]\s+\[([^\]]+)\]\(\./([^)#\s]+\.md)\)', re.M)
+
+
+def front_matter(text):
+    """Top-level `key: value` pairs of a page's YAML front matter."""
+    m = FRONT.match(text)
+    if not m:
+        return None
+    keys = {}
+    for line in m.group(1).splitlines():
+        km = re.match(r'^([A-Za-z_][\w-]*):\s*(.*?)\s*$', line)
+        if km:
+            keys[km.group(1)] = km.group(2).strip('"\'')
+    return keys
+
+
+def words(text):
+    return " " + " ".join(re.sub(r'[^a-z0-9]+', " ", text.lower()).split()) + " "
+
+
+def nav_fail(where, why):
+    global errors
+    errors += 1
+    print(f"  ✗ {where}: {why}")
+
+
+if os.path.isfile(os.path.join(root, "_config.yml")):
+    guides = sorted(glob.glob(os.path.join(root, "*.md")))
+    meta = {}
+    for guide in guides:
+        text = open(guide, encoding="utf-8", errors="replace").read()
+        for m in TOC_MARKER.finditer(text):
+            line = text.count("\n", 0, m.start()) + 1
+            nav_fail(f"{guide}:{line}", "literal [TOC] marker kramdown prints"
+                     " as text — use `* TOC` + `{:toc}`")
+        fm = front_matter(text)
+        meta[os.path.basename(guide)] = fm or {}
+        if fm is None:
+            nav_fail(guide, "no front matter — the page is published raw,"
+                     " without the guide layout")
+            continue
+        if fm.get("layout") != "default":
+            nav_fail(guide, "front matter lacks `layout: default` — the page"
+                     " misses the site bar and breadcrumb")
+        if not fm.get("title"):
+            nav_fail(guide, "front matter lacks a `title:`")
+    index = [g for g, fm in meta.items() if fm.get("permalink") == "/docs/"]
+    if len(index) != 1:
+        nav_fail(root, f"expected one docs index (permalink: /docs/), found"
+                 f" {len(index)}")
+    else:
+        index_path = os.path.join(root, index[0])
+        text = open(index_path, encoding="utf-8", errors="replace").read()
+        for label, target in INDEX_LINK.findall(text):
+            title = meta.get(target, {}).get("title")
+            if title is None:
+                continue                  # missing target: a link failure
+            a, b = words(label), words(title)
+            if a not in b and b not in a:
+                nav_fail(index_path, f"label '{label}' does not name the"
+                         f" title of {target} ('{title}')")
+elif os.path.isfile(os.path.join(root, "docs", "index.html")):
+    landing = os.path.join(root_real, "index.html")
+    for page in pages:
+        text = open(page, encoding="utf-8", errors="replace").read()
+        if "<p>[TOC]</p>" in text:
+            nav_fail(page, "renders a literal [TOC] marker")
+        if os.path.normpath(page) == landing:
+            continue
+        if page not in links_home:
+            nav_fail(page, "no link to the site root (landing page)")
+        if page not in links_docs:
+            nav_fail(page, "no link to the docs index (docs/)")
+
 if errors:
-    print(f"✗ {errors} broken or unsafe link(s) under {root}",
-          file=sys.stderr)
+    print(f"✗ {errors} broken or unsafe link(s) or navigation gap(s)"
+          f" under {root}", file=sys.stderr)
     print("To fix:  publish the target, correct the path/anchor, or use"
-          " HTTPS (issue #247)", file=sys.stderr)
+          " HTTPS (issue #247); give the guide its layout, title and"
+          " {:toc}, or make the docs-index label name the page title"
+          " (issue #579)", file=sys.stderr)
     sys.exit(1)
-print(f"✓ all links resolve across {len(pages)} page(s) under {root}")
+print(f"✓ all links resolve and every guide is navigable across"
+      f" {len(pages)} page(s) under {root}")
 PYEOF

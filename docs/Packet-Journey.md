@@ -5,7 +5,8 @@ title: "packet journey"
 
 # packet journey #
 
-[TOC]
+* TOC
+{:toc}
 
 ------------------
 

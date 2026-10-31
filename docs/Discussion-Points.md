@@ -5,7 +5,8 @@ title: "Discussion Points"
 
 # Discussion Points
 
-[TOC]
+* TOC
+{:toc}
 
 ------------------
 

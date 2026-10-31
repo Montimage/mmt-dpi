@@ -7,12 +7,14 @@ permalink: /docs/
 # MMT-DPI Documentation #
 
 Documentation for the MMT-DPI deep packet inspection library. For a project
-overview and quick start, see the [root README](https://github.com/montimage-projects/mmt-dpi/blob/main/README.md).
+overview and quick start, see the [landing page](../#quick-start) (or the
+[root README](https://github.com/montimage-projects/mmt-dpi/blob/main/README.md)
+on GitHub).
 
 ## Getting Started ##
 * [User Guide](./USER_GUIDE.md) — install, first run, and embedding the library
 * [Compilation and Installation Instructions](./Compilation-and-Installation-Instructions.md)
-* [Compiling for ARM (cross-compiler)](./Compiling-mmt-sdk-for-ARM-architecture-by-cross-compiler.md)
+* [Compiling mmt-sdk for ARM architecture by cross-compiler](./Compiling-mmt-sdk-for-ARM-architecture-by-cross-compiler.md)
 * [Examples](./Examples.md)
     * [MMT QoE demo](./MMT-QoE-demo.md)
 
@@ -23,7 +25,7 @@ overview and quick start, see the [root README](https://github.com/montimage-pro
 * [MMT Handler](./MMT-Handler.md)
 * [MMT Packet](./MMT-Packet.md)
     * [Packet Journey](./Packet-Journey.md)
-* [MMT Session](./MMT-Session.md)
+* [MMT Sessions](./MMT-Session.md)
 * [MMT Attributes](./MMT-Attributes.md)
     * [Attribute Conditions](./Attribute-Conditions.md)
 * [Data Types](./Data-Types.md)
@@ -32,10 +34,10 @@ overview and quick start, see the [root README](https://github.com/montimage-pro
 ## Protocols ##
 * [MMT Protocol](./MMT-Protocol.md)
     * [Protocol Statistics](./Protocol-Statistics.md)
-    * [Protocol Modeling](./Protocol-Modeling.md)
+    * [Protocol Model](./Protocol-Modeling.md)
     * [Adding a New Protocol](./Add-New-Protocol.md)
 * [Protocol Stack](./Protocol-Stack.md)
-* [Phase-2 Heuristics](./Phase2-Heuristics.md)
+* [Weak classification heuristics](./Phase2-Heuristics.md)
 * [DPI Profiles](./DPI-Profiles.md) — named per-level detection toggles (depth, app/port/IP-range)
 
 ## Development & Operations ##
@@ -51,4 +53,4 @@ overview and quick start, see the [root README](https://github.com/montimage-pro
 
 ## Additional References ##
 * [ChronoChat](./ChronoChat.md) — ChronoChat protocol notes
-* [External Attribution](./External-Attribution.md) — third-party attributions
+* [Externally-updatable IP-range / port attribution](./External-Attribution.md) — third-party attributions

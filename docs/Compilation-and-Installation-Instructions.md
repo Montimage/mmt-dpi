@@ -1,6 +1,6 @@
 ---
 layout: default
-title: "Before compiling"
+title: "Compilation and Installation Instructions"
 ---
 
 **Compilation and Installation instructions**

@@ -5,7 +5,8 @@ title: "Protocol Statistics"
 
 # Protocol Statistics #
 
-[TOC]
+* TOC
+{:toc}
 
 ------------------
 

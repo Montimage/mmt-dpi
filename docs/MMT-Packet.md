@@ -5,7 +5,8 @@ title: "MMT Packet"
 
 # MMT Packet #
 
-[TOC]
+* TOC
+{:toc}
 
 ------------------
 

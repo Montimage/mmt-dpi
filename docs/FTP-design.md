@@ -1,9 +1,9 @@
 ---
 layout: default
-title: "Data structures"
+title: "FTP design"
 ---
 
-# Data structures
+# FTP design
 
 ## FTP tuple6
 

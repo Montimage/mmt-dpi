@@ -27,6 +27,10 @@ plugins:
   - jekyll-seo-tag     # the cayman default layout calls {% seo %}
   - jekyll-relative-links  # rewrite .md links in guides to built .html URLs
 show_downloads: false
+# Guide tables of contents (`* TOC` + `{:toc}`, issue #579) list the section
+# headings, not the page's own title heading.
+kramdown:
+  toc_levels: 2..3
 
 # Exclude only heavy/binary assets from the published site; every guide is
 # published so no page is both excluded and linked from the docs index.

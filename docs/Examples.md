@@ -3,7 +3,8 @@ layout: default
 title: "Examples"
 ---
 
-[TOC]
+* TOC
+{:toc}
 
 ------------------
 

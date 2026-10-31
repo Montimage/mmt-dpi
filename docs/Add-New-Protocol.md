@@ -1,11 +1,12 @@
 ---
 layout: default
-title: "Workflow to Add New Protocol"
+title: "Adding a New Protocol"
 ---
 
-# Workflow to Add New Protocol
+# Adding a New Protocol
 
-[TOC]
+* TOC
+{:toc}
 
 ------------------
 

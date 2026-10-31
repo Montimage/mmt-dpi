@@ -5,7 +5,8 @@ title: "MMT Global Handler"
 
 # MMT Global Handler #
 
-[TOC]
+* TOC
+{:toc}
 
 ------------------
 

@@ -1,9 +1,9 @@
 ---
 layout: default
-title: "Things need to be done before releasing a new stable version"
+title: "Preparing a New Release"
 ---
 
-# Things need to be done before releasing a new stable version
+# Preparing a New Release
 
 ## Update the new version number
 

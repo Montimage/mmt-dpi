@@ -1,0 +1,97 @@
+---
+---
+
+// Guide-page stylesheet (issue #579, F-UX-008): the pinned cayman theme
+// (docs/_config.yml remote_theme) with the landing page's palette. The
+// colours are the :root tokens of docs/index.html — warm dark surfaces
+// (--bg #1A1A1A, --panel #2A2520) and Montimage Golden Amber (--mi-amber
+// #E9AB34). On the white guide body amber is too light to read (2.1:1), so
+// headings and links use a darkened amber (#8A5A0A, 5.9:1 on white).
+
+$header-bg-color: #1A1A1A;
+$header-bg-color-secondary: #2A2520;
+$section-headings-color: #8A5A0A;
+$body-link-color: #8A5A0A;
+
+@import 'jekyll-theme-cayman';
+
+$landing-amber: #E9AB34;
+$landing-text: #F5F0EB;
+$landing-text-dim: #c9bba7;
+$landing-border: #40382e;
+
+.site-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1.25rem;
+  padding: 0.6rem 1rem;
+  background-color: $header-bg-color;
+  border-bottom: 1px solid $landing-border;
+  font-size: 0.95rem;
+
+  a {
+    color: $landing-text-dim;
+
+    &:hover,
+    &[aria-current="page"] {
+      color: $landing-amber;
+      text-decoration: none;
+    }
+  }
+
+  .site-id {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-right: auto;
+    color: $landing-text;
+    font-weight: 700;
+
+    img {
+      display: block;
+    }
+  }
+}
+
+.page-header .btn {
+  color: $landing-text;
+}
+
+.breadcrumb {
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+
+  ol {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    color: $landing-text-dim;
+
+    + li::before {
+      content: "\203A";
+      padding: 0 0.5rem;
+      color: $landing-text-dim;
+    }
+
+    &[aria-current="page"] {
+      color: $landing-text;
+    }
+  }
+
+  a {
+    color: $landing-amber;
+  }
+}
+
+.site-footer-nav {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}

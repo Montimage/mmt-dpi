@@ -9,7 +9,8 @@ title: "MMT-QoE Demo"
 > is a separate product that embeds MMT-DPI. The installation steps reference
 > external URLs and software not included in this repository.
 
-[TOC]
+* TOC
+{:toc}
 
 ------------------
 

@@ -5,7 +5,8 @@ title: "MMT Protocol"
 
 # MMT Protocol #
 
-[TOC]
+* TOC
+{:toc}
 
 ------------------
 

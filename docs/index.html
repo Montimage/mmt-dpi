@@ -820,7 +820,10 @@
            edit docs/_includes/quick-start.md, never a second copy here. -->
       <div class="feat-md quick-md">
         {% capture quick_start %}{% include quick-start.md %}{% endcapture %}
-        {{ quick_start | markdownify }}
+        {%- comment -%} The fragment links the User Guide on GitHub so it
+          resolves from README too; on the site, keep the reader on the site
+          (issue #579, F-UX-017). {%- endcomment %}
+        {{ quick_start | replace: "https://github.com/montimage-projects/mmt-dpi/blob/main/docs/USER_GUIDE.md", "USER_GUIDE.html" | markdownify }}
       </div>
 
       <div class="cta-row" style="margin-top:28px;">
@@ -831,7 +834,7 @@
         The install command above the fold installs to <code>/opt/mmt/dpi</code>, and the first-run steps beside it compile and run the published <a href="first-run/hello_packet.c">hello_packet.c</a> against that prefix. Prefer a package? Grab the
         <code>.deb</code>/<code>.rpm</code> from <a href="https://github.com/montimage-projects/mmt-dpi/releases" target="_blank" rel="noopener">Releases</a>;
         building from source or cross-compiling is covered in the
-        <a href="Compilation-and-Installation-Instructions.html">install guide</a>. Every guide lives in the
+        <a href="Compilation-and-Installation-Instructions.html">Compilation and Installation Instructions</a>. Every guide lives in the
         <a href="docs/">documentation index</a>.
       </p>
     </section>
@@ -895,7 +898,7 @@
           <a href="docs/">Documentation index</a>
           <a href="USER_GUIDE.html">User Guide</a>
           <a href="Add-New-Protocol.html">Add a Protocol</a>
-          <a href="Protocol-Stack.html">Architecture</a>
+          <a href="ARCHITECTURE.html">Architecture</a>
           <a href="https://github.com/montimage-projects/mmt-dpi" target="_blank" rel="noopener">GitHub</a>
           <a href="https://github.com/montimage-projects/mmt-dpi/releases" target="_blank" rel="noopener">Releases</a>
           <a href="https://github.com/montimage-projects/mmt-dpi/blob/main/LICENSE" target="_blank" rel="noopener">Apache-2.0</a>

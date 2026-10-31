@@ -5,7 +5,8 @@ title: "MMT Attributes"
 
 # MMT Attributes #
 
-[TOC]
+* TOC
+{:toc}
 
 ------------------
 
