@@ -30,7 +30,7 @@ int mmt_check_spotify(ipacket_t * ipacket, unsigned index) {
              */
             if (((ntohl(packet->iph->saddr) & 0xFFFFFC00) == 0x4E1F0800)
                     || ((ntohl(packet->iph->daddr) & 0xFFFFFC00) == 0x4E1F0800)) {
-                mmt_internal_add_connection(ipacket, PROTO_SPOTIFY, MMT_REAL_PROTOCOL);
+                mmt_internal_add_connection_by(ipacket, PROTO_SPOTIFY, MMT_REAL_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP); /* #567: address-range match */
                 return 1;
             }
 

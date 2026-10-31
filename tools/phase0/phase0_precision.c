@@ -48,12 +48,21 @@
  *   phase0_precision <file.pcap> <expected_protocol> [extra_ignore_csv]
  *
  * Output (one tab-separated line on stdout):
- *   <expected>\t<total>\t<tp>\t<fp>\t<app_unknown>\t<predicted_csv>
+ *   <expected>\t<total>\t<tp>\t<fp>\t<app_unknown>\t<predicted_csv>\t<method_csv>
  *
  * where <predicted_csv> is the retained prediction histogram -- sorted,
  * comma-separated <name>:<count> pairs over the predicted application
  * protocols (or '-' when every packet abstained). tp == the count of the
  * expected label inside the histogram; fp == its sum over the other labels.
+ *
+ * <method_csv> (issue #567, F-BUG-306) splits the packets that got an
+ * application verdict by how the verdict was reached -- the session's
+ * classification method (get_session_classification_method()) when the
+ * packet is processed: comma-separated <method>:<verdicts>:<tp> triples in
+ * ascending confidence order (none, port, ip, correlated, hostname, dpi),
+ * methods without a verdict left out, '-' when no packet got one. The
+ * verdicts sum to tp + fp and the tp column to tp, so the runner derives the
+ * precision of each method.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -100,6 +109,11 @@ static char          g_pred_names[MAX_PRED_NAMES][64];
 static unsigned long g_pred_counts[MAX_PRED_NAMES];
 static int           g_n_pred = 0;
 static unsigned long g_pred_overflow = 0;
+
+/* Issue #567: verdicts and true positives per classification method, indexed
+ * by the MMT_CLASSIFICATION_METHOD_* values. */
+static unsigned long g_method_verdicts[MMT_CLASSIFICATION_METHOD_NB];
+static unsigned long g_method_tp[MMT_CLASSIFICATION_METHOD_NB];
 
 static void record_pred(const char *name) {
     int i;
@@ -155,9 +169,16 @@ static int packet_handler(const ipacket_t *ipacket, void *user_args) {
     if (app == NULL) {
         g_app_unknown++;
     } else {
+        uint8_t method = get_session_classification_method(
+                get_session_from_packet(ipacket));
+        if (method >= MMT_CLASSIFICATION_METHOD_NB) {
+            method = MMT_CLASSIFICATION_METHOD_NONE; /* not a method: no claim */
+        }
         record_pred(app);
+        g_method_verdicts[method]++;
         if (strcasecmp(app, g_expected) == 0) {
             g_tp++;
+            g_method_tp[method]++;
         } else {
             g_fp++;
         }
@@ -222,11 +243,11 @@ int main(int argc, char **argv) {
         packet_process(mmt_handler, &header, data);
     }
 
-    /* expected \t total \t tp \t fp \t app_unknown \t predicted_csv */
+    /* expected \t total \t tp \t fp \t app_unknown \t predicted_csv \t method_csv */
     printf("%s\t%lu\t%lu\t%lu\t%lu\t",
            g_expected, g_total, g_tp, g_fp, g_app_unknown);
     if (g_n_pred == 0 && g_pred_overflow == 0) {
-        printf("-\n");
+        printf("-");
     } else {
         int  order[MAX_PRED_NAMES];
         int  i, first = 1;
@@ -240,7 +261,20 @@ int main(int argc, char **argv) {
         if (g_pred_overflow > 0) {
             printf("%s<overflow>:%lu", first ? "" : ",", g_pred_overflow);
         }
-        printf("\n");
+    }
+
+    /* \t method_csv (issue #567) */
+    {
+        int m, first = 1;
+        printf("\t");
+        for (m = 0; m < MMT_CLASSIFICATION_METHOD_NB; m++) {
+            if (g_method_verdicts[m] == 0) continue;
+            printf("%s%s:%lu:%lu", first ? "" : ",",
+                   get_classification_method_name((uint8_t) m),
+                   g_method_verdicts[m], g_method_tp[m]);
+            first = 0;
+        }
+        printf("%s\n", first ? "-" : "");
     }
 
     mmt_close_handler(mmt_handler);

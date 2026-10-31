@@ -127,6 +127,18 @@ uint32_t get_session_protocol_index( const mmt_session_t *session )
 const proto_hierarchy_t * get_session_protocol_hierarchy( const mmt_session_t *session )
 { return &session->proto_path; }
 
+uint8_t get_session_classification_method( const mmt_session_t *session )
+{ return (session != NULL) ? session->classification_method : MMT_CLASSIFICATION_METHOD_NONE; }
+
+const char * get_classification_method_name( uint8_t method )
+{
+    /* Issue #567: indexed by the MMT_CLASSIFICATION_METHOD_* values. */
+    static const char * const names[MMT_CLASSIFICATION_METHOD_NB] = {
+        "none", "port", "ip", "correlated", "hostname", "dpi",
+    };
+    return (method < MMT_CLASSIFICATION_METHOD_NB) ? names[method] : NULL;
+}
+
 /* Issue #255 (F-PERF-010): the subsession counters live in the lazily-
  * allocated tunnel-parent extension — a NULL children_stats means "no child
  * sessions", i.e. every sub_* counter reads as 0. */

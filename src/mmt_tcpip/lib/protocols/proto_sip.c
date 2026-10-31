@@ -35,15 +35,20 @@ uint32_t check_sip_internal(ipacket_t * ipacket) {
     {
         proto = get_proto_id_from_address(ipacket);
     }
+    /* Issue #567: an IP-range attribution records the "ip" method. */
     if (proto != PROTO_UNKNOWN) {
         switch(proto) {
             case PROTO_YAHOO:
-                mmt_int_sip_add_connection(ipacket, PROTO_YAHOOMSG);
+                mmt_internal_add_connection_by(ipacket, PROTO_YAHOOMSG, MMT_CORRELATED_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP);
                 //printf("Test from sip\n");
                 set_local_conv_proto(ipacket, PROTO_YAHOOMSG, packet);
                 return PROTO_YAHOOMSG;
             default:
-                mmt_int_sip_add_connection(ipacket, proto);
+                if (proto == PROTO_SIP) {
+                    mmt_int_sip_add_connection(ipacket, proto);
+                } else {
+                    mmt_internal_add_connection_by(ipacket, proto, MMT_CORRELATED_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP);
+                }
                 return proto;
         }
     }

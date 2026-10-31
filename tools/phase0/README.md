@@ -13,7 +13,7 @@ Phase 0 changes **no production code** — it adds tooling and captured baseline
 |---|---|
 | `phase0_classify.c` | Deterministic protocol-classification fingerprint tool. Prints, per pcap, sorted `count<TAB>protocol.path` lines — free of timestamps/addresses/ordering, so it diffs cleanly. |
 | `phase0_throughput.c` | Throughput baseline tool (packets/second), in-memory replay with a fresh handler per iteration. Reports `harness_rss_kib` (trace-preload share) and `library_rss_kib` (SDK share) separately next to the process peak (issue #251), and `ns_per_pkt` last (issue #555). `PHASE0_MODE=bare\|attrs8\|all` selects the attribute/handler workload (see *Perf benchmark and instruction-count gate* below). |
-| `phase0_precision.c` | Labelled-pcap precision/recall harness (Phase 7, M9, issue #74). Given a pcap and the application protocol it is known to carry, prints `label<TAB>total<TAB>tp<TAB>fp<TAB>app_unknown<TAB>predicted_csv` from the classifier's deterministic decisions, where `predicted_csv` is the retained prediction histogram (`name:count` pairs) feeding the actual-by-predicted confusion matrix in `ci/render_precision.py` (issue #373, F-TEST-002). The unlabelled fingerprint proves decisions don't *change*; this measures whether they are *correct*. |
+| `phase0_precision.c` | Labelled-pcap precision/recall harness (Phase 7, M9, issue #74). Given a pcap and the application protocol it is known to carry, prints `label<TAB>total<TAB>tp<TAB>fp<TAB>app_unknown<TAB>predicted_csv<TAB>method_csv` from the classifier's deterministic decisions, where `predicted_csv` is the retained prediction histogram (`name:count` pairs) feeding the actual-by-predicted confusion matrix in `ci/render_precision.py` (issue #373, F-TEST-002), and `method_csv` splits the verdicts by classification method (`method:verdicts:tp` triples, issue #567). The unlabelled fingerprint proves decisions don't *change*; this measures whether they are *correct*. |
 | `golden_pcaps.txt` | The fixed golden pcap set (paths relative to the mmt-test `data-sets/` root). |
 | `throughput_pcaps.txt` | The bigFlows/smallFlows perf-benchmark set (issue #251) — deliberately separate from `golden_pcaps.txt` so the classification fingerprint's input set is unchanged. |
 | `capture_perf.sh` | Captures `baseline/perf/throughput.txt`: default-build SDK, every `throughput_pcaps.txt` capture in each `PHASE0_MODE`, one row per (pcap, mode) with the host in the header (issue #555). |
@@ -139,6 +139,11 @@ What each gate asserts:
   #373: a wrong prediction is an FN of the actual class and an FP of the
   predicted class; an abstention is an FN of the actual class only), and diffs
   the resulting metrics against the committed `ci/baseline/precision.txt`.
+  Its **per-method** block (issue #567, F-BUG-306) gives the precision of
+  each classification method — `none`, `port`, `ip`, `correlated`,
+  `hostname`, `dpi`, read from `get_session_classification_method()` on
+  every packet given an application verdict — and the abstention section
+  ends with the method that accepted each of its packets.
   It then regenerates the seeded random-payload **abstention set**
   (`gen_tcpip_pcap.py --abstention`: 12 payload lengths from 1 to 1400 bytes,
   TCP and UDP, 8 flows each, bytes, ports and server addresses all derived

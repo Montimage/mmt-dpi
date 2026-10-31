@@ -354,6 +354,17 @@ static inline void mmt_int_http_add_connection(ipacket_t * ipacket, uint32_t pro
     flow->http_detected = 1;
 }
 
+/* Issue #567: a service attribution recording how it was made (`method`, an
+ * MMT_CLASSIFICATION_METHOD_* value) instead of the default "correlated". */
+static inline void mmt_int_http_add_connection_by(ipacket_t * ipacket, uint32_t protocol, uint8_t method) {
+    if (protocol != PROTO_HTTP) {
+        mmt_internal_add_connection_by(ipacket, protocol, MMT_CORRELATED_PROTOCOL, method);
+        ipacket->internal_packet->flow->http_detected = 1;
+    } else {
+        mmt_int_http_add_connection(ipacket, protocol);
+    }
+}
+
 /*
  * Beginning of functions to manage different MIME types
  */
@@ -916,8 +927,10 @@ static inline void parseHttpSubprotocol(ipacket_t * ipacket) {
         proto = get_proto_id_by_hostname(ipacket, (char *)packet->host_line.ptr, packet->host_line.len);
     }
 
+    /* Issue #567: a service attributed from the Host header (hostname table)
+     * or from the IP-range table records that method, not "correlated". */
     if (proto != PROTO_UNKNOWN) {
-        mmt_int_http_add_connection(ipacket, proto);
+        mmt_int_http_add_connection_by(ipacket, proto, MMT_CLASSIFICATION_METHOD_HOSTNAME);
         return;
     }
 
@@ -926,7 +939,7 @@ static inline void parseHttpSubprotocol(ipacket_t * ipacket) {
         proto = get_proto_id_from_address(ipacket);
         if (proto != PROTO_UNKNOWN)
         {
-            mmt_int_http_add_connection(ipacket, proto);
+            mmt_int_http_add_connection_by(ipacket, proto, MMT_CLASSIFICATION_METHOD_IP);
             return;
         }
     }

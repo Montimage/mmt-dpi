@@ -253,6 +253,61 @@ proc = subprocess.run([sys.executable, RENDER, "/dev/null", "--abstention"],
 check("--abstention without a file -> rc 2", proc.returncode == 2,
       proc.stderr.strip())
 
+# --- 10. per-method precision (issue #567) ------------------------------------
+METHOD_ROWS = ("a.pcap\tftp\t10\t8\t1\t1\tftp:8,http:1\tport:2:1,dpi:7:7\n"
+               "b.pcap\thttp\t6\t4\t2\t0\tftp:2,http:4\tip:1:0,hostname:5:4\n")
+rc, p, err = run_render(METHOD_ROWS)
+methods = {m["name"]: m for m in (p or {}).get("methods", [])}
+check("per-method renders (rc 0)", rc == 0 and p is not None, err.strip())
+check("per-method: all six methods in confidence order",
+      [m["name"] for m in (p or {}).get("methods", [])]
+      == ["none", "port", "ip", "correlated", "hostname", "dpi"], p)
+check("per-method: port verdicts=2 tp=1 fp=1 precision=0.5",
+      methods.get("port", {}).get("verdicts") == 2
+      and methods["port"]["tp"] == 1 and methods["port"]["fp"] == 1
+      and close(methods["port"]["precision"], 0.5), methods)
+check("per-method: hostname 4/5, dpi 7/7, ip 0/1",
+      close(methods.get("hostname", {}).get("precision"), 0.8)
+      and close(methods.get("dpi", {}).get("precision"), 1.0)
+      and close(methods.get("ip", {}).get("precision"), 0.0), methods)
+check("per-method: an unused method has no precision",
+      methods.get("correlated", {}).get("verdicts") == 0
+      and methods["correlated"]["precision"] is None, methods)
+rc_old, p_old, _ = run_render("a.pcap\tftp\t10\t8\t1\t1\tftp:8,http:1\n"
+                              "b.pcap\thttp\t6\t4\t2\t0\tftp:2,http:4\n")
+check("per-method field leaves the confusion matrix unchanged",
+      rc_old == 0 and p_old["confusion"] == p["confusion"]
+      and p_old["overall"] == p["overall"], p_old)
+check("7-field rows contribute to no method",
+      rc_old == 0 and all(m["verdicts"] == 0 for m in p_old["methods"]),
+      p_old)
+plain = subprocess.run([sys.executable, RENDER, "/dev/stdin"],
+                       input=METHOD_ROWS, capture_output=True, text=True).stdout
+check("text: per-method section lists port's precision",
+      "# --- per-method (issue #567)" in plain
+      and any(ln.split() == ["port", "2", "1", "1", "0.5000"]
+              for ln in plain.splitlines()), plain)
+for name, row in (
+        ("unknown method name -> rc 2",
+         "a.pcap\tftp\t2\t2\t0\t0\tftp:2\tguess:2:2\n"),
+        ("method verdicts != tp+fp -> rc 2",
+         "a.pcap\tftp\t2\t2\t0\t0\tftp:2\tdpi:1:1\n"),
+        ("method tp != tp -> rc 2",
+         "a.pcap\tftp\t2\t2\t0\t0\tftp:2\tdpi:2:1\n"),
+        ("method tp > verdicts -> rc 2",
+         "a.pcap\tftp\t2\t1\t1\t0\tftp:1,http:1\tport:1:2,dpi:1:0\n"),
+        ("duplicate method -> rc 2",
+         "a.pcap\tftp\t2\t2\t0\t0\tftp:2\tdpi:1:1,dpi:1:1\n"),
+        ("malformed method triple -> rc 2",
+         "a.pcap\tftp\t2\t2\t0\t0\tftp:2\tdpi:2\n")):
+    rc, _, err = run_render(row)
+    check(name, rc == 2, err.strip())
+rc, text, err = render_pair(LABELLED,
+                            "abstain_tcp_0016.pcap\t<abstain>\t40\t0\t2\t38"
+                            "\tdicom:2\tdpi:2:0\n")
+check("text: abstention names the method that accepted",
+      rc == 0 and "abstention accepted_by_method=dpi:2" in text, text)
+
 print()
 print("precision-metrics self-test: %d passed, %d failed (%d checks)"
       % (PASS, FAIL, TESTED))

@@ -109,6 +109,19 @@ int packet_id_extraction(const ipacket_t * packet, unsigned proto_index,
     return 1;
 }
 
+/* Issue #567 (F-BUG-306): how the session's application verdict was reached,
+ * an MMT_CLASSIFICATION_METHOD_* value — "none" too, unlike meta.classified,
+ * so a consumer reads an abstention as well as a guess or a match. */
+int classification_method_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+
+    if (packet->session == NULL) {
+        return 0;
+    }
+    *((uint8_t *) extracted_data->data) = packet->session->classification_method;
+    return 1;
+}
+
 static attribute_metadata_t meta_attributes_metadata[META_ATTRIBUTES_NB] = {
     {META_PACKET_DIRECTION, META_PACKET_DIRECTION_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, packet_direction_extraction},
     {META_UARGS, META_UARGS_ALIAS, MMT_DATA_POINTER, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_PACKET, uargs_extraction},
@@ -120,6 +133,7 @@ static attribute_metadata_t meta_attributes_metadata[META_ATTRIBUTES_NB] = {
     {META_PROBE_ID, META_PROBE_ID_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_SESSION, probe_id_extraction},
     {META_SOURCE_ID, META_SOURCE_ID_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_SESSION, source_id_extraction},
     {META_PACKET_INDEX, META_PACKET_INDEX_ALIAS, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_SESSION, packet_id_extraction},
+    {META_CLASSIFICATION_METHOD, META_CLASSIFICATION_METHOD_ALIAS, MMT_U8_DATA, sizeof (uint8_t), POSITION_NOT_KNOWN, SCOPE_SESSION, classification_method_extraction},
 };
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////

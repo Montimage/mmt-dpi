@@ -24,6 +24,21 @@ extern "C" {
 #define NonClassified   0 /**< Non-classified protocol */
 #define Classified      1 /**< Classified protocol */
 
+/**
+ * Classification methods (issue #567, F-BUG-306): how a session's application
+ * verdict was reached. A session is `Classified` whatever the evidence, so the
+ * method tells a payload match from a guess. The values are ordered by
+ * ascending confidence; get_session_classification_method() returns one and
+ * the `meta.classification_method` session attribute carries it.
+ */
+#define MMT_CLASSIFICATION_METHOD_NONE       0 /**< no application verdict (or none yet) */
+#define MMT_CLASSIFICATION_METHOD_PORT       1 /**< well-known port guess (port_classify) */
+#define MMT_CLASSIFICATION_METHOD_IP         2 /**< IP-range table attribution (ip_address_classify) */
+#define MMT_CLASSIFICATION_METHOD_CORRELATED 3 /**< inferred from another protocol's content or from per-host memory */
+#define MMT_CLASSIFICATION_METHOD_HOSTNAME   4 /**< hostname table match on an HTTP Host or a TLS SNI (hostname_classify) */
+#define MMT_CLASSIFICATION_METHOD_DPI        5 /**< payload signature match by the protocol's own classifier */
+#define MMT_CLASSIFICATION_METHOD_NB         6 /**< number of classification methods */
+
 #define Max_Alias_Len 64  /**< Max length of an alias name.
                                Applies to all alias names (protocol, attribute, etc..) .*/
 
@@ -480,6 +495,29 @@ MMTAPI const proto_hierarchy_t* MMTCALL get_session_protocol_hierarchy(
  */
 MMTAPI uint64_t MMTCALL get_session_id(
     const mmt_session_t *session
+);
+
+/**
+ * Returns how the session's application verdict was reached (issue #567):
+ * one of the MMT_CLASSIFICATION_METHOD_* values. It reflects the protocol
+ * currently at the top of the session's application stack, so a payload match
+ * replaces the TCP/UDP fallback's earlier port or IP-range guess.
+ * @param session the session structure
+ * @return the classification method, MMT_CLASSIFICATION_METHOD_NONE when
+ *         \p session is NULL or has no application verdict.
+ */
+MMTAPI uint8_t MMTCALL get_session_classification_method(
+    const mmt_session_t *session
+);
+
+/**
+ * Returns the name of a classification method (issue #567): "none", "port",
+ * "ip", "correlated", "hostname" or "dpi".
+ * @param method one of the MMT_CLASSIFICATION_METHOD_* values
+ * @return a static string, NULL when \p method is not a classification method.
+ */
+MMTAPI const char* MMTCALL get_classification_method_name(
+    uint8_t method
 );
 
 /**

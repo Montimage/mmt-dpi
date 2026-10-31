@@ -161,55 +161,55 @@ int check_viber_udp(ipacket_t * ipacket) {
             
             if (((ntohl(packet->iph->saddr) & 0xFFFFFFE0 /* 255.255.255.224 */) == 0x36A93FA0 /* 54.169.63.160 */)
                     || ((ntohl(packet->iph->daddr) & 0xFFFFFFE0 /* 255.255.255.224 */) == 0x36A93FA0 /* 54.169.63.160 */)) {
-                mmt_internal_add_connection(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL);
+                mmt_internal_add_connection_by(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP); /* #567: address-range match */
                 return 1;
             }
 
             if (((ntohl(packet->iph->saddr) & 0xFFFFFC00 /* 255.255.252.0 */) == 0x3400FC00 /* 52.0.252.0 */)
                     || ((ntohl(packet->iph->daddr) & 0xFFFFFC00 /* 255.255.252.0 */) == 0x3400FC00 /* 52.0.252.0 */)) {
-                mmt_internal_add_connection(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL);
+                mmt_internal_add_connection_by(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP); /* #567: address-range match */
                 return 1;
             }
 
             if (((ntohl(packet->iph->saddr) & 0xFFFFFFC0 /* 255.255.255.192 */) == 0x365DFF40 /* 54.93.255.64 */)
                     || ((ntohl(packet->iph->daddr) & 0xFFFFFFC0 /* 255.255.255.192 */) == 0x365DFF40 /* 54.93.255.64 */)) {
-                mmt_internal_add_connection(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL);
+                mmt_internal_add_connection_by(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP); /* #567: address-range match */
                 return 1;
             }
 
             if (((ntohl(packet->iph->saddr) & 0xFFFC0000 /* 255.252.0.0 */) == 0x32100000 /* 50.16.0.0/14 */)
                     || ((ntohl(packet->iph->daddr) & 0xFFFC0000 /* 255.252.0.0 */) == 0x32100000 /* 50.16.0.0/14 */)) {
-                mmt_internal_add_connection(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL);
+                mmt_internal_add_connection_by(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP); /* #567: address-range match */
                 return 1;
             }
             if (((ntohl(packet->iph->saddr) & 0xFFFC0000 /* 255.252.0.0 */) == 0x6B140000 /* 107.20.0.0/14 */)
                     || ((ntohl(packet->iph->daddr) & 0xFFFC0000 /* 255.252.0.0 */) == 0x6B140000 /* 107.20.0.0/14 */)) {
-                mmt_internal_add_connection(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL);
+                mmt_internal_add_connection_by(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP); /* #567: address-range match */
                 return 1;
             }
             if (((ntohl(packet->iph->saddr) & 0xFFFC0000 /* 255.252.0.0 */) == 0x17140000 /* 23.20.0.0/14 */)
                     || ((ntohl(packet->iph->daddr) & 0xFFFC0000 /* 255.252.0.0 */) == 0x17140000 /* 23.20.0.0/14 */)) {
-                mmt_internal_add_connection(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL);
+                mmt_internal_add_connection_by(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP); /* #567: address-range match */
                 return 1;
             }
             if (((ntohl(packet->iph->saddr) & 0xFFE00000 /* 255.224.0.0 */) == 0x36E00000 /* 54.224.0.0/14 */)
                     || ((ntohl(packet->iph->daddr) & 0xFFE00000 /* 255.224.0.0 */) == 0x36E00000 /* 54.224.0.0/14 */)) {
-                mmt_internal_add_connection(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL);
+                mmt_internal_add_connection_by(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP); /* #567: address-range match */
                 return 1;
             }
             if (((ntohl(packet->iph->saddr) & 0xFFFF0000 /* 255.255.0.0 */) == 0x2E330000 /* 46.51.0.0/16 */)
                     || ((ntohl(packet->iph->daddr) & 0xFFFF0000 /* 255.255.0.0 */) == 0x2E330000 /* 46.51.0.0/16 */)) {
-                mmt_internal_add_connection(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL);
+                mmt_internal_add_connection_by(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP); /* #567: address-range match */
                 return 1;
             }
             if (((ntohl(packet->iph->saddr) & 0xFFFF0000 /* 255.255.0.0 */) == 0x2E890000 /* 46.137.0.0/16 */)
                     || ((ntohl(packet->iph->daddr) & 0xFFFF0000 /* 255.255.0.0 */) == 0x2E890000 /* 46.137.0.0/16 */)) {
-                mmt_internal_add_connection(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL);
+                mmt_internal_add_connection_by(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP); /* #567: address-range match */
                 return 1;
             }
             if (((ntohl(packet->iph->saddr) & 0xFFFF0000 /* 255.255.0.0 */) == 0xB0220000 /* 176.34.0.0/16 */)
                     || ((ntohl(packet->iph->daddr) & 0xFFFF0000 /* 255.255.0.0 */) == 0xB0220000 /* 176.34.0.0/16 */)) {
-                mmt_internal_add_connection(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL);
+                mmt_internal_add_connection_by(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP); /* #567: address-range match */
                 return 1;
             }
         }
@@ -244,14 +244,14 @@ int check_tango_udp(ipacket_t * ipacket) {
          */
         if (((ntohl(packet->iph->saddr) & 0xFFFFF800 /* 255.255.248.0 */) == 0xC753A800 /* 199.83.168.0 */)
                 || ((ntohl(packet->iph->daddr) & 0xFFFFF800 /* 255.255.248.0 */) == 0xC753A800 /* 199.83.168.0 */)) {
-            mmt_internal_add_connection(ipacket, PROTO_TANGO, MMT_REAL_PROTOCOL);
+            mmt_internal_add_connection_by(ipacket, PROTO_TANGO, MMT_REAL_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP); /* #567: address-range match */
             insert_to_local_protos(packet->udp->dest, PROTO_TANGO, 17 /*UDP*/, &dst->local_protos);
             insert_to_local_protos(packet->udp->source, PROTO_TANGO, 17 /*UDP*/, &src->local_protos);
             return 1;
         }
         if (((ntohl(packet->iph->saddr) & 0xFFFFFFF8 /* 255.255.255.248 */) == 0x48FBF370 /* 72.251.243.112/29 */)
                 || ((ntohl(packet->iph->daddr) & 0xFFFFFFF8 /* 255.255.255.248 */) == 0x48FBF370 /* 72.251.243.112/29 */)) {
-            mmt_internal_add_connection(ipacket, PROTO_TANGO, MMT_REAL_PROTOCOL);
+            mmt_internal_add_connection_by(ipacket, PROTO_TANGO, MMT_REAL_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP); /* #567: address-range match */
             insert_to_local_protos(packet->udp->dest, PROTO_TANGO, 17 /*UDP*/, &dst->local_protos);
             insert_to_local_protos(packet->udp->source, PROTO_TANGO, 17 /*UDP*/, &src->local_protos);
             return 1;
@@ -305,7 +305,7 @@ uint32_t check_stun_internal(ipacket_t * ipacket) {
          * 103.2.28.0/22
          */
         if (((ntohl(packet->iph->daddr) & 0xFFFFFC00 /* 255.255.252.0 */) == 0x67021C00 /* 103.2.28.0/22 */)) {
-            mmt_internal_add_connection(ipacket, PROTO_LINE, MMT_REAL_PROTOCOL);
+            mmt_internal_add_connection_by(ipacket, PROTO_LINE, MMT_REAL_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP); /* #567: address-range match */
             //In addition, report the port number of the source address
             insert_to_local_protos(packet->udp->dest, PROTO_LINE, 17 /*UDP*/, &dst->local_protos);
             insert_to_local_protos(packet->udp->source, PROTO_LINE, 17 /*UDP*/, &src->local_protos);
@@ -313,7 +313,7 @@ uint32_t check_stun_internal(ipacket_t * ipacket) {
         }
     }
 
-    /* Check the protocol by the IP addresses!!!*/
+    /* Check the protocol by the IP addresses!!! (issue #567: the "ip" method) */
     if (ipacket->mmt_handler->ip_address_classify == 1)
     {
         proto = get_proto_id_from_address(ipacket);
@@ -321,17 +321,17 @@ uint32_t check_stun_internal(ipacket_t * ipacket) {
     if (proto != PROTO_UNKNOWN) {
         switch (proto) {
             case PROTO_YAHOO:
-                mmt_internal_add_connection(ipacket, PROTO_YAHOOMSG, MMT_CORRELATED_PROTOCOL);
+                mmt_internal_add_connection_by(ipacket, PROTO_YAHOOMSG, MMT_CORRELATED_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP);
                 insert_to_local_protos(packet->udp->dest, PROTO_YAHOOMSG, 17 /*UDP*/, &dst->local_protos);
                 insert_to_local_protos(packet->udp->source, PROTO_YAHOOMSG, 17 /*UDP*/, &src->local_protos);
                 return PROTO_YAHOOMSG;
             case PROTO_GOOGLE:
-                mmt_internal_add_connection(ipacket, PROTO_GTALK, MMT_CORRELATED_PROTOCOL);
+                mmt_internal_add_connection_by(ipacket, PROTO_GTALK, MMT_CORRELATED_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP);
                 insert_to_local_protos(packet->udp->dest, PROTO_GTALK, 17 /*UDP*/, &dst->local_protos);
                 insert_to_local_protos(packet->udp->source, PROTO_GTALK, 17 /*UDP*/, &src->local_protos);
                 return PROTO_GTALK;
             default:
-                mmt_internal_add_connection(ipacket, proto, MMT_CORRELATED_PROTOCOL);
+                mmt_internal_add_connection_by(ipacket, proto, MMT_CORRELATED_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP);
                 insert_to_local_protos(packet->udp->dest, proto, 17 /*UDP*/, &dst->local_protos);
                 insert_to_local_protos(packet->udp->source, proto, 17 /*UDP*/, &src->local_protos);
                 return proto;

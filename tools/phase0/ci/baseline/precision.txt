@@ -27,6 +27,17 @@ http             604      598      0        6        1.0000     0.9901
 # --- overall (micro-averaged) ---
 total=1238   tp=1203   fp=0      fn=35     accuracy=0.9717 micro_precision=1.0000 micro_recall=0.9717
 
+# --- per-method (issue #567): how each verdict was reached ---
+# verdicts = packets given an application verdict by the method;
+# precision = tp / verdicts. Methods in ascending confidence.
+method           verdicts tp       fp       precision
+none             0        0        0        n/a
+port             0        0        0        n/a
+ip               0        0        0        n/a
+correlated       0        0        0        n/a
+hostname         0        0        0        n/a
+dpi              1203     1203     0        1.0000
+
 # --- abstention set (issue #527): seeded random payloads ---
 # No capture carries an application protocol: every packet should get no
 # application verdict. accepted = packets given one anyway (pred names them);
@@ -57,3 +68,4 @@ abstain_udp_0512.pcap        16       16       0        1.0000       -
 abstain_udp_1024.pcap        16       16       0        1.0000       -
 abstain_udp_1400.pcap        16       16       0        1.0000       -
 abstention total=672    abstain=670    accepted=2      unknown_rate=0.9970
+abstention accepted_by_method=dpi:2

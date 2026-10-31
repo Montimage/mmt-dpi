@@ -26,7 +26,8 @@ enum {
     META_PROBE_ID,
     META_SOURCE_ID,
 	META_PACKET_INDEX,
-    META_ATTRIBUTES_NB = META_PACKET_INDEX
+    META_CLASSIFICATION_METHOD, /* issue #567: appended — earlier ids keep their values */
+    META_ATTRIBUTES_NB = META_CLASSIFICATION_METHOD
 };
 
 // #define META_ATTRIBUTES_NB 7 /* To be updated with whenever necessary */
@@ -44,6 +45,7 @@ enum {
 #define META_SOURCE_ID_ALIAS   "source_id"
 #define META_PACKET_DIRECTION_ALIAS "direction"
 #define META_PACKET_INDEX_ALIAS "packet_index"
+#define META_CLASSIFICATION_METHOD_ALIAS "classification_method"
 
 #ifdef	__cplusplus
 }

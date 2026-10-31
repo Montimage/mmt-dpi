@@ -156,6 +156,12 @@ MMTAPI uint64_t MMTCALL get_session_id(
 ```
 This function returns the associated session identifier.
 ```c
+MMTAPI uint8_t MMTCALL get_session_classification_method(
+    const mmt_session_t *session
+);
+```
+This function returns how the session's application verdict was reached — one of the `MMT_CLASSIFICATION_METHOD_*` values `none`, `port`, `ip`, `correlated`, `hostname`, `dpi`, in ascending confidence — and `MMT_CLASSIFICATION_METHOD_NONE` for a NULL session (issue #567; the values are described with the `meta.classification_method` attribute in [MMT Attributes](./MMT-Attributes.md)). `get_classification_method_name(method)` returns the method's name, NULL for a value that is not a method.
+```c
 MMTAPI void* MMTCALL get_user_session_context(
     const mmt_session_t *session
 );

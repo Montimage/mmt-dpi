@@ -283,6 +283,12 @@ struct mmt_session_struct {
 #else
 #error "BYTE_ORDER must be defined"
 #endif
+    /* Issue #567 (F-BUG-306): how the application verdict was reached — an
+     * MMT_CLASSIFICATION_METHOD_* value, written where the verdict is decided
+     * (the tcpip flow-protocol funnel, the TCP/UDP IP-range and port
+     * fallbacks, classifier claims in set_classified_proto). It sits in the
+     * padding before tcp_reasm, so the session does not grow. */
+    uint8_t classification_method;
     /* Issue #245: the TCP reassembly fields (segment lists, payload image
      * buffers, block chain) moved into the lazily-allocated mmt_tcp_reasm_t
      * extension above — a session that never reassembles TCP payload pays

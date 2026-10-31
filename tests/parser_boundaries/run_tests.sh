@@ -190,10 +190,22 @@
 #                               connections through mmt_init_handler +
 #                               packet_process.
 #
+# Issue #567 adds the "classification-method" fixture: DPI matches, hostname
+# and IP-range attributions, correlated inferences and port guesses all mark a
+# session Classified — get_session_classification_method() and the
+# meta.classification_method attribute must name how each verdict was reached.
+#
+#   test_classification_method_api.c — packet/API path: accuracy-corpus
+#                               captures (tools/phase0/ci/accuracy/) of each
+#                               method plus a crafted UDP flow to an IP-range
+#                               address, through mmt_init_handler +
+#                               packet_process.
+#
 # Usage: tests/parser_boundaries/run_tests.sh [fixture ...]
 #   no arguments runs every fixture; "udp"/"dtls"/"dns-soa"/"dns-txt"/"dns-names"/"nfs"/"int"/
 #   "tcp-options"/"radius-dns"/"quic"/"gre"/"classifier-audit"/"tcp-events"/"s1ap-integer"/
-#   "classify"/"registration"/"ftp-sessions" select a fixture family.
+#   "classify"/"registration"/"ftp-sessions"/"classification-method" select a
+#   fixture family.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -201,7 +213,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # --- fixture selection -----------------------------------------------------
 FIXTURES=( "$@" )
-[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions)
+[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method)
 UNIT_TESTS=()
 API_TESTS=()
 MOBILE_TESTS=()
@@ -259,8 +271,11 @@ for f in "${FIXTURES[@]}"; do
         ftp-sessions)
             API_TESTS+=(ftp_session_attrs_api)
             ;;
+        classification-method)
+            API_TESTS+=(classification_method_api)
+            ;;
         *)
-            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions)" >&2
+            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method)" >&2
             exit 2
             ;;
     esac
@@ -401,4 +416,4 @@ if [ "${rc}" -ne 0 ]; then
     echo "✗ parser boundary tests failed" >&2
     exit 1
 fi
-echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455, #505, #513, #531, #542, #544)"
+echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455, #505, #513, #531, #542, #544, #567)"

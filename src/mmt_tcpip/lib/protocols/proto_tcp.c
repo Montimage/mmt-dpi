@@ -1142,12 +1142,20 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
         // the DPI profiles — each of the heuristic levers below (IP-range,
         // then port) is gated by its own profile toggle on the handler.
         /* The protocol is unkown and we reached the classification threshold! Try with IP addresses and port numbers before setting it as unkown */
+        /* Issue #567: the verdict is a guess — record which one (a GTP
+         * verdict the fallback leaves standing keeps its method). */
+        uint8_t method = (retval.proto_id == PROTO_UNKNOWN)
+                ? MMT_CLASSIFICATION_METHOD_NONE : ipacket->session->classification_method;
         if (ipacket->mmt_handler->ip_address_classify == 1){
             retval.proto_id = get_proto_id_from_address(ipacket);
+            if (retval.proto_id != PROTO_UNKNOWN) method = MMT_CLASSIFICATION_METHOD_IP;
         }
         if(retval.proto_id == PROTO_UNKNOWN && ipacket->mmt_handler->port_classify != 0) {
             retval.proto_id =  mmt_guess_protocol_by_port_number(ipacket);
+            if (retval.proto_id != PROTO_UNKNOWN) method = MMT_CLASSIFICATION_METHOD_PORT;
         }
+        ipacket->session->classification_method =
+                (retval.proto_id == PROTO_UNKNOWN) ? MMT_CLASSIFICATION_METHOD_NONE : method;
         if (retval.proto_id != PROTO_UNKNOWN){
             retval.status = Classified;
             new_retval = set_classified_proto(ipacket, index + 1, retval);}

@@ -53,6 +53,44 @@ Indicates at what points during the packet journey in the core, the user registe
    The core checks for on-demand attributes with registered attribute handlers, and, for each calls the attribute's 
    extraction function then calls the user attribute handlers registered with the attribute.
 
+## Classification method (`meta.classification_method`) ##
+A session is `Classified` whether its application protocol was matched in the
+payload or only guessed, so the status alone cannot tell a port guess from a
+DPI match (issue #567, F-BUG-306). The session-scope attribute
+`meta.classification_method` (`PROTO_META`, id `META_CLASSIFICATION_METHOD`,
+`MMT_U8_DATA` — `src/mmt_core/src/proto_meta.c:136`,
+`src/mmt_core/public_include/proto_meta.h:29`) carries how the verdict was
+reached; `get_session_classification_method()` returns the same value from a
+session (`src/mmt_core/public_include/data_defs.h:509`) and
+`get_classification_method_name()` names it
+(`src/mmt_core/public_include/data_defs.h:519`). Unlike `meta.classified`, it
+is extracted for every packet that has a session, `none` included.
+
+The values, in ascending order of confidence
+(`src/mmt_core/public_include/data_defs.h:34-40`):
+
+| Value | Name | Set when |
+|-------|------|----------|
+| `MMT_CLASSIFICATION_METHOD_NONE` (0) | `none` | no application verdict (yet) |
+| `MMT_CLASSIFICATION_METHOD_PORT` (1) | `port` | the TCP/UDP fallback guessed from a well-known port (`port_classify`, `src/mmt_tcpip/lib/protocols/proto_tcp.c:1154`, `src/mmt_tcpip/lib/protocols/proto_udp.c:165`) |
+| `MMT_CLASSIFICATION_METHOD_IP` (2) | `ip` | the IP-range table named the protocol — the TCP/UDP fallback (`src/mmt_tcpip/lib/protocols/proto_tcp.c:1150`, `src/mmt_tcpip/lib/protocols/proto_udp.c:160`), or the HTTP, TLS, RTP, SIP and STUN classifiers' address lookups (e.g. `src/mmt_tcpip/lib/protocols/http.c:942`, `src/mmt_tcpip/lib/protocols/proto_ssl.c:842`) — or a classifier matched a hard-coded address range (WhatsApp, Viber, Gameforge, Tango, LINE, Ustream, Spotify, NetEase POPO); an address range checked together with a payload property (FaceTime's 17.0.0.0/8 plus a 16-byte payload) counts as `dpi` |
+| `MMT_CLASSIFICATION_METHOD_CORRELATED` (3) | `correlated` | a classifier inferred it from another protocol's content or from what the hosts were seen with (`MMT_CORRELATED_PROTOCOL`) |
+| `MMT_CLASSIFICATION_METHOD_HOSTNAME` (4) | `hostname` | the hostname table matched the HTTP `Host` header or the TLS SNI/certificate name (`src/mmt_tcpip/lib/protocols/http.c:933`, `src/mmt_tcpip/lib/protocols/proto_ssl.c:602`, `src/mmt_tcpip/lib/protocols/proto_ssl.c:644`) |
+| `MMT_CLASSIFICATION_METHOD_DPI` (5) | `dpi` | the protocol's own classifier matched the payload (`MMT_REAL_PROTOCOL`), or a dissector above the transport layer claimed the layer itself (DICOM, S1AP, QUIC, HTTP/2 — `src/mmt_core/src/packet_pipeline.c:653`); such a claim also covers layers that are not an application (SCTP chunks, tunnel headers such as GTP), so a tunnel or SCTP session reads `dpi` |
+
+The method follows the protocol at the top of the session's application stack
+(`src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c:214`): when a classifier puts a
+new protocol there, its method replaces the previous one — HTTP matched by DPI
+and then attributed to a service from its `Host` header reads `hostname` — and
+re-asserting the protocol already on top only raises the method; a protocol
+inserted beneath a different one on top leaves it. A payload match therefore
+replaces the TCP/UDP fallback's earlier port or IP-range guess, while a service
+attributed on top of HTTP or TLS keeps its method when the wire protocol is
+matched again beneath it.
+`tools/phase0/ci/check_precision.sh` reports the precision of each method over
+the labelled set (the `per-method` block of
+`tools/phase0/ci/baseline/precision.txt`).
+
 ## API ##
 ### User API ###
 ```c
@@ -90,11 +128,11 @@ Indicates at what points during the packet journey in the core, the user registe
 ```
    Allow unregistering an already registered attribute handler. If the unregistration succeeds, a positive value will be returned.
 
-   A handler may unregister attribute handlers, itself included, from inside its callback: the handlers still registered on the attribute keep running for the current dispatch, and an attribute released this way is freed only once the dispatch returns (`src/mmt_core/src/packet_pipeline.c:790`, `src/mmt_core/src/packet_registry_attr.c:125`). A handler that unregisters and re-registers itself from its callback (to change its `user_args`) runs once for that dispatch, and the handlers and attributes after it still run: the handler dispatch continues from the handler that followed it, within a bound on the number of handlers it saw (`src/mmt_core/src/packet_pipeline.c:803`, `src/mmt_core/src/packet_pipeline.c:851`), and the attribute dispatch continues at the next field in field order, so each attribute runs at most once per packet (`src/mmt_core/src/packet_pipeline.c:830`). A handler registered from a callback may first run on the next packet or event. Unregistering a handler gives back the extraction registration only when that handler's registration created the attribute; an attribute you registered with `register_extraction_attribute()` stays registered until you unregister it (`src/mmt_core/src/packet_registry_attr.c:325`).
+   A handler may unregister attribute handlers, itself included, from inside its callback: the handlers still registered on the attribute keep running for the current dispatch, and an attribute released this way is freed only once the dispatch returns (`src/mmt_core/src/packet_pipeline.c:799`, `src/mmt_core/src/packet_registry_attr.c:125`). A handler that unregisters and re-registers itself from its callback (to change its `user_args`) runs once for that dispatch, and the handlers and attributes after it still run: the handler dispatch continues from the handler that followed it, within a bound on the number of handlers it saw (`src/mmt_core/src/packet_pipeline.c:812`, `src/mmt_core/src/packet_pipeline.c:860`), and the attribute dispatch continues at the next field in field order, so each attribute runs at most once per packet (`src/mmt_core/src/packet_pipeline.c:839`). A handler registered from a callback may first run on the next packet or event. Unregistering a handler gives back the extraction registration only when that handler's registration created the attribute; an attribute you registered with `register_extraction_attribute()` stays registered until you unregister it (`src/mmt_core/src/packet_registry_attr.c:325`).
 
-   For an event attribute, such as the HTTP header and body events, `attribute->data` points to the event payload only while the handler runs. The payload often lives on the engine's stack, so `data` is `NULL` once the dispatch returns (`src/mmt_core/src/packet_pipeline.c:896`). Copy any value you need to keep.
+   For an event attribute, such as the HTTP header and body events, `attribute->data` points to the event payload only while the handler runs. The payload often lives on the engine's stack, so `data` is `NULL` once the dispatch returns (`src/mmt_core/src/packet_pipeline.c:905`). Copy any value you need to keep.
 
-   Some attributes hand back a heap object instead of a value in the attribute's own buffer: the DNS `queries`, `answers` and `auth_records` lists, the FTP `packet_request`, `packet_request_parameter` and `packet_reponse_value` strings, and the NDN strings (`name_components`, `publisher_publickey_locator`, `exclude`, `content`, `signature_value`, `final_block_id`, `key_locator`). The handler owns that object. It stays valid while the current packet is processed and its handlers run, and the handler frees it when the next `packet_process()` call on it starts (`src/mmt_core/src/packet_pipeline.c:1487`) or when `mmt_close_handler()` runs (`src/mmt_core/src/packet_registry_attr.c:148`). Do not free it, and copy any part you need after the packet. Every read extracts the attribute again and allocates a new object, so read it once per packet. An extraction function in a plugin hands its heap value over the same way, with `mmt_packet_scratch_adopt()` (`src/mmt_core/public_include/plugin_defs.h:54`).
+   Some attributes hand back a heap object instead of a value in the attribute's own buffer: the DNS `queries`, `answers` and `auth_records` lists, the FTP `packet_request`, `packet_request_parameter` and `packet_reponse_value` strings, and the NDN strings (`name_components`, `publisher_publickey_locator`, `exclude`, `content`, `signature_value`, `final_block_id`, `key_locator`). The handler owns that object. It stays valid while the current packet is processed and its handlers run, and the handler frees it when the next `packet_process()` call on it starts (`src/mmt_core/src/packet_pipeline.c:1496`) or when `mmt_close_handler()` runs (`src/mmt_core/src/packet_registry_attr.c:148`). Do not free it, and copy any part you need after the packet. Every read extracts the attribute again and allocates a new object, so read it once per packet. An extraction function in a plugin hands its heap value over the same way, with `mmt_packet_scratch_adopt()` (`src/mmt_core/public_include/plugin_defs.h:54`).
 
 ```c
    int is_registered_attribute_handler(mmt_handler_t * mmt_handler, uint32_t protocol_id, uint32_t attribute_id, attribute_handler_function handler_fct);

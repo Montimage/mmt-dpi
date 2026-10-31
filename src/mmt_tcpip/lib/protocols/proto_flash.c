@@ -21,7 +21,7 @@ void check_by_ip_address(ipacket_t * ipacket)
          */
         if (((ntohl(packet->iph->saddr) & 0xFFFFFC00 /* 255.255.252.0 */) == 0xC742EC00 /* 199.66.236.0 */)
                 || ((ntohl(packet->iph->daddr) & 0xFFFFFC00 /* 255.255.252.0 */) == 0xC742EC00 /* 199.66.236.0 */)) {
-            mmt_internal_add_connection(ipacket, PROTO_USTREAM, MMT_REAL_PROTOCOL);
+            mmt_internal_add_connection_by(ipacket, PROTO_USTREAM, MMT_REAL_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP); /* #567: address-range match */
             return;
         }
     }

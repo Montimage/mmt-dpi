@@ -108,7 +108,8 @@ while IFS= read -r line; do
         echo "  dropped — restore the fixture or remove its labels.txt row)" >&2
         exit 1
     fi
-    # output: <label> <total> <tp> <fp> <app_unknown> <predicted_csv>. A harness
+    # output: <label> <total> <tp> <fp> <app_unknown> <predicted_csv>
+    # <method_csv> (the verdicts per classification method, issue #567). A harness
     # non-zero exit or empty output fails the gate: a labelled example that
     # produces no metrics is a harness failure, not a skippable input.
     out="$(cd "${BUILD_DIR}" && "${BUILD_DIR}/phase0_precision" "${pcap}" "${label}" 2>/dev/null)" || out=""
@@ -140,8 +141,8 @@ for pcap in "${ABSTAIN_DIR}"/abstain_*.pcap; do
 done
 
 # --- render the deterministic metrics file ---------------------------------
-# Per-pcap rows + confusion matrix + per-class and overall micro-averages,
-# then the abstention section (unknown rate of the seeded random payloads).
+# Per-pcap rows + confusion matrix + per-class and overall micro-averages +
+# per-classification-method precision (issue #567), then the abstention section (unknown rate of the seeded random payloads).
 # render_precision.py validates every raw row and exits non-zero on malformed
 # input, so a broken harness can never render a partial metric set.
 python3 "${CI_DIR}/render_precision.py" "${RAW}" --abstention "${ABSTAIN_RAW}" \

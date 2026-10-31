@@ -36,12 +36,27 @@ void mmt_add_content_type(ipacket_t * ipacket, uint16_t content_class, uint16_t 
  */
 void mmt_internal_add_connection(ipacket_t * ipacket, uint16_t detected_protocol, mmt_protocol_type_t protocol_type);
 
+/* Issue #567 (F-BUG-306): the method a flow-protocol change records by
+ * default — a real protocol is a payload match of its own classifier, a
+ * correlated one is inferred from another protocol's content or from what
+ * the hosts were seen with. */
+static inline uint8_t mmt_classification_method_of(mmt_protocol_type_t protocol_type) {
+    return (protocol_type == MMT_REAL_PROTOCOL) ? MMT_CLASSIFICATION_METHOD_DPI
+                                                : MMT_CLASSIFICATION_METHOD_CORRELATED;
+}
+
+/* mmt_internal_add_connection, recording `method` (an
+ * MMT_CLASSIFICATION_METHOD_* value) as how the verdict was reached instead of
+ * the protocol type's default: the hostname-table and IP-range attributions
+ * of the HTTP, TLS, RTP, SIP and STUN classifiers (issue #567). */
+void mmt_internal_add_connection_by(ipacket_t * ipacket, uint16_t detected_protocol, mmt_protocol_type_t protocol_type, uint8_t method);
+
 /* generic function for changing the flow protocol
  *
  * what it does is:
  * 1.update the flow protocol stack with the new protocol
  */
-void mmt_change_internal_flow_protocol(ipacket_t * ipacket, uint16_t detected_protocol, mmt_protocol_type_t protocol_type);
+void mmt_change_internal_flow_protocol_by(ipacket_t * ipacket, uint16_t detected_protocol, mmt_protocol_type_t protocol_type, uint8_t method);
 
 /* generic function for changing the packetprotocol
  *
@@ -166,7 +181,7 @@ get_local_conv_proto(ipacket_t * ipacket) {
  * 2.update the packet protocol stack with the new protocol
  */
 static inline void
-mmt_change_internal_flow_packet_protocol(ipacket_t * ipacket, uint16_t detected_protocol, mmt_protocol_type_t protocol_type)
+mmt_change_internal_flow_packet_protocol_by(ipacket_t * ipacket, uint16_t detected_protocol, mmt_protocol_type_t protocol_type, uint8_t method)
 {
     /* Issue #252 (F-PERF-002): the deepest classification funnel — every
      * add_connection / direct flow-packet protocol change lands here. When a
@@ -177,8 +192,15 @@ mmt_change_internal_flow_packet_protocol(ipacket_t * ipacket, uint16_t detected_
     if (ipacket_internal(ipacket)->mmt_current_classifier != NULL) {
         ipacket_internal(ipacket)->mmt_classifier_claim = ipacket_internal(ipacket)->mmt_current_classifier;
     }
-    mmt_change_internal_flow_protocol(ipacket, detected_protocol, protocol_type);
+    mmt_change_internal_flow_protocol_by(ipacket, detected_protocol, protocol_type, method);
     mmt_change_internal_packet_protocol(ipacket, detected_protocol, protocol_type);
+}
+
+static inline void
+mmt_change_internal_flow_packet_protocol(ipacket_t * ipacket, uint16_t detected_protocol, mmt_protocol_type_t protocol_type)
+{
+    mmt_change_internal_flow_packet_protocol_by(ipacket, detected_protocol, protocol_type,
+            mmt_classification_method_of(protocol_type));
 }
 
 static inline void

@@ -361,6 +361,7 @@ static void init_new_session_fields(mmt_handler_t * mmt_handler, mmt_session_t *
     session->tcp_retransmissions = 0;
     session->tcp_outoforders = 0;
     session->status = NonClassified;
+    session->classification_method = MMT_CLASSIFICATION_METHOD_NONE; // issue #567
     session->protocol_container_context = configured_protocol;
     session->session_protocol_index = index;
     session->tcp_retransmissions = 0;

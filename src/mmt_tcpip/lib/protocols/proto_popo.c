@@ -42,7 +42,7 @@ void mmt_classify_popo(ipacket_t * ipacket, unsigned index) {
 
             if (ntohl(packet->iph->daddr) >= MMT_POPO_IP_SUBNET_START
                     && ntohl(packet->iph->daddr) <= MMT_POPO_IP_SUBNET_END) {
-                mmt_int_popo_add_connection(ipacket);
+                mmt_internal_add_connection_by(ipacket, PROTO_POPO, MMT_REAL_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP); /* #567: address-range match */
                 return;
             }
         }

@@ -681,6 +681,35 @@ static void b_get_session_id(void) {
     CHECK(get_session_id(fake_session()) == 77, "session id");
 }
 
+/* Issue #567: how the session's verdict was reached. */
+static void b_get_session_classification_method(void) {
+    mmt_session_t *s = fake_session();
+    CHECK(get_session_classification_method(s) == MMT_CLASSIFICATION_METHOD_NONE,
+          "a fresh session has no verdict method");
+    s->classification_method = MMT_CLASSIFICATION_METHOD_HOSTNAME;
+    CHECK(get_session_classification_method(s) == MMT_CLASSIFICATION_METHOD_HOSTNAME,
+          "the recorded method");
+}
+static void e_get_session_classification_method(void) {
+    CHECK(get_session_classification_method(NULL) == MMT_CLASSIFICATION_METHOD_NONE,
+          "NULL session -> none");
+}
+
+static void b_get_classification_method_name(void) {
+    CHECK(strcmp(get_classification_method_name(MMT_CLASSIFICATION_METHOD_NONE), "none") == 0
+          && strcmp(get_classification_method_name(MMT_CLASSIFICATION_METHOD_PORT), "port") == 0
+          && strcmp(get_classification_method_name(MMT_CLASSIFICATION_METHOD_IP), "ip") == 0
+          && strcmp(get_classification_method_name(MMT_CLASSIFICATION_METHOD_CORRELATED), "correlated") == 0
+          && strcmp(get_classification_method_name(MMT_CLASSIFICATION_METHOD_HOSTNAME), "hostname") == 0
+          && strcmp(get_classification_method_name(MMT_CLASSIFICATION_METHOD_DPI), "dpi") == 0,
+          "every method has its name");
+}
+static void e_get_classification_method_name(void) {
+    CHECK(get_classification_method_name(MMT_CLASSIFICATION_METHOD_NB) == NULL
+          && get_classification_method_name(255) == NULL,
+          "not a method -> NULL");
+}
+
 static void b_get_user_session_context(void) {
     mmt_session_t *s = fake_session();
     int ctx;
@@ -2960,6 +2989,8 @@ static const api_contract_t k_contracts[] = {
     NO_ERROR_PATH(get_session_protocol_index, b_get_session_protocol_index, W_SESSION),
     NO_ERROR_PATH(get_session_protocol_hierarchy, b_get_session_protocol_hierarchy, W_SESSION),
     NO_ERROR_PATH(get_session_id, b_get_session_id, W_SESSION),
+    CONTRACT(get_session_classification_method, b_get_session_classification_method, e_get_session_classification_method),
+    CONTRACT(get_classification_method_name, b_get_classification_method_name, e_get_classification_method_name),
     NO_ERROR_PATH(get_user_session_context, b_get_user_session_context, W_SESSION),
     CONTRACT(get_proto_session_data, b_get_proto_session_data, e_get_proto_session_data),
     CONTRACT(set_proto_session_data, b_set_proto_session_data, e_set_proto_session_data),

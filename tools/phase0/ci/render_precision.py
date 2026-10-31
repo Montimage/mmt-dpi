@@ -6,10 +6,12 @@ per-class accounting correction is issue #373 (F-TEST-002).
 
 Reads the raw TSV produced by check_precision.sh -- one row per labelled pcap:
 
-    <pcap_rel> <actual_label> <total> <tp> <fp> <abstained> <predicted_csv>
+    <pcap_rel> <actual_label> <total> <tp> <fp> <abstained> <predicted_csv> [<method_csv>]
 
 where <predicted_csv> is the retained prediction histogram emitted by
-phase0_precision (sorted `name:count` pairs, or `-`). The script folds every
+phase0_precision (sorted `name:count` pairs, or `-`), and the optional
+<method_csv> (issue #567, F-BUG-306) splits the packets given an application
+verdict by classification method (`method:verdicts:tp` triples, or `-`). The script folds every
 row into an actual-by-predicted CONFUSION MATRIX and derives, per class C:
 
     TP = C[C][C];  FP = sum_{a != C} C[a][C];  FN = sum_{p != C} C[C][p]
@@ -19,6 +21,12 @@ A wrong prediction therefore increments the FP of the predicted class AND the
 FN of the actual class -- the accounting the pre-#373 bare `fp` column could
 not express. An abstention (no application verdict, recorded under the
 `<abstain>` pseudo-column) counts as an FN of the actual class only.
+
+Per classification method M (issue #567) it derives, over the labelled rows,
+verdicts(M) = packets given an application verdict by method M, tp(M) = those
+naming the actual label, fp(M) = the rest and precision(M) = tp(M) /
+verdicts(M) -- every method of METHODS is listed, so a method no verdict used
+reads n/a. Rows without a <method_csv> field contribute to no method.
 
 With ``--abstention <abstain.tsv>`` (issue #527) it also renders the seeded
 random-payload abstention set check_precision.sh runs: rows in the same raw
@@ -42,6 +50,11 @@ import json
 import sys
 
 ABSTAIN = "<abstain>"
+
+# Issue #567: the classification methods in ascending confidence order -- the
+# MMT_CLASSIFICATION_METHOD_* values of data_defs.h, named as
+# get_classification_method_name() names them.
+METHODS = ("none", "port", "ip", "correlated", "hostname", "dpi")
 
 HEADER = """\
 # Phase 7 (M9, issue #74) precision/recall baseline -- labelled CI golden subset.
@@ -90,9 +103,10 @@ def parse_raw(path):
             if not line.strip():
                 continue
             fields = line.split("\t")
-            if len(fields) != 7:
+            if len(fields) not in (7, 8):
                 _fail(path, lineno,
-                      "expected 7 tab-separated fields, got %d" % len(fields))
+                      "expected 7 or 8 tab-separated fields, got %d"
+                      % len(fields))
             rel, actual = fields[0], fields[1].strip().lower()
             total = _parse_int(path, lineno, "total", fields[2])
             tp = _parse_int(path, lineno, "tp", fields[3])
@@ -124,9 +138,39 @@ def parse_raw(path):
                 _fail(path, lineno,
                       "predicted[%r]=%d != tp=%d"
                       % (actual, pred.get(actual, 0), tp))
+            methods = {}
+            mcsv = fields[7].strip() if len(fields) == 8 else "-"
+            if mcsv and mcsv != "-":
+                for triple in mcsv.split(","):
+                    parts = triple.split(":")
+                    if len(parts) != 3 or parts[0].strip() not in METHODS:
+                        _fail(path, lineno,
+                              "bad method_csv triple: %r" % triple)
+                    name = parts[0].strip()
+                    if name in methods:
+                        _fail(path, lineno,
+                              "duplicate method in method_csv: %r" % name)
+                    m_verdicts = _parse_int(path, lineno, "method_csv",
+                                            parts[1])
+                    m_tp = _parse_int(path, lineno, "method_csv", parts[2])
+                    if m_tp > m_verdicts:
+                        _fail(path, lineno,
+                              "method %r: tp %d > verdicts %d"
+                              % (name, m_tp, m_verdicts))
+                    methods[name] = {"verdicts": m_verdicts, "tp": m_tp}
+            if len(fields) == 8:
+                if sum(m["verdicts"] for m in methods.values()) != tp + fp:
+                    _fail(path, lineno,
+                          "method verdicts sum to %d, expected tp+fp=%d"
+                          % (sum(m["verdicts"] for m in methods.values()),
+                             tp + fp))
+                if sum(m["tp"] for m in methods.values()) != tp:
+                    _fail(path, lineno,
+                          "method tp sums to %d, expected tp=%d"
+                          % (sum(m["tp"] for m in methods.values()), tp))
             rows.append({"pcap": rel, "actual": actual, "total": total,
                          "tp": tp, "misclassified": fp, "abstained": abstained,
-                         "pred": pred})
+                         "pred": pred, "methods": methods})
     if not rows:
         raise InputError("%s: no data rows -- the harness produced nothing; "
                          "refusing to render an empty metric set" % path)
@@ -181,7 +225,18 @@ def build_metrics(rows):
         "micro_precision": (o_tp / (o_tp + o_fp)) if (o_tp + o_fp) else None,
         "micro_recall": (o_tp / (o_tp + o_fn)) if (o_tp + o_fn) else None,
     }
-    return {"confusion": confusion, "classes": per_class, "overall": overall}
+    per_method = []
+    for m in METHODS:
+        verdicts = sum(r["methods"].get(m, {}).get("verdicts", 0)
+                       for r in rows)
+        m_tp = sum(r["methods"].get(m, {}).get("tp", 0) for r in rows)
+        per_method.append({
+            "name": m, "verdicts": verdicts, "tp": m_tp,
+            "fp": verdicts - m_tp,
+            "precision": (m_tp / verdicts) if verdicts else None,
+        })
+    return {"confusion": confusion, "classes": per_class, "overall": overall,
+            "methods": per_method}
 
 
 def _ratio(x):
@@ -222,6 +277,16 @@ def render_text(rows, metrics):
             "micro_precision=%-6s micro_recall=%s"
             % (o["total"], o["tp"], o["fp"], o["fn"], _ratio(o["accuracy"]),
                _ratio(o["micro_precision"]), _ratio(o["micro_recall"]))]
+
+    out += ["", "# --- per-method (issue #567): how each verdict was reached ---",
+            "# verdicts = packets given an application verdict by the method;",
+            "# precision = tp / verdicts. Methods in ascending confidence.",
+            "%-16s %-8s %-8s %-8s %s"
+            % ("method", "verdicts", "tp", "fp", "precision")]
+    for m in metrics["methods"]:
+        out.append("%-16s %-8d %-8d %-8d %s"
+                   % (m["name"], m["verdicts"], m["tp"], m["fp"],
+                      _ratio(m["precision"])))
     return "\n".join(out) + "\n"
 
 
@@ -248,6 +313,15 @@ def render_abstention(ab):
                "unknown_rate=%s"
                % (ab["total"], ab["abstained"], ab["accepted"],
                   _ratio(ab["unknown_rate"])))
+    # Issue #567: every accepted packet there is a false positive -- name the
+    # method that accepted it.
+    by_method = {}
+    for r in ab["rows"]:
+        for name, m in r["methods"].items():
+            by_method[name] = by_method.get(name, 0) + m["verdicts"]
+    out.append("abstention accepted_by_method=%s"
+               % (",".join("%s:%d" % (m, by_method[m]) for m in METHODS
+                           if by_method.get(m)) or "-"))
     return "\n".join(out) + "\n"
 
 
@@ -278,7 +352,8 @@ def main(argv):
         return 2
     if as_json:
         doc = {"rows": rows, "confusion": metrics["confusion"],
-               "classes": metrics["classes"], "overall": metrics["overall"]}
+               "classes": metrics["classes"], "overall": metrics["overall"],
+               "methods": metrics["methods"]}
         if ab is not None:
             doc["abstention"] = ab
         json.dump(doc, sys.stdout, indent=1, sort_keys=True)

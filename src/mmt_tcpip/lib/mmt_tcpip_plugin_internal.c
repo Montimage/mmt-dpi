@@ -69,10 +69,15 @@ void mmt_add_content_type(ipacket_t * ipacket, uint16_t content_class, uint16_t 
 }
 
 void mmt_internal_add_connection(ipacket_t * ipacket, uint16_t detected_protocol, mmt_protocol_type_t protocol_type) {
+    mmt_internal_add_connection_by(ipacket, detected_protocol, protocol_type,
+            mmt_classification_method_of(protocol_type));
+}
+
+void mmt_internal_add_connection_by(ipacket_t * ipacket, uint16_t detected_protocol, mmt_protocol_type_t protocol_type, uint8_t method) {
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
     struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
 
-    mmt_change_internal_flow_packet_protocol(ipacket, detected_protocol, protocol_type);
+    mmt_change_internal_flow_packet_protocol_by(ipacket, detected_protocol, protocol_type, method);
 
     if (src != NULL) {
         MMT_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, detected_protocol);
@@ -82,7 +87,7 @@ void mmt_internal_add_connection(ipacket_t * ipacket, uint16_t detected_protocol
     }
 }
 
-void mmt_change_internal_flow_protocol(ipacket_t * ipacket, uint16_t detected_protocol, mmt_protocol_type_t protocol_type) {
+static void change_internal_flow_stack(ipacket_t * ipacket, uint16_t detected_protocol, mmt_protocol_type_t protocol_type) {
     struct mmt_internal_tcpip_session_struct *flow = ipacket->internal_packet->flow;
 #if PROTOCOL_HISTORY_SIZE > 1
     uint8_t a;
@@ -195,6 +200,34 @@ void mmt_change_internal_flow_protocol(ipacket_t * ipacket, uint16_t detected_pr
     flow->detected_protocol_stack[0] = detected_protocol;
     flow->detected_subprotocol_stack[0] = detected_subprotocol;
 #endif
+}
+
+/* Issue #567 (F-BUG-306): every flow-protocol change records how the session's
+ * verdict was reached. The method follows the protocol at the top of the flow
+ * stack (the application verdict): when the change put a new protocol there,
+ * its method replaces the old one, whatever their order — HTTP matched by DPI
+ * and then attributed to a service by its Host header is a hostname verdict.
+ * Re-asserting the protocol already on top only upgrades the method, so a
+ * weaker re-detection never downgrades a stronger one. A change that leaves
+ * another protocol on top (a real protocol inserted beneath a different
+ * correlated one) leaves the method alone. */
+void mmt_change_internal_flow_protocol_by(ipacket_t * ipacket, uint16_t detected_protocol, mmt_protocol_type_t protocol_type, uint8_t method) {
+    struct mmt_internal_tcpip_session_struct *flow = ipacket->internal_packet->flow;
+    mmt_session_t *session = ipacket->session;
+
+    if (!flow)
+        return;
+
+    const uint16_t before = flow->detected_protocol_stack[0];
+    change_internal_flow_stack(ipacket, detected_protocol, protocol_type);
+
+    if (session == NULL || detected_protocol == PROTO_UNKNOWN
+            || flow->detected_protocol_stack[0] != detected_protocol) {
+        return;
+    }
+    if (before != detected_protocol || session->classification_method < method) {
+        session->classification_method = method;
+    }
 }
 
 void mmt_change_internal_packet_protocol(ipacket_t * ipacket, uint16_t detected_protocol, mmt_protocol_type_t protocol_type) {

@@ -64,7 +64,7 @@ struct ipacket_struct {
 };
 ```
 
-Structures from `src/mmt_core/public_include/data_defs.h:122-175` (installed
+Structures from `src/mmt_core/public_include/data_defs.h:137-190` (installed
 as `sdk/include/data_defs.h`). The structure holds the public fields only
 (issue #535): the engine's per-packet state — embedded storage for the path
 arrays and the meta-data, the original data pointer, the offset cache and the
@@ -73,7 +73,7 @@ classifier-walk bookkeeping — lives in a private extension that embeds it
 the packet: a consumer receives an `ipacket_t *` and must never allocate, copy
 or embed an `ipacket_t`. The offsets of the public fields are pinned by
 `_Static_assert`s on the shipped LP64 targets
-(`src/mmt_core/public_include/data_defs.h:177-205`); after an in-place write
+(`src/mmt_core/public_include/data_defs.h:192-220`); after an in-place write
 to `proto_headers_offset->proto_path[]`, call the exported
 `invalidate_packet_offset_cache()`.
 ### User API ###

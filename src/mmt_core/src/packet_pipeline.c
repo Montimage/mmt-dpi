@@ -643,6 +643,15 @@ int set_classified_proto(ipacket_t * ipacket, unsigned index, classified_proto_t
      * claim. */
     if (pi->mmt_current_classifier != NULL) {
         pi->mmt_classifier_claim = pi->mmt_current_classifier;
+        /* Issue #567: a classifier writing the path itself above the
+         * session's transport layer has matched the payload — a direct
+         * dissector claim (DICOM, S1AP, QUIC, HTTP/2...). The transport claim
+         * right above the session's own protocol (TCP, UDP, SCTP beneath IP)
+         * says nothing about the application verdict and is not recorded. */
+        if (ipacket->session != NULL && classified_proto.proto_id != PROTO_UNKNOWN
+                && index > ipacket->session->session_protocol_index + 1) {
+            ipacket->session->classification_method = MMT_CLASSIFICATION_METHOD_DPI;
+        }
     }
 
     set_ipacket_session_status(ipacket, classified_proto.status);
