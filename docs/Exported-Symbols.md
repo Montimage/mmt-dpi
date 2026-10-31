@@ -27,6 +27,13 @@ internals that `libmmt_tcpip` resolves after `dlopen()`
 four `MMT_DPI_PROFILE_*` objects are exported `R` (read-only data) symbols, so
 this `T` table does not list them. Tests that call hidden internals link
 `libmmt_core.a` (`tools/phase0/tests/static_core_link.sh`).
+`hex2int`, `str_combine`, `str_copy`, `str_get_indexes_n`, `str_hex2str` and
+`str_sub_n` (called by `libmmt_tcpip`) and `mmt_log_event`/`mmt_log_write`
+(called by `libmmt_tmobile`) are exported on purpose for the plugins, although
+no core object calls them: `src/mmt_core/src/mmt_init.c` references them so
+that a consumer linking `libmmt_core.a` (the STATIC_LINK mode of 5Greplay and
+NetworkFuzzer) holds them too, and `tools/ci/check-static-link.sh` fails when a
+plugin imports a core symbol such a consumer lacks (issue #675).
 `scripts/validate-exported-symbols.sh` also fails when `nm -D --defined-only`
 lists more symbols than the `MMTAPI` declarations in
 `src/mmt_core/{public,private}_include/*.h` plus 5, any symbol that is not

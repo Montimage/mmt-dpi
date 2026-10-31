@@ -475,6 +475,14 @@ done
 check "simple_traffic_reporting uses bounded hierarchy API" \
     grep -q 'proto_hierarchy_to_str_with_size' "${REPO_ROOT}/src/examples/simple_traffic_reporting.c"
 
+# --- 6b. Downstream STATIC_LINK mode (issue #675) -----------------------------
+# 5Greplay and NetworkFuzzer link libmmt_core.a before libmmt_tcpip.so; the
+# installed archives must give that executable every core symbol a plugin
+# imports.
+echo "--- downstream STATIC_LINK mode (libmmt_core.a + plugins) ---"
+check "check-static-link.sh: the STATIC_LINK order links, every plugin loads" \
+    env CC="${CC}" bash "${REPO_ROOT}/tools/ci/check-static-link.sh" "${PREFIX2}"
+
 # --- 7. make install / uninstall contract (issue #485) ----------------------
 echo "--- make install consumes artifacts; loader by privilege; uninstall ---"
 SDKM=(make -C "${REPO_ROOT}/sdk" "${SDK_MAKE_ARGS[@]}")

@@ -11,7 +11,10 @@
 #              mmt_memcmp from mmt_core.h)
 #   consumer   reached by a known consumer through the static archive:
 #              5Greplay links libmmt_tcpip.a and calls update_http2_data(),
-#              which reaches the other HTTP/2 rewrite helpers (http2.c)
+#              which reaches the other HTTP/2 rewrite helpers (http2.c);
+#              its STATIC_LINK mode (and NetworkFuzzer's) links
+#              libmmt_core.a, where the mmt_init.c table pulls in the core
+#              functions the plugins import (issue #675)
 #   config     reached only in another build profile: the ngap.c and
 #              s1ap_common.c codec contexts under BUILD=asan
 #              (MMT_BUILD_ASAN), dummy_estimation() in proto_rtp.c without
@@ -35,6 +38,7 @@ src/mmt_core/src/hashmap.c hmap_dump_entry test
 src/mmt_core/src/hexdump.c fhexdump test
 src/mmt_core/src/hexdump.c hexdump test
 src/mmt_core/src/memory.c MMT_ARENA_HDR folded
+src/mmt_core/src/mmt_init.c mmt_plugin_core_imports consumer
 src/mmt_core/src/packet_pipeline.c mmt_caplen_guard_refused_count test
 src/mmt_core/src/packet_pipeline.c mmt_caplen_guard_stats_reset test
 src/mmt_core/src/packet_pipeline.c mmt_caplen_guard_total_count test

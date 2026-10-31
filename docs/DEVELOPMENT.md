@@ -67,7 +67,9 @@ Before switching between `BUILD=` profiles, follow the clean rule in
 [Agent Environment Notes §5 Sanitizer Build Profiles](./AGENT_ENVIRONMENT.md#5-sanitizer-build-profiles).
 
 <!-- FLAG: unverified — TCP_SEGMENT=1 and STATIC_LINK=1 were previously documented
-     but no Makefile rule or code reference was found. -->
+     but no Makefile rule or code reference was found. STATIC_LINK=1 is a
+     make option of 5Greplay and NetworkFuzzer, which link libmmt_core.a;
+     tools/ci/check-static-link.sh checks that mode (issue #675). -->
 
 ## Testing
 
