@@ -428,7 +428,8 @@ WORKFLOWS = {
         "other": ["changes", "fuzz-alert"],
     },
     "phase0-baseline.yml": {
-        "single": ["classification-gate", "leak-gate", "precision-gate"],
+        "single": ["classification-gate", "leak-gate", "precision-gate",
+                   "instruction-gate"],
         "matrix": [],
         "docs": [],
         "retired": [],
@@ -450,7 +451,7 @@ TIER_SETS = {
     },
     "phase0-baseline.yml": {
         "gates": ["classification-gate", "leak-gate", "precision-gate",
-                  "harness"],
+                  "instruction-gate", "harness"],
         "full": [],
         "not_tests": [],
         "suite_legs": [],

@@ -83,6 +83,8 @@ tools/phase0/baseline/classification.actual.txt
 # Same for the precision/recall gate's freshly-captured metrics
 tools/phase0/ci/baseline/precision.actual.txt
 **/precision.actual.txt
+# Same for the instruction-count gate's measurement (issue #555)
+tools/phase0/ci/baseline/instructions.actual.txt
 
 # Compiled unit-test binaries — rebuilt by each suite's run_tests.sh
 tests/*/test_*

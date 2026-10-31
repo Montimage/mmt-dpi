@@ -211,5 +211,6 @@ harness ssl_tls12_version_test tcpip
 harness tcp_doff_min_test smoke
 harness tcpip_pcap_harness_test tcpip,smoke
 harness tcp_reassembly_perf_test smoke
+harness throughput_attrs_test smoke
 harness tls_ext_walk_test tcpip
 harness tunnel_parent_lifetime_test smoke

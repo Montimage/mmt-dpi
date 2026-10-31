@@ -12,16 +12,19 @@ Phase 0 changes **no production code** — it adds tooling and captured baseline
 | File | Purpose |
 |---|---|
 | `phase0_classify.c` | Deterministic protocol-classification fingerprint tool. Prints, per pcap, sorted `count<TAB>protocol.path` lines — free of timestamps/addresses/ordering, so it diffs cleanly. |
-| `phase0_throughput.c` | Throughput baseline tool (packets/second), in-memory replay with a fresh handler per iteration. Reports `harness_rss_kib` (trace-preload share) and `library_rss_kib` (SDK share) separately next to the process peak (issue #251). |
+| `phase0_throughput.c` | Throughput baseline tool (packets/second), in-memory replay with a fresh handler per iteration. Reports `harness_rss_kib` (trace-preload share) and `library_rss_kib` (SDK share) separately next to the process peak (issue #251), and `ns_per_pkt` last (issue #555). `PHASE0_MODE=bare\|attrs8\|all` selects the attribute/handler workload (see *Perf benchmark and instruction-count gate* below). |
 | `phase0_precision.c` | Labelled-pcap precision/recall harness (Phase 7, M9, issue #74). Given a pcap and the application protocol it is known to carry, prints `label<TAB>total<TAB>tp<TAB>fp<TAB>app_unknown<TAB>predicted_csv` from the classifier's deterministic decisions, where `predicted_csv` is the retained prediction histogram (`name:count` pairs) feeding the actual-by-predicted confusion matrix in `ci/render_precision.py` (issue #373, F-TEST-002). The unlabelled fingerprint proves decisions don't *change*; this measures whether they are *correct*. |
 | `golden_pcaps.txt` | The fixed golden pcap set (paths relative to the mmt-test `data-sets/` root). |
 | `throughput_pcaps.txt` | The bigFlows/smallFlows perf-benchmark set (issue #251) — deliberately separate from `golden_pcaps.txt` so the classification fingerprint's input set is unchanged. |
+| `capture_perf.sh` | Captures `baseline/perf/throughput.txt`: default-build SDK, every `throughput_pcaps.txt` capture in each `PHASE0_MODE`, one row per (pcap, mode) with the host in the header (issue #555). |
 | `capture_baseline.sh` | Orchestrator: build+install at `-O3`, compile the drivers, capture all baselines into `baseline/`. |
 | `run_all_harnesses.sh` | Aggregate runner (issue #183): enumerates `tests/run_*.sh`, builds the SDK once per required profile into a shared prefix, and replays every harness against it. `--group`/`--shard` select one slice of the enumeration (issue #655 — the CI `harness-*` legs), `--only` keeps the named harnesses (their `run_<stem>.sh` stems) before that (issue #656 — a pull request's selection), `--list` prints the selection without building, and `--log-dir` keeps one log per harness plus a `verdicts.tsv` table. Reachable from the suite runner via `bash tests/run_all_tests.sh --with-harnesses`. `--profile coverage` (issue #524) instead builds one `BUILD=coverage` SDK and replays every harness against it except its `COVERAGE_SKIP` list; `bash tests/run_all_tests.sh --coverage` runs it as its harness arm (see *Coverage profile* below). |
 | `baseline/classification.txt` | **The golden classification baseline.** The asserted regression oracle. |
 | `baseline/classification/` | Per-pcap fingerprints (one file each), for granular diffs. |
 | `baseline/throughput.txt` | Throughput reference snapshot (environment-dependent — compare relative deltas). |
-| `baseline/perf/throughput.txt` | Same-machine throughput + RSS reference for the `throughput_pcaps.txt` benchmark set (issue #251). |
+| `baseline/perf/throughput.txt` | Same-machine throughput + RSS reference for the `throughput_pcaps.txt` benchmark set (issue #251), per attribute mode with `ns_per_pkt` (issue #555). Written by `capture_perf.sh`. |
+| `ci/check_instructions.sh` | The `instruction-gate` CI gate (issue #555): callgrind instruction counts of the replay per attribute mode against `ci/baseline/instructions.txt`. `--self-test` checks its comparator on fixtures. |
+| `ci/baseline/instructions.txt` | Committed instruction-count baseline (aarch64 / Ubuntu 24.04 / GCC 13): per pcap and per mode, plus the per-mode instructions per packet the gate compares. |
 | `ci/accuracy/` | Reviewed accuracy corpus (F-TEST-003): DNS/TLS/QUIC/HTTP-2 (issue #389), S1AP/NGAP/NAS and unknown/malformed traffic (issue #390), and a positive and a negative case per classifier of the default TCP/UDP chains (issue #527). Synthetic captures plus `corpus.json`, which records per capture the family, the case (positive / negative / ambiguous, or `unknown` in the abstention family), the default-chain classifiers it exercises (`classifiers`), the expected per-packet handling, the sha256 of the reviewed bytes, redistribution provenance and review notes. `coverage-pending.txt` lists, each with its reason, the chain classifiers still owed a case pair; the list only shrinks (enforced against the base commit by `--base`). Checked by `tools/ci/tests/check-accuracy-corpus.py`; deliberately **not** in `ci/golden_pcaps.txt`, so the golden fingerprint's input set is unchanged. Regenerate with `gen_tcpip_pcap.py --out-dir ci/accuracy --accuracy` and `gen_mobile_pcap.py --out-dir ci/accuracy --accuracy`. |
 | `ci/baseline/memory.txt` | The M4 library-RSS ceiling (KiB), enforced by `tests/run_memory_ceiling_test.sh` in the CI `harness-default` leg (issue #251). |
 | `baseline/valgrind.txt` | Valgrind leak baseline, or a SKIPPED note + exact command when valgrind is absent. |
@@ -107,8 +110,9 @@ list fails the build):
 - `harness-gate` — harness-gate
 - `classification-gate` — Golden classification fingerprint unchanged
 - `leak-gate` — leak-gate
+- `instruction-gate` — instruction-gate
 - `precision-gate` — Labelled-pcap precision/recall holds or improves (M9, issue #74)
-- matrix expansion: `harness-*` runs 5 legs, slices of `tools/phase0/run_all_harnesses.sh` that together run all 50 `tools/phase0/tests/run_*.sh`
+- matrix expansion: `harness-*` runs 5 legs, slices of `tools/phase0/run_all_harnesses.sh` that together run all 51 `tools/phase0/tests/run_*.sh`
 <!-- end-generated: ci-gates -->
 
 What each gate asserts:
@@ -191,6 +195,14 @@ What each gate asserts:
   manifest and the classifier coverage only. When a classifier change intentionally alters a case's
   handling, update that case's `expected` block and review notes in the same
   PR.
+- **`instruction-gate`** — runs `tools/phase0/ci/check_instructions.sh` on
+  the `ubuntu-24.04-arm` runner (issue #555): callgrind counts the
+  instructions of `phase0_throughput`'s replay over the vendored CI pcaps
+  (`ci/golden_pcaps.txt`) in the `bare`, `attrs8` and `all` modes, and the job
+  fails when a mode's instructions per packet rise more than 2 % above
+  `ci/baseline/instructions.txt`, when a mode is missing or the packet count
+  changed. See *Perf benchmark and instruction-count gate* below for the
+  regeneration rule.
 - **`harness-*` legs / `harness-gate`** — five legs (issue #655), each
   running one slice of `run_all_harnesses.sh`: `asan-1of3` to `asan-3of3`
   (`--group asan --shard K/3`), `default` (`--group none,default`) and
@@ -211,6 +223,61 @@ What each gate asserts:
   pins that the legs cover every harness exactly once. Locally,
   `run_all_harnesses.sh` with no selector (or `tests/run_all_tests.sh
   --with-harnesses`) runs all of them.
+
+### Perf benchmark and instruction-count gate (issue #555)
+
+`phase0_throughput` measures one of three workloads, chosen with
+`PHASE0_MODE` (the per-iteration setup is outside the timed window):
+
+| Mode | Registered | Fetched per packet |
+|---|---|---|
+| `bare` (default) | nothing | nothing — the classifier hot path |
+| `attrs8` | `ip.src`, `ip.dst`, `tcp.src_port`, `tcp.dest_port`, `udp.src_port`, `udp.dest_port`, `meta.packet_len`, `http.uri` | each of the 8, by a packet handler (`get_attribute_extracted_data`) |
+| `all` (fetch-all) | every attribute of every registered protocol | for each layer of the packet's protocol path, every attribute of that layer's protocol (`get_attribute_extracted_data_at_index`) |
+
+`PHASE0_ATTRS="proto.attr,..."` (issue #506) still registers a custom list
+(mode `custom`); it cannot be combined with `PHASE0_MODE`. The driver prints
+`mode<TAB><mode><TAB><attributes registered>` on stderr, and the stdout line
+ends with `ns_per_pkt` (`1e9 / pps`). Measured with the `bash
+tools/phase0/tests/run_throughput_attrs_test.sh` harness.
+
+**Same-host wall clock.** `tools/phase0/capture_perf.sh` builds the default
+(release) SDK, replays bigFlows and smallFlows (`throughput_pcaps.txt`, from
+the mmt-test data-sets) in each mode and writes `baseline/perf/throughput.txt`
+— `--modes`, `--iterations` and `--out` narrow it, `MMT_PREFIX` plus
+`MMT_SDK_PREBUILT=1` reuse an installed SDK. The header names the host, the
+GCC and the commit; compare a change against a fresh capture on the **same
+host**, never against figures from another machine. A perf change records
+its before/after rows in its PR.
+
+**CI instruction counts.** Wall-clock pps is too noisy on shared runners, so
+CI counts instructions: `tools/phase0/ci/check_instructions.sh` runs the
+driver under `valgrind --tool=callgrind --collect-atstart=no`, one iteration
+per vendored CI pcap and mode. The driver brackets each replay pass with
+`CALLGRIND_TOGGLE_COLLECT` (compiled in when `<valgrind/callgrind.h>` is
+present), so the count is the replay alone, without `init_extraction()`,
+handler setup or teardown; `MMT_DETERMINISTIC_SEED=1` pins the hash seeds,
+so a pcap's count repeats within a few tens of instructions (the residue
+moves with the environment and paths, through stack alignment) — the gate
+relies on its tolerance, never on exact equality. The per-mode total over the pcap set, in instructions per
+packet, is compared with `ci/baseline/instructions.txt`:
+`INSTR_TOLERANCE_PCT` (default 2) above it fails, more than that below it
+passes with a request to ratchet the baseline. Counts depend on the
+architecture and the toolchain: the baseline is aarch64 / Ubuntu 24.04 /
+GCC 13, the `ubuntu-24.04-arm` runner's; another architecture exits 2, and
+another GCC or Valgrind release is a warning.
+
+Regenerating the baseline — an intentional change, or a perf change that
+lowers the counts: run the gate on an aarch64 Ubuntu 24.04 host (or take the
+`phase0-instructions-actual` artifact of the CI run), copy the measurement
+over the baseline in the same PR and give the per-mode before/after figures
+in the PR body:
+
+```bash
+MMT_PREFIX=$(mktemp -d) bash tools/phase0/ci/check_instructions.sh   # writes ci/baseline/instructions.actual.txt
+cp tools/phase0/ci/baseline/instructions.actual.txt \
+   tools/phase0/ci/baseline/instructions.txt                         # or run the gate with --update
+```
 
 ### Coverage profile (`run_all_harnesses.sh --profile coverage`)
 
@@ -246,6 +313,9 @@ Equally deliberate — these signals exist but nothing fails on them
   — needs the external mmt-test data-sets; only the `ci/baseline/` subset is
   gated. Re-run `capture_baseline.sh` manually to refresh it.
 - `baseline/throughput.txt` — informational trend, environment-dependent.
+- `baseline/perf/throughput.txt` — same-host wall clock and RSS per
+  attribute mode; CI gates the instruction counts (`instruction-gate`)
+  instead.
 - `baseline/valgrind.txt` — asserted only where valgrind is installed; the
   capture records SKIPPED otherwise.
 - `tests/run_all_tests.sh --with-harnesses` — the local aggregate run of

@@ -1,0 +1,78 @@
+# Instruction-count baseline of the phase0_throughput replay (issue #555).
+# callgrind Ir of the replay pass, 1 iteration per pcap, over
+# tools/phase0/ci/golden_pcaps.txt; gated per mode on Ir per packet by
+# tools/phase0/ci/check_instructions.sh. Regenerate on a matching host,
+# never by hand (see the script header).
+# arch: aarch64
+# gcc: 13.3.0
+# valgrind: valgrind-3.22.0
+# os: Ubuntu 24.04.4 LTS
+#
+# pcap	<mode>	<pcap>	<packets>	<instructions>
+# total	<mode>	<packets>	<instructions>	<instructions_per_packet>
+pcap	bare	tcp_bbc-out-of-order.pcap	125	5664466
+pcap	bare	tcp_ecn_sample.pcap	479	6804127
+pcap	bare	tcp_tpncp_tcp.pcap	116	565370
+pcap	bare	ftp_txt.pcap	75	333861
+pcap	bare	ftp_login_fail.pcap	77	373542
+pcap	bare	ftp_multiple_session.pcap	482	1801119
+pcap	bare	ip_ping_local_ip_fragmentation.pcap	54	233183
+pcap	bare	ip_teardrop_overlaping_ip_fragments.pcap	17	63687
+pcap	bare	arp_padding.pcap	98	123057
+pcap	bare	dns_query.pcap	1	9247
+pcap	bare	tls.pcap	2	28197
+pcap	bare	quic.pcap	1	17502
+pcap	bare	dtls.pcap	3	27829
+pcap	bare	http2.pcap	1	7724
+pcap	bare	dicom.pcap	1	19546
+pcap	bare	syslog.pcap	1	10579
+pcap	bare	ptp.pcap	1	16443
+pcap	bare	radius.pcap	2	33466
+pcap	bare	gtp.pcap	4	65872
+pcap	bare	s1ap.pcap	3	16529
+pcap	bare	ngap.pcap	4	44004
+total	bare	1547	16259350	10510.2
+pcap	attrs8	tcp_bbc-out-of-order.pcap	125	5811552
+pcap	attrs8	tcp_ecn_sample.pcap	479	7371959
+pcap	attrs8	tcp_tpncp_tcp.pcap	116	690411
+pcap	attrs8	ftp_txt.pcap	75	416033
+pcap	attrs8	ftp_login_fail.pcap	77	458688
+pcap	attrs8	ftp_multiple_session.pcap	482	2324919
+pcap	attrs8	ip_ping_local_ip_fragmentation.pcap	54	286551
+pcap	attrs8	ip_teardrop_overlaping_ip_fragments.pcap	17	73416
+pcap	attrs8	arp_padding.pcap	98	167494
+pcap	attrs8	dns_query.pcap	1	10830
+pcap	attrs8	tls.pcap	2	31005
+pcap	attrs8	quic.pcap	1	19082
+pcap	attrs8	dtls.pcap	3	31705
+pcap	attrs8	http2.pcap	1	9343
+pcap	attrs8	dicom.pcap	1	21165
+pcap	attrs8	syslog.pcap	1	12162
+pcap	attrs8	ptp.pcap	1	18062
+pcap	attrs8	radius.pcap	2	36195
+pcap	attrs8	gtp.pcap	4	71250
+pcap	attrs8	s1ap.pcap	3	19313
+pcap	attrs8	ngap.pcap	4	46908
+total	attrs8	1547	17928043	11588.9
+pcap	all	tcp_bbc-out-of-order.pcap	125	10991855
+pcap	all	tcp_ecn_sample.pcap	479	27105829
+pcap	all	tcp_tpncp_tcp.pcap	116	4830988
+pcap	all	ftp_txt.pcap	75	3853160
+pcap	all	ftp_login_fail.pcap	77	3866783
+pcap	all	ftp_multiple_session.pcap	482	24771163
+pcap	all	ip_ping_local_ip_fragmentation.pcap	54	1542654
+pcap	all	ip_teardrop_overlaping_ip_fragments.pcap	17	395824
+pcap	all	arp_padding.pcap	98	1427297
+pcap	all	dns_query.pcap	1	43305
+pcap	all	tls.pcap	2	103179
+pcap	all	quic.pcap	1	48289
+pcap	all	dtls.pcap	3	109322
+pcap	all	http2.pcap	1	46332
+pcap	all	dicom.pcap	1	63769
+pcap	all	syslog.pcap	1	36508
+pcap	all	ptp.pcap	1	42495
+pcap	all	radius.pcap	2	246680
+pcap	all	gtp.pcap	4	207038
+pcap	all	s1ap.pcap	3	161738
+pcap	all	ngap.pcap	4	225229
+total	all	1547	80119437	51790.2

@@ -3,11 +3,13 @@ name: Phase 0 baseline gate
 # Gates the MMT-DPI Master Improvement Plan on the Phase 0 baselines:
 #   1. the golden-pcap classification fingerprint must be unchanged — phases 1-3,5,6
 #   2. labelled-pcap precision/recall must hold or improve — Phase 7 (M9, #74)
+#   3. replay instruction counts (bare / attrs8 / fetch-all) must not rise
+#      past the committed baseline's tolerance — issue #555
 # The BUILD=asan (ASan/UBSan) profile compile gate moved into c-cpp.yml's
 # sanitizer-tests (BUILD=asan, asan) leg (issue #659); its old context
 # `ASan/UBSan profile compiles` is a retired stub there.
 #
-# The classification and precision jobs are self-contained: they use the small
+# The classification, precision and instruction jobs are self-contained: they use the small
 # pcap subset vendored under tools/phase0/ci/pcaps/, so they need no access to
 # the mmt-test repo. See tools/phase0/README.md.
 
@@ -213,6 +215,36 @@ jobs:
           extra-packages: valgrind
       - name: Run the named leak-regression cases under Valgrind
         run: bash tools/phase0/tests/run_leak_regression_test.sh
+
+  instruction-gate:
+    # Issue #555: pps is too noisy on shared runners to gate, so this job
+    # counts instructions instead. tools/phase0/ci/check_instructions.sh runs
+    # phase0_throughput under callgrind over the vendored CI pcaps in the
+    # bare, attrs8 and fetch-all modes (the replay alone, bracketed by
+    # CALLGRIND_TOGGLE_COLLECT) and fails when a mode's instructions per
+    # packet rise more than 2 % above tools/phase0/ci/baseline/instructions.txt.
+    # Counts are per architecture: the baseline is aarch64 / Ubuntu 24.04 /
+    # GCC 13, so the job runs on the ubuntu-24.04-arm runner. It reports
+    # under its job id, a short stable required context (#490).
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' }}
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/bootstrap-deps
+        with:
+          extra-packages: valgrind
+      - name: Compare replay instruction counts with the committed baseline
+        run: bash tools/phase0/ci/check_instructions.sh
+      - name: Upload the measured counts
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: phase0-instructions-actual
+          path: tools/phase0/ci/baseline/instructions.actual.txt
+          if-no-files-found: ignore
+          retention-days: 7
 
   precision-gate:
     name: Labelled-pcap precision/recall holds or improves (M9, issue #74)

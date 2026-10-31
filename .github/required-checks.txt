@@ -84,6 +84,8 @@ Golden classification fingerprint unchanged
 Labelled-pcap precision/recall holds or improves (M9, issue
 harness-gate
 leak-gate
+# Replay instruction counts per attribute mode (issue #555), on arm64.
+instruction-gate
 
 # --- release-packages.yml --------------------------------------------------
 # Always reports: passes when a PR touches no packaging path (build and
