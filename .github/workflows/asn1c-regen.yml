@@ -51,7 +51,7 @@ jobs:
     # (issue #491); base-image-refresh.yml repins it when the tag moves.
     # Debian 13 since issue #516: the Debian 12 image misses the 2026 glibc
     # fixes, and the tree reproduces byte-for-byte under trixie's toolchain.
-    container: buildpack-deps:trixie@sha256:4a40a9b7f5b25cced5d5367108754eeb825a3e64c05c94e1ab7b462a96de5434
+    container: buildpack-deps:trixie@sha256:8db3a3d1e68e0a88ed31c2256d0c0e3b127f80685e6b1f3a9bb31e22638b5e7b
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 

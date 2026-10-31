@@ -76,8 +76,8 @@ jobs:
         include:
           # Digest-pinned and recorded in tools/ci/base-images.txt; `name` is
           # the distribution token of the release packages.
-          - { name: ubuntu-24.04, ext: deb, image: "ubuntu:24.04@sha256:24737cef17f4e22b1977df7d9a05e77c4e28b7da5b8911f8d8ccda136bf3573c" }
-          - { name: debian-12, ext: deb, image: "debian:12@sha256:854dd8ab51d62866dbd8f5431d15ce77b12983a2a4a1e1fe43a2395dc7ef9f61" }
+          - { name: ubuntu-24.04, ext: deb, image: "ubuntu:24.04@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852" }
+          - { name: debian-12, ext: deb, image: "debian:12@sha256:d74df7598108a173a621eda4d58a2adbf850b2d9a9d81bc2cca1a6c21174a880" }
           - { name: rocky-9, ext: rpm, image: "rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6" }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

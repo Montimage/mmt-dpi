@@ -233,7 +233,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     container:
-      image: "ubuntu:22.04@sha256:e0f80c829509ef4df9e76bd8944eb7b8ec25cbb379b112a7f9448b2c77a77c9b"
+      image: "ubuntu:22.04@sha256:076e7bf82319619f28dd0aa9c02ab34b055ad37100395b4f49a2ffba04fb5e11"
     steps:
     # git first, so actions/checkout makes a real clone (without git it
     # downloads a tarball with no history, and the suites read the tree with
@@ -407,7 +407,7 @@ jobs:
     env:
       CPPCHECK_MODE: ${{ github.event_name == 'pull_request' && 'pr' || 'full' }}
     container:
-      image: "ubuntu:24.04@sha256:24737cef17f4e22b1977df7d9a05e77c4e28b7da5b8911f8d8ccda136bf3573c"
+      image: "ubuntu:24.04@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852"
     steps:
     # git first, so actions/checkout makes a real clone (shellcheck lists the
     # tracked scripts with git ls-files); retried as in toolchain-floor.
@@ -835,7 +835,7 @@ jobs:
     - name: Root install / uninstall round trip in ubuntu:24.04
       run: |
         docker run --rm -v "$PWD":/work -w /work \
-          "ubuntu:24.04@sha256:24737cef17f4e22b1977df7d9a05e77c4e28b7da5b8911f8d8ccda136bf3573c" \
+          "ubuntu:24.04@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852" \
           bash tools/ci/tests/run-root-install.sh --install-deps
 
   assertions-live:

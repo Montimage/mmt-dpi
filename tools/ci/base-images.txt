@@ -34,17 +34,17 @@
 # Refresh every pin with: bash tools/ci/refresh-base-images.sh --write
 # Refresh a single pin with:
 digest-source: docker buildx imagetools inspect <image>:<tag>
-ubuntu:22.04@sha256:e0f80c829509ef4df9e76bd8944eb7b8ec25cbb379b112a7f9448b2c77a77c9b  # retire-by: 2027-04-30 (#516)
-ubuntu:24.04@sha256:24737cef17f4e22b1977df7d9a05e77c4e28b7da5b8911f8d8ccda136bf3573c
-debian:12@sha256:854dd8ab51d62866dbd8f5431d15ce77b12983a2a4a1e1fe43a2395dc7ef9f61
+ubuntu:22.04@sha256:076e7bf82319619f28dd0aa9c02ab34b055ad37100395b4f49a2ffba04fb5e11  # retire-by: 2027-04-30 (#516)
+ubuntu:24.04@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852
+debian:12@sha256:d74df7598108a173a621eda4d58a2adbf850b2d9a9d81bc2cca1a6c21174a880
 rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6
 quay.io/centos/centos:stream9@sha256:6f8045fc4f552544d8a401d61848bafc8d06ca7c11897c5b54a2c37fc419a20a  # retire-by: 2027-04-30 (#516)
-buildpack-deps:trixie@sha256:4a40a9b7f5b25cced5d5367108754eeb825a3e64c05c94e1ab7b462a96de5434
+buildpack-deps:trixie@sha256:8db3a3d1e68e0a88ed31c2256d0c0e3b127f80685e6b1f3a9bb31e22638b5e7b
 # Current-generation release legs (issue #515). Rocky Linux 10 is published
 # as rockylinux/rockylinux only: the Docker Hub official `rockylinux` image
 # stops at 9.
-ubuntu:26.04@sha256:19fcd1bf268f02b60aca3bd30bd8a6d9a11759a430e32921833e65f16d87348a
-debian:13@sha256:4c25275446ca371766b8b093c696782eabce06263fccacb8d5d813b3dc44b308
+ubuntu:26.04@sha256:6a06111c3b0a8600feadb270aec771dc239bf407b25625f93f44ab00e11f4d3c
+debian:13@sha256:2dc419c6d7fe3dad0a2f9fd469c34cc90b0f9ba642d8fde837fe3d7d34a0e7f1
 rockylinux/rockylinux:10@sha256:827d37bc128288ccf160ee318bb3cb92d591164cb217e92f8bc61e3982ae1834
 quay.io/centos/centos:stream10@sha256:99b8fe27dd4958b5dc2630ce35f5f6a7ff7bf9b2b1a72078102fde50d3277550
 # Install smoke matrix only (issue #493): the advertised distributions outside
@@ -53,6 +53,6 @@ quay.io/centos/centos:stream10@sha256:99b8fe27dd4958b5dc2630ce35f5f6a7ff7bf9b2b1
 # image: quay.io retags fedora:44 daily and drops the previous digest at once,
 # so a quay pin breaks within a day.
 fedora:44@sha256:43b29f65a41eb9c35e1cd5323e3bdf3b655c2357a9f4f1ff2f9c2798e5045d80
-registry.opensuse.org/opensuse/leap:16.0@sha256:295892214721055ace3d2b7f86b21d4143cc0edb4264149d3310a0a032fa166a
+registry.opensuse.org/opensuse/leap:16.0@sha256:a9273058652f1f7d39f7c8439079662bd387be74013c6b40c9dfc42b228a972c
 alpine:3.23@sha256:ff7f0c727dd796aa36787bfcd9a64bf35a6ce72a73451b3359fde849b6703d63
-archlinux:base@sha256:52dfbd5afb23a220d5ee92dafcb4c788d96c026ed04179890c23adef4c897fa0  # platforms: linux/amd64
+archlinux:base@sha256:e82623936fa1a69700b48e98b058df6eaab18b737c27473a7234a40fdecb9413  # platforms: linux/amd64

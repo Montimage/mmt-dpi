@@ -84,16 +84,16 @@ jobs:
           # Every image is digest-pinned and recorded in
           # tools/ci/base-images.txt (check-image-digests.sh, refreshed daily
           # by base-image-refresh.yml).
-          - { name: ubuntu-22.04, tier: supported, image: "ubuntu:22.04@sha256:e0f80c829509ef4df9e76bd8944eb7b8ec25cbb379b112a7f9448b2c77a77c9b" }
-          - { name: ubuntu-24.04, tier: supported, image: "ubuntu:24.04@sha256:24737cef17f4e22b1977df7d9a05e77c4e28b7da5b8911f8d8ccda136bf3573c" }
-          - { name: debian-12, tier: supported, image: "debian:12@sha256:854dd8ab51d62866dbd8f5431d15ce77b12983a2a4a1e1fe43a2395dc7ef9f61" }
+          - { name: ubuntu-22.04, tier: supported, image: "ubuntu:22.04@sha256:076e7bf82319619f28dd0aa9c02ab34b055ad37100395b4f49a2ffba04fb5e11" }
+          - { name: ubuntu-24.04, tier: supported, image: "ubuntu:24.04@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852" }
+          - { name: debian-12, tier: supported, image: "debian:12@sha256:d74df7598108a173a621eda4d58a2adbf850b2d9a9d81bc2cca1a6c21174a880" }
           - { name: rocky-9, tier: supported, image: "rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6" }
           - { name: centos-stream9, tier: supported, image: "quay.io/centos/centos:stream9@sha256:6f8045fc4f552544d8a401d61848bafc8d06ca7c11897c5b54a2c37fc419a20a" }
           - { name: fedora-44, tier: supported, image: "fedora:44@sha256:43b29f65a41eb9c35e1cd5323e3bdf3b655c2357a9f4f1ff2f9c2798e5045d80" }
-          - { name: opensuse-leap-16.0, tier: supported, image: "registry.opensuse.org/opensuse/leap:16.0@sha256:295892214721055ace3d2b7f86b21d4143cc0edb4264149d3310a0a032fa166a" }
+          - { name: opensuse-leap-16.0, tier: supported, image: "registry.opensuse.org/opensuse/leap:16.0@sha256:a9273058652f1f7d39f7c8439079662bd387be74013c6b40c9dfc42b228a972c" }
           # Best-effort: Arch is rolling (no arm64 image upstream); Alpine is
           # musl, which the SDK does not build on today.
-          - { name: archlinux, tier: best-effort, image: "archlinux:base@sha256:52dfbd5afb23a220d5ee92dafcb4c788d96c026ed04179890c23adef4c897fa0" }
+          - { name: archlinux, tier: best-effort, image: "archlinux:base@sha256:e82623936fa1a69700b48e98b058df6eaab18b737c27473a7234a40fdecb9413" }
           - { name: alpine-3.23, tier: best-effort, image: "alpine:3.23@sha256:ff7f0c727dd796aa36787bfcd9a64bf35a6ce72a73451b3359fde849b6703d63" }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
