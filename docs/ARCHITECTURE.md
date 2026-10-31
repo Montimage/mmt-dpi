@@ -22,14 +22,20 @@ The central component responsible for:
 
 ### Protocol Plugins
 
-Protocol implementations are organized into shared libraries loaded at runtime:
+Protocol implementations are organized into shared libraries loaded at runtime
+from `plugins/` (the plugin list `make install` links there is
+`MMT_LAYOUT_PLUGINS`, `sdk/Makefile:249`; library names in `rules/common.mk:216-223`):
 
 | Plugin | Library | Description |
 |--------|---------|-------------|
 | **mmt_tcpip** | `libmmt_tcpip.so` | TCP/IP stack and application-layer protocols (HTTP, DNS, FTP, QUIC, etc.) |
-| **mmt_mobile** | `libmmt_mobile.so` | LTE/5G protocols (NAS, S1AP, NGAP, GTP, Diameter) |
+| **mmt_mobile** | `libmmt_tmobile.so` | LTE/5G protocols (NAS, S1AP, NGAP, GTP, Diameter) |
 | **mmt_business_app** | `libmmt_business_app.so` | Business application protocols |
-| **mmt_security** | `libmmt_security.so` | Security protocol handling |
+| **mmt_dicom** | `libmmt_tdicom.so` | DICOM medical-imaging protocol |
+
+`libmmt_security.so` (the rule-based security engine) and `libmmt_fuzz.so` are
+not plugins: they are built only with `ENABLESEC=1` (`rules/common.mk:225-228`)
+and linked by the application.
 
 The LTE NAS decoder does not decrypt ciphered NAS messages (EEA1/EEA2/EEA3):
 the per-UE NAS keys cannot be derived from the traffic, and the SDK has no API
@@ -42,7 +48,7 @@ read from a ciphered Attach Accept. Background in the
 
 ### Build System (`rules/`, `sdk/`)
 
-Platform-specific build rules supporting Linux (GCC, Clang, ICC) and ARM cross-compilation.
+Platform-specific build rules supporting Linux (GCC, Clang, ICC), built natively on x86-64 and arm64; cross-compilation is not supported ([ARM status](Compiling-mmt-sdk-for-ARM-architecture-by-cross-compiler.md)).
 
 ## Packet Processing Flow
 

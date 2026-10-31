@@ -63,8 +63,8 @@ curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/ins
 # Install to a custom directory
 curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | MMT_BASE=/usr/local/mmt bash
 
-# Build a development branch instead of the pinned release (unverified — explicit opt-in)
-curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | BRANCH=dev bash -s -- --unverified-branch
+# Build the tip of a branch (here main) instead of the pinned release (unverified — explicit opt-in)
+curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | BRANCH=main bash -s -- --unverified-branch
 
 # Skip automatic dependency installation
 curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | SKIP_DEPS=1 bash
@@ -374,7 +374,7 @@ mmt-dpi/
 |----------|--------------|
 | Linux (GCC) | `make` |
 | Linux (Clang) | `make ARCH=linux-clang` |
-| ARM (cross-compilation) | [Cross-compilation guide](docs/Compiling-mmt-sdk-for-ARM-architecture-by-cross-compiler.md) |
+| Linux arm64 (aarch64), native | `make` on an arm64 host — CI runs the full suite on `ubuntu-24.04-arm` ([ARM status](docs/Compiling-mmt-sdk-for-ARM-architecture-by-cross-compiler.md)) |
 
 > **Note:** macOS and Windows are not currently supported.
 

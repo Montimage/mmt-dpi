@@ -833,7 +833,7 @@
       <p class="api-note" style="margin-top:22px;">
         The install command above the fold installs to <code>/opt/mmt/dpi</code>, and the first-run steps beside it compile and run the published <a href="first-run/hello_packet.c">hello_packet.c</a> against that prefix. Prefer a package? Grab the
         <code>.deb</code>/<code>.rpm</code> from <a href="https://github.com/montimage-projects/mmt-dpi/releases" target="_blank" rel="noopener">Releases</a>;
-        building from source or cross-compiling is covered in the
+        building from source is covered in the
         <a href="Compilation-and-Installation-Instructions.html">Compilation and Installation Instructions</a>. Every guide lives in the
         <a href="docs/">documentation index</a>.
       </p>
@@ -852,7 +852,7 @@
         </details>
         <details>
           <summary>Which platforms are supported?</summary>
-          <p>Linux only. The one-command install is <a href="https://github.com/montimage-projects/mmt-dpi/actions/workflows/install-smoke.yml">smoke-tested in CI</a> on Ubuntu, Debian, Rocky Linux, CentOS Stream, Fedora and openSUSE; Arch, Alpine and RHEL itself are best-effort. Builds with GCC or Clang, plus ARM cross-compilation. macOS and Windows are not currently supported.</p>
+          <p>Linux only. The one-command install is <a href="https://github.com/montimage-projects/mmt-dpi/actions/workflows/install-smoke.yml">smoke-tested in CI</a> on Ubuntu, Debian, Rocky Linux, CentOS Stream, Fedora and openSUSE; Arch, Alpine and RHEL itself are best-effort. Builds with GCC or Clang, on x86-64 and natively on arm64 (aarch64). macOS and Windows are not currently supported.</p>
         </details>
         <details>
           <summary>How do I add a protocol that isn't covered?</summary>

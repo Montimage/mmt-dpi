@@ -1,38 +1,40 @@
 ---
 layout: default
-title: "Compiling mmt-sdk for ARM architecture by cross-compiler"
+title: "Building mmt-sdk for ARM (arm64)"
 ---
 
-# Compiling mmt-sdk for ARM architecture by cross-compiler
+# Building mmt-sdk for ARM (arm64)
 
-> ⚠️ This document references the `ARCH=green-arm` build target which no longer
-> exists in the current codebase. The current available build targets are:
-> `linux`, `linux-gcc`, `linux-clang`, `linux-icc`, `osx`, `win32`, `win64`
-> (`rules/arch-*.mk`).
->
-> For ARM cross-compilation, use `ARCH=linux` with a cross-compiler toolchain
-> and set `CC=arm-linux-gnueabihf-gcc` (or your target's compiler).
+**Status: native arm64 builds are supported; cross-compilation is not.**
 
-**Note:** To compile the buildroot, it needs ~2GB RAM memory.
+## Native arm64 (aarch64)
 
-Download the cross-compiler for arm: `greencom-buildroot.tgz` (can be found on `mmt-probe` project, on branch `SAN-QOLSR` at location `mmt-probe/qolsr/docs`). Then build the compiler
+On a Linux arm64 host the SDK builds and installs exactly as on x86-64 — the
+same toolchain line, `make -C sdk -j$(nproc)` and `make -C sdk install`
+([Compilation and Installation Instructions](./Compilation-and-Installation-Instructions.md)).
+CI tests it on a native arm64 runner: the `unit-tests-arm` job of
+`.github/workflows/c-cpp.yml` runs the full suite on `ubuntu-24.04-arm`, and
+the release workflow builds and checks the arm64 packages on the same runner
+label. The toolchain and CI facts are stated once, in
+[Agent Environment Notes §1](./AGENT_ENVIRONMENT.md#1-toolchain-requirements).
 
-```sh
-sudo apt-get install unzip # if it is not installed yet
-tar xzf greencom-buildroot.tgz
-cd greencom-buildroot
-make greencom-rpi_defconfig
-make toolchain
-```
+## Cross-compilation
 
-Add the compiler path:
+Building on one architecture for another is not supported and no CI job
+tests it. The default toolchain file sets the compiler and archiver itself
+(`CC := gcc`, `AR := ar rcsD` at `rules/arch-linux.mk:3-4`), so an exported
+`CC` is ignored, and the build wires no sysroot or target triplet. The older
+recipe that lived here (a buildroot toolchain and a `green-arm` build target)
+no longer applies: that target was removed. Build on an arm64 host instead.
 
-```sh
-export PATH="/home/USER/greencom-buildroot/output/host/usr/bin:$PATH"
-```
+## Build targets
 
-Then build the SDK:
+`ARCH` selects one of the `rules/arch-<name>.mk` files (`sdk/Makefile:1,17`),
+and these are the only targets:
 
-```sh
-make -j4 ARCH=linux CC=arm-linux-gnueabihf-gcc
-```
+| `ARCH=` | Toolchain |
+|---------|-----------|
+| `linux` (default) | GCC |
+| `linux-gcc` | GCC |
+| `linux-clang` | Clang |
+| `linux-icc` | Intel icc |

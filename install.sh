@@ -22,7 +22,7 @@
 #
 # Options (via environment variables):
 #   MMT_BASE=/custom/path  - Install to a custom directory (default: /opt/mmt)
-#   BRANCH=dev             - Same as --branch dev (requires --unverified-branch)
+#   BRANCH=main            - Same as --branch main (requires --unverified-branch)
 #   JOBS=4                 - Number of parallel build jobs (default: auto-detected)
 #   SKIP_DEPS=1            - Skip dependency installation
 #   LDCONF=0               - Do not register the libraries with the dynamic
@@ -32,7 +32,7 @@
 #   curl -fsSL https://...install.sh | bash
 #   curl -fsSL https://...install.sh | bash -s -- --dry-run
 #   curl -fsSL https://...install.sh | MMT_BASE=/usr/local/mmt bash
-#   curl -fsSL https://...install.sh | BRANCH=dev bash -s -- --unverified-branch
+#   curl -fsSL https://...install.sh | BRANCH=main bash -s -- --unverified-branch
 #   curl -fsSL https://...install.sh | bash -s -- --uninstall
 #
 
@@ -125,7 +125,7 @@ Options:
 
 Environment variables:
   MMT_BASE=/custom/path  Install to a custom directory (default: /opt/mmt)
-  BRANCH=dev             Same as --branch dev (requires --unverified-branch)
+  BRANCH=main            Same as --branch main (requires --unverified-branch)
   JOBS=4                 Number of parallel build jobs (default: auto)
   SKIP_DEPS=1            Skip dependency installation
   LDCONF=0               Do not register the libraries with the dynamic

@@ -47,10 +47,9 @@ gcc -o extract_all extract_all.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lm
 
 ## Branching Strategy
 
-- `main` - Stable release branch (protected)
-- `dev` - Development integration branch
-- `feat/*` - Feature branches
-- `hotfix/*` - Hotfix branches
+- `main` - The only long-lived branch (protected); releases are tagged on it
+- `<type>/<issue>-<short-desc>` - Work branches, e.g. `fix/123-null-deref` or
+  `docs/456-deployment-guide`, merged into `main` through a pull request
 
 Always branch from `main` for new features and bug fixes.
 

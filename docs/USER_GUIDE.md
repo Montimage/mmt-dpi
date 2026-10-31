@@ -61,10 +61,10 @@ After installation (default `MMT_BASE=/opt/mmt`), the layout is:
 │   ├── include/      # Public C headers (mmt_core.h, ...)
 │   └── lib/          # Shared libraries (libmmt_core.so, libmmt_tcpip.so, ...)
 ├── plugins/          # Protocol plugin .so files loaded at runtime
-└── examples/         # Prebuilt example binaries
+└── examples/         # Example sources (copied by make install, sdk/Makefile:110-113)
 ```
 
-Paths are defined in `rules/common.mk:4-7`.
+Paths are defined in `rules/common.mk:3-8`.
 
 ## 2. First run: extract attributes from a pcap
 

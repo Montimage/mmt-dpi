@@ -9,20 +9,30 @@ title: "httpparser → llhttp migration guide"
 performs the migration. This document is the audit-required guide: it changes no code
 and no build input.*
 
-## 1. Current state
+**Status (2026-10-31, issue #583): done.** Issue #222 performed the migration
+(commit `e16f265e`, 2026-09-16). This guide is kept as the spike record: §1 and the
+*http_parser symbol* columns of §4 describe the tree before that commit — read the
+removed files with `git show e16f265e~1:src/mmt_tcpip/lib/http_parser.h` — while
+every *Site* cite points at the same call site on `main`, which now holds the llhttp
+form. Today's vendored parser is llhttp 9.4.3 (`LLHTTP_VERSION_*` at
+`src/mmt_tcpip/lib/llhttp.h:14-16`), in `src/mmt_tcpip/lib/llhttp.h`, `llhttp.c`,
+`llhttp_api.c` and `llhttp_http.c`; the glue kept its names,
+`src/mmt_tcpip/lib/http_parser_integration.c` / `.h`.
 
-MMT-DPI vendors **nodejs/http-parser 2.9.4** at `src/mmt_tcpip/lib/http_parser.c` /
-`http_parser.h` (`HTTP_PARSER_VERSION_*` at `http_parser.h:36-38`; bumped from 2.5.0 by
-issue #142, hardened by issue #204). Upstream was archived on 2022-06-19 and points at
+## 1. State before the migration (pre-#222, until 2026-09-16)
+
+MMT-DPI vendored **nodejs/http-parser 2.9.4** as `http_parser.c` / `http_parser.h` in
+`src/mmt_tcpip/lib/` (`HTTP_PARSER_VERSION_*` at lines 36-38 of that header; bumped
+from 2.5.0 by issue #142, hardened by issue #204; both files removed by #222). Upstream was archived on 2022-06-19 and points at
 **llhttp** as its successor — the dependency is terminal and unmaintained.
 
-The entire call surface is three files:
+The entire call surface was three files:
 
 | File | Role |
 |------|------|
 | `src/mmt_tcpip/lib/http_parser_integration.h` | `stream_parser_t` (one `http_parser` per direction), `stream_processor_t` (per-parser `data` payload), `init_http_parser`/`close_http_parser` inline helpers |
 | `src/mmt_tcpip/lib/http_parser_integration.c` | the eight callbacks and the `http_parser_settings` table (`get_settings()`) |
-| `src/mmt_tcpip/lib/protocols/proto_http.c` | the only driver: `http_parser_execute()` at `proto_http.c:383`, `parser->upgrade` at `:384`, `HTTP_PARSER_ERRNO`/`http_errno_description` at `:389`, and the reset-on-error `http_parser_init(parser, HTTP_BOTH)` at `:396` |
+| `src/mmt_tcpip/lib/protocols/proto_http.c` | the only driver: `http_parser_execute()`, the `parser->upgrade` test, `HTTP_PARSER_ERRNO`/`http_errno_description`, and the reset-on-error `http_parser_init(parser, HTTP_BOTH)` — their sites on `main` are in §4.2 |
 
 Out of scope by construction: HTTP/2 is parsed by a bespoke frame parser in
 `src/mmt_tcpip/lib/protocols/http2.c`, not by http_parser — the migration does not
@@ -52,8 +62,8 @@ build.
 Task 4.2 (issue #218, `F-DEP-207`) declared and enforces the floor:
 
 - **GCC ≥ 11, glibc ≥ 2.34, libstdc++6 ≥ 11** — `MMT_GCC_MIN`, `MMT_GLIBC_MIN`,
-  `MMT_LIBSTDCXX_MIN` in `rules/common.mk:497-499`, enforced at parse time by
-  `rules/arch-linux-gcc.mk`, documented in `docs/AGENT_ENVIRONMENT.md` §1, and
+  `MMT_LIBSTDCXX_MIN` in `rules/common.mk:492-494`, enforced at parse time by
+  `rules/arch-linux.mk` and `rules/arch-linux-gcc.mk`, documented in `docs/AGENT_ENVIRONMENT.md` §1, and
   exercised by the `toolchain-floor` CI job in a digest-pinned `ubuntu:22.04`
   container (GCC 11.4).
 
@@ -73,21 +83,21 @@ Every `http_parser` symbol this codebase uses, with its llhttp equivalent. Colum
 | Site | http_parser symbol | llhttp equivalent | Notes |
 |------|--------------------|-------------------|-------|
 | `integration.h:24` | `http_parser` (type, `parser[2]`) | `llhttp_t` | typedef of `llhttp__internal_t`; still embeddable by value |
-| `integration.c:167` | `http_parser_settings` (type) | `llhttp_settings_t` | same callback field names, plus `*_complete` / `on_reset` additions |
-| `integration.c:169-176` | `.on_message_begin`, `.on_header_field`, `.on_header_value`, `.on_url`, `.on_status`, `.on_body`, `.on_headers_complete`, `.on_message_complete` | identical field names on `llhttp_settings_t` | signatures change to `llhttp_cb` (`int (*)(llhttp_t*)`) / `llhttp_data_cb` (`int (*)(llhttp_t*, const char*, size_t)`) — same shapes, parameter type only |
-| `integration.c:10-162` | `p->data` in every callback | `parser->data` | unchanged: `void *data` survives on `llhttp_t` |
-| `integration.h:90-91` | `http_parser_init(&p->parser[i], HTTP_BOTH)` | `llhttp_init(&parser[i], HTTP_BOTH, get_settings())` | **llhttp_init takes the settings**; `HTTP_BOTH` keeps its name (`llhttp_type_t`). See §5.5 — `llhttp_init` does **not** preserve `data`; assign `parser->data` *after* init |
-| `integration.c:141` (commented) | `http_should_keep_alive(parser)` | `llhttp_should_keep_alive(parser)` | direct equivalent, should it ever be enabled |
+| `integration.c:153` | `http_parser_settings` (type) | `llhttp_settings_t` | same callback field names, plus `*_complete` / `on_reset` additions |
+| `integration.c:155-162` | `.on_message_begin`, `.on_header_field`, `.on_header_value`, `.on_url`, `.on_status`, `.on_body`, `.on_headers_complete`, `.on_message_complete` | identical field names on `llhttp_settings_t` | signatures change to `llhttp_cb` (`int (*)(llhttp_t*)`) / `llhttp_data_cb` (`int (*)(llhttp_t*, const char*, size_t)`) — same shapes, parameter type only |
+| `integration.c:10-148` | `p->data` in every callback | `parser->data` | unchanged: `void *data` survives on `llhttp_t` |
+| `integration.h:100-103` | `http_parser_init(&p->parser[i], HTTP_BOTH)` | `llhttp_init(&parser[i], HTTP_BOTH, get_settings())` | **llhttp_init takes the settings**; `HTTP_BOTH` keeps its name (`llhttp_type_t`). See §5.5 — `llhttp_init` does **not** preserve `data`; assign `parser->data` *after* init |
+| `integration.c:127` (commented) | `http_should_keep_alive(parser)` | `llhttp_should_keep_alive(parser)` | direct equivalent, should it ever be enabled |
 
 ### 4.2 Symbols used by `proto_http.c`
 
 | Site | http_parser symbol | llhttp equivalent | Notes |
 |------|--------------------|-------------------|-------|
-| `proto_http.c:383` | `nparsed = http_parser_execute(parser, settings, data, len)` | `err = llhttp_execute(parser, data, len)` | **return-type change**: `size_t` bytes-parsed → `llhttp_errno_t`. `HPE_OK` means all input consumed; on error `llhttp_get_error_pos(parser)` points at the first un-parsed byte, so `nparsed == error_pos - data`. Settings are bound at init, not per call. See §5.4 |
-| `proto_http.c:384` | `parser->upgrade` | `llhttp_get_upgrade(parser)` | field → accessor (the `upgrade` field still exists but the API accessor is the stable surface) |
-| `proto_http.c:389` | `HTTP_PARSER_ERRNO(parser)` | `llhttp_get_errno(parser)` | macro on `parser->http_errno` → getter on `parser->error` |
-| `proto_http.c:389` | `http_errno_description(err)` | `llhttp_get_error_reason(parser)` (prose) or `llhttp_errno_name(err)` (code name) | llhttp stores a per-parser reason string; `HPE_USER` carries a caller-set reason via `llhttp_set_error_reason()` |
-| `proto_http.c:396` | `http_parser_init(parser, HTTP_BOTH)` (reset-on-error) | `llhttp_reset(parser)` | **not** `llhttp_init` — `llhttp_reset` preserves type, settings, `data`, and lenient flags, exactly the property `proto_http.c:395` relies on. See §5.5 |
+| `proto_http.c:372` | `nparsed = http_parser_execute(parser, settings, data, len)` | `err = llhttp_execute(parser, data, len)` | **return-type change**: `size_t` bytes-parsed → `llhttp_errno_t`. `HPE_OK` means all input consumed; on error `llhttp_get_error_pos(parser)` points at the first un-parsed byte, so `nparsed == error_pos - data`. Settings are bound at init, not per call. See §5.4 |
+| `proto_http.c:373` | `parser->upgrade` | `llhttp_get_upgrade(parser)` | field → accessor (the `upgrade` field still exists but the API accessor is the stable surface) |
+| `proto_http.c:377` | `HTTP_PARSER_ERRNO(parser)` | `llhttp_get_errno(parser)` | macro on `parser->http_errno` → getter on `parser->error` |
+| `proto_http.c:377` | `http_errno_description(err)` | `llhttp_get_error_reason(parser)` (prose) or `llhttp_errno_name(err)` (code name) | llhttp stores a per-parser reason string; `HPE_USER` carries a caller-set reason via `llhttp_set_error_reason()` |
+| `proto_http.c:385` | `http_parser_init(parser, HTTP_BOTH)` (reset-on-error) | `llhttp_reset(parser)` | **not** `llhttp_init` — `llhttp_reset` preserves type, settings, `data`, and lenient flags, exactly the property the comment at `proto_http.c:383-384` relies on. See §5.5 |
 
 ### 4.3 Public http_parser API not used by MMT (mapped for completeness)
 
@@ -108,10 +118,10 @@ Every `http_parser` symbol this codebase uses, with its llhttp equivalent. Colum
 ### 5.1 Strict-mode semantics — the F-BUG-060 interaction
 
 http-parser's strictness is a **compile-time** flag: `#if HTTP_PARSER_STRICT` guards
-`STRICT_CHECK` throughout `http_parser.c` (e.g. `http_parser.c:463-472`), raising
+`STRICT_CHECK` throughout `http_parser.c` (defined at lines 471-481 of the removed file), raising
 `HPE_STRICT` on malformed tokens. F-BUG-060 found it gated on `SHOWLOG`, so every
 release build parsed leniently; issue #204 (task 2.6) gave it its own flag defaulting
-on — the pre-#222 `rules/common.mk:173-183` block set `HTTP_PARSER_STRICT := 1`
+on — the pre-#222 `rules/common.mk` block (lines 173-183 at `e16f265e~1`) set `HTTP_PARSER_STRICT := 1`
 unless explicitly overridden (removed by the #222 migration, which replaced it
 with the always-strict note now at `rules/common.mk:173-178`).
 
@@ -182,14 +192,14 @@ llhttp makes pause a first-class state:
   `llhttp_resume()`.
 
 MMT currently never pauses, but the mapping matters for the `parser->upgrade` check
-at `proto_http.c:384`: under llhttp, "this was an upgrade" arrives as the
+at `proto_http.c:373`: under llhttp, "this was an upgrade" arrives as the
 `HPE_PAUSED_UPGRADE` return code (or `on_headers_complete` returning `2`) plus
 `llhttp_get_upgrade(parser)` — not only as a sticky flag after `execute`.
 
 ### 5.4 `execute` return contract
 
-`http_parser_execute` returns `size_t nparsed`; `nparsed != len` at `proto_http.c:386`
-is MMT's error test. `llhttp_execute` returns `llhttp_errno_t`; `HPE_OK` asserts *all*
+`http_parser_execute` returns `size_t nparsed`; `nparsed != len` was MMT's error test
+(today `err != HPE_OK` at `proto_http.c:375`). `llhttp_execute` returns `llhttp_errno_t`; `HPE_OK` asserts *all*
 input was consumed, and `llhttp_get_error_pos()` yields the stop position for any
 byte accounting the caller still wants. The `nparsed != len` test becomes
 `err != HPE_OK`.
@@ -201,8 +211,8 @@ guarantee explicit.
 
 ### 5.5 Init vs. reset — `data` preservation
 
-`http_parser_init` preserves `parser->data` (MMT relies on this at
-`proto_http.c:395-396`, where re-init keeps the `stream_processor_t`).
+`http_parser_init` preserves `parser->data` (MMT relied on this at the reset-on-error
+site, now `proto_http.c:383-385`, where re-init keeps the `stream_processor_t`).
 
 `llhttp_init` calls `llhttp__internal_init`, which zeroes the struct — **`data` is
 lost** — then stores `type` and a *pointer* to `settings`. Two consequences:
@@ -281,7 +291,9 @@ if (err == HPE_PAUSED_UPGRADE || llhttp_get_upgrade(parser)) {
 - llhttp changelog — GitHub releases (`release/v9.x.y` tags,
   https://github.com/nodejs/llhttp/releases); v9.4.3 is the adoption target.
 - nodejs/http-parser — archived upstream (https://github.com/nodejs/http-parser);
-  vendored copy at 2.9.4 (`src/mmt_tcpip/lib/http_parser.h:36-38`).
-- In-repo: task 2.6 strict-mode fix (`rules/common.mk:173-183`, issue #204);
-  toolchain floor (`rules/common.mk:497-499`, `docs/AGENT_ENVIRONMENT.md` §1,
+  vendored at 2.9.4 until #222 removed it (`git show e16f265e~1:src/mmt_tcpip/lib/http_parser.h`).
+- In-repo: vendored llhttp 9.4.3 (`src/mmt_tcpip/lib/llhttp.h`, `llhttp.c`,
+  `llhttp_api.c`, `llhttp_http.c`, issue #222); the always-strict note that replaced
+  the task 2.6 strict-mode flag (`rules/common.mk:173-178`, issues #204/#222);
+  toolchain floor (`rules/common.mk:492-494`, `docs/AGENT_ENVIRONMENT.md` §1,
   issue #218); prior parser spike (`docs/DECISIONS.md`, issue #142 entry).

@@ -14,7 +14,7 @@ on GitHub).
 ## Getting Started ##
 * [User Guide](./USER_GUIDE.md) — install, first run, and embedding the library
 * [Compilation and Installation Instructions](./Compilation-and-Installation-Instructions.md)
-* [Compiling mmt-sdk for ARM architecture by cross-compiler](./Compiling-mmt-sdk-for-ARM-architecture-by-cross-compiler.md)
+* [Building mmt-sdk for ARM (arm64)](./Compiling-mmt-sdk-for-ARM-architecture-by-cross-compiler.md)
 * [Examples](./Examples.md)
     * [MMT QoE demo](./MMT-QoE-demo.md)
 

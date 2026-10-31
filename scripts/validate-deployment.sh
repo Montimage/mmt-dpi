@@ -79,6 +79,150 @@ else
     ERRORS=$((ERRORS + 1))
 fi
 
+# Checks 8-12 (issue #583, F-DOCS-014/016/018/019/021/023): the content of the
+# deployment-facing docs against the sources. They read tracked files only
+# (`git ls-files`), so a stale local docs/_site build is never scanned.
+DEPLOY_DOC="$ROOT/docs/DEPLOYMENT.md"
+
+# Check 8: every MMT_* variable the library reads at run time is documented.
+# The names come from the getenv()/secure_getenv() calls in tracked src/
+# (generated asn1c code excluded); a macro argument such as PLUGINS_DIR_ENV is
+# resolved through its #define. MMT_DPI_PLUGINS_DIR is pinned as a floor so a
+# grep that silently finds nothing cannot pass.
+env_calls=$(git -C "$ROOT" grep -hoE '(secure_)?getenv\( *("MMT_[A-Z0-9_]+"|[A-Z][A-Z0-9_]*) *\)' \
+    -- src ':!src/mmt_mobile/asn1c' 2>/dev/null || true)
+env_names=(MMT_DPI_PLUGINS_DIR)
+unresolved=""
+while IFS= read -r arg; do
+    [ -n "$arg" ] || continue
+    case "$arg" in
+        \"*\") env_names+=("${arg//\"/}") ;;
+        *)
+            val=$(git -C "$ROOT" grep -hoE "^#define +$arg +\"MMT_[A-Z0-9_]+\"" -- src 2>/dev/null \
+                | sed -E 's/.*"(MMT_[A-Z0-9_]+)"/\1/' | head -n 1 || true)
+            if [ -n "$val" ]; then
+                env_names+=("$val")
+            else
+                unresolved="$unresolved $arg"
+            fi
+            ;;
+    esac
+done <<EOF
+$(printf '%s\n' "$env_calls" | sed -E 's/^(secure_)?getenv\( *//; s/ *\)$//')
+EOF
+if [ -n "$unresolved" ]; then
+    echo "  ✗ getenv() argument(s) not resolved to an MMT_* name:$unresolved"
+    ERRORS=$((ERRORS + 1))
+fi
+env_count=0
+for name in $(printf '%s\n' "${env_names[@]}" | sort -u); do
+    env_count=$((env_count + 1))
+    if grep -qF "\`$name\`" "$DEPLOY_DOC"; then
+        echo "  ✓ DEPLOYMENT.md documents $name"
+    else
+        echo "  ✗ DEPLOYMENT.md does not document $name (read by src/)"
+        ERRORS=$((ERRORS + 1))
+    fi
+done
+if [ "$env_count" -lt 2 ]; then
+    echo "  ✗ found only $env_count run-time variable(s) in src/ — the getenv() scan is broken"
+    ERRORS=$((ERRORS + 1))
+fi
+
+# Check 9: every `path:line`, `path:a-b` or `path:a,b` cite in DEPLOYMENT.md
+# and ARCHITECTURE.md names a tracked file that has at least that many lines.
+for doc in docs/DEPLOYMENT.md docs/ARCHITECTURE.md; do
+    name=${doc##*/}
+    cite_count=0
+    while IFS= read -r cite; do
+        [ -n "$cite" ] || continue
+        cite_count=$((cite_count + 1))
+        path=${cite%%:*}
+        max=$(printf '%s\n' "${cite#*:}" | sed 's/[,-]/\n/g' | sort -n | tail -n 1)
+        if ! git -C "$ROOT" ls-files --error-unmatch -- "$path" >/dev/null 2>&1; then
+            echo "  ✗ $name cites $cite, but $path is not a tracked file"
+            ERRORS=$((ERRORS + 1))
+            continue
+        fi
+        lines=$(awk 'END { print NR }' "$ROOT/$path")
+        if [ "$max" -gt "$lines" ]; then
+            echo "  ✗ $name cites $cite, but $path has $lines lines"
+            ERRORS=$((ERRORS + 1))
+        fi
+    done <<EOF
+$(grep -oE "\`[A-Za-z0-9_./-]+:[0-9]+([,-][0-9]+)*\`" "$ROOT/$doc" | tr -d "\`" || true)
+EOF
+    if [ "$cite_count" -gt 0 ]; then
+        echo "  ✓ checked $cite_count path:line cite(s) in $name"
+    else
+        echo "  ✗ no path:line cite found in $name — the cite scan is broken"
+        ERRORS=$((ERRORS + 1))
+    fi
+done
+
+# Check 10: no claim that the library reads no environment variables.
+if grep -qiE 'no (run[- ]?time )?environment variables?' "$DEPLOY_DOC"; then
+    echo "  ✗ DEPLOYMENT.md claims there are no (run-time) environment variables"
+    ERRORS=$((ERRORS + 1))
+else
+    echo "  ✓ DEPLOYMENT.md makes no 'no environment variables' claim"
+fi
+
+# Check 11: every libmmt_<x> a deployment-facing doc names is a library the
+# build defines in rules/common.mk (the mobile plugin is libmmt_tmobile).
+known_libs=$(grep -oE ':= *libmmt_[a-z_]+$' "$ROOT/rules/common.mk" | sed -E 's/:= *//' | sort -u)
+for doc in docs/DEPLOYMENT.md docs/ARCHITECTURE.md README.md; do
+    bad=""
+    while IFS= read -r lib; do
+        [ -n "$lib" ] || continue
+        if ! printf '%s\n' "$known_libs" | grep -qxF "$lib"; then
+            bad="$bad $lib"
+        fi
+    done <<EOF
+$(grep -oE 'libmmt_[a-z_]+' "$ROOT/$doc" | sort -u || true)
+EOF
+    if [ -z "$bad" ]; then
+        echo "  ✓ $doc names only libraries rules/common.mk defines"
+    else
+        echo "  ✗ $doc names libraries rules/common.mk does not define:$bad"
+        ERRORS=$((ERRORS + 1))
+    fi
+done
+
+# Check 12: the stale install-layout label is gone, and no contributor- or
+# user-facing doc names an integration branch that does not exist. The
+# append-only docs/DECISIONS.md keeps its history and is not scanned for the
+# branch name.
+tracked_docs=$(git -C "$ROOT" ls-files -- README.md CONTRIBUTING.md install.sh docs \
+    | grep -E '\.(md|html|sh)$' || true)
+if [ -z "$tracked_docs" ]; then
+    echo "  ✗ no tracked doc found — the git ls-files scan is broken"
+    ERRORS=$((ERRORS + 1))
+fi
+label_hits=""
+branch_hits=""
+for doc in $tracked_docs; do
+    if grep -qF 'Prebuilt example binaries' "$ROOT/$doc"; then
+        label_hits="$label_hits $doc"
+    fi
+    [ "$doc" = "docs/DECISIONS.md" ] && continue
+    if grep -qE "BRANCH=dev([^A-Za-z0-9_-]|\$)|--branch dev([^A-Za-z0-9_-]|\$)|\`dev\`|(^|[^A-Za-z0-9_-])dev branch" "$ROOT/$doc"; then
+        branch_hits="$branch_hits $doc"
+    fi
+done
+if [ -z "$label_hits" ]; then
+    echo "  ✓ no doc labels the installed examples as prebuilt binaries"
+else
+    echo "  ✗ 'Prebuilt example binaries' label still in:$label_hits"
+    ERRORS=$((ERRORS + 1))
+fi
+if [ -z "$branch_hits" ]; then
+    echo "  ✓ no doc names a 'dev' branch"
+else
+    echo "  ✗ a 'dev' branch is named in:$branch_hits"
+    ERRORS=$((ERRORS + 1))
+fi
+
 echo ""
 if [ $ERRORS -eq 0 ]; then
     echo "Result: PASS (all checks passed)"
