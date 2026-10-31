@@ -2844,10 +2844,10 @@ static void b_unregister_protocol_by_id(void) {
     CHECK(unregister_protocol_by_id(AC_FREE_ID + 7) == 1 && !is_registered_protocol(AC_FREE_ID + 7), "removed");
 }
 static void e_unregister_protocol_by_id(void) {
-    /* Finding (issue #525): unregister_protocol_by_id(PROTO_MAX_IDENTIFIER)
-     * writes past configured_protocols[] (is_free_protocol_id_for_registration
-     * reports an out-of-range id as "not free"); ASan flags it, so the
-     * out-of-range id is not exercised here. */
+    /* Issue #673 (found by #525): an out-of-range id used to index past
+     * configured_protocols[] and write through what it found there. */
+    CHECK(unregister_protocol_by_id(PROTO_MAX_IDENTIFIER) == 0, "out-of-range id -> 0");
+    CHECK(unregister_protocol_by_id(UINT32_MAX) == 0, "largest id -> 0");
     CHECK(unregister_protocol_by_id(AC_FREE_ID + 8) == 0, "never-registered id -> 0");
     CHECK(unregister_protocol_by_id(AC_UNREG_ID) == 0 && !is_registered_protocol(AC_UNREG_ID),
           "another never-registered id -> 0, nothing changed");

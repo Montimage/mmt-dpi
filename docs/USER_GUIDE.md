@@ -112,9 +112,9 @@ callbacks, statistics), one `mmt_handler_t` per packet stream. The order is:
 
 1. Initialise the global state once with `init_extraction()`, **before any
    handler exists**, and check its return value — it returns `false` on
-   failure (`src/mmt_core/src/packet_registry.c:608`). It builds the
+   failure (`src/mmt_core/src/packet_registry.c:616`). It builds the
    protocol registry, loads the plugins and creates the map that tracks live
-   handlers (`src/mmt_core/src/packet_registry.c:650-651`,
+   handlers (`src/mmt_core/src/packet_registry.c:658-659`,
    `src/mmt_core/src/packet_registry_handler.c:408`); nothing else
    in the API works before it. If it fails, do not call anything else,
    including `close_extraction()`.
@@ -135,10 +135,10 @@ callbacks, statistics), one `mmt_handler_t` per packet stream. The order is:
    the global handler map (`src/mmt_core/src/packet_registry_handler.c:296`,
    `src/mmt_core/src/packet_registry_handler.c:346`).
 6. Tear down the global state last, once, with `close_extraction()`
-   (`src/mmt_core/src/packet_registry.c:659`). It force-closes any handler
-   still registered (`src/mmt_core/src/packet_registry.c:662`,
+   (`src/mmt_core/src/packet_registry.c:667`). It force-closes any handler
+   still registered (`src/mmt_core/src/packet_registry.c:670`,
    `src/mmt_core/src/packet_registry_handler.c:414`) and then
-   unloads the plugins (`src/mmt_core/src/packet_registry.c:670`), so a
+   unloads the plugins (`src/mmt_core/src/packet_registry.c:678`), so a
    handler pointer is dangling afterwards: never call `mmt_close_handler()`
    or `packet_process()` on it once `close_extraction()` has run.
 

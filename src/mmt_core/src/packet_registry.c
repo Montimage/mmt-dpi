@@ -553,11 +553,19 @@ bool register_protocol(protocol_t *proto, uint32_t proto_id) {
     return retval;
 }
 
+/* Issue #673: a registered slot, checked directly. is_free_protocol_id_for_registration()
+ * returns 0 for an out-of-range id as well as for a registered one, so its 0 must
+ * never be read as "registered": that indexed past configured_protocols[]. */
+static inline bool _is_registered_slot(uint32_t proto_id) {
+    return _is_valid_protocol_id(proto_id) && configured_protocols[proto_id] != NULL
+            && configured_protocols[proto_id]->is_registered;
+}
+
 bool unregister_protocol_by_id(uint32_t proto_id) {
     // Issue #22: guard the global registry mutation (see register_protocol).
     int retval = 0;
     pthread_mutex_lock(&configured_protocols_mutex);
-    if (!is_free_protocol_id_for_registration(proto_id)) {
+    if (_is_registered_slot(proto_id)) {
         configured_protocols[proto_id]->is_registered = PROTO_NOT_REGISTERED;
         retval = 1;
     }
@@ -571,7 +579,7 @@ bool unregister_protocol_by_name(char* proto_name) {
     int retval = 0;
     pthread_mutex_lock(&configured_protocols_mutex);
     for (i =0;i<PROTO_MAX_IDENTIFIER;i++){
-        if (!is_free_protocol_id_for_registration(i)) {
+        if (_is_registered_slot(i)) {
             if(mmt_strcasecmp(configured_protocols[i]->protocol_name,proto_name) == 0){
                 configured_protocols[i]->is_registered = PROTO_NOT_REGISTERED;
                 retval = 1;

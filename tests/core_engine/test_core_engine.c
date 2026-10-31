@@ -2473,8 +2473,11 @@ static void test_null_slot_lookups(void) {
         CHECK(is_protocol_valid_attribute(id, 1) == 0, "attribute validity on a NULL slot");
         CHECK(init_protocol_struct_for_registration(id, "ce_null_slot") == NULL,
               "registration into a NULL slot is refused");
+        CHECK(unregister_protocol_by_id(id) == 0, "unregister of a NULL slot -> 0 (#673)");
     }
     CHECK(is_registered_protocol(PROTO_MAX_IDENTIFIER) == 0, "out-of-range id");
+    CHECK(unregister_protocol_by_id(PROTO_MAX_IDENTIFIER) == 0, "unregister of an out-of-range id -> 0 (#673)");
+    CHECK(unregister_protocol_by_name((char *) "ce_null_slot") == 0, "unregister by name with every slot NULL -> 0");
 }
 
 int main(void) {
