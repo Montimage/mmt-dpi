@@ -27,11 +27,11 @@
  *
  */
  
- #include <stdio.h>
- #include <stdlib.h>
- #include <string.h>
- #include <pcap.h>
- #include "mmt_core.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <pcap.h>
+#include "mmt_core.h"
 
 #define _STDC_FORMAT_MARCROS
 #include <inttypes.h>
@@ -49,36 +49,53 @@ int main(int argc, char ** argv){
 	pcap_t *pcap;
 	const unsigned char *data;
 	struct pcap_pkthdr p_pkthdr;
-	char errbuf[1024];
+	char errbuf[PCAP_ERRBUF_SIZE];
 
 	uint64_t session_count=0;
 
+	if(argc != 2){
+		fprintf(stderr, "Usage: %s <pcap file>\n", argv[0]);
+		return EXIT_FAILURE;
+	}
+
 	//Initialize MMT
-	init_extraction();
+	if(!init_extraction()){
+		fprintf(stderr, "MMT extraction init failed\n");
+		return EXIT_FAILURE;
+	}
 
 	//Initialize MMT handler
 	mmt_handler =mmt_init_handler(DLT_EN10MB,0,mmt_errbuf);
 	if(!mmt_handler){
 		fprintf(stderr, "MMT handler init failed for the following reason: %s\n",mmt_errbuf );
+		close_extraction();
 		return EXIT_FAILURE;
 	}
 
 	// Register an attribute handler, it will be called for every time the indicated attribute  is detected
-	register_attribute_handler_by_name(
+	if(!register_attribute_handler_by_name(
 		mmt_handler,
 		"IP","SESSION",
 		session_attr_handler,
 		NULL/*will be ignored, should be set to NULL*/,
 		&session_count
-	);
+	)){
+		fprintf(stderr, "MMT attribute handler registration failed\n");
+		mmt_close_handler(mmt_handler);
+		close_extraction();
+		return EXIT_FAILURE;
+	}
 
 	pcap = pcap_open_offline(argv[1],errbuf); // open offline trace
 	if(!pcap){ /* pcap error? */
 		fprintf(stderr, "pcap_open failed for the following reason: %s\n", errbuf);
-		return;
+		mmt_close_handler(mmt_handler);
+		close_extraction();
+		return EXIT_FAILURE;
 	}
 
 	while((data=pcap_next(pcap,&p_pkthdr))){
+		memset(&header, 0, sizeof(header)); // no stale metadata fields
 		header.ts = p_pkthdr.ts;
 		header.caplen = p_pkthdr.caplen;
 		header.len = p_pkthdr.len;
@@ -87,13 +104,13 @@ int main(int argc, char ** argv){
 		}
 	}
 
+	pcap_close(pcap);
+
 	//Close the MMT handler
 	mmt_close_handler(mmt_handler);
 
 	//Close MMT
 	close_extraction();
-
-	pcap_close(pcap);
 
 	return EXIT_SUCCESS;
 

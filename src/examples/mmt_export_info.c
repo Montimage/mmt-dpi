@@ -16,6 +16,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include "mmt_core.h"
 
 uint64_t nb_proto = 0;
@@ -50,7 +51,11 @@ void protocols_iterator(uint32_t proto_id, void *args)
 int main(int argc, char **argv)
 {
 
-    init_extraction();
+    if (!init_extraction())
+    {
+        fprintf(stderr, "MMT extraction init failed\n");
+        return EXIT_FAILURE;
+    }
 
     printf("_proto_id, proto_name, attr_id, attr_name, version: %s\n", mmt_version());
 
@@ -58,10 +63,10 @@ int main(int argc, char **argv)
     
     close_extraction();
     nb_proto = nb_proto - 2; // 2 protocols: unknown and meta
-    printf("-1,Number of protocols,%lu,Not include UNKNOWN and META protocols\n",nb_proto);
+    printf("-1,Number of protocols,%" PRIu64 ",Not include UNKNOWN and META protocols\n", nb_proto);
     uint64_t nb_attr_real = nb_attr - (nb_proto - 1) * 9;
-    printf("-1,Number of attributes (all),%lu\n", nb_attr);
-    printf("-1,Number of attributes (no repeat),%lu\n", nb_attr_real);
+    printf("-1,Number of attributes (all),%" PRIu64 "\n", nb_attr);
+    printf("-1,Number of attributes (no repeat),%" PRIu64 "\n", nb_attr_real);
 
     return (EXIT_SUCCESS);
 }

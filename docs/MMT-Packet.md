@@ -80,7 +80,7 @@ to `proto_headers_offset->proto_path[]`, call the exported
 ### User API ###
 
 ```c
-   int packet_process(
+   bool packet_process(
       mmt_handler_t *mmt_handler,
       struct pkthdr *header,
       const u_char *packet);
@@ -88,17 +88,17 @@ to `proto_headers_offset->proto_path[]`, call the exported
 This is the entry point for MMT. It feeds packets to the Core for processing by the given MMT handler. 
 
 ```c
-   int register_packet_handler(
+   bool register_packet_handler(
       mmt_handler_t *mmt_handler,
       int packet_handler_id,
       generic_packet_handler_callback function,
-      void *user);
+      mmt_opaque_t user);
 
-   int is_registered_packet_handler(
+   bool is_registered_packet_handler(
       mmt_handler_t *mmt_handler,
       int packet_handler_id);
 
-   int unregister_packet_handler(
+   bool unregister_packet_handler(
       mmt_handler_t *mmt_handler,
       int packet_handler_id);
 ```
@@ -121,15 +121,15 @@ MMTAPI uint32_t MMTCALL get_protocol_id_at_index(
     unsigned index
 );
 ```
-This function return the identifier of the protocol at the given index if such index exists, -1 otherwise.
+This function returns the identifier of the protocol at the given index if such index exists, `MMT_NO_PROTO_ID` otherwise (`src/mmt_core/public_include/data_defs.h:366`).
 
 ```c
 MMTAPI unsigned MMTCALL get_protocol_index_by_id(
     const ipacket_t *ipacket,
-    uint32_t proto_id
+    mmt_proto_id_t proto_id
 );
 ```
-This function return the index of the protocol given by its id. If the protocol id is not valid or the protocol does not appear in the protocol hierarchy, -1 is returned.
+This function returns the index of the protocol given by its id. If the protocol id is not valid or the protocol does not appear in the protocol hierarchy, `MMT_NO_PROTO_INDEX` is returned (`src/mmt_core/public_include/data_defs.h:367`).
 
 ```c
 MMTAPI unsigned MMTCALL get_protocol_index_by_name(
@@ -137,7 +137,7 @@ MMTAPI unsigned MMTCALL get_protocol_index_by_name(
     const char *proto_name
 );
 ```
-This function return the index of the protocol given by its name. If the protocol name is not valid or the protocol does not appear in the protocol hierarchy, -1 is returned.
+This function returns the index of the protocol given by its name. If the protocol name is not valid or the protocol does not appear in the protocol hierarchy, `MMT_NO_PROTO_INDEX` is returned (`src/mmt_core/public_include/data_defs.h:367`).
 
 ```c
 MMTAPI uint64_t MMTCALL get_session_id_from_packet(
@@ -156,7 +156,7 @@ This function returns the user session context
 ```c
 MMTAPI void MMTCALL set_user_session_context_for_packet(
     const ipacket_t *ipacket,
-    void *user_data
+    mmt_opaque_t user_data
 );
 ```
 This function sets the user session context for a given packet

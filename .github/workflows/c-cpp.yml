@@ -719,6 +719,14 @@ jobs:
           echo "=== $s"
           bash "$s"
         done
+    - name: Compile every docs listing and example program (blocking — issue #581)
+      # Builds and installs the SDK into a throwaway prefix, then compiles
+      # each docs/Examples.md listing with the command shown under it and
+      # every src/examples/*.c, with -Werror=return-type and the diagnostics
+      # GCC 14 makes errors by default. Every tier: a docs-only change can
+      # break a listing and a code change an example. unit-tests also runs
+      # it, against the shared SDK, through the docs_lifecycle suite.
+      run: bash tools/ci/compile-doc-listings.sh
     - name: Check the documented lifecycle citations (docs-only change)
       if: needs.changes.outputs.code == 'false'
       run: bash tests/run_all_tests.sh docs_lifecycle

@@ -178,7 +178,7 @@ This function returns pointer to the initialized session data of the protocol at
 ```c
 MMTAPI void MMTCALL set_proto_session_data(
     mmt_session_t *session,
-    void * proto_data,
+    mmt_opaque_t proto_data,
     unsigned index
 );
 ```
@@ -187,7 +187,7 @@ This function sets the protocol session data.
 ```c
 MMTAPI void MMTCALL set_user_session_context(
     mmt_session_t *session,
-    void *user_data
+    mmt_opaque_t user_data
 );
 ```
 This function sets the user session context
@@ -360,13 +360,13 @@ MMTAPI uint32_t MMTCALL get_session_retransmission_count(
 ```
 This function returns the number of retransmitted packets seen by the given session.
 ```c
-MMTAPI mmt_session_t MMTCALL get_session_next(
+MMTAPI const mmt_session_t * MMTCALL get_session_next(
     const mmt_session_t *session
 );
 ```
 This function returns the next session of the given session. NULL if the given session does not have next session
 ```c
-MMTAPI mmt_session_t MMTCALL get_session_previous(
+MMTAPI const mmt_session_t * MMTCALL get_session_previous(
     const mmt_session_t *session
 );
 ```

@@ -89,50 +89,50 @@ struct protocol_struct {
 
 ```c
 MMTAPI protocol_t* MMTCALL get_protocol_struct_by_id(
-    uint32_t proto_id
+    mmt_proto_id_t proto_id
 );
 ```
 Get the protocol structure by given `proto_id`. This function MUST only be used when we are sure that there is a protocol structure associated with the given identifier. If there is no protocol associated with the given identifier, null will be returned. This function is to be used with high precautions.
 ```c
 MMTAPI int MMTCALL get_proto_attribute_position(
     protocol_t *proto,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attr_id
 );
 
 MMTAPI int MMTCALL get_proto_attribute_length(
     protocol_t *proto,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attr_id
 );
 
 MMTAPI int MMTCALL get_proto_attribute_id(
     protocol_t *proto,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     const char *attr_name
 );
 
 MMTAPI const char* MMTCALL get_proto_attribute_name(
     protocol_t *proto,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attr_id
 );
 
 MMTAPI int MMTCALL get_proto_attribute_type(
     protocol_t *proto,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attr_id
 );
 
 MMTAPI int MMTCALL get_proto_attribute_scope(
     protocol_t *proto,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attr_id
 );
 
-MMTAPI int MMTCALL is_valid_proto_attribute(
+MMTAPI bool MMTCALL is_valid_proto_attribute(
     protocol_t *proto,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attr_id
 );
 ```
@@ -148,8 +148,8 @@ MMTAPI int MMTCALL set_classified_proto(
 ```
 Set classified protocol for a packet.
 ```c
-MMTAPI int MMTCALL register_classification_function_with_parent_protocol(
-    uint32_t proto_id,
+MMTAPI bool MMTCALL register_classification_function_with_parent_protocol(
+    mmt_proto_id_t proto_id,
     generic_classification_function classification_fct,
     int weight
 );
@@ -157,7 +157,7 @@ MMTAPI int MMTCALL register_classification_function_with_parent_protocol(
 This function registers a classification function for the protocol identified by the given proto_id. This function should be used when a protocol wants to complement the classification of another protocol (HTTP adding a classification to TCP). For protocols registering their own classification function, this function SHOULD BE AVOIDED, rather use "register_classification_function".
 
 ```c
-MMTAPI int MMTCALL register_classification_function(
+MMTAPI bool MMTCALL register_classification_function(
     protocol_t *protocol_struct,
     generic_classification_function classification_fct
 );
@@ -165,7 +165,7 @@ MMTAPI int MMTCALL register_classification_function(
 This function registers a classification function for the protocol identified by the given protocol_struct. This function MUST only be used when a protocol registers its own classification function. This function will always perform what it is supposed to do.
 
 ```c
-MMTAPI int MMTCALL register_classification_function_full(
+MMTAPI bool MMTCALL register_classification_function_full(
     protocol_t *protocol_struct,
     generic_classification_function classification_fct,
     int weight,
@@ -176,7 +176,7 @@ MMTAPI int MMTCALL register_classification_function_full(
 This function registers a classification function, a pre-classification and a post-classification for the protocol identified by the given protocol_struct. This function MUST only be used when a protocol registers its own classification function. This function will always perform what it is supposed to do.
 
 ```c
-MMTAPI int MMTCALL register_pre_post_classification_functions(
+MMTAPI bool MMTCALL register_pre_post_classification_functions(
     protocol_t *protocol_struct,
     generic_classification_function pre_classification,
     generic_classification_function post_classification
@@ -199,7 +199,7 @@ MMTAPI void MMTCALL register_proto_context_init_cleanup_function(
     protocol_t *protocol_struct,
     generic_proto_context_init_function context_init_fct,
     generic_proto_context_cleanup_function context_cleanup_fct,
-    void *args
+    mmt_opaque_t args
 );
 ```
 This function registers a protocol context cleanup function for the protocol identified by the given protocol_struct.
@@ -221,8 +221,8 @@ MMTAPI void MMTCALL register_session_data_cleanup_function(
 This function registers the given session data cleanup function with the given protocol structure.
 
 ```c
-MMTAPI int MMTCALL register_session_data_analysis_function_with_protocol(
-    uint32_t proto_id,
+MMTAPI bool MMTCALL register_session_data_analysis_function_with_protocol(
+    mmt_proto_id_t proto_id,
     generic_session_data_analysis_function session_data_analysis_fct,
     int weight
 );
@@ -230,7 +230,7 @@ MMTAPI int MMTCALL register_session_data_analysis_function_with_protocol(
 This function registers a session data analysis function for the protocol identified by the given proto_id. This function should be used in order to complement the analysis of a protocol. For protocols registering their own analysis function, this function SHOULD BE AVOIDED, rather use "register_session_data_analysis_function".
 
 ```c
-MMTAPI int MMTCALL register_session_data_analysis_function(
+MMTAPI bool MMTCALL register_session_data_analysis_function(
     protocol_t *protocol_struct,
     generic_session_data_analysis_function session_data_analysis_fct
 );
@@ -238,7 +238,7 @@ MMTAPI int MMTCALL register_session_data_analysis_function(
 This function registers a session data analysis function for the protocol identified by the given protocol_struct. This function MUST only be used when a protocol registers its own session data analysis function. This function will always perform what it is supposed to do.
 
 ```c
-MMTAPI int MMTCALL register_session_data_analysis_function_full(
+MMTAPI bool MMTCALL register_session_data_analysis_function_full(
     protocol_t *protocol_struct,
     generic_session_data_analysis_function session_data_analysis_fct,
     int weight,
@@ -249,7 +249,7 @@ MMTAPI int MMTCALL register_session_data_analysis_function_full(
 This function registers a session data analysis function for the protocol identified by the given protocol_struct. This function MUST only be used when a protocol registers its own session data analysis function. This function will always perform what it is supposed to do.
 
 ```c
-MMTAPI int MMTCALL register_pre_post_analysis_functions(
+MMTAPI bool MMTCALL register_pre_post_analysis_functions(
     protocol_t *protocol_struct,
     generic_session_data_analysis_function pre_analysis,
     generic_session_data_analysis_function post_analysis
@@ -264,20 +264,20 @@ MMTAPI bool MMTCALL is_free_protocol_id_for_registration(
 This function returns true if the identifier is valid and no protocol is registered with it, false otherwise. The misspelled `is_free_protocol_id_for_registractionl` remains exported but is deprecated (removal in 2.0.0) (`src/mmt_core/public_include/plugin_defs.h`).
 ```c
 MMTAPI protocol_t* MMTCALL get_protocol_struct_for_registration_if_free(
-    uint32_t proto_id
+    mmt_proto_id_t proto_id
 );
 ```
 This function returns a pointer to the protocol structure if the given identifier is not registered, NULL otherwise.
 ```c
 MMTAPI protocol_t* MMTCALL init_protocol_struct_for_registration(
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     const char *protocol_name
 );
 ```
 This function returns a pointer to the protocol if the given identifier is not registered, NULL otherwise.
 
 ```c
-MMTAPI int MMTCALL register_attribute_with_protocol(
+MMTAPI bool MMTCALL register_attribute_with_protocol(
     protocol_t *protocol_struct,
     attribute_metadata_t *attribute_meta_data
 );
@@ -285,9 +285,9 @@ MMTAPI int MMTCALL register_attribute_with_protocol(
 This function registers an attribute given by its metadata structure with the given protocol. The registration succeeds if the attribute metadata is valid and the attribute is not already registered, it fails otherwise.
 
 ```c
-MMTAPI int MMTCALL register_protocol(
+MMTAPI bool MMTCALL register_protocol(
     protocol_t *protocol_struct,
-    uint32_t proto_id
+    mmt_proto_id_t proto_id
 );
 ```
 This function registers the protocol defined by the given protocol structure and protocol identifier.

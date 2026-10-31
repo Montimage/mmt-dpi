@@ -35,7 +35,10 @@ int main(int argc, char** argv) {
 	printf("|\t http://montimage.eu\n");
 	printf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");  	
 	
-	init_extraction();
+	if(!init_extraction()){
+		fprintf(stderr, "MMT extraction init failed\n");
+		return EXIT_FAILURE;
+	}
 
 	iterate_through_protocols(protocols_iterator, NULL);
 

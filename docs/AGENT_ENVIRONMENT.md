@@ -312,7 +312,10 @@ other
 `docs_lifecycle` (issue #392) checks the `path:line` citations of the
 embedding lifecycle in `docs/USER_GUIDE.md` §3 (and of the handler and
 fragment-limit API in `docs/MMT-Handler.md`, issue #396) and compiles and runs the
-installed `packet_handler.c` example against a throwaway install prefix.
+installed `packet_handler.c` example against a throwaway install prefix,
+then compiles every `docs/Examples.md` listing and every `src/examples/*.c`
+against that prefix with `tools/ci/compile-doc-listings.sh` (issue #581;
+the `doc-validators` CI job also runs it on its own).
 `docs_onboarding` (issue #393) runs the first-run steps shown in
 `docs/_includes/first-example.md` verbatim from an empty directory — fetch
 the published `docs/first-run/hello_packet.c` and `traffic.pcap`, compile

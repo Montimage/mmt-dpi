@@ -74,35 +74,35 @@ bool set_live_session_timed_out(mmt_handler_t *mmt_handler,uint32_t timedout_val
 Enable/disable classification by hostname (enable by default)
 
 ```c
-bool enable_hostname_classify(mmt_handler_t * mmt);
-bool disable_hostname_classify(mmt_handler_t * mmt);
+bool enable_hostname_classify(mmt_handler_t * mmt_handler);
+bool disable_hostname_classify(mmt_handler_t * mmt_handler);
 ```
 
 Enable/disable classification by ip address (enable by default)
 
 ```c
-bool enable_ip_address_classify(mmt_handler_t * mmt);
-bool disable_ip_address_classify(mmt_handler_t * mmt);
+bool enable_ip_address_classify(mmt_handler_t * mmt_handler);
+bool disable_ip_address_classify(mmt_handler_t * mmt_handler);
 ```
 
 Enable/disable classification by port number (disable by default)
 
 ```c
-bool enable_port_classify(mmt_handler_t * mmt);
-bool disable_port_classify(mmt_handler_t * mmt);
+bool enable_port_classify(mmt_handler_t * mmt_handler);
+bool disable_port_classify(mmt_handler_t * mmt_handler);
 ```
 
 Enable/disable using `mmt_reassembly` (disable by default)
 
 ```c
-bool enable_mmt_reassembly(mmt_handler_t * mmt);
-bool disable_mmt_reassembly(mmt_handler_t * mmt);
+bool enable_mmt_reassembly(mmt_handler_t * mmt_handler);
+bool disable_mmt_reassembly(mmt_handler_t * mmt_handler);
 ```
 
 Process session timer handler which is registered by user
 
 ```c
-void process_session_timer_handler(mmt_handler_t * mmt);
+void process_session_timer_handler(mmt_handler_t * mmt_handler);
 ```
 
 Register an evasion_handler

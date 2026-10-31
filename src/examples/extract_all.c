@@ -58,26 +58,31 @@ static volatile sig_atomic_t stop_flag = 0;
  * @param  iname       interface name
  * @param  buffer_size buffer size (MB)
  * @param  snaplen     packet snaplen
- * @return             NULL if cannot create pcap handler
- *                     a pointer points to a new pcap handle
+ * @return             NULL if the pcap handler cannot be created or activated,
+ *                     or the interface is not Ethernet; else the new handle
  */
 pcap_t * init_pcap(char *iname, uint16_t buffer_size, uint16_t snaplen){
     pcap_t * my_pcap;
-    char errbuf[1024];
+    char errbuf[PCAP_ERRBUF_SIZE];
     my_pcap = pcap_create(iname, errbuf);
     if (my_pcap == NULL) {
         fprintf(stderr, "[error] Couldn't open device %s\n", errbuf);
-        exit(0);
+        return NULL;
     }
     pcap_set_snaplen(my_pcap, snaplen);
     pcap_set_promisc(my_pcap, 1);
     pcap_set_timeout(my_pcap, 0);
     pcap_set_buffer_size(my_pcap, buffer_size * 1000 * 1000);
-    pcap_activate(my_pcap);
+    if (pcap_activate(my_pcap) < 0) {
+        fprintf(stderr, "[error] Couldn't activate %s: %s\n", iname, pcap_geterr(my_pcap));
+        pcap_close(my_pcap);
+        return NULL;
+    }
 
     if (pcap_datalink(my_pcap) != DLT_EN10MB) {
         fprintf(stderr, "[error] %s is not an Ethernet (Make sure you run with administrator permission! )\n", iname);
-        exit(0);
+        pcap_close(my_pcap);
+        return NULL;
     }
     return my_pcap;
 }
@@ -186,6 +191,7 @@ void live_capture_callback( u_char *user, const struct pcap_pkthdr *p_pkthdr, co
 {
     mmt_handler_t *mmt = (mmt_handler_t*)user;
     struct pkthdr header;
+    memset(&header, 0, sizeof(header)); // no stale metadata fields
     header.ts = p_pkthdr->ts;
     header.caplen = p_pkthdr->caplen;
     header.len = p_pkthdr->len;
@@ -211,7 +217,9 @@ void clean() {
     printf("[info] Closed extraction \n");
 
     // Show pcap statistic if capture from an interface
-    if (pcap_stats(pcap, &pcs) < 0) {
+    if (pcap == NULL) {
+        printf("[info] no pcap handle\n");
+    } else if (pcap_stats(pcap, &pcs) < 0) {
         printf("[info] pcap_stats does not exist\n");
         (void) printf("[info] pcap_stats: %s\n", pcap_geterr(pcap));
     } else {
@@ -265,12 +273,16 @@ int main(int argc, char ** argv) {
     parseOptions(argc, argv, filename, &type);
 
     //Initialize MMT
-    init_extraction();
+    if (!init_extraction()) {
+        fprintf(stderr, "[error] MMT extraction init failed\n");
+        return EXIT_FAILURE;
+    }
 
     //Initialize MMT handler
     mmt_handler = mmt_init_handler(DLT_EN10MB, 0, mmt_errbuf);
     if (!mmt_handler) {
         fprintf(stderr, "[error] MMT handler init failed for the following reason: %s\n", mmt_errbuf );
+        close_extraction();
         return EXIT_FAILURE;
     }
 
@@ -278,7 +290,12 @@ int main(int argc, char ** argv) {
     iterate_through_protocols(protocols_iterator, mmt_handler);
 
     // Register packet handler function
-    register_packet_handler(mmt_handler, 1, debug_extracted_attributes_printout_handler, NULL);
+    if (!register_packet_handler(mmt_handler, 1, debug_extracted_attributes_printout_handler, NULL)) {
+        fprintf(stderr, "[error] MMT packet handler registration failed\n");
+        mmt_close_handler(mmt_handler);
+        close_extraction();
+        return EXIT_FAILURE;
+    }
 
     // Handle signals: the handler only flags the stop and breaks the pcap
     // loop, so clean-up below runs exactly once (issue #211, F-BUG-105).
@@ -293,11 +310,14 @@ int main(int argc, char ** argv) {
         struct pcap_pkthdr p_pkthdr;
         pcap = pcap_open_offline(filename, mmt_errbuf);
         if (!pcap) {
-            fprintf(stderr, "pcap_open failed for the following reason\n");
+            fprintf(stderr, "pcap_open failed for the following reason: %s\n", mmt_errbuf);
+            mmt_close_handler(mmt_handler);
+            close_extraction();
             return EXIT_FAILURE;
         }
         const u_char *data = NULL;
         while (!stop_flag && (data = pcap_next(pcap, &p_pkthdr))) {
+            memset(&header, 0, sizeof(header)); // no stale metadata fields
             header.ts = p_pkthdr.ts;
             header.caplen = p_pkthdr.caplen;
             header.len = p_pkthdr.len;
@@ -317,7 +337,9 @@ int main(int argc, char ** argv) {
         pcap = init_pcap(filename,pcap_bs,65535);
 
         if (!pcap) {
-            fprintf(stderr, "[error] creating pcap failed for the following reason: %s\n", mmt_errbuf);
+            fprintf(stderr, "[error] creating pcap on %s failed\n", filename);
+            mmt_close_handler(mmt_handler);
+            close_extraction();
             return EXIT_FAILURE;
         }
         (void)pcap_loop( pcap, -1, &live_capture_callback, (u_char*)mmt_handler );

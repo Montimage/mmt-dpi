@@ -38,7 +38,7 @@ MMT provides a set of attributes (common to all protocols) to access the protoco
 ### User API ###
 
 ```c
-   proto_statistics_t * get_protocol_stats(mmt_handler_t *mmt_handler, uint32_t proto_id);
+   proto_statistics_t * get_protocol_stats(mmt_handler_t *mmt_handler, mmt_proto_id_t proto_id);
 ```
    Returns a pointer to the protocol statistics (list) of the given protocol (`sdk/include/mmt_core.h:912`).
 

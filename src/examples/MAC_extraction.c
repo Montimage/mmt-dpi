@@ -29,6 +29,7 @@
  #include <getopt.h>
  #include <signal.h>
  #include <errno.h>
+ #include <inttypes.h>
 
  #ifndef __FAVOR_BSD
  # define __FAVOR_BSD
@@ -53,6 +54,9 @@
 	
 	uint8_t *src_mac = (uint8_t *) get_attribute_extracted_data(ipacket, PROTO_ETHERNET, ETH_SRC);
 	uint8_t *dst_mac = (uint8_t *) get_attribute_extracted_data(ipacket, PROTO_ETHERNET, ETH_DST);
+	if (src_mac == NULL || dst_mac == NULL) {
+		return 0; // not an Ethernet frame: nothing to print
+	}
 
  	char src_mac_pretty [18], dst_mac_pretty [18];
 		
@@ -60,7 +64,7 @@
 		
 	snprintf(dst_mac_pretty , 18, "%02x:%02x:%02x:%02x:%02x:%02x", dst_mac[0], dst_mac[1], dst_mac[2], dst_mac[3], dst_mac[4], dst_mac[5] );
 
-	printf("%lu,", ipacket->packet_id);
+	printf("%" PRIu64 ",", ipacket->packet_id);
 	printf("%s,",src_mac_pretty);
 	printf("%s\n",dst_mac_pretty);
 
@@ -142,6 +146,7 @@ void live_capture_callback( u_char *user, const struct pcap_pkthdr *p_pkthdr, co
 {
     mmt_handler_t *mmt = (mmt_handler_t*)user;
     struct pkthdr header;
+    memset(&header, 0, sizeof(header)); // no stale metadata fields
     header.ts = p_pkthdr->ts;
     header.caplen = p_pkthdr->caplen;
     header.len = p_pkthdr->len;
@@ -162,39 +167,49 @@ int main(int argc, char ** argv){
 	pcap_t *pcap;
 	const unsigned char *data;
 	struct pcap_pkthdr p_pkthdr;
-	char errbuf[1024];
+	char errbuf[PCAP_ERRBUF_SIZE];
 
 	quiet = 0;
 	parseOptions(argc, argv, filename, &type);
 
 	//Initialize MMT
-	init_extraction();
+	if(!init_extraction()){
+		fprintf(stderr, "MMT extraction init failed\n");
+		return EXIT_FAILURE;
+	}
 
 	//Initialize MMT handler
 	mmt_handler =mmt_init_handler(DLT_EN10MB,0,mmt_errbuf);
 	if(!mmt_handler){
 		fprintf(stderr, "MMT handler init failed for the following reason: %s\n",mmt_errbuf );
+		close_extraction();
 		return EXIT_FAILURE;
 	}
 
 	
 	// ETHERNET PROTOCOL META DATA
-	register_extraction_attribute(mmt_handler,PROTO_ETHERNET,ETH_SRC);
-	register_extraction_attribute(mmt_handler,PROTO_ETHERNET,ETH_DST);
-	register_extraction_attribute(mmt_handler,PROTO_ETHERNET,ETH_PROTOCOL);
-	
-	
-	register_packet_handler(mmt_handler,1,packet_handler, NULL);
+	if(!register_extraction_attribute(mmt_handler,PROTO_ETHERNET,ETH_SRC)
+		|| !register_extraction_attribute(mmt_handler,PROTO_ETHERNET,ETH_DST)
+		|| !register_extraction_attribute(mmt_handler,PROTO_ETHERNET,ETH_PROTOCOL)
+		|| !register_packet_handler(mmt_handler,1,packet_handler, NULL)){
+		fprintf(stderr, "MMT attribute/packet handler registration failed\n");
+		mmt_close_handler(mmt_handler);
+		close_extraction();
+		return EXIT_FAILURE;
+	}
 		
 	printf("Packet_id, MAC source, MAC destination\n");
 	if (type == TRACE_FILE) {
         pcap = pcap_open_offline(filename, errbuf); // open offline trace
         if (!pcap) { /* pcap error ? */
 	        fprintf(stderr, "pcap_open failed for the following reason: %s\n", errbuf);
+	        mmt_close_handler(mmt_handler);
+	        close_extraction();
 	        return EXIT_FAILURE;
    		}
 
 	    while ((data = pcap_next(pcap, &p_pkthdr))) {
+	    	memset(&header, 0, sizeof(header)); // no stale metadata fields
 	    	header.ts = p_pkthdr.ts;
 	    	header.caplen = p_pkthdr.caplen;
 	    	header.len = p_pkthdr.len;
@@ -206,18 +221,20 @@ int main(int argc, char ** argv){
 		pcap = pcap_open_live(filename, MTU_BIG, 1, 1000, errbuf);
 		if (!pcap) {
 			fprintf(stderr, "pcap_open failed for the following reason: %s\n", errbuf);
+			mmt_close_handler(mmt_handler);
+			close_extraction();
 			return EXIT_FAILURE;
 		}
 		(void)pcap_loop( pcap, -1, &live_capture_callback, (u_char*)mmt_handler );
 	}
+
+	pcap_close(pcap);
 
 		//Close the MMT handler
 	mmt_close_handler(mmt_handler);
 
 		//Close MMT
 	close_extraction();
-
-	pcap_close(pcap);
 
 	return EXIT_SUCCESS;
 

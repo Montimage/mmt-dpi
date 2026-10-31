@@ -16,6 +16,12 @@
 #               commands that invoke ./BIN — never a different binary.
 #   F-DOCS-018  every src/examples/*.c file is named on the page, and the
 #               page either compiles each one or states it covers a subset.
+#   F-DOCS-006  (issue #581) every Examples.md listing whose compile step
+#               names a src/examples file is that file's code, so the one
+#               copy tools/ci/compile-doc-listings.sh compiles is the page's.
+#   F-DOCS-007  (issue #581) every prototype docs/*.md shows for a public
+#               (MMTAPI) function matches src/mmt_core/public_include, as
+#               tools/ci/public-prototypes.py normalises both.
 #   F-DOCS-014  the unsupported-platform instruction blocks (Homebrew
 #               formulas, ARCH=osx/win32/win64 builds, /opt/windows staging)
 #               are gone from Compilation-and-Installation-Instructions.md,
@@ -188,11 +194,71 @@ elif unwalked:
 else:
     print("  ✓ every example has a compile step")
 
+# F-DOCS-006 (issue #581): a listing whose compile step names an example
+# file is that file's code, from the first line after its header comment —
+# one copy, compiled by tools/ci/compile-doc-listings.sh.
+def example_body(path):
+    lines = open(path, encoding="utf-8").read().split("\n")
+    i = 0
+    if lines and lines[0].lstrip().startswith("/*"):
+        while i < len(lines) and "*/" not in lines[i]:
+            i += 1
+        i += 1
+    while i < len(lines) and not lines[i].strip():
+        i += 1
+    return "\n".join(l.rstrip() for l in lines[i:]).rstrip()
+
+synced = 0
+listed = set()
+for m in re.finditer(r"^```c\n(.*?)^```\n", doc, re.S | re.M):
+    rest = doc[m.end():]
+    nxt = re.search(r"^```c\s*$", rest, re.M)
+    g = re.search(r"\bgcc\b[^#\n]*?\s-o\s+([A-Za-z0-9_.-]+)",
+                  rest[:nxt.start()] if nxt else rest)
+    line = doc.count("\n", 0, m.start()) + 2
+    if not g or not os.path.isfile(f"src/examples/{g.group(1)}.c"):
+        continue
+    listed.add(g.group(1))
+    listing = "\n".join(l.rstrip() for l in m.group(1).split("\n")).rstrip()
+    if listing != example_body(f"src/examples/{g.group(1)}.c"):
+        errors += 1
+        print(f"  ✗ line {line}: listing differs from src/examples/{g.group(1)}.c "
+              "(copy the file's code after its header comment)")
+    else:
+        synced += 1
+# Every compile step that names an example must follow its listing: a
+# listing retagged or dropped would otherwise leave both gates unnoticed.
+stepped = set(e[:-2] for e in examples) & compiled_set
+for name in sorted(stepped - listed):
+    errors += 1
+    print(f"  ✗ the page compiles {name} but shows no ```c listing of "
+          f"src/examples/{name}.c before that step")
+if synced and errors == 0:
+    print(f"  ✓ all {synced} listing(s) are the code of the example they compile")
+
 sys.exit(errors)
 PYEOF
 then
     ERRORS=$((ERRORS + 1))
 fi
+
+# --- F-DOCS-007: API prototypes match the public headers (#581) -------------
+echo ""
+echo "-- F-DOCS-007: API prototypes vs src/mmt_core/public_include --"
+
+# Every declaration a page shows for an MMTAPI function must be the header's,
+# after normalisation (tools/ci/public-prototypes.py). DECISIONS.md is an
+# append-only record, so it may quote a signature as it once was.
+proto_docs=()
+for d in docs/*.md; do
+    [ "$d" = docs/DECISIONS.md ] || proto_docs+=("$d")
+done
+proto_rc=0
+proto_out="$(python3 tools/ci/public-prototypes.py --check "${proto_docs[@]}" 2>&1)" || proto_rc=$?
+[ -n "$proto_out" ] && printf '%s\n' "$proto_out" | sed 's/^/    /'
+[ "$proto_rc" -le 1 ] || { echo "✗ tools/ci/public-prototypes.py is broken (exit $proto_rc)" >&2; exit 2; }
+check "every public prototype in docs/*.md matches src/mmt_core/public_include" \
+      "[ $proto_rc -eq 0 ]"
 
 # --- F-DOCS-014: unsupported-platform sections -------------------------------
 echo ""

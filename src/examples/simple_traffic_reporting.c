@@ -57,15 +57,18 @@ void new_flow_handle(const ipacket_t * ipacket, attribute_t * attribute, void * 
     if (attribute->data == NULL) {
         return; //This should never happen! check it anyway
     }
+    if (get_user_session_context(ipacket->session) != NULL) {
+        return; // already recorded (IP and IPv6 both report a tunnelled session)
+    }
     internal_session_struct_t *temp_session = (internal_session_struct_t*)mmt_malloc(sizeof (internal_session_struct_t));
     if (temp_session == NULL) {
         return;
     }
     memset(temp_session, '\0', sizeof (internal_session_struct_t));
     // Flow extraction
-    int ipindex = get_protocol_index_by_id(ipacket, PROTO_IP);
+    unsigned ipindex = get_protocol_index_by_id(ipacket, PROTO_IP);
     //Process IPv4 flows
-    if (ipindex != -1) {
+    if (ipindex != MMT_NO_PROTO_INDEX) {
         uint32_t * ip_src = (uint32_t *) get_attribute_extracted_data(ipacket, PROTO_IP, IP_SRC);
         uint32_t * ip_dst = (uint32_t *) get_attribute_extracted_data(ipacket, PROTO_IP, IP_DST);
         if (ip_src) {
@@ -164,17 +167,19 @@ void session_expiry_handle(const mmt_session_t * expired_session, void * args) {
             // get_application_class_name_by_protocol_id(proto_id),
             path, app_name
             );
+    // The record was mmt_malloc()ed in new_flow_handle(); every session
+    // expires once, at the latest in mmt_close_handler(), so free it here.
+    mmt_free(temp_session);
 }
 int main(int argc, const char **argv) {
-    mmt_handler_t *mmt_handler, *m1;
+    mmt_handler_t *mmt_handler;
     char mmt_errbuf[1024];
     int packets_count = 0;
     pcap_t *pcap;
     const u_char *data;
     struct pkthdr header;
     struct pcap_pkthdr pkthdr;
-    char errbuf[1024];
-    int ret;
+    char errbuf[PCAP_ERRBUF_SIZE];
     //flows = NULL;
     if (argc < 2) {
         usage(argv[0]);
@@ -188,16 +193,27 @@ int main(int argc, const char **argv) {
     }
     if (!init_extraction()) { // general ixE initialization
         fprintf(stderr, "MMT extract init error\n");
+        pcap_close(pcap);
         return EXIT_FAILURE;
     }
     //Initialize an MMT handler
     mmt_handler = mmt_init_handler(DLT_EN10MB, 0, mmt_errbuf);
     if (!mmt_handler) { /* pcap error ? */
         fprintf(stderr, "MMT handler init failed for the following reason: %s\n", mmt_errbuf);
+        close_extraction();
+        pcap_close(pcap);
         return EXIT_FAILURE;
     }
     // customized packet and session handling functions are then registered
-    register_session_timeout_handler(mmt_handler, session_expiry_handle, NULL);
+    if (!register_session_timeout_handler(mmt_handler, session_expiry_handle, NULL)
+        || !register_attribute_handler(mmt_handler, PROTO_IP, PROTO_SESSION, new_flow_handle, NULL, NULL)
+        || !register_attribute_handler(mmt_handler, PROTO_IPV6, PROTO_SESSION, new_flow_handle, NULL, NULL)) {
+        fprintf(stderr, "MMT session handler registration failed\n");
+        mmt_close_handler(mmt_handler);
+        close_extraction();
+        pcap_close(pcap);
+        return EXIT_FAILURE;
+    }
     register_extraction_attribute(mmt_handler, PROTO_IP, IP_SRC);
     register_extraction_attribute(mmt_handler, PROTO_IP, IP_DST);
     register_extraction_attribute(mmt_handler, PROTO_IP, IP_PROTO_ID);
@@ -210,8 +226,6 @@ int main(int argc, const char **argv) {
     register_extraction_attribute(mmt_handler, PROTO_IPV6, IP6_DST);
     register_extraction_attribute(mmt_handler, PROTO_IPV6, IP6_SERVER_PORT);
     register_extraction_attribute(mmt_handler, PROTO_IPV6, IP6_CLIENT_PORT);
-    register_attribute_handler(mmt_handler, PROTO_IP, PROTO_SESSION, new_flow_handle, NULL, NULL);
-    register_attribute_handler(mmt_handler, PROTO_IPV6, PROTO_SESSION, new_flow_handle, NULL, NULL);
     printf("Start timestamp, End timestamp, Flow id, "
             "IP version, Server IP, Client IP, Server Port, Client Port, "
             "Proto, UL Packets, DL Packets, UL Volume, DL Volume, "
@@ -220,6 +234,7 @@ int main(int argc, const char **argv) {
     gettimeofday(&tval, NULL);
     fprintf(stderr, "Time %lu.%06lu\n", tval.tv_sec, tval.tv_usec);
     while ((data = pcap_next(pcap, &pkthdr))) {
+        memset(&header, 0, sizeof(header)); // no stale metadata fields
         header.ts = pkthdr.ts;
         header.caplen = pkthdr.caplen;
         header.len = pkthdr.len;

@@ -46,19 +46,19 @@ register user requests, and notify user upon occurrence of identified events (pa
 ### Developer API ###
 
 ```c
-   int register_protocol_stack(uint32_t s_id, char *s_name, generic_stack_classification_function fct);
+   bool register_protocol_stack(uint32_t s_id, char *s_name, generic_stack_classification_function fct);
 
-   int register_protocol_stack_full(uint32_t s_id, 
+   bool register_protocol_stack_full(uint32_t s_id, 
       char *s_name, generic_stack_classification_function fct, 
       stack_internal_cleanup stack_cleanup, 
-      void * stack_internal_context
+      mmt_opaque_t stack_internal_context
     );
 ```
    Registers a protocol stack given its identifier, name and classification function. In case the stack maintains a local context, 
    the cleanup function needs to be given. The registration fails if a protocol stack is already registered with the given identifier or name.
 
 ```c
-   int unregister_protocol_stack(uint32_t s_id);
+   bool unregister_protocol_stack(uint32_t s_id);
 ```
    Unregisters a protocol stack given its identifier.
 
