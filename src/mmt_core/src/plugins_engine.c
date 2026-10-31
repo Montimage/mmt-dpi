@@ -1,3 +1,7 @@
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE /* secure_getenv() */
+#endif
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,39 +36,67 @@ static pthread_mutex_t plugin_handlers_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 static struct plugin_handler_struct * plugin_handlers_list = NULL;
 
 
+/*
+ * Issue #503 (F-BUG-005): the plugin directory is the one compiled into the
+ * library (PLUGINS_REPOSITORY_OPT, i.e. $(MMT_BASE)/plugins) unless the
+ * MMT_DPI_PLUGINS_DIR environment variable names another absolute directory.
+ * The working directory is never scanned: a CWD-relative "plugins/" used to
+ * run the constructor and init_proto() of any .so planted wherever the host
+ * process was started. secure_getenv() ignores the override in setuid/setgid
+ * processes. Returns NULL (after logging why) for a relative override.
+ */
+static const char *plugins_directory(int *from_env)
+{
+    const char *dir = secure_getenv(PLUGINS_DIR_ENV);
+    *from_env = 0;
+    if (dir == NULL || dir[0] == '\0')
+        return PLUGINS_REPOSITORY_OPT;
+    *from_env = 1;
+    if (dir[0] != '/') {
+        mmt_stderr_log("%s must be an absolute directory, got \"%s\"\n", PLUGINS_DIR_ENV, dir);
+        return NULL;
+    }
+    return dir;
+}
+
 int load_plugins() {
     int retval = 1;
-    char path[ 256 ];
-
+    int from_env;
+    char path[ PATH_MAX ];
     struct dirent **entries;
-    struct dirent *entry;
-    int plugins_path=0;
-    int ret;
-    int n = scandir( PLUGINS_REPOSITORY, &entries, load_filter, alphasort );
+    const char *dir = plugins_directory(&from_env);
+    if (dir == NULL)
+        return 0;
+
+    int n = scandir( dir, &entries, load_filter, alphasort );
     if( n < 0 ) {
-        /* can't read PLUGINS_REPOSITORY -> just ignore and return success
-         * (the directory may not exist or may be inaccessible, that's ok)
-         * note: no entries were allocated at this point, no need for free().
-         */
-	plugins_path=1;
-        n = scandir( PLUGINS_REPOSITORY_OPT, &entries, load_filter, alphasort );
-	if (n<0){
-		mmt_debug_log("You don't have any plugin\n");
-	        return 1;
-	}
+        /* An explicitly requested directory must exist. The compiled-in one
+         * may not (a core-only install): run without protocol plugins.
+         * No entries were allocated, no need for free(). */
+        if (from_env) {
+            mmt_stderr_log("Cannot read plugin directory %s (%s)\n", dir, PLUGINS_DIR_ENV);
+            return 0;
+        }
+        mmt_debug_log("You don't have any plugin\n");
+        return 1;
     }
 
+    /* Issue #503 (F-BUG-006): the first plugin that fails to load or to
+     * initialize fails the whole load (and init_extraction()); the remaining
+     * entries are only freed. */
     int i;
     for( i = 0 ; i < n ; ++i ) {
-        entry = entries[i];
-        ret = snprintf( path, 256, "%s/%s",plugins_path==0?PLUGINS_REPOSITORY:PLUGINS_REPOSITORY_OPT,entry->d_name );
-
-        if( ret <= 0 ) //must not occurs, but we need to check anyway to avoid warning when compiling using gcc7
-        	return 0;
-
-        // printf("Loading plugins from: %s \n",path);
-	(void)load_plugin( path );
-        free( entry );
+        if (retval) {
+            int ret = snprintf( path, sizeof( path ), "%s/%s", dir, entries[i]->d_name );
+            if( ret < 0 || (size_t) ret >= sizeof( path )) {
+                mmt_stderr_log( "Plugin path too long: %s/%s\n", dir, entries[i]->d_name );
+                retval = 0;
+            } else if( !load_plugin( path )) {
+                mmt_stderr_log( "Error loading plugin %s\n", path );
+                retval = 0;
+            }
+        }
+        free( entries[i] );
     }
 
     free( entries );
@@ -107,7 +139,14 @@ int load_plugin(char * plugin_path_name) {
     plugin_handler->next = plugin_handlers_list;
     plugin_handlers_list = plugin_handler;
     pthread_mutex_unlock(&plugin_handlers_list_mutex);
-    return retval;
+    /* Issue #503: init_proto() reports failure as 0 or a negative value
+     * (init_dicom_proto_struct() returns -1). The handle stays on the list
+     * above so close_plugins() still runs cleanup_proto() and dlclose(). */
+    if (retval <= 0) {
+        mmt_stderr_log( "%s: %s() failed (%d)\n", plugin_path_name, PLUGIN_INIT_FUNCTION_NAME, retval );
+        return 0;
+    }
+    return 1;
 }
 
 void close_plugins() {

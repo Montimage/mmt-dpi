@@ -328,7 +328,7 @@ directly against sources under `src/` with plain `gcc`; suites that need the
 built SDK (`hashmap`, `citrix_ica_detection`, `http_header_case`,
 `s1ap_ngap_decode`, `rule_engine`, `radius_hardening`, `nas_ies_tail`, `installer`,
 `installed_consumer`, `parser_boundaries`, `sdk_coverage`, `docs_lifecycle`, `docs_onboarding`, and the engine
-leg of `fault_injection`, `tests/fault_injection/run_tests.sh:115-117`) run `make -C sdk clean` and build
+leg of `fault_injection`, `tests/fault_injection/run_tests.sh:134-136`) run `make -C sdk clean` and build
 it themselves into a throwaway prefix when run on their own
 (`bash tests/<suite>/run_tests.sh`), so running them discards an existing
 `sdk/` build.
@@ -389,7 +389,7 @@ packages add the `lib<name>.so.$(SOVERSION)` runtime link. Locally it needs
   `rules/common.mk:120-127`) and sets `ASAN_OPTIONS=detect_leaks=0`
   (leak detection stays with Valgrind). The shared builds and the SDK-building suites inherit `BUILD=asan` for their
   SDK build, except `fault_injection`: its engine leg is skipped under sanitizers
-  while its unit leg still runs (`tests/fault_injection/run_tests.sh:97-102`).
+  while its unit leg still runs (`tests/fault_injection/run_tests.sh:116-121`).
 - `SANITIZE=tsan bash tests/run_all_tests.sh` — same with TSan
   (`rules/common.mk:150-157`). On kernels with high-entropy ASLR the runner
   re-execs itself once under `setarch -R`
@@ -593,7 +593,10 @@ the plugin directory it was compiled with (`sdk/Makefile:25-29`): a build
 with a different `MMT_BASE` recompiles exactly that object, a rebuild with
 the same one compiles nothing, and `make install` — which never builds —
 refuses a mismatch. Keep `MMT_BASE` identical across build/install
-invocations so compilation and installation use one path.
+invocations so compilation and installation use one path. It is the only
+directory the plugins load from — the working directory is never scanned —
+unless the absolute directory in `MMT_DPI_PLUGINS_DIR` overrides it at run
+time (`src/mmt_core/src/plugins_engine.c:50-53`, issue #503).
 
 ## 5. Sanitizer Build Profiles
 

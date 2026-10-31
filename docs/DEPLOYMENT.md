@@ -80,12 +80,13 @@ gcc -o myapp myapp.c \
 
 ### Plugin Loading
 
-By default, plugins are loaded from `/opt/mmt/plugins/` (`rules/common.mk:7`). You can also place plugins in a `plugins/` directory relative to your application binary.
+By default, plugins are loaded from `/opt/mmt/plugins/` (`rules/common.mk:7`). They load only from that compiled-in `$(MMT_BASE)/plugins` directory, or from the absolute directory named by `MMT_DPI_PLUGINS_DIR`, read with `secure_getenv()` (`src/mmt_core/src/plugins_engine.c:48-60`); the working directory and the application binary's directory are never scanned.
 
 ### Environment Variables
 
-No environment variables are documented in the codebase for runtime configuration.
-The plugin load path is compiled in at build time from `MMT_BASE`; the contract is
+`MMT_DPI_PLUGINS_DIR` overrides the plugin directory at run time; a relative or
+unreadable value makes `init_extraction()` fail.
+Otherwise the plugin load path is compiled in at build time from `MMT_BASE`; the contract is
 stated once, in
 [Agent Environment Notes §4 `MMT_BASE` Install-Prefix Behavior](./AGENT_ENVIRONMENT.md#4-mmt_base-install-prefix-behavior).
 

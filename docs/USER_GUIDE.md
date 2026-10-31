@@ -177,11 +177,14 @@ Any Ethernet pcap works; the `curl` line fetches the published
 commands run from any directory — a checkout's `src/examples/google-fr.pcap`
 works too when passed by its full path.
 
-`init_extraction()` loads the protocol plugins from a `plugins` directory
-in the current working directory when one exists, and from
-`$MMT_BASE/plugins` only otherwise
-(`src/mmt_core/src/plugins_engine.c:43-50`), so run the program from a
-directory without a stale `./plugins`.
+`init_extraction()` loads the protocol plugins only from
+`$MMT_BASE/plugins`, the directory compiled into the SDK, or from the
+absolute directory named by the `MMT_DPI_PLUGINS_DIR` environment variable
+(`src/mmt_core/src/plugins_engine.c:50-53`); the working directory is
+never scanned. A plugin that fails to load or initialise makes
+`init_extraction()` return `false`
+(`src/mmt_core/src/plugins_engine.c:94-96`), and so does a relative or
+unreadable `MMT_DPI_PLUGINS_DIR`.
 
 The `docs_lifecycle` test suite builds and installs the SDK into a
 throwaway prefix, compiles and runs this example against it, and checks

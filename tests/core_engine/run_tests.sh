@@ -128,13 +128,17 @@ objects+=("$SCRIPT_DIR/test_core_engine.o")
     -o "$SCRIPT_DIR/test_ip_session_ids" "$SCRIPT_DIR/test_ip_session_ids.o" \
     "$SCRIPT_DIR/hash_utils.o" "$SCRIPT_DIR/memory.o" -lpthread
 
-# Run from a scratch directory: load_plugins() scans ./plugins first, and an
-# empty/missing one deterministically takes the no-plugin early return. The
-# engine prints verbose DEBUG lines; keep them in a log and only surface it
-# when the suite fails.
+# Point the plugin loader at an empty scratch directory for every binary
+# that calls init_extraction(): the source-compiled
+# plugins_engine.c defaults to /opt/mmt/plugins, whose plugins (if a host
+# install exists) cannot link against this static test binary, and a failed
+# plugin now fails init_extraction() (issue #503). The engine prints verbose
+# DEBUG lines; keep them in a log and only surface it when the suite fails.
 echo "Running core-engine tests..."
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
+mkdir "$WORK/plugins"
+export MMT_DPI_PLUGINS_DIR="$WORK/plugins"
 if ( cd "$WORK" && "$SCRIPT_DIR/test_core_engine" > "$WORK/core_engine.log" 2>&1 ); then
     echo "Core-engine tests: PASSED"
 else

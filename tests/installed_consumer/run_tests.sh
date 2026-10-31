@@ -234,6 +234,8 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 check "driver compiles the consumer source" \
     bash -c "grep -q 'installed_consumer.c' '${DRIVER}'"
+check "driver runs the consumer beside a planted plugins/evil.so (#503)" \
+    grep -q 'hostile_plugin.c' "${DRIVER}"
 
 echo
 if [ "${FAIL}" -gt 0 ]; then

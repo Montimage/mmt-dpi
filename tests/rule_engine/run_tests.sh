@@ -138,13 +138,11 @@ INC="${PREFIX}/dpi/include"
 LIB="${PREFIX}/dpi/lib"
 
 # The plugin engine (packet_processing.c -> plugins_engine.c) dlopens
-# libmmt_tcpip.so. Its search path is compile-time, not runtime-env:
-# mmt_init_handler falls back from PLUGINS_REPOSITORY_OPT (baked in via
-# -DPLUGINS_REPOSITORY_OPT="$(MMT_PLUGINS)") to the relative "plugins"
-# (plugins_engine.h:21) and then "/opt/mmt/plugins". The build above already
-# installed libmmt_tcpip.so into ${PREFIX}/plugins (sdk/Makefile install), so
-# the test binary is run with CWD=${PREFIX} to satisfy the relative "plugins"
-# fallback, on top of LD_LIBRARY_PATH for the shared libraries.
+# libmmt_tcpip.so from PLUGINS_REPOSITORY_OPT only (baked in via
+# -DPLUGINS_REPOSITORY_OPT="$(MMT_PLUGINS)"; the working directory is never
+# scanned, issue #503). The build above installed libmmt_tcpip.so into
+# ${PREFIX}/plugins (sdk/Makefile install), which is that directory, so the
+# test binary only needs LD_LIBRARY_PATH for the shared libraries.
 
 # Both optional engines must exist once ENABLESEC=1 is set: libmmt_security
 # hosts the rule engine under test, libmmt_fuzz the fuzz engine (#126).
@@ -176,9 +174,8 @@ ${CC} -O2 -Wall -shared -fPIC -I "${INC}" -o "${EMBEDDED_DIR}/libembedded_functi
 MALFORMED_XML="${WORK}/rule_malformed.xml"
 printf '<?xml version="1.0"?>\n<beginning>\n  <property property_id="1"\n' > "${MALFORMED_XML}"
 
-# Run from ${PREFIX} so the plugin engine's relative "plugins" fallback
-# (plugins_engine.h:21) resolves to ${PREFIX}/plugins where the SDK install
-# dropped libmmt_tcpip.so. RUN_DIR is defined before the helpers.
+# Run from ${PREFIX} (the plugins load from the compiled-in
+# ${PREFIX}/plugins whatever the CWD). RUN_DIR is defined before the helpers.
 RUN_DIR="${PREFIX}"
 
 run_expect_ok() { # <label> <logfile> <cmd...>

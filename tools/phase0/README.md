@@ -276,10 +276,11 @@ data-sets).
 
 ## Notes & known boundaries
 
-- Plugin loading is **CWD-relative**: the SDK scans `./plugins/` first and only
-  falls back to the installed prefix when the working directory has no
-  `plugins/` directory (`src/mmt_core/src/plugins_engine.c`). The capture script
-  runs the drivers from a neutral temp directory for this reason.
+- Plugin loading is **prefix-bound**: the SDK loads only the `plugins/`
+  directory of the prefix it was built for (or the absolute
+  `MMT_DPI_PLUGINS_DIR` override) and never scans the working directory
+  (`src/mmt_core/src/plugins_engine.c`, issue #503). The capture script still
+  runs the drivers from a neutral temp directory.
 - Pcaps whose link-type `mmt_init_handler` does not support (e.g. DLT_RAW —
   `tcp_segmented_fpm.pcap`) are recorded as `<unclassified: ...>` /
   `<unsupported link-type>` rather than dropped, so the boundary itself is part

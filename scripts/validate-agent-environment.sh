@@ -199,12 +199,13 @@ rules/arch-linux.mk:73-85	^ifneq \(\$\(strip \$\(MMT_CCACHE\)\),\)	^endif$	MMT_C
 docs/Gemfile:12-17	^source	^gem "jekyll-seo-tag"	documentation gems	jekyll
 .github/workflows/c-cpp.yml:535	bash tools/ci/build-docs-site.sh	-	CI builds Jekyll
 rules/common.mk:3-8	^MMT_BASE	^MMT_EXAMS	Make install configuration
-tests/fault_injection/run_tests.sh:115-117	^ *make .* clean	^ *make .* install	fault injection builds and installs SDK
-tests/fault_injection/run_tests.sh:97-102	^if .*SDK_BUILD_PROFILE	^fi	sanitizers skip fault injection engine leg	exit 0
+tests/fault_injection/run_tests.sh:134-136	^ *make .* clean	^ *make .* install	fault injection builds and installs SDK
+tests/fault_injection/run_tests.sh:116-121	^if .*SDK_BUILD_PROFILE	^fi	sanitizers skip fault injection engine leg	exit 0
 tests/run_all_tests.sh:397-401	json_file=	select\(	coverage restricts emitted records to src	/src/
 tests/run_all_tests.sh:458-472	Instrumented files	scope:	coverage summary exposes measured scope	instrumented_sources
 tests/coverage/floor.json:2-10	"library_line_pct": 83.1	  ]	coverage floor and required sources	"instrumented_files": 47
 rules/common.mk:187-206	^SRCDIR	^SDKXAM	artifacts remain in checkout	SDKLIB
+src/mmt_core/src/plugins_engine.c:50-53	secure_getenv\(PLUGINS_DIR_ENV\)	return PLUGINS_REPOSITORY_OPT;	plugins load from the compiled-in directory or MMT_DPI_PLUGINS_DIR only
 CITATIONS
 
 registered="$(printf '%s' "$registered" | grep -v '^$' | sort -u)"

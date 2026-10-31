@@ -594,7 +594,7 @@ bool unregister_protocol_by_name(char* proto_name) {
 
 int init_plugins() {
     if (!load_plugins()) {
-        mmt_stderr_log( "Error while loading plugins, Exiting\n");
+        mmt_stderr_log( "Error while loading plugins\n");
         return 0;
     }
 
@@ -655,7 +655,7 @@ bool init_extraction()
         return 0;
     }
 
-    init_plugins();
+    if (!init_plugins()) return 0; // Issue #503: a plugin load/init failure fails init_extraction()
     if (!init_handlers_map()) {
         // Issue #200 (F-BUG-003): same unchecked-nothrow-new guard as above.
         mmt_stderr_log( "Error during initialization (out of memory)\n");

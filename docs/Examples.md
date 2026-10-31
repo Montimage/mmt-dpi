@@ -58,7 +58,7 @@ Run the example:
 ```
 The output is the list of available protocols and for each protocol, the list of its attributes.
 
-If you want to test with your own plugins, place them in `/opt/mmt/plugins` (the default plugin directory — the prefix contract is stated once, in [Agent Environment Notes §4](./AGENT_ENVIRONMENT.md#4-mmt_base-install-prefix-behavior)) or create a `plugins/` folder alongside the example binary.
+If you want to test with your own plugins, place them in `/opt/mmt/plugins` (the default plugin directory — the prefix contract is stated once, in [Agent Environment Notes §4](./AGENT_ENVIRONMENT.md#4-mmt_base-install-prefix-behavior)) or point `MMT_DPI_PLUGINS_DIR` at an absolute directory holding them (see the same section).
 
 ## Extract All ##
 This example is intended to extract everything! This means all the attributes of all registered protocols will be registered for extraction. When a packet is processed, the attributes found in the packet will be printed out.

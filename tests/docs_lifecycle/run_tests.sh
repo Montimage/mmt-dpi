@@ -38,7 +38,7 @@ CITING_DOCS=(docs/USER_GUIDE.md docs/THREADING.md docs/Global-Handler.md docs/MM
 #   [<TAB> <regex the end line must match>]
 CITATIONS="$(cat <<'TABLE'
 src/mmt_core/src/packet_registry.c:616	^bool init_extraction\(\)
-src/mmt_core/src/packet_registry.c:658-659	^ *init_plugins\(\);	if \(!init_handlers_map\(\)\)
+src/mmt_core/src/packet_registry.c:658-659	^ *if \(!init_plugins\(\)\) return 0;	if \(!init_handlers_map\(\)\)
 src/mmt_core/src/packet_registry_handler.c:408	mmt_configured_handlers_map = init_map_space
 src/mmt_core/src/packet_registry_handler.c:116	^mmt_handler_t \*mmt_init_handler\(
 src/mmt_core/src/packet_registry_handler.c:263	insert_key_value\(mmt_configured_handlers_map
@@ -66,7 +66,8 @@ src/mmt_core/public_include/mmt_core.h:332	^MMTAPI bool MMTCALL register_evasion
 src/mmt_core/public_include/mmt_core.h:581	^MMTAPI bool MMTCALL set_fragment_in_packet\(
 src/mmt_core/public_include/mmt_core.h:593	^MMTAPI bool MMTCALL set_fragmented_packet_in_session\(
 src/mmt_core/public_include/mmt_core.h:605	^MMTAPI bool MMTCALL set_fragment_in_session\(
-src/mmt_core/src/plugins_engine.c:43-50	scandir\( PLUGINS_REPOSITORY,	scandir\( PLUGINS_REPOSITORY_OPT,
+src/mmt_core/src/plugins_engine.c:50-53	secure_getenv\(PLUGINS_DIR_ENV\)	return PLUGINS_REPOSITORY_OPT;
+src/mmt_core/src/plugins_engine.c:94-96	!load_plugin\( path \)	retval = 0;
 TABLE
 )"
 
@@ -204,9 +205,9 @@ fi
 read -r -a extra_cflags <<< "${EXTRA_CFLAGS:-}"
 "${CC}" "${extra_cflags[@]}" -O2 -Wall -o "${WORK}/packet_handler" "${INSTALLED_EX}" \
     -I "${PREFIX}/dpi/include" -L "${PREFIX}/dpi/lib" -lmmt_core -ldl -lpcap
-# init_extraction() scans ./plugins before <prefix>/plugins
-# (src/mmt_core/src/plugins_engine.c:43-50): run from a neutral CWD so a
-# checkout-local ./plugins can never shadow the installed plugins.
+# init_extraction() loads only <prefix>/plugins and never scans the working
+# directory (src/mmt_core/src/plugins_engine.c:50-53, issue #503); the run
+# still uses a neutral CWD.
 mkdir -p "${WORK}/run"
 run() { (cd "${WORK}/run" && LD_LIBRARY_PATH="${PREFIX}/dpi/lib:${LD_LIBRARY_PATH:-}" "${WORK}/packet_handler" "$@"); }
 

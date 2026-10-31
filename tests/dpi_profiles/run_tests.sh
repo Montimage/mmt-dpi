@@ -49,13 +49,17 @@ objects+=("$SCRIPT_DIR/test_dpi_profiles.o")
 "$CC" "${extra_cflags[@]}" \
     -o "$SCRIPT_DIR/test_dpi_profiles" "${objects[@]}" -lm -lpthread -ldl
 
-# Run from a scratch directory: load_plugins() scans ./plugins first, and an
-# empty/missing one deterministically takes the no-plugin early return. Keep
-# the engine's verbose output in a log unless the suite fails.
+# Point the plugin loader at an empty scratch directory: the source-compiled
+# plugins_engine.c defaults to /opt/mmt/plugins, whose plugins (if a host
+# install exists) cannot link against this static test binary, and a failed
+# plugin now fails init_extraction() (issue #503). Keep the engine's verbose
+# output in a log unless the suite fails.
 echo "Running dpi-profiles tests..."
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
-if ( cd "$WORK" && "$SCRIPT_DIR/test_dpi_profiles" > "$WORK/dpi_profiles.log" 2>&1 ); then
+mkdir "$WORK/plugins"
+if ( cd "$WORK" && MMT_DPI_PLUGINS_DIR="$WORK/plugins" \
+        "$SCRIPT_DIR/test_dpi_profiles" > "$WORK/dpi_profiles.log" 2>&1 ); then
     echo "DPI-profiles tests: PASSED"
 else
     cat "$WORK/dpi_profiles.log"

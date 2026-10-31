@@ -21,7 +21,9 @@
 #      protocol resolves (one name per plugin — a plugin that failed to
 #      dlopen cannot hide), the capture classifies to its known label, and
 #      the SDK shuts down cleanly;
-#   4. every log line carries the package filename, SHA-256, distro and
+#   4. run from a directory holding plugins/evil.so (hostile_plugin.c), the
+#      consumer still passes and evil.so is never loaded (issue #503);
+#   5. every log line carries the package filename, SHA-256, distro and
 #      architecture so a failure is attributable to one matrix row.
 #
 # With --root-install (issue #485, F-CI-104) the run is the root-install leg:
@@ -67,6 +69,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 CONSUMER_SRC="${SCRIPT_DIR}/installed_consumer.c"
+HOSTILE_SRC="${SCRIPT_DIR}/hostile_plugin.c"
 # Overridable for tests and exotic layouts; production runs use the vendored
 # defaults beside this script.
 FIXTURES="${FIXTURES:-${SCRIPT_DIR}/fixtures.txt}"
@@ -96,7 +99,7 @@ while [ $# -gt 0 ]; do
         --no-engines)     EXPECT_ENGINES=0; shift ;;
         --root-install)   ROOT_INSTALL=1; shift ;;
         -h|--help)
-            sed -n '2,64p' "$0"; exit 0 ;;
+            sed -n '2,66p' "$0"; exit 0 ;;
         *) echo "✗ unknown argument: $1" >&2; exit 2 ;;
     esac
 done
@@ -233,4 +236,30 @@ done < "${FIXTURES}"
 if [ "${failures}" -gt 0 ]; then
     fail "${failures} fixture(s) failed"
 fi
+
+# --- 4. a hostile working directory cannot inject a plugin (issue #503) -------
+# plugins/evil.so in the consumer's CWD creates SENTINEL from its constructor
+# the moment anything dlopen()s it; the SDK loads only <prefix>/plugins.
+HOSTILE="${WORK}/hostile"
+SENTINEL="${WORK}/hostile-plugin-loaded"
+mkdir -p "${HOSTILE}/plugins"
+if ! "${CC}" -O2 -Wall -fPIC -shared -DHOSTILE_SENTINEL="\"${SENTINEL}\"" \
+        -o "${HOSTILE}/plugins/evil.so" "${HOSTILE_SRC}"; then
+    fail "hostile plugin does not compile"
+fi
+read -r rel expected _rest < <(grep -Ev '^[[:space:]]*(#|$)' "${FIXTURES}")
+if [ "${ROOT_INSTALL}" -eq 1 ]; then
+    run_env=(env -u LD_LIBRARY_PATH -u MMT_DPI_PLUGINS_DIR)
+else
+    run_env=(env -u MMT_DPI_PLUGINS_DIR LD_LIBRARY_PATH="${LIB}")
+fi
+if ! (cd "${HOSTILE}" && "${run_env[@]}" "${BIN}" \
+        "${PCAP_DIR}/${rel}" "${expected}" "${REQUIRED_PROTOS}") \
+        >"${WORK}/out.log" 2>"${WORK}/err.log"; then
+    head -12 "${WORK}/err.log" | while IFS= read -r line; do say "  ${line}"; done
+    fail "consumer run from a directory holding plugins/evil.so failed"
+fi
+[ ! -e "${SENTINEL}" ] \
+    || fail "plugins/evil.so in the working directory was loaded (sentinel created)"
+say "✓ ./plugins/evil.so in the working directory was not loaded"
 say "OK — installed SDK consumer passed on every fixture"

@@ -2484,9 +2484,8 @@ int main(void) {
     fprintf(stderr, "Core-engine test suite (session lifecycle + arena allocator)\n");
     g_null_fp = fopen("/dev/null", "w"); /* sink for the fprintf/format helpers */
 
-    /* Run from a directory without a `plugins/` subdir so load_plugins()
-     * takes its no-plugin early return deterministically. The run script
-     * cd's into a scratch dir. */
+    /* The run script points MMT_DPI_PLUGINS_DIR at an empty scratch
+     * directory, so load_plugins() deterministically loads no plugin. */
     test_arena();
     test_arena_failures();
 
