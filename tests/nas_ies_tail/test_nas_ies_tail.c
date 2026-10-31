@@ -46,6 +46,13 @@
  * pinned, including the operand types the macros compared in, and a check's
  * warning still names the decoder's .c file, not decoder.h.
  *
+ * Issue #573 adds:
+ * - EPS QoS: ielen counts the contents only; every ielen 1..13 consumes the
+ *   whole IE, decodes each rate group it holds whole (Rel-11 extended-2
+ *   included) and leaves the next IE in place
+ * - PDN address: the IPv4 of an IPv4v6 address follows the IPv6 IID
+ * - NAS-5G: security header type 1 reports its inner message type
+ *
  * Verifies crafted Attach-Accept/Request tail cases (ielen 0..10 at buffer end)
  * pass without AddressSanitizer errors.
  */
@@ -329,6 +336,162 @@ static void test_qos_bit_rates(void) {
     CHECK("qos bit_rates_ext present", m.bit_rates_ext_present == 1);
     CHECK("qos ext max ul", m.bit_rates_ext.max_bit_rate_for_ul  == 0x55);
     CHECK("qos ext guar dl", m.bit_rates_ext.guar_bit_rate_for_dl == 0x88);
+}
+
+/* issue #573: TS 24.301 §9.9.4.3 — the QoS contents are the QCI and up to
+ * three groups of four rate octets (ielen 1, 5, 9, 13). ielen never counts
+ * the IEI; in-between lengths decode the whole groups and skip the rest.
+ * Each case is followed by a sentinel octet the decoder must not consume. */
+static void check_qos_ielen(uint8_t iei, int ielen) {
+    uint8_t buf[2 + 13 + 1];
+    const int hdr = iei ? 2 : 1;
+    nas_eps_quality_of_service_t m;
+    char d[96];
+    memset(buf, 0, sizeof(buf));
+    if (iei)
+        buf[0] = iei;
+    buf[hdr - 1] = (uint8_t)ielen;
+    for (int i = 0; i < ielen; i++)
+        buf[hdr + i] = (uint8_t)(0x10 + i);    /* QCI 0x10, rates 0x11.. */
+    buf[hdr + ielen] = 0xEE;                   /* next IE */
+    memset(&m, 0xA5, sizeof(m));
+    int ret = nas_decode_eps_quality_of_service(&m, iei, buf, (uint32_t)(hdr + ielen + 1));
+    snprintf(d, sizeof(d), "qos iei=0x%02x ielen=%d consumes the IE, not the next one",
+             iei, ielen);
+    CHECK(d, ret == hdr + ielen && buf[ret] == 0xEE);
+    snprintf(d, sizeof(d), "qos iei=0x%02x ielen=%d groups present %d/%d/%d", iei, ielen,
+             ielen >= 5, ielen >= 9, ielen >= 13);
+    CHECK(d, m.qci == 0x10
+          && m.bit_rates_present == (ielen >= 5)
+          && m.bit_rates_ext_present == (ielen >= 9)
+          && m.bit_rates_ext2_present == (ielen >= 13));
+    if (ielen >= 5) {
+        snprintf(d, sizeof(d), "qos iei=0x%02x ielen=%d bit rates", iei, ielen);
+        CHECK(d, m.bit_rates.max_bit_rate_for_ul == 0x11
+              && m.bit_rates.guar_bit_rate_for_dl == 0x14);
+    }
+    if (ielen >= 9) {
+        snprintf(d, sizeof(d), "qos iei=0x%02x ielen=%d extended bit rates", iei, ielen);
+        CHECK(d, m.bit_rates_ext.max_bit_rate_for_ul == 0x15
+              && m.bit_rates_ext.guar_bit_rate_for_dl == 0x18);
+    }
+    if (ielen >= 13) {
+        snprintf(d, sizeof(d), "qos iei=0x%02x ielen=%d extended-2 bit rates", iei, ielen);
+        CHECK(d, m.bit_rates_ext2.max_bit_rate_for_ul == 0x19
+              && m.bit_rates_ext2.max_bit_rate_for_dl == 0x1A
+              && m.bit_rates_ext2.guar_bit_rate_for_ul == 0x1B
+              && m.bit_rates_ext2.guar_bit_rate_for_dl == 0x1C);
+    }
+}
+
+static void test_qos_spec_lengths(void) {
+    printf("EPS QoS ielen 1..13 as TS 24.301 lays it out (#573):\n");
+    for (int ielen = 1; ielen <= 13; ielen++) {
+        check_qos_ielen(0, ielen);
+        check_qos_ielen(0x5B, ielen);
+    }
+    /* a group cut by the buffer, not by ielen, is still an error */
+    uint8_t cut[14] = { 13, 0x09, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+    nas_eps_quality_of_service_t m; memset(&m, 0, sizeof(m));
+    CHECK("qos ielen=13 in a 13-octet buffer error",
+          nas_decode_eps_quality_of_service(&m, 0, cut, 13) < 0);
+}
+
+/* issue #573: TS 24.301 §9.9.4.9 — an IPv4v6 PDN address carries the
+ * 8-octet IPv6 interface identifier, then the IPv4 address. */
+static void test_pdn_address_ipv4(void) {
+    printf("PDN address IPv4 / IPv4v6 / IPv6 (#573):\n");
+    static const uint8_t v4[] = { 5, NAS_PDN_VALUE_TYPE_IPV4, 10, 45, 0, 2 };
+    static const uint8_t v4v6[] = { 13, NAS_PDN_VALUE_TYPE_IPV4V6,
+        0x02, 0x11, 0x22, 0xFF, 0xFE, 0x33, 0x44, 0x55,   /* IPv6 IID */
+        10, 45, 0, 7 };                                  /* IPv4 */
+    static const uint8_t v6[] = { 9, NAS_PDN_VALUE_TYPE_IPV6,
+        0x02, 0x11, 0x22, 0xFF, 0xFE, 0x33, 0x44, 0x55 };
+    const uint8_t ip_v4[4] = { 10, 45, 0, 2 }, ip_v4v6[4] = { 10, 45, 0, 7 };
+    nas_pdn_address_t addr;
+    uint32_t ip;
+
+    memset(&addr, 0, sizeof(addr)); ip = 0;
+    CHECK("pdn IPv4 decodes", nas_decode_pdn_address(&addr, 0, v4, sizeof(v4)) == (int)sizeof(v4));
+    CHECK("pdn IPv4 address", nas_pdn_address_get_ipv4(&addr, &ip) == 1
+          && memcmp(&ip, ip_v4, 4) == 0);
+
+    memset(&addr, 0, sizeof(addr)); ip = 0;
+    CHECK("pdn IPv4v6 decodes", nas_decode_pdn_address(&addr, 0, v4v6, sizeof(v4v6)) == (int)sizeof(v4v6));
+    CHECK("pdn IPv4v6 type", addr.pdn_type_value == NAS_PDN_VALUE_TYPE_IPV4V6
+          && addr.pdn_address_information.len == 12);
+    CHECK("pdn IPv4v6 IPv4 read after the IPv6 IID", nas_pdn_address_get_ipv4(&addr, &ip) == 1
+          && memcmp(&ip, ip_v4v6, 4) == 0);
+
+    memset(&addr, 0, sizeof(addr)); ip = 0xDEADBEEF;
+    CHECK("pdn IPv6 decodes", nas_decode_pdn_address(&addr, 0, v6, sizeof(v6)) == (int)sizeof(v6));
+    CHECK("pdn IPv6 has no IPv4", nas_pdn_address_get_ipv4(&addr, &ip) == 0 && ip == 0xDEADBEEF);
+
+    /* a hand-built value too short for its type is refused, not over-read */
+    addr.pdn_type_value = NAS_PDN_VALUE_TYPE_IPV4V6;
+    addr.pdn_address_information.data = v4v6 + 2;
+    addr.pdn_address_information.len = 11;
+    CHECK("pdn IPv4v6 len=11 refused", nas_pdn_address_get_ipv4(&addr, &ip) == 0 && ip == 0xDEADBEEF);
+    CHECK("pdn NULL refused", nas_pdn_address_get_ipv4(NULL, &ip) == 0
+          && nas_pdn_address_get_ipv4(&addr, NULL) == 0);
+}
+
+/* issue #573: QoS ielen 13 then an IPv4v6 PDN address, as the ESM container
+ * of an Attach Accept carries them: the old decoder stopped 4 octets into the
+ * QoS IE and read the APN and PDN address from the wrong octets. */
+static void test_esm_qos13_ipv4v6(void) {
+    printf("Activate Default EPS Bearer Context Request, QoS ielen 13 + IPv4v6 (#573):\n");
+    static const uint8_t esm[] = {
+        0x52, 0x01, 0xC1,                               /* EBI 5, PTI, ADEBCR */
+        13, 0x09, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
+            0x99, 0xAA, 0xBB, 0xCC,                     /* EPS QoS, Rel-11 */
+        0x04, 0x03, 'a', 'p', 'n',                      /* APN */
+        13, NAS_PDN_VALUE_TYPE_IPV4V6,
+            0x02, 0x11, 0x22, 0xFF, 0xFE, 0x33, 0x44, 0x55,
+            10, 45, 0, 7,                               /* PDN address */
+    };
+    const uint8_t ip_v4v6[4] = { 10, 45, 0, 7 };
+    nas_msg_t m; memset(&m, 0, sizeof(m));
+    uint32_t ip = 0;
+    CHECK("ESM message decodes", nas_decode(&m, esm, sizeof(esm)) > 0
+          && m.plain_msg.esm.header.message_type == NAS_ESM_ACTIVATE_DEFAULT_EPS_BEARER_CONTEXT_REQUEST);
+    const nas_esm_activate_default_eps_bearer_context_request_t *r =
+        &m.plain_msg.esm.active_default_esp_bearer_context_request;
+    CHECK("QoS extended-2 group decoded", r->eps_qos.qci == 0x09
+          && r->eps_qos.bit_rates_ext2_present
+          && r->eps_qos.bit_rates_ext2.guar_bit_rate_for_dl == 0xCC);
+    CHECK("APN after the 13-octet QoS", r->access_point_name.len == 4
+          && memcmp(r->access_point_name.data, "\x03" "apn", 4) == 0);
+    CHECK("IPv4 of the IPv4v6 PDN address", nas_pdn_address_get_ipv4(&r->pdn_address, &ip) == 1
+          && memcmp(&ip, ip_v4v6, 4) == 0);
+}
+
+/* issue #573: TS 24.501 §9.3.1 — security header types 1 and 3 are integrity
+ * protected, not ciphered: the inner message follows the 7-octet header. */
+static void test_nas5g_message_type(void) {
+    printf("NAS-5G message type by security header type (#573):\n");
+    /* Registration Request (0x41) wrapped by security header type sht */
+    uint8_t pdu[] = { 0x7E, 0x01, 0xA1, 0xB2, 0xC3, 0xD4, 0x05,
+                      0x7E, 0x00, 0x41, 0x79, 0x00 };
+    uint8_t type = 0xFF;
+    CHECK("SHT 1 Registration Request reports 0x41",
+          nas_5g_message_type(pdu, sizeof(pdu), &type) && type == 0x41);
+    pdu[1] = 0x03; type = 0xFF;
+    CHECK("SHT 3 reports the inner type", nas_5g_message_type(pdu, sizeof(pdu), &type) && type == 0x41);
+    pdu[1] = 0x02; type = 0xFF;
+    CHECK("SHT 2 (ciphered) reports 0", nas_5g_message_type(pdu, sizeof(pdu), &type) && type == 0);
+    pdu[1] = 0x04; type = 0xFF;
+    CHECK("SHT 4 (ciphered) reports 0", nas_5g_message_type(pdu, sizeof(pdu), &type) && type == 0);
+    pdu[1] = 0x01;
+    CHECK("SHT 1 without an inner header fails", !nas_5g_message_type(pdu, 7, &type)
+          && !nas_5g_message_type(pdu, 9, &type));
+    const uint8_t plain[] = { 0x7E, 0x00, 0x41, 0x79 };
+    type = 0xFF;
+    CHECK("plain 5GMM reports its type", nas_5g_message_type(plain, sizeof(plain), &type) && type == 0x41);
+    const uint8_t smm[] = { 0x2E, 0x01, 0x02, 0xC1 };
+    type = 0xFF;
+    CHECK("5GSM reports its type", nas_5g_message_type(smm, sizeof(smm), &type) && type == 0xC1);
+    CHECK("NULL out refused", !nas_5g_message_type(plain, sizeof(plain), NULL));
 }
 
 /* issue #208, F-BUG-081: a minimum-size security-protected PDU (header only,
@@ -854,8 +1017,12 @@ int main(void) {
     test_iei_len1();
     test_tai_len();
     test_qos_bit_rates();
+    test_qos_spec_lengths();
+    test_pdn_address_ipv4();
+    test_esm_qos13_ipv4v6();
     test_nas_msg_min();
     test_nas5g_decode();
+    test_nas5g_message_type();
     test_tai_list_types();
     test_attach_accept_full();
     test_attach_accept_in_nas_pdu();

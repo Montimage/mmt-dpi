@@ -30,3 +30,38 @@ bool nas_5g_decode( nas_5g_msg_t *nas_msg, const uint8_t *buffer, uint32_t lengt
 			length < sizeof( nas_5g_msg_t ) ? length : sizeof( nas_5g_msg_t ));
 	return true;
 }
+
+/* TS 24.501 §9.1.1, §9.3.1: a security protected 5GMM message carries its
+ * security header type in bits 1-4 of octet 2, then the MAC (octets 3-6)
+ * and the sequence number (octet 7); the protected NAS message follows.
+ * Types 1 and 3 are integrity protected but not ciphered, so that inner
+ * message is plain text (issue #573: type 1 was reported as 0); types 2 and
+ * 4 are ciphered and report 0. The type is read from the octet, not from
+ * the header bitfield, whose nibble order is compiler-dependent. */
+bool nas_5g_message_type( const uint8_t *buffer, uint32_t length, uint8_t *message_type ){
+	nas_5g_msg_t msg;
+	if( message_type == NULL || !nas_5g_decode( &msg, buffer, length ))
+		return false;
+	if( msg.protocol_discriminator == NAS5G_SESSION_MANAGEMENT_MESSAGE ){
+		*message_type = msg.smm.message_type;
+		return true;
+	}
+	switch( buffer[1] & 0x0F ){
+	case NAS5G_SECURITY_HEADER_PLAIN:
+		*message_type = msg.mmm.message_type;
+		return true;
+	case NAS5G_SECURITY_HEADER_INTEGRITY_PROTECTED:
+	case NAS5G_SECURITY_HEADER_INTEGRITY_PROTECTED_NEW_CONTEXT:
+		/* F-BUG-085: length - 7 must not wrap when length < 7 */
+		if( length <= NAS5G_SECURITY_PROTECTED_HEADER_LENGTH
+				|| !nas_5g_decode( &msg, buffer + NAS5G_SECURITY_PROTECTED_HEADER_LENGTH,
+						length - NAS5G_SECURITY_PROTECTED_HEADER_LENGTH ))
+			return false;
+		*message_type = msg.mmm.message_type;
+		return true;
+	default:
+		//otherwise the message is encrypted
+		*message_type = 0;
+		return true;
+	}
+}

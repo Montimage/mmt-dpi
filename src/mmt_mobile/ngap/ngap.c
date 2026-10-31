@@ -602,8 +602,10 @@ uint32_t encode_ngap( void *buffer, uint32_t buffer_size, const ngap_message_t *
 
 	enc_ret = aper_encode_to_buffer(&asn_DEF_NGAP_NGAP_PDU, NULL, pdu_p, buffer, buffer_size);
 
+	/* issue #573: aper_encode_to_buffer() counts bits (aper_encoder.h);
+	 * the caller gets the bytes written, the last one padded */
 	if( enc_ret.encoded >= 0)
-		ret = enc_ret.encoded;
+		ret = (uint32_t)((enc_ret.encoded + 7) / 8);
 
 	ASN_STRUCT_FREE( asn_DEF_NGAP_NGAP_PDU, pdu_p );
 	return ret;

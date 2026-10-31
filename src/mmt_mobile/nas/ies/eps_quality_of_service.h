@@ -13,7 +13,8 @@
 
 
 #define EPS_QUALITY_OF_SERVICE_MINIMUM_LENGTH  2
-#define EPS_QUALITY_OF_SERVICE_MAXIMUM_LENGTH 10
+/* TS 24.301 §9.9.4.3: length octet + up to 13 octets of contents (Rel-11) */
+#define EPS_QUALITY_OF_SERVICE_MAXIMUM_LENGTH 14
 
 typedef struct {
   uint8_t max_bit_rate_for_ul;
@@ -25,9 +26,11 @@ typedef struct {
 typedef struct {
   uint8_t bit_rates_present:1;
   uint8_t bit_rates_ext_present:1;
+  uint8_t bit_rates_ext2_present:1;  /* Rel-11 extended-2 bit rates (issue #573) */
   uint8_t qci;
   nas_eps_qos_bit_rates_t bit_rates;
   nas_eps_qos_bit_rates_t bit_rates_ext;
+  nas_eps_qos_bit_rates_t bit_rates_ext2;
 } nas_eps_quality_of_service_t;
 
 //typedef uint8_t EpsQualityOfService;

@@ -1,3 +1,4 @@
+#include <string.h>
 #include "../util/decoder.h"
 #include "pdn_address.h"
 
@@ -67,3 +68,25 @@ int nas_decode_pdn_address(nas_pdn_address_t *addr, uint8_t iei, const uint8_t *
   return decoded;
 }
 
+
+/* TS 24.301 §9.9.4.9: the PDN address information is the IPv4 address for
+ * PDN type IPv4, the 8-octet IPv6 interface identifier for IPv6, and the
+ * interface identifier followed by the IPv4 address for IPv4v6. Issue #573:
+ * the IPv4 of an IPv4v6 address is read after the interface identifier. */
+int nas_pdn_address_get_ipv4(const nas_pdn_address_t *addr, uint32_t *ipv4)
+{
+  uint32_t offset;
+
+  if (addr == NULL || ipv4 == NULL || addr->pdn_address_information.data == NULL)
+    return 0;
+  if (addr->pdn_type_value == NAS_PDN_VALUE_TYPE_IPV4)
+    offset = 0;
+  else if (addr->pdn_type_value == NAS_PDN_VALUE_TYPE_IPV4V6)
+    offset = NAS_PDN_IPV6_IID_LENGTH;
+  else
+    return 0;
+  if (addr->pdn_address_information.len < offset + sizeof(*ipv4))
+    return 0;
+  memcpy(ipv4, addr->pdn_address_information.data + offset, sizeof(*ipv4));
+  return 1;
+}

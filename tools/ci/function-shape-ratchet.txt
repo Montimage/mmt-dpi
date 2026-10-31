@@ -13,7 +13,7 @@
 # are depth-only, mmt_classify_oscar sitting at exactly 200 lines.
 # Measured on 8fa3a816 + issue #547. Regenerate the rows with:
 #   bash tools/ci/report-function-shape.sh --emit-ratchet
-src/mmt_mobile/s1ap/s1ap_common.c _s1ap_decode_e_rabtobesetuplistctxtsureq 101 8
+src/mmt_mobile/s1ap/s1ap_common.c _s1ap_decode_e_rabtobesetuplistctxtsureq 97 7
 src/mmt_mobile/s1ap/s1ap_common.c _decode_s1ap_initialuemessageies 119 8
 src/mmt_tcpip/lib/protocols/proto_bittorrent.c mmt_check_bittorrent_udp 65 7
 src/mmt_tcpip/lib/protocols/proto_dropbox.c mmt_check_dropbox_udp 36 7

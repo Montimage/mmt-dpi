@@ -26,6 +26,9 @@
  *  - Issue #545: malformed S1AP PDUs write nothing to stdout or stderr by
  *    default (each failure counted by the SDK logger), and with logging on
  *    their diagnostics go to stderr, rate-limited per call site.
+ *  - Issue #573: encode_ngap() returns bytes (a round trip re-encodes the
+ *    PDU byte for byte), and the UE IPv4 of an IPv4v6 PDN address is
+ *    extracted after a Rel-11 13-octet EPS QoS.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -368,6 +371,25 @@ static const uint8_t NAS_ATTACH_ACCEPT_EBI5[] = {
 		0x05, 0x01, 10, 45, 0, 2            /* PDN address: IPv4       */
 };
 
+/* Issue #573: the same Attach Accept with a Rel-11 13-octet EPS QoS and an
+ * IPv4v6 PDN address (TS 24.301 §9.9.4.9: IPv6 IID, then the IPv4) */
+static const uint8_t NAS_ATTACH_ACCEPT_QOS13_IPV4V6[] = {
+		0x17, 0x11, 0x22, 0x33, 0x44, 0x01, /* sec hdr 1, MAC, SQN     */
+		0x07, 0x42,                         /* EMM, Attach Accept      */
+		0x01,                               /* EPS attach result       */
+		0x21,                               /* T3412                   */
+		0x06, 0x00, 0x00, 0xf1, 0x10, 0x00, 0x01, /* TAI list LV       */
+		0x00, 0x24,                         /* ESM container length 36 */
+		0x52, 0x01, 0xc1,                   /* EBI 5 + ESM PD, PTI, ADEBCR */
+		0x0d, 0x09, 0x11, 0x22, 0x33, 0x44, /* EPS QoS: QCI 9, rates,  */
+		0x55, 0x66, 0x77, 0x88,             /*   extended,             */
+		0x99, 0xaa, 0xbb, 0xcc,             /*   extended-2            */
+		0x04, 0x03, 'a', 'p', 'n',          /* APN                     */
+		0x0d, 0x03,                         /* PDN address: IPv4v6     */
+		0x02, 0x11, 0x22, 0xff, 0xfe, 0x33, 0x44, 0x55, /* IPv6 IID    */
+		10, 45, 0, 2                        /*   IPv4                  */
+};
+
 /* Unconstrained, octet-aligned length determinant + content (X.691
  * §11.9.3.6-8). From 16K octets on the content is split into fragments of
  * m * 16K octets (m = 1..4, header 0xC0 | m); the remainder, possibly 0,
@@ -654,6 +676,16 @@ static int decode_smc_id(uint16_t mme_ue_id, uint8_t enb_ue_id, uint8_t algorith
 
 static int decode_smc(uint8_t mme_ue_id, uint8_t enb_ue_id, uint8_t algorithms) {
 	return decode_smc_id(mme_ue_id, enb_ue_id, algorithms);
+}
+
+/* Issue #573: the UE IPv4 of an IPv4v6 PDN address follows the IPv6 IID,
+ * and a 13-octet EPS QoS ahead of it must not shift the APN and PDN address.
+ * The S1 connection (9, 3) has no learned ciphering algorithm. */
+static void test_s1ap_ics_request_ue_ipv4v6(void) {
+	printf("S1AP InitialContextSetupRequest UE IPv4 of an IPv4v6 PDN (issue #573):\n");
+	CHECK("UE IPv4 extracted from an IPv4v6 PDN address after a Rel-11 QoS",
+			ics_extracts_ue_ipv4(NAS_ATTACH_ACCEPT_QOS13_IPV4V6,
+					sizeof(NAS_ATTACH_ACCEPT_QOS13_IPV4V6), 9, 3) == 1);
 }
 
 static void test_s1ap_nas_ciphering(void) {
@@ -1097,12 +1129,18 @@ static void test_ngap_get_nas_pdu(void) {
 			uint8_t enc_buf[256];
 			ngap_message_t back;
 			uint32_t enc_len;
+			/* issue #573: encode_ngap() returns bytes, not the bit count
+			 * aper_encode_to_buffer() reports — an unchanged message
+			 * re-encodes to the very PDU it came from */
+			enc_len = encode_ngap(enc_buf, sizeof(enc_buf), &msg, buf, (uint32_t)len);
+			CHECK("encode_ngap round trip returns the PDU byte length (#573)",
+					enc_len == (uint32_t)len && memcmp(enc_buf, buf, (size_t)len) == 0);
 			msg.ran_ue_id = 777;
 			enc_len = encode_ngap(enc_buf, sizeof(enc_buf), &msg, buf, (uint32_t)len);
 			memset(&back, 0, sizeof(back));
 			CHECK("encode_ngap rewrites RAN-UE-NGAP-ID 777 into the PDU",
-					enc_len > 0
-					&& decode_ngap(&back, enc_buf, (enc_len + 7) / 8)
+					enc_len > 0 && enc_len <= sizeof(enc_buf)
+					&& decode_ngap(&back, enc_buf, enc_len)
 					&& back.ran_ue_id == 777);
 		}
 	}
@@ -1302,7 +1340,7 @@ static void test_ngap_choice_discriminant(void) {
 	if (enc > 0) {
 		memset(&msg2, 0, sizeof(msg2));
 		CHECK("round-trip keeps the real union arm",
-				decode_ngap(&msg2, out, (uint32_t)((enc + 7) / 8))
+				decode_ngap(&msg2, out, (uint32_t)enc)
 				&& msg2.pdu_present == NGAP_NGAP_PDU_PR_initiatingMessage);
 	}
 }
@@ -1513,7 +1551,7 @@ static void test_ngap_message_decoders(void) {
 		memset(&back, 0, sizeof(back));
 		snprintf(desc, sizeof(desc), "%s: encode_ngap rewrites the UE ids", v->name);
 		CHECK(desc, enc > 0
-				&& decode_ngap(&back, out, (enc + 7) / 8)
+				&& decode_ngap(&back, out, enc)
 				&& back.pdu_present == v->present
 				&& back.procedure_code == v->procedure
 				&& back.amf_ue_id == amf2
@@ -1750,6 +1788,7 @@ int main(void) {
 	test_s1ap_valid_vectors();
 	test_s1ap_corpus_initial_ue_message();
 	test_s1ap_ics_request_ue_ipv4();
+	test_s1ap_ics_request_ue_ipv4v6();
 	test_s1ap_nas_ciphering();
 	test_s1ap_spec_vectors();
 	test_open_type_split_length();

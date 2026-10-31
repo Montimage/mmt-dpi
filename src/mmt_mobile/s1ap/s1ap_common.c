@@ -297,14 +297,10 @@ static inline int _s1ap_decode_e_rabtobesetuplistctxtsureq(
 						if( nas_decode( &mm, octet->data, octet->len) > 0
 								&& mm.plain_msg.header.protocol_discriminator == NAS_EPS_SESSION_MANAGEMENT_MESSAGE
 								&& mm.plain_msg.esm.header.message_type == NAS_ESM_ACTIVATE_DEFAULT_EPS_BEARER_CONTEXT_REQUEST ){
-							// F-BUG-202: bound UE-IP read by pdn_type-implied minimum
-							nas_pdn_address_t *pdn = &mm.plain_msg.esm.active_default_esp_bearer_context_request.pdn_address;
-							if( pdn && pdn->pdn_type_value == NAS_PDN_VALUE_TYPE_IPV4
-									&& pdn->pdn_address_information.data != NULL
-									&& pdn->pdn_address_information.len >= 4 ){
-								memcpy( &message->ue_ipv4, pdn->pdn_address_information.data,
-										sizeof( message->ue_ipv4 ));
-							}
+							/* F-BUG-202: bound UE-IP read by pdn_type-implied minimum;
+							 * issue #573: an IPv4v6 address carries it too */
+							nas_pdn_address_get_ipv4( &mm.plain_msg.esm.active_default_esp_bearer_context_request.pdn_address,
+									&message->ue_ipv4 );
 						}
 					}
 					//parse EPS mobile identity to get m_tmsi

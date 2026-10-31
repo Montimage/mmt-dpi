@@ -13,6 +13,27 @@ static inline int _decode_eps_qos_bit_rates(nas_eps_qos_bit_rates_t* m, const ui
   return decoded;
 }
 
+/* TS 24.301 §9.9.4.3: ielen counts the contents only (never the IEI): the
+ * QCI, then up to three optional groups of four rate octets — the bit rates
+ * (octets 4-7), the extended bit rates (octets 8-11) and the Rel-11 extended-2
+ * bit rates (octets 12-15), so ielen is 1, 5, 9 or 13. Issue #573: a group is
+ * decoded when ielen holds it whole; octets past the last whole group are
+ * skipped, never read as the next IE. The caller checked ielen octets are
+ * readable at contents and ielen >= 1. */
+static void _decode_eps_qos_contents(nas_eps_quality_of_service_t *m, const uint8_t *contents, uint8_t ielen)
+{
+  m->qci = contents[0];
+  m->bit_rates_present = ielen >= 5;
+  if (m->bit_rates_present)
+    _decode_eps_qos_bit_rates(&m->bit_rates, contents + 1);
+  m->bit_rates_ext_present = ielen >= 9;
+  if (m->bit_rates_ext_present)
+    _decode_eps_qos_bit_rates(&m->bit_rates_ext, contents + 5);
+  m->bit_rates_ext2_present = ielen >= 13;
+  if (m->bit_rates_ext2_present)
+    _decode_eps_qos_bit_rates(&m->bit_rates_ext2, contents + 9);
+}
+
 int nas_decode_eps_quality_of_service(nas_eps_quality_of_service_t *m, uint8_t iei, const uint8_t *buffer, uint32_t len)
 {
   int decoded = 0;
@@ -45,43 +66,9 @@ int nas_decode_eps_quality_of_service(nas_eps_quality_of_service_t *m, uint8_t i
   rc = nas_check_length(ielen, 1);
   if (unlikely(rc < 0))
     return rc;
-  rc = nas_check_length((int32_t)len - decoded, 1);
-  if (unlikely(rc < 0))
-    return rc;
-  IES_DECODE_U8(buffer, decoded, m->qci);
+  _decode_eps_qos_contents(m, buffer + decoded, ielen);
 
-  // F-BUG-205: fix operator-precedence guards
-  if ( ielen > (2 + (iei > 0 ? 1 : 0)) ) {
-    /* bitRates is present */
-    rc = nas_check_length(ielen, 1 + 4);
-    if (unlikely(rc < 0))
-      return rc;
-    rc = nas_check_length((int32_t)len - decoded, 4);
-    if (unlikely(rc < 0))
-      return rc;
-    m->bit_rates_present = 1;
-    decoded += _decode_eps_qos_bit_rates(&m->bit_rates,
-                                        buffer + decoded);
-  } else {
-    /* bitRates is not present */
-    m->bit_rates_present = 0;
-  }
-
-  if ( ielen > (6 + (iei > 0 ? 1 : 0)) ) {
-    /* bitRatesExt is present */
-    rc = nas_check_length(ielen, 1 + 8);
-    if (unlikely(rc < 0))
-      return rc;
-    rc = nas_check_length((int32_t)len - decoded, 4);
-    if (unlikely(rc < 0))
-      return rc;
-    m->bit_rates_ext_present = 1;
-    decoded += _decode_eps_qos_bit_rates(&m->bit_rates_ext,
-                                        buffer + decoded);
-  } else {
-    /* bitRatesExt is not present */
-    m->bit_rates_ext_present = 0;
-  }
-
-  return decoded;
+  /* issue #573: the whole IE is consumed, so the caller resumes at the next
+   * IE whatever groups ielen held */
+  return decoded + ielen;
 }
