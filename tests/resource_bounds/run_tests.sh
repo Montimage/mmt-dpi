@@ -60,6 +60,19 @@
 #                          and the core objects they need (the core_engine
 #                          suite's source set).
 #
+# Issue #563 (F-PERF-106) adds the "ftp-control" fixture: an FTP control
+# session leaves the per-handler list when its flow expires (session-data
+# cleanup), opening one is an O(1) tail append, a data flow keeps its data
+# session alive past the control flow (retired list), and teardown is
+# iterative — 100,000 sessions open at 100x the 1,000-session allocator
+# calls with 0 list visits, and the lists end empty with nothing leaked.
+#
+#   test_ftp_control.c — drives ftp_session_data_analysis() and
+#                        ftp_session_data_cleanup() over crafted packets;
+#                        the proto_ftp*.c units and mmt_utils.c are compiled
+#                        beside it with the counted allocator and the lookup
+#                        visit counter armed (-DMMT_FTP_LIST_STATS).
+#
 # Issue #394 (F-PERF-001..004) consolidates the four fixtures into
 # reproducible adversarial resource budgets: every fixture reports its
 # workload scales, fixed seeds, accepted/refused work and counters as
@@ -90,7 +103,8 @@
 #
 # Usage: tests/resource_bounds/run_tests.sh [all | fixture ...]
 #   no arguments (or "all") runs every fixture; "ipv6-hash" / "tcp-memory" /
-#   "tcp-order" / "fragment-eviction" / "timeout-sweep" select one.
+#   "tcp-order" / "fragment-eviction" / "timeout-sweep" / "ftp-control"
+#   select one.
 set -euo pipefail
 # Issue #551: the budgets are fixed-seed counts, and the ipv6-hash fixture
 # reports its table seeds — keep the legacy fixed seed sequence (hash_utils.c).
@@ -99,7 +113,7 @@ export MMT_DETERMINISTIC_SEED=1
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-ALL_FIXTURES=(ipv6-hash tcp-memory tcp-order fragment-eviction timeout-sweep)
+ALL_FIXTURES=(ipv6-hash tcp-memory tcp-order fragment-eviction timeout-sweep ftp-control)
 FIXTURES=()
 for f in "$@"; do
     if [ "$f" = "all" ]; then FIXTURES+=("${ALL_FIXTURES[@]}"); else FIXTURES+=("$f"); fi
@@ -116,7 +130,8 @@ for f in "${FIXTURES[@]}"; do
         tcp-order) TESTS+=(tcp_order) ;;
         fragment-eviction) TESTS+=(frag_eviction) ;;
         timeout-sweep) TESTS+=(timeout_sweep) ;;
-        *) echo "✗ unknown resource_bounds fixture '$f' (known: all, ipv6-hash, tcp-memory, tcp-order, fragment-eviction, timeout-sweep)" >&2
+        ftp-control) TESTS+=(ftp_control) ;;
+        *) echo "✗ unknown resource_bounds fixture '$f' (known: all, ipv6-hash, tcp-memory, tcp-order, fragment-eviction, timeout-sweep, ftp-control)" >&2
            exit 2 ;;
     esac
     FIXTURE_IDS+=("$f")
@@ -254,6 +269,29 @@ build_timeout_sweep() {
         -c "${SCRIPT_DIR}/test_timeout_sweep.c" -o "${SCRIPT_DIR}/test_timeout_sweep.o"
     "${CC}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_timeout_sweep" \
         "${SCRIPT_DIR}/test_timeout_sweep.o" "${objs[@]}" -lm -lpthread -ldl
+}
+
+build_ftp_control() {
+    # The FTP units and the string helpers they call, each compiled with the
+    # counted allocator of tcp-memory (-DNDEBUG as in the SDK build, which
+    # keeps the units' debug() lines out); the test TU stubs the rest.
+    local count=(-Dmalloc=tcm_malloc -Dcalloc=tcm_calloc
+                 -Drealloc=tcm_realloc -Dfree=tcm_free)
+    local objs=() src
+    for src in proto_ftp proto_ftp_session proto_ftp_parse proto_ftp_addr proto_ftp_extract; do
+        "${CC}" "${extra_cflags[@]}" -std=gnu11 -DNDEBUG -DMMT_FTP_LIST_STATS "${count[@]}" "${INCS[@]}" \
+            -c "${REPO_ROOT}/src/mmt_tcpip/lib/protocols/${src}.c" -o "${SCRIPT_DIR}/fc_${src}.o"
+        objs+=("${SCRIPT_DIR}/fc_${src}.o")
+    done
+    "${CC}" "${extra_cflags[@]}" -std=gnu11 "${count[@]}" "${INCS[@]}" \
+        -c "${REPO_ROOT}/src/mmt_core/src/mmt_utils.c" -o "${SCRIPT_DIR}/fc_mmt_utils.o"
+    "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${count[@]}" "${INCS[@]}" \
+        -c "${SCRIPT_DIR}/test_ftp_control.c" -o "${SCRIPT_DIR}/test_ftp_control.o"
+    "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 \
+        -c "${SCRIPT_DIR}/tcp_alloc_count.c" -o "${SCRIPT_DIR}/tcp_alloc_count_ftp.o"
+    "${CC}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_ftp_control" \
+        "${SCRIPT_DIR}/test_ftp_control.o" "${objs[@]}" "${SCRIPT_DIR}/fc_mmt_utils.o" \
+        "${SCRIPT_DIR}/tcp_alloc_count_ftp.o" -lm
 }
 
 echo "  [1/3] compiling ..."
@@ -396,4 +434,4 @@ python3 "${CHECKER}" --self-test > "${WORK}/selftest.log" 2>&1 || { cat "${WORK}
 tail -n 1 "${WORK}/selftest.log"
 
 [ "${rc}" -eq 0 ] || { echo "✗ resource bounds tests failed" >&2; exit 1; }
-echo "✓ resource bounds tests passed (issues #379, #380, #382, #383, #500; budgets #394, gate #395)"
+echo "✓ resource bounds tests passed (issues #379, #380, #382, #383, #500, #563; budgets #394, gate #395)"

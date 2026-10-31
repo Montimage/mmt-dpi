@@ -209,11 +209,23 @@ typedef struct ftp_user_struct{
 }ftp_user_t;
 
 typedef struct ftp_control_session_struct  ftp_control_session_t;
+typedef struct ftp_context_struct          ftp_context_t;
+
+/*
+ * Issue #563: a flow's FTP session_data slot holds a control session on the
+ * control connection and a data session on a data connection. Both
+ * structures start with a `kind` tag so the session-expiry cleanup
+ * (ftp_session_data_cleanup) tells them apart without the packet.
+ */
+#define MMT_FTP_KIND_CONTROL 0x46545043u   /* "FTPC" */
+#define MMT_FTP_KIND_DATA    0x46545044u   /* "FTPD" */
 
 /**
  * A FTP data session
  */
 typedef struct ftp_data_session_struct{
+
+    uint32_t kind; // MMT_FTP_KIND_DATA — first member (issue #563)
 
     ftp_tuple6_t *data_conn;
 
@@ -237,7 +249,9 @@ typedef struct ftp_data_session_struct{
  * A FTP control session
  */
 typedef struct ftp_control_session_struct{
-    
+
+    uint32_t kind; // MMT_FTP_KIND_CONTROL — first member (issue #563)
+
     ftp_tuple6_t * contrl_conn;
 
     ftp_command_t *last_command;
@@ -256,9 +270,35 @@ typedef struct ftp_control_session_struct{
     
     ftp_data_session_t * current_data_session;
 
+    /* Issue #563 (F-PERF-106): intrusive links in one of the handler
+     * context's circular lists (live or retired), the context, and the
+     * number of flows whose session_data references this session — its
+     * control flow while that lives, plus every data flow attached to its
+     * current_data_session. The memory is freed when the count reaches 0. */
     ftp_control_session_t *next;
+    ftp_control_session_t *prev;
+    ftp_context_t *ctx;
+    uint32_t refs;
+    uint8_t retired;            // 1 once its control flow has expired
 
 }ftp_control_session_t;
+
+/**
+ * Per-handler FTP state (the FTP protocol instance's args), issue #563.
+ *
+ * `live` heads the control sessions whose control flow is still open, in
+ * arrival order: a new one is appended at the tail in O(1), and the data
+ * connection lookups walk only these. `retired` holds the sessions whose
+ * control flow expired while a data flow still references their data
+ * session; each is freed when its last data flow expires. Both lists are
+ * circular around their sentinel, so a session unlinks in O(1).
+ */
+struct ftp_context_struct {
+    ftp_control_session_t live;     // sentinel: live control sessions
+    ftp_control_session_t retired;  // sentinel: expired, still referenced
+    uint64_t live_count;
+    uint64_t retired_count;
+};
 
 /*
  * Functions the proto_ftp*.c units share (issue #544). libmmt_tcpip is
@@ -283,7 +323,13 @@ ftp_control_session_t *ftp_new_control_session(ftp_tuple6_t *tuple6);
 void free_ftp_control_session(ftp_control_session_t *ftp_control);
 int ftp_compare_tuple6(ftp_tuple6_t *t1, ftp_tuple6_t *t2);
 void ftp_set_tuple6_direction(ftp_tuple6_t *tuple6, ftp_tuple6_t *conn, int compare);
-ftp_control_session_t *ftp_get_list_control_session(ipacket_t *ipacket, unsigned index);
+ftp_context_t *ftp_get_context(const ipacket_t *ipacket, unsigned index);
+ftp_context_t *ftp_new_context(void);
+void ftp_free_context(ftp_context_t *ctx);
+void ftp_context_link(ftp_context_t *ctx, ftp_control_session_t *ftp_control);
+void ftp_control_release(ftp_control_session_t *ftp_control);
+void ftp_data_attach(mmt_session_t *session, unsigned index, ftp_data_session_t *ftp_data);
+void ftp_session_data_cleanup(mmt_session_t *session, unsigned index);
 
 /* proto_ftp_parse.c — command and reply parsing */
 uint8_t mmt_int_check_possible_ftp_command(char *payload, int payload_len);

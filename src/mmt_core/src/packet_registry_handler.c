@@ -162,6 +162,8 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
     new_handler->has_reassembly = 0; // Disable TCP-reassembly by default
     /* Issue #245: bounded TCP reassembly ceiling + pooled reassembly packets. */
     new_handler->tcp_reassembly_limit = MMT_TCP_REASSEMBLY_LIMIT_DEFAULT;
+    new_handler->tcp_reassembly_budget = 0; /* issue #563: unlimited by default */
+    new_handler->tcp_reasm_committed = 0;
     new_handler->ipacket_pool = NULL;
     new_handler->port_classify = 0; // Disable classification by port number by default
     new_handler->port_classify_payload_confirm = 0; // M9 (issue #75): accept any port-based guess by default (no payload confirmation required)

@@ -133,7 +133,7 @@ Define the id of evasion (`src/mmt_core/public_include/mmt_core.h:106-110`):
 #define EVA_IP_FRAGMENT_DUPLICATED 5 // Event: IP fragmentation duplicated segments
 ```
 
-Update the value for the limit number of fragment in packet (`src/mmt_core/public_include/mmt_core.h:581`)
+Update the value for the limit number of fragment in packet (`src/mmt_core/public_include/mmt_core.h:612`)
 ```c
 MMTAPI bool MMTCALL set_fragment_in_packet(
     mmt_handler_t *mmt_handler,
@@ -149,7 +149,7 @@ MMTAPI bool MMTCALL set_fragmented_packet_in_session(
 );
 ```
 
-Set value for number of fragmented packet in session (`src/mmt_core/public_include/mmt_core.h:593`); returns `true` on success.
+Set value for number of fragmented packet in session (`src/mmt_core/public_include/mmt_core.h:624`); returns `true` on success.
 
 ```c
 MMTAPI bool MMTCALL set_fragment_in_session(
@@ -158,7 +158,7 @@ MMTAPI bool MMTCALL set_fragment_in_session(
 );
 ```
 
-Set value for number of fragments in one session (`src/mmt_core/public_include/mmt_core.h:605`); returns `true` on success.
+Set value for number of fragments in one session (`src/mmt_core/public_include/mmt_core.h:636`); returns `true` on success.
 
 
 ## Open Issues ##

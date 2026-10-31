@@ -39,22 +39,22 @@ MMT provides a set of attributes (common to all protocols) to access the protoco
 ```c
    proto_statistics_t * get_protocol_stats(mmt_handler_t *mmt_handler, uint32_t proto_id);
 ```
-   Returns a pointer to the protocol statistics (list) of the given protocol (`sdk/include/mmt_core.h:881`).
+   Returns a pointer to the protocol statistics (list) of the given protocol (`sdk/include/mmt_core.h:912`).
 
 ```c
    void get_protocol_stats_path(mmt_handler_t *mmt_handler, proto_statistics_t *stats, proto_hierarchy_t *proto_hierarchy);
 ```
-   Provides the protocol path of the given statistics instance (`sdk/include/mmt_core.h:901`).
+   Provides the protocol path of the given statistics instance (`sdk/include/mmt_core.h:932`).
 
 ```c
    void get_children_stats(proto_statistics_t * parent_stats, proto_statistics_t * children_stats);
 ```
-   Provides the aggregation of the children protocol statistics (`sdk/include/mmt_core.h:891`).
+   Provides the aggregation of the children protocol statistics (`sdk/include/mmt_core.h:922`).
 
 ```c
    void reset_statistics(proto_statistics_t * stats);
 ```
-   Resets the given protocol statistics instance (`sdk/include/mmt_core.h:911`).
+   Resets the given protocol statistics instance (`sdk/include/mmt_core.h:942`).
 
 ```c
    void enable_protocol_statistics(mmt_handler_t *mmt_handler);

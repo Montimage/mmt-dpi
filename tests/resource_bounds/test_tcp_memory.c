@@ -28,6 +28,17 @@
  *      randomized two-direction offers/drains at 64 KiB keep
  *      reserved + owed[0] + owed[1] <= limit after every offer; an emptied
  *      head block a larger carve does not fit is freed, never stranded.
+ *   F. Handler budget (issue #563, F-PERF-009) — 16 flows on one handler,
+ *      each under the 4 MiB per-flow ceiling, offered 200 x 1,400-B
+ *      segments round-robin (half of them drained every 8 offers): with a
+ *      1 MiB handler budget the handler gauge equals the walked
+ *      commitment (reserved + owed image growth) of every flow, and neither
+ *      it nor the walked reserved storage exceeds the budget after ANY
+ *      operation, while the same workload without a budget peaks far above
+ *      it; offers past the budget are refused (dropped and counted), every
+ *      admitted byte is still flattened, storage released by a flow's
+ *      teardown is admitted again, a budget lowered below usage refuses
+ *      every reservation, and teardown returns the gauge to 0.
  *
  * proto_tcp.c and tcp_segment.c are included directly so the static
  * reassembly helpers run unmodified (tests/parser_boundaries/
@@ -641,6 +652,167 @@ static void test_recycled_head(void) {
 }
 
 /* ------------------------------------------------------------------ */
+/* F — handler-wide budget (issue #563)                                */
+/* ------------------------------------------------------------------ */
+
+#define HB_FLOWS  16u
+#define HB_SEGS   200u
+#define HB_LEN    1400u
+#define HB_BUDGET (1024u * 1024u)
+
+static mmt_session_t g_hb[HB_FLOWS];
+static uint32_t g_hb_seq[HB_FLOWS];
+static uint64_t g_hb_peak, g_hb_peak_committed;
+static uint32_t g_hb_mismatch, g_hb_over;
+
+/* Walked storage and commitment of every flow, compared with the handler
+ * gauge and the budget after each operation. */
+static void hb_check(void) {
+	uint64_t total = 0, committed = 0;
+	for (uint32_t f = 0; f < HB_FLOWS; f++) {
+		const mmt_tcp_reasm_t *r = g_hb[f].tcp_reasm;
+		if (r == NULL) continue;
+		uint64_t blocks;
+		chain_blocks(r, &blocks);
+		uint64_t held = blocks + r->image_cap[0] + r->image_cap[1];
+		total += held;
+		committed += held + tcp_reasm_owed(r, 0) + tcp_reasm_owed(r, 1);
+	}
+	if (total > g_hb_peak) g_hb_peak = total;
+	if (committed > g_hb_peak_committed) g_hb_peak_committed = committed;
+	g_hb_mismatch += (committed != g_handler.tcp_reasm_committed);
+	g_hb_over += (g_handler.tcp_reassembly_budget != 0 && committed > g_handler.tcp_reassembly_budget);
+}
+
+/* One in-order segment on flow f; returns 1 when it was admitted. */
+static int hb_offer(uint32_t f) {
+	for (uint32_t i = 0; i < HB_LEN; i++) g_seg_buf[i] = pattern(0, (uint64_t) g_hb_seq[f] + i);
+	uint64_t d0 = g_dropped;
+	tcp_reasm_offer(&g_hb[f], 0, 1, g_hb_seq[f], 0, g_seg_buf, HB_LEN);
+	g_hb_seq[f] += HB_LEN;
+	hb_check();
+	return g_dropped == d0;
+}
+
+static void hb_open(uint64_t budget) {
+	memset(g_hb, 0, sizeof(g_hb));
+	memset(g_hb_seq, 0, sizeof(g_hb_seq));
+	g_handler.tcp_reassembly_limit = BUDGET;
+	g_handler.tcp_reassembly_budget = budget;
+	for (uint32_t f = 0; f < HB_FLOWS; f++) g_hb[f].mmt_handler = &g_handler;
+	g_hb_peak = 0;
+	g_hb_peak_committed = 0;
+	g_hb_mismatch = 0;
+	g_hb_over = 0;
+}
+
+/* Returns the payload bytes the drains dropped (admitted, not flattened). */
+static uint64_t hb_workload(uint32_t *acc, uint32_t *ref) {
+	uint64_t drain_drops = 0;
+	*acc = *ref = 0;
+	for (uint32_t i = 0; i < HB_SEGS; i++)
+		for (uint32_t f = 0; f < HB_FLOWS; f++) {
+			if (hb_offer(f)) (*acc)++; else (*ref)++;
+			if (f % 2 == 0 && i % 8 == 7) {
+				uint64_t d0 = g_dropped;
+				tcp_reasm_drain(&g_hb[f], 0);
+				drain_drops += g_dropped - d0;
+				hb_check();
+			}
+		}
+	return drain_drops;
+}
+
+static void hb_close(void) {
+	for (uint32_t f = 0; f < HB_FLOWS; f++) {
+		clean_session_payload(&g_hb[f], 0);
+		hb_check();
+	}
+	g_handler.tcp_reassembly_budget = 0;
+}
+
+static void test_handler_budget(void) {
+	int64_t o0 = tcm_outstanding;
+	uint64_t gauge0 = g_handler.tcp_reasm_committed;
+	CHECK(gauge0 == 0, "handler budget: gauge %llu before the case (earlier teardowns)",
+	      (unsigned long long) gauge0);
+
+	/* Control run: the same workload without a handler budget. */
+	uint32_t acc0, ref0;
+	hb_open(0);
+	(void) hb_workload(&acc0, &ref0);
+	uint64_t unbudgeted_peak = g_hb_peak;
+	uint32_t mismatch0 = g_hb_mismatch;
+	hb_close();
+
+	uint32_t acc, ref;
+	hb_open(HB_BUDGET);
+	uint64_t drain_drops = hb_workload(&acc, &ref);
+	uint64_t peak = g_hb_peak, peak_committed = g_hb_peak_committed;
+	uint32_t over = g_hb_over;
+	uint64_t full = g_handler.tcp_reasm_committed;
+	/* Storage a flow's teardown releases returns to the budget. Flow 1 is
+	 * never drained, so it holds pending blocks; flow 3 is refused at first
+	 * and admitted once flow 1 is gone. */
+	int refused_full = !hb_offer(3);
+	clean_session_payload(&g_hb[1], 0);
+	hb_check();
+	uint64_t released = full - g_handler.tcp_reasm_committed;
+	int readmitted = hb_offer(3);
+	/* A budget lowered below the usage refuses every new reservation. */
+	g_handler.tcp_reassembly_budget = g_handler.tcp_reasm_committed / 2;
+	uint64_t before_low = g_handler.tcp_reasm_committed;
+	uint32_t low_refused = 0;
+	for (uint32_t f = 0; f < HB_FLOWS; f++) low_refused += !hb_offer(f);
+	uint64_t growth_low = g_handler.tcp_reasm_committed - before_low;
+	uint32_t mismatch = g_hb_mismatch;
+	g_handler.tcp_reassembly_budget = HB_BUDGET;
+	hb_close();
+	uint64_t gauge_after = g_handler.tcp_reasm_committed;
+	g_handler.tcp_reassembly_limit = BUDGET;
+
+	CHECK(mismatch0 == 0 && mismatch == 0, "handler budget: gauge differed from the walk %u/%u times",
+	      mismatch0, mismatch);
+	CHECK(unbudgeted_peak > HB_BUDGET, "handler budget: unbudgeted peak %llu B does not exceed the budget",
+	      (unsigned long long) unbudgeted_peak);
+	CHECK(ref0 == 0, "handler budget: %u offers refused without a budget", ref0);
+	CHECK(over == 0 && peak <= HB_BUDGET && peak_committed <= HB_BUDGET,
+	      "handler budget: %u operations over budget, peak %llu B (committed %llu B) > budget %u B",
+	      over, (unsigned long long) peak, (unsigned long long) peak_committed, HB_BUDGET);
+	CHECK(drain_drops == 0, "handler budget: drains dropped %llu admitted bytes",
+	      (unsigned long long) drain_drops);
+	CHECK(ref > 0 && acc + ref == HB_FLOWS * HB_SEGS, "handler budget: %u accepted, %u refused",
+	      acc, ref);
+	CHECK(refused_full && released > 0 && readmitted,
+	      "handler budget: full %d, %llu B released, readmitted %d", refused_full,
+	      (unsigned long long) released, readmitted);
+	CHECK(low_refused == HB_FLOWS && growth_low == 0,
+	      "handler budget: lowered budget refused %u of %u, gauge grew %llu B", low_refused,
+	      HB_FLOWS, (unsigned long long) growth_low);
+	CHECK(gauge_after == 0, "handler budget: gauge %llu B after teardown", (unsigned long long) gauge_after);
+	CHECK(tcm_outstanding == o0, "handler budget: %lld allocation(s) outstanding",
+	      (long long) (tcm_outstanding - o0));
+	printf("  handler budget %u B over %u flows: %u of %u offers admitted (peak %llu B; "
+	       "unbudgeted peak %llu B), %llu B released by a teardown re-admitted, gauge %llu B after\n",
+	       HB_BUDGET, HB_FLOWS, acc, HB_FLOWS * HB_SEGS, (unsigned long long) peak,
+	       (unsigned long long) unbudgeted_peak, (unsigned long long) released,
+	       (unsigned long long) gauge_after);
+	rb_metric(RB, "handler.budget_bytes", HB_BUDGET);
+	rb_metric(RB, "handler.flows", HB_FLOWS);
+	rb_metric(RB, "handler.offers", HB_FLOWS * HB_SEGS);
+	rb_metric(RB, "handler.accepted", acc);
+	rb_metric(RB, "handler.refused", ref);
+	rb_metric(RB, "handler.peak_reserved_bytes", peak);
+	rb_metric(RB, "handler.peak_committed_bytes", peak_committed);
+	rb_metric(RB, "handler.drain_dropped_bytes", drain_drops);
+	rb_metric(RB, "handler.unbudgeted_peak_reserved_bytes", unbudgeted_peak);
+	rb_metric(RB, "handler.gauge_mismatches", (uint64_t) mismatch0 + mismatch);
+	rb_metric(RB, "handler.readmitted_after_release", (uint64_t) readmitted);
+	rb_metric(RB, "handler.lowered_growth_bytes", growth_low);
+	rb_metric(RB, "handler.gauge_after_teardown", gauge_after);
+}
+
+/* ------------------------------------------------------------------ */
 /* D — allocation failures                                             */
 /* ------------------------------------------------------------------ */
 
@@ -682,6 +854,7 @@ int main(void) {
 	test_random_small_limit();
 	test_recycled_head();
 	test_oom();
+	test_handler_budget();
 	rb_metric(RB, "budget_bytes", BUDGET);
 	rb_metric(RB, "max_reserved_bytes", g_max_reserved);
 	rb_metric(RB, "checks.total", (uint64_t) checks);

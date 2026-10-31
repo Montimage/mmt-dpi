@@ -57,6 +57,19 @@
 /* reservations until usage drops below it. Transient realloc copies   */
 /* and this mmt_tcp_reasm_t itself (metadata) are outside the budget;  */
 /* clean_session_payload() releases every block, image and the state.  */
+/*                                                                    */
+/* Issue #563 (F-PERF-009): that ceiling is per flow; a handler-wide   */
+/* budget (set_tcp_reassembly_budget(), 0 = unlimited, the default)    */
+/* bounds the sum over every flow of reserved + owed[0] + owed[1] —    */
+/* its commitment, an upper bound on its reserved storage that also    */
+/* holds the room its drains need. Each operation that can reserve     */
+/* storage (offer, drain) runs under the smaller of the per-flow       */
+/* ceiling and what the budget leaves beside the other flows'          */
+/* commitments, so the admission and clamping rules above refuse (drop */
+/* and count) what would overflow it, and what a flow admitted it can  */
+/* still flatten. The handler gauge tcp_reasm_committed is charged     */
+/* with the flow's net change when the operation returns; teardown     */
+/* credits it back.                                                    */
 /* ------------------------------------------------------------------ */
 
 /* Lazily allocate the session's reassembly extension. */
@@ -81,6 +94,33 @@ static void tcp_reasm_seg_release(mmt_tcp_reasm_t *r, tcp_seg_t *seg) {
 static uint64_t tcp_reasm_owed(const mmt_tcp_reasm_t *r, int dir) {
     uint64_t want = (uint64_t) r->image_len[dir] + r->pending_len[dir];
     return (want > r->image_cap[dir]) ? want - r->image_cap[dir] : 0;
+}
+
+/* Issue #563 (F-PERF-009): what flow `r` holds against the handler budget —
+ * its reserved storage plus the image growth it still owes to flatten the
+ * bytes it admitted, so a drain never needs budget another flow took. */
+static uint64_t tcp_reasm_committed(const mmt_tcp_reasm_t *r) {
+    return r->reserved + tcp_reasm_owed(r, 0) + tcp_reasm_owed(r, 1);
+}
+
+/* Issue #563: the ceiling one operation on flow `r` may commit up to — the
+ * per-flow limit, lowered to what the handler budget leaves beside every
+ * other flow's commitment. Valid only at the start of an operation, while
+ * the handler gauge still holds this flow's commitment as last charged by
+ * tcp_reasm_charge(). */
+static uint32_t tcp_reasm_flow_limit(const mmt_session_t *session, const mmt_tcp_reasm_t *r) {
+    const mmt_handler_t *h = session->mmt_handler;
+    uint32_t limit = h->tcp_reassembly_limit;
+    if (h->tcp_reassembly_budget == 0) return limit;   /* unlimited (default) */
+    uint64_t others = h->tcp_reasm_committed - tcp_reasm_committed(r);
+    uint64_t room = (h->tcp_reassembly_budget > others) ? h->tcp_reassembly_budget - others : 0;
+    return (room < limit) ? (uint32_t) room : limit;
+}
+
+/* Issue #563: charge the handler gauge with the flow's net commitment
+ * change since `before` (modular arithmetic: a release is a negative delta). */
+static void tcp_reasm_charge(mmt_session_t *session, const mmt_tcp_reasm_t *r, uint64_t before) {
+    session->mmt_handler->tcp_reasm_committed += tcp_reasm_committed(r) - before;
 }
 
 /* Issue #380 (F-PERF-002): give back image capacity neither direction
@@ -119,11 +159,11 @@ static void tcp_reasm_trim(mmt_tcp_reasm_t *r) {
  * that do not fit are the caller's to drop. The speculative part of a step
  * (beyond the direction's image + pending bytes) takes at most half of the
  * budget still free. *oom is set (and 0 returned) only when realloc()
- * fails — a budget clamp is never reported as OOM. */
-static uint32_t tcp_reasm_image_append(mmt_session_t *session, mmt_tcp_reasm_t *r,
+ * fails — a budget clamp is never reported as OOM. `limit` is the ceiling
+ * of the calling operation (tcp_reasm_flow_limit(), issue #563). */
+static uint32_t tcp_reasm_image_append(mmt_tcp_reasm_t *r, uint32_t limit,
                                        int dir, const uint8_t *data, uint32_t len,
                                        int *oom) {
-    uint32_t limit = session->mmt_handler->tcp_reassembly_limit;
     uint32_t room = (r->image_len[dir] < limit) ? limit - r->image_len[dir] : 0;
     *oom = 0;
     if (len > room) len = room;
@@ -172,9 +212,7 @@ static uint32_t tcp_reasm_image_append(mmt_session_t *session, mmt_tcp_reasm_t *
  * sequence range was already emitted (consumed prefix) are dropped instead
  * of being spliced into the middle of the image — that is the "consumed
  * prefix is discarded" half of the bound. O(pending) per call. */
-static void tcp_reasm_drain(mmt_session_t *session, int dir) {
-    mmt_tcp_reasm_t *r = session->tcp_reasm;
-    if (r == NULL) return;
+static void tcp_reasm_drain_under(mmt_tcp_reasm_t *r, uint32_t limit, int dir) {
     tcp_seg_t *seg = r->seg_head[dir];
     /* Issue #382: the drain empties the list from the head; the index is
      * dropped with it (and rebuilt lazily if an OOM leaves a suffix). */
@@ -191,7 +229,7 @@ static void tcp_reasm_drain(mmt_session_t *session, int dir) {
             mmt_tcp_reasm_stat_drop(seg->len);
         } else {
             int oom;
-            uint32_t n = tcp_reasm_image_append(session, r, dir, seg->data, seg->len, &oom);
+            uint32_t n = tcp_reasm_image_append(r, limit, dir, seg->data, seg->len, &oom);
             if (oom) {
                 /* OOM growing the image — re-link at head and stop: the
                  * pending list keeps the segment for the next read. The
@@ -217,6 +255,27 @@ static void tcp_reasm_drain(mmt_session_t *session, int dir) {
     }
 }
 
+/* Issue #563: drain under the flow's budgeted ceiling, then charge the
+ * handler gauge with the drain's net change (flattening turns owed growth
+ * into reserved image capacity; released blocks are credited). */
+static void tcp_reasm_drain(mmt_session_t *session, int dir) {
+    mmt_tcp_reasm_t *r = session->tcp_reasm;
+    if (r == NULL) return;
+    uint64_t before = tcp_reasm_committed(r);
+    tcp_reasm_drain_under(r, tcp_reasm_flow_limit(session, r), dir);
+    tcp_reasm_charge(session, r, before);
+}
+
+/* One arriving payload segment, handed from tcp_reasm_offer() to
+ * tcp_reasm_admit() (keeps the worker within the parameter-count limit). */
+typedef struct tcp_seg_in {
+    uint64_t packet_id;
+    uint32_t seq;
+    uint32_t ack;
+    const uint8_t *payload;
+    uint32_t len;
+} tcp_seg_in_t;
+
 /* Offer a freshly arrived TCP payload segment to the direction's pending
  * store. In-order and descending arrivals take O(1) fast paths (tail /
  * head); other out-of-order segments are located through the AVL index
@@ -224,13 +283,15 @@ static void tcp_reasm_drain(mmt_session_t *session, int dir) {
  * so each fast-path node is indexed at most once. Issue #380
  * (F-PERF-002): the position — and so any duplicate — is found BEFORE any
  * storage is carved, and a carve is admitted only within the reserved-
- * storage budget (see the block comment above). */
-static void tcp_reasm_offer(mmt_session_t *session, int dir, uint64_t packet_id,
-                            uint32_t seq, uint32_t ack, const uint8_t *payload,
-                            uint32_t len) {
-    mmt_tcp_reasm_t *r = tcp_reasm_state(session);
-    if (r == NULL) return;
-    uint32_t limit = session->mmt_handler->tcp_reassembly_limit;
+ * storage budget (see the block comment above); `limit` is the operation's
+ * ceiling (tcp_reasm_flow_limit(), issue #563). */
+static void tcp_reasm_admit(mmt_tcp_reasm_t *r, uint32_t limit, int dir,
+                            const tcp_seg_in_t *in) {
+    uint64_t packet_id = in->packet_id;
+    uint32_t seq = in->seq;
+    uint32_t ack = in->ack;
+    const uint8_t *payload = in->payload;
+    uint32_t len = in->len;
 
     /* The consumed prefix is gone for good: a segment whose WHOLE range is
      * below the emitted frontier (a pure retransmission) cannot be spliced
@@ -330,6 +391,19 @@ static void tcp_reasm_offer(mmt_session_t *session, int dir, uint64_t packet_id,
 drop:
     r->dropped += len;
     mmt_tcp_reasm_stat_drop(len);
+}
+
+/* Issue #563: admit under the flow's budgeted ceiling, then charge the
+ * handler gauge with what the offer committed (or the trim gave back). */
+static void tcp_reasm_offer(mmt_session_t *session, int dir, uint64_t packet_id,
+                            uint32_t seq, uint32_t ack, const uint8_t *payload,
+                            uint32_t len) {
+    mmt_tcp_reasm_t *r = tcp_reasm_state(session);
+    if (r == NULL) return;
+    uint64_t before = tcp_reasm_committed(r);
+    const tcp_seg_in_t in = { packet_id, seq, ack, payload, len };
+    tcp_reasm_admit(r, tcp_reasm_flow_limit(session, r), dir, &in);
+    tcp_reasm_charge(session, r, before);
 }
 
 int tcp_data_offset_extraction(const ipacket_t * packet, unsigned proto_index,
@@ -858,6 +932,8 @@ void clean_session_payload(mmt_session_t * session, unsigned index){
      * teardown (consumed prefix was already reclaimed during the flow). */
     mmt_tcp_reasm_t *r = session->tcp_reasm;
     if (r != NULL) {
+        if (session->mmt_handler != NULL)   /* issue #563: credit the handler gauge */
+            session->mmt_handler->tcp_reasm_committed -= tcp_reasm_committed(r);
         mmt_tcp_reasm_stat_live(-(int64_t) r->live);
         mmt_segblk_free_all(r->blocks, &r->reserved);
         r->reserved -= (uint64_t) r->image_cap[0] + r->image_cap[1]; /* issue #380: now 0 */

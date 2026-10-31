@@ -1,6 +1,6 @@
 {
   "schema": "mmt-dpi/resource-bounds-budgets/v1",
-  "description": "Reproducible adversarial resource budgets (issue #394, F-PERF-001..004). Every value is a deterministic count or byte total from fixed-seed workloads; no packets-per-second or production timing guarantee is asserted. Checks: eq/le/lt compare `metric` with `limit`, or with `factor` x `limit_metric`; sum requires `metric` to equal the sum of `parts` (every refusal accounted). `baseline` is the reported pre-fix figure a budget improves on.",
+  "description": "Reproducible adversarial resource budgets (issue #394, F-PERF-001..004). Every value is a deterministic count or byte total from fixed-seed workloads; no packets-per-second or production timing guarantee is asserted. Checks: eq/le/lt compare `metric` with `limit`, or with `factor` x `limit_metric`; sum requires `metric` to equal the sum of `parts` (every refusal accounted). `baseline` is the reported pre-fix figure a budget improves on (ftp-control's open-visit baselines are the analytical N(N-1)/2 of the former tail walk, not a measurement).",
   "fixtures": {
     "ipv6-hash": {
       "issue": 379,
@@ -27,7 +27,7 @@
     "tcp-memory": {
       "issue": 380,
       "finding": "F-PERF-002",
-      "workload": "1,024 retained one-byte segments each followed by 169 duplicates; 8,129-B segments to exhaustion; two-direction and image-plus-pending fills; a limit lowered mid-flow; keep-alive, idle-peer and single-stream fairness; 300 randomized flows at 64 KiB.",
+      "workload": "1,024 retained one-byte segments each followed by 169 duplicates; 8,129-B segments to exhaustion; two-direction and image-plus-pending fills; a limit lowered mid-flow; keep-alive, idle-peer and single-stream fairness; 300 randomized flows at 64 KiB; 16 flows x 200 1,400-B segments under a 1 MiB handler budget (issue #563).",
       "checks": [
         { "id": "dup-offers", "metric": "dup.offers", "op": "eq", "limit": 174080 },
         { "id": "dup-retained", "metric": "dup.accepted", "op": "eq", "limit": 1024 },
@@ -51,6 +51,19 @@
         { "id": "fair-single-stream-accounted", "metric": "fair_single_stream.offers", "op": "sum", "parts": ["fair_single_stream.accepted", "fair_single_stream.refused"] },
         { "id": "fair-single-stream-growths", "metric": "fair_single_stream.image_growths", "op": "le", "limit": 24 },
         { "id": "random-accounted", "metric": "random.offers", "op": "sum", "parts": ["random.accepted", "random.refused"] },
+        { "id": "handler-budget", "metric": "handler.budget_bytes", "op": "eq", "limit": 1048576 },
+        { "id": "handler-flows", "metric": "handler.flows", "op": "eq", "limit": 16 },
+        { "id": "handler-offers", "metric": "handler.offers", "op": "eq", "limit": 3200 },
+        { "id": "handler-accounted", "metric": "handler.offers", "op": "sum", "parts": ["handler.accepted", "handler.refused"] },
+        { "id": "handler-exceeded", "metric": "handler.budget_bytes", "op": "lt", "limit_metric": "handler.unbudgeted_peak_reserved_bytes" },
+        { "id": "handler-refuses", "metric": "handler.accepted", "op": "lt", "limit_metric": "handler.offers" },
+        { "id": "handler-bounded", "metric": "handler.peak_committed_bytes", "op": "le", "limit_metric": "handler.budget_bytes" },
+        { "id": "handler-reserved-bounded", "metric": "handler.peak_reserved_bytes", "op": "le", "limit_metric": "handler.budget_bytes" },
+        { "id": "handler-gauge-exact", "metric": "handler.gauge_mismatches", "op": "eq", "limit": 0 },
+        { "id": "handler-flattens-admitted", "metric": "handler.drain_dropped_bytes", "op": "eq", "limit": 0 },
+        { "id": "handler-readmits", "metric": "handler.readmitted_after_release", "op": "eq", "limit": 1 },
+        { "id": "handler-lowered", "metric": "handler.lowered_growth_bytes", "op": "eq", "limit": 0 },
+        { "id": "handler-teardown", "metric": "handler.gauge_after_teardown", "op": "eq", "limit": 0 },
         { "id": "checks", "metric": "checks.failed", "op": "eq", "limit": 0 }
       ]
     },
@@ -121,6 +134,40 @@
         { "id": "all-expire-once", "metric": "expired_once", "op": "eq", "limit_metric": "sessions" },
         { "id": "no-double-expiry", "metric": "expired_twice", "op": "eq", "limit": 0 },
         { "id": "none-orphaned", "metric": "never_expired", "op": "eq", "limit": 0, "baseline": 5010 },
+        { "id": "checks", "metric": "checks.failed", "op": "eq", "limit": 0 }
+      ]
+    },
+    "ftp-control": {
+      "issue": 563,
+      "finding": "F-PERF-106",
+      "workload": "1,000 then 100,000 FTP control flows each greeted (220) through ftp_session_data_analysis(), an unmatched data-connection lookup before and after every flow expires through ftp_session_data_cleanup() in a fixed-seed shuffled order; 1,000 passive transfers (227 + data flow) with the control flow expiring first for half and the data flow first for the rest, a quarter detached by a non-matching data packet; 100,000 live sessions released by handler teardown.",
+      "checks": [
+        { "id": "small-scale", "metric": "small.sessions", "op": "eq", "limit": 1000 },
+        { "id": "large-scale", "metric": "large.sessions", "op": "eq", "limit": 100000 },
+        { "id": "small-opened", "metric": "small.opened", "op": "eq", "limit_metric": "small.sessions" },
+        { "id": "large-opened", "metric": "large.opened", "op": "eq", "limit_metric": "large.sessions" },
+        { "id": "open-o1-small", "metric": "small.open_visits", "op": "eq", "limit": 0, "baseline": 499500 },
+        { "id": "open-o1-large", "metric": "large.open_visits", "op": "eq", "limit": 0, "baseline": 4999950000 },
+        { "id": "tail-append-small", "metric": "small.tail_appends", "op": "eq", "limit_metric": "small.sessions" },
+        { "id": "tail-append-large", "metric": "large.tail_appends", "op": "eq", "limit_metric": "large.sessions" },
+        { "id": "flat-per-session", "metric": "large.alloc_calls", "op": "eq", "factor": 100, "limit_metric": "small.alloc_calls" },
+        { "id": "live-bounded", "metric": "large.live_peak", "op": "eq", "limit_metric": "large.sessions" },
+        { "id": "lookup-live-only", "metric": "large.probe_visits_open", "op": "le", "limit_metric": "large.live_peak" },
+        { "id": "lookup-after-expiry", "metric": "large.probe_visits_expired", "op": "eq", "limit": 0, "baseline": 100000 },
+        { "id": "small-empties", "metric": "small.live_after_expiry", "op": "eq", "limit": 0, "baseline": 1000 },
+        { "id": "large-empties", "metric": "large.live_after_expiry", "op": "eq", "limit": 0, "baseline": 100000 },
+        { "id": "large-retired-empty", "metric": "large.retired_after_expiry", "op": "eq", "limit": 0 },
+        { "id": "small-no-leak", "metric": "small.leaked_allocations", "op": "eq", "limit": 0 },
+        { "id": "large-no-leak", "metric": "large.leaked_allocations", "op": "eq", "limit": 0 },
+        { "id": "transfers-attached", "metric": "transfers.attached", "op": "eq", "limit_metric": "transfers.sessions" },
+        { "id": "transfers-retired", "metric": "transfers.retired_peak", "op": "eq", "limit": 500 },
+        { "id": "transfers-outlive-control", "metric": "transfers.read_retired", "op": "eq", "limit_metric": "transfers.retired_peak" },
+        { "id": "transfers-detached", "metric": "transfers.detached", "op": "eq", "limit": 250 },
+        { "id": "transfers-detach-frees", "metric": "transfers.freed_by_detach", "op": "eq", "limit_metric": "transfers.detached" },
+        { "id": "transfers-empty", "metric": "transfers.lists_after", "op": "eq", "limit": 0 },
+        { "id": "transfers-no-leak", "metric": "transfers.leaked_allocations", "op": "eq", "limit": 0 },
+        { "id": "teardown-scale", "metric": "teardown.sessions", "op": "eq", "limit": 100000 },
+        { "id": "teardown-no-leak", "metric": "teardown.leaked_allocations", "op": "eq", "limit": 0 },
         { "id": "checks", "metric": "checks.failed", "op": "eq", "limit": 0 }
       ]
     }

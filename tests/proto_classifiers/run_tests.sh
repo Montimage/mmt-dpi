@@ -6,6 +6,13 @@
 # flag decoding (issue #504). Each test pins the behaviour its fix added —
 # reverting the fix fails the suite.
 #
+# test_ftp_dialogue (issue #563) drives the FTP dissector — parsing, session
+# tuples, IPv4/IPv6 dialogues read back through the attribute extractors,
+# classification and out-of-memory sweeps. FTP is five units (issue #544),
+# so they and mmt_utils.c are compiled as objects beside the test with the
+# fault-injecting allocator of ftp_alloc_fail.c (-Dmalloc=fda_malloc ...),
+# objects in this directory so their .gcda outlive the script (issue #524).
+#
 # Each proto source is compiled into its own test binary (the per-protocol
 # file-scope classifier bitmasks must not alias), so every exercised line is
 # attributed to the real file in the coverage tracefile; the mmt_core helpers
@@ -37,13 +44,37 @@ INCS=(
 
 echo "  repo root : ${REPO_ROOT}"
 
+build_ftp_dialogue() {
+    local count=(-Dmalloc=fda_malloc -Dcalloc=fda_calloc
+                 -Drealloc=fda_realloc -Dfree=fda_free)
+    local objs=() src
+    for src in proto_ftp proto_ftp_session proto_ftp_parse proto_ftp_addr proto_ftp_extract; do
+        "${CC}" "${extra_cflags[@]}" -O1 -g -std=gnu11 -DNDEBUG "${count[@]}" "${INCS[@]}" \
+            -c "${REPO_ROOT}/src/mmt_tcpip/lib/protocols/${src}.c" -o "${SCRIPT_DIR}/fd_${src}.o"
+        objs+=("${SCRIPT_DIR}/fd_${src}.o")
+    done
+    "${CC}" "${extra_cflags[@]}" -O1 -g -std=gnu11 "${count[@]}" "${INCS[@]}" \
+        -c "${REPO_ROOT}/src/mmt_core/src/mmt_utils.c" -o "${SCRIPT_DIR}/fd_mmt_utils.o"
+    "${CC}" "${extra_cflags[@]}" -O1 -g -Wall -Wextra -std=gnu11 "${count[@]}" "${INCS[@]}" \
+        -c "${SCRIPT_DIR}/test_ftp_dialogue.c" -o "${SCRIPT_DIR}/test_ftp_dialogue.o"
+    "${CC}" "${extra_cflags[@]}" -O1 -g -Wall -Wextra -std=gnu11 \
+        -c "${SCRIPT_DIR}/ftp_alloc_fail.c" -o "${SCRIPT_DIR}/fd_alloc_fail.o"
+    "${CC}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_ftp_dialogue" \
+        "${SCRIPT_DIR}/test_ftp_dialogue.o" "${objs[@]}" "${SCRIPT_DIR}/fd_mmt_utils.o" \
+        "${SCRIPT_DIR}/fd_alloc_fail.o" -lm
+}
+
 rc=0
-for name in dcerpc_offset ptp_classify syslog_format diameter_flags; do
+for name in dcerpc_offset ptp_classify syslog_format diameter_flags ftp_dialogue; do
     src="${SCRIPT_DIR}/test_${name}.c"
     bin="${SCRIPT_DIR}/test_${name}"
     echo "  compiling test_${name} ..."
-    "${CC}" "${extra_cflags[@]}" -O1 -g -Wall -Wextra -std=gnu11 \
-        "${INCS[@]}" -o "${bin}" "${src}"
+    if [ "${name}" = ftp_dialogue ]; then
+        build_ftp_dialogue
+    else
+        "${CC}" "${extra_cflags[@]}" -O1 -g -Wall -Wextra -std=gnu11 \
+            "${INCS[@]}" -o "${bin}" "${src}"
+    fi
     echo "  running test_${name} ..."
     if "${bin}"; then
         echo "  ✓ test_${name}: PASSED"
@@ -55,7 +86,7 @@ for name in dcerpc_offset ptp_classify syslog_format diameter_flags; do
 done
 
 if [ "${rc}" -ne 0 ]; then
-    echo "✗ 1.8.0 classifier crafted-input tests failed" >&2
+    echo "✗ classifier crafted-input tests failed" >&2
     exit 1
 fi
-echo "✓ 1.8.0 classifier crafted-input tests passed (issue #243)"
+echo "✓ classifier crafted-input tests passed (issues #243, #563)"

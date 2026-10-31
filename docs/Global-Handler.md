@@ -28,7 +28,7 @@ Get current version of `MMT-DPI`:
 char * mmt_version();
 ```
 
-(`src/mmt_core/public_include/mmt_core.h:1229`)
+(`src/mmt_core/public_include/mmt_core.h:1260`)
 
 `init_extraction()` / `close_extraction()`: (`src/mmt_core/public_include/mmt_core.h:185,198`)
 

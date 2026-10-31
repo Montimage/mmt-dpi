@@ -1,7 +1,7 @@
 /*
  * proto_ftp_session.c — FTP session state: the connection tuple (tuple6),
  * the lifecycles of the command, response, user, file, data-session and
- * control-session structures, and the per-handler control-session list.
+ * control-session structures, and the per-handler control-session lists.
  * Split out of proto_ftp.c by issue #544.
  */
 #include "plugin_defs.h"
@@ -232,6 +232,7 @@ ftp_data_session_t * ftp_new_data_connection() {
     ftp_data_session_t * ftp_data;
     ftp_data = (ftp_data_session_t*)malloc(sizeof(ftp_data_session_t));
     if(ftp_data == NULL) return NULL;
+    ftp_data->kind = MMT_FTP_KIND_DATA;
     ftp_data->data_conn = ftp_new_tuple6();
     if(ftp_data->data_conn == NULL){
         free(ftp_data);
@@ -308,6 +309,7 @@ ftp_control_session_t * ftp_new_control_session(ftp_tuple6_t * tuple6) {
     ftp_control = (ftp_control_session_t*)malloc(sizeof(ftp_control_session_t));
     if (ftp_control == NULL)
         return NULL;
+    ftp_control->kind = MMT_FTP_KIND_CONTROL;
 
     ftp_control->contrl_conn = ftp_copy_tupl6(tuple6);
     if(ftp_control->contrl_conn == NULL){
@@ -344,11 +346,17 @@ ftp_control_session_t * ftp_new_control_session(ftp_tuple6_t * tuple6) {
     ftp_control->current_data_session->control_session = ftp_control;
     ftp_control->status = 0;
     ftp_control->next = NULL;
+    ftp_control->prev = NULL;
+    ftp_control->ctx = NULL;
+    ftp_control->refs = 0;
+    ftp_control->retired = 0;
     return ftp_control;
 }
 
 /**
- * Free a ftp control session
+ * Free one ftp control session and what it owns. Issue #563: only this
+ * session — the list it may be linked in is the context's to maintain (the
+ * former recursion on ->next made a teardown one stack frame per session).
  * @param ftp_control ftp control session is going to be free
  */
 void free_ftp_control_session(ftp_control_session_t *ftp_control) {
@@ -361,7 +369,6 @@ void free_ftp_control_session(ftp_control_session_t *ftp_control) {
     if (ftp_control->session_syst != NULL) free(ftp_control->session_syst);
     if (ftp_control->current_dir != NULL) free(ftp_control->current_dir);
     free_ftp_data_session(ftp_control->current_data_session);
-    free_ftp_control_session(ftp_control->next);
     free(ftp_control);
 }
 
@@ -494,13 +501,148 @@ void ftp_set_tuple6_direction(ftp_tuple6_t *tuple6, ftp_tuple6_t *conn, int comp
 }
 
 /**
- * Get list of control session from session context
+ * Get the per-handler FTP context from the protocol instance
  * @param  ipacket packet
  * @param  index   protocol index
- * @return         the pointer to the first control_session
+ * @return         the context set up by setup_ftp_context()
  */
-ftp_control_session_t * ftp_get_list_control_session(ipacket_t *ipacket, unsigned index) {
+ftp_context_t * ftp_get_context(const ipacket_t *ipacket, unsigned index) {
     protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
             ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
-    return (ftp_control_session_t*)configured_protocol->args;
+    return (ftp_context_t*)configured_protocol->args;
+}
+
+/////////////// PER-HANDLER CONTROL SESSION LISTS (issue #563) ///////////////
+
+static void ftp_list_init(ftp_control_session_t *head) {
+    head->next = head;
+    head->prev = head;
+}
+
+static void ftp_list_append(ftp_control_session_t *head, ftp_control_session_t *c) {
+    c->prev = head->prev;
+    c->next = head;
+    head->prev->next = c;
+    head->prev = c;
+}
+
+static void ftp_list_unlink(ftp_control_session_t *c) {
+    if (c->next == NULL || c->prev == NULL) return;   // never linked
+    c->prev->next = c->next;
+    c->next->prev = c->prev;
+    c->next = NULL;
+    c->prev = NULL;
+}
+
+/**
+ * Create the per-handler FTP context: two empty circular lists.
+ * @return the context, NULL on allocation failure
+ */
+ftp_context_t * ftp_new_context(void) {
+    ftp_context_t *ctx = (ftp_context_t*)malloc(sizeof(ftp_context_t));
+    if (ctx == NULL) return NULL;
+    /* The sentinels are never read beyond their links: zero the rest so no
+     * field of theirs is uninitialised. */
+    memset(ctx, 0, sizeof(*ctx));
+    ftp_list_init(&ctx->live);
+    ftp_list_init(&ctx->retired);
+    return ctx;
+}
+
+/**
+ * Free the context and every control session still in its lists, one
+ * iteration per session (handler teardown: every session has expired by
+ * then, so normally both lists are already empty).
+ */
+void ftp_free_context(ftp_context_t *ctx) {
+    if (ctx == NULL) return;
+    ftp_control_session_t *heads[2] = {&ctx->live, &ctx->retired};
+    for (int i = 0; i < 2; i++) {
+        ftp_control_session_t *c = heads[i]->next;
+        while (c != heads[i]) {
+            ftp_control_session_t *nx = c->next;
+            free_ftp_control_session(c);
+            c = nx;
+        }
+    }
+    free(ctx);
+}
+
+/**
+ * Append a new control session at the tail of the live list — O(1) — and
+ * give it the reference of the control flow that created it.
+ */
+void ftp_context_link(ftp_context_t *ctx, ftp_control_session_t *ftp_control) {
+    if (ctx == NULL || ftp_control == NULL) return;
+    ftp_control->ctx = ctx;
+    ftp_control->refs = 1;
+    ftp_control->retired = 0;
+    ftp_list_append(&ctx->live, ftp_control);
+    ctx->live_count++;
+}
+
+/**
+ * Drop one reference; the last one unlinks and frees the session.
+ */
+void ftp_control_release(ftp_control_session_t *ftp_control) {
+    if (ftp_control == NULL || ftp_control->refs == 0) return;
+    if (--ftp_control->refs > 0) return;
+    if (ftp_control->ctx != NULL && ftp_control->next != NULL) {
+        if (ftp_control->retired) ftp_control->ctx->retired_count--;
+        else ftp_control->ctx->live_count--;
+    }
+    ftp_list_unlink(ftp_control);
+    free_ftp_control_session(ftp_control);
+}
+
+/* The control flow of `ftp_control` expired: leave the live list (no new
+ * data connection can match it), and either free it or — while data flows
+ * still reference its data session — park it on the retired list. */
+static void ftp_control_retire(ftp_control_session_t *ftp_control) {
+    if (ftp_control->retired) return;           // already retired
+    if (ftp_control->refs > 1 && ftp_control->ctx != NULL && ftp_control->next != NULL) {
+        ftp_list_unlink(ftp_control);
+        ftp_control->ctx->live_count--;
+        ftp_list_append(&ftp_control->ctx->retired, ftp_control);
+        ftp_control->ctx->retired_count++;
+        ftp_control->retired = 1;
+    }
+    ftp_control_release(ftp_control);
+}
+
+/* A data flow stops referencing `ftp_data`. */
+static void ftp_data_release(ftp_data_session_t *ftp_data) {
+    if (ftp_data != NULL) ftp_control_release(ftp_data->control_session);
+}
+
+/**
+ * Point a data flow's session_data slot at `ftp_data` (NULL detaches it),
+ * moving the flow's reference from the old data session's control session
+ * to the new one.
+ */
+void ftp_data_attach(mmt_session_t *session, unsigned index, ftp_data_session_t *ftp_data) {
+    ftp_data_session_t *old = (ftp_data_session_t*)session->session_data[index];
+    if (old == ftp_data) return;
+    session->session_data[index] = ftp_data;
+    if (ftp_data != NULL && ftp_data->control_session != NULL) ftp_data->control_session->refs++;
+    ftp_data_release(old);
+}
+
+/**
+ * Session-expiry cleanup of the FTP slot (issue #563, F-PERF-106): a
+ * control flow retires its control session, a data flow drops its reference
+ * on the data session's control session. Before this, nothing unlinked a
+ * control session until the handler closed.
+ */
+void ftp_session_data_cleanup(mmt_session_t *session, unsigned index) {
+    if (session == NULL || index >= PROTO_PATH_SIZE) return;
+    void *slot = session->session_data[index];
+    if (slot == NULL) return;
+    session->session_data[index] = NULL;
+    uint32_t kind = *(const uint32_t *)slot;
+    if (kind == MMT_FTP_KIND_CONTROL) {
+        ftp_control_retire((ftp_control_session_t*)slot);
+    } else if (kind == MMT_FTP_KIND_DATA) {
+        ftp_data_release((ftp_data_session_t*)slot);
+    }
 }

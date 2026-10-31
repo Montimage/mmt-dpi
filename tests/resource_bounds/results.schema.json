@@ -12,7 +12,7 @@
     "timing_asserted": { "const": false },
     "fixtures": {
       "type": "object",
-      "description": "One entry per fixture that ran, keyed by fixture id (ipv6-hash, tcp-memory, tcp-order, fragment-eviction, timeout-sweep).",
+      "description": "One entry per fixture that ran, keyed by fixture id (ipv6-hash, tcp-memory, tcp-order, fragment-eviction, timeout-sweep, ftp-control).",
       "additionalProperties": {
         "type": "object",
         "required": ["issue", "finding", "workload", "exit_status", "seeds", "metrics"],

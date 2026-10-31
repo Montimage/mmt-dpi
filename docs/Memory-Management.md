@@ -49,7 +49,7 @@ The contract is the standard `malloc()`/`realloc()` one, stated in `src/mmt_core
 
 * `mmt_malloc()` logs the failure and returns `NULL` (`src/mmt_core/src/memory.c:40-45`).
 * `mmt_realloc()` returns `NULL` and leaves the original block untouched, so the caller still owns it and must free it (`src/mmt_core/src/memory.c:73-79`).
-* `mmt_arena_alloc()` returns `NULL` on out-of-memory (`src/mmt_core/public_include/mmt_core.h:1253-1254`).
+* `mmt_arena_alloc()` returns `NULL` on out-of-memory (`src/mmt_core/public_include/mmt_core.h:1284-1285`).
 
 The library runs inside the host process. An allocation that a packet can trigger must not end that process. The library used to call `abort()` when an allocation failed, so a packet that triggered a huge allocation could crash the host: a remote denial of service (B5 in `src/mmt_core/src/memory.c:8-17`). Code that assumes success has the same effect, because the `NULL` it ignored crashes the process later.
 

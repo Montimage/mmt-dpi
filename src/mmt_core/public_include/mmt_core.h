@@ -532,6 +532,37 @@ MMTAPI bool MMTCALL set_tcp_reassembly_limit(
     uint32_t bytes
 );
 
+/**
+ * Set a handler-wide budget on TCP reassembly storage. Same scope as
+ * set_tcp_reassembly_limit(): only meaningful with enable_mmt_reassembly()
+ * plus TCP segment reassembly.
+ *
+ * Issue #563 (F-PERF-009): the per-flow ceiling bounds one flow; this
+ * budget bounds the sum over every flow of the handler of its reserved
+ * storage (segment blocks incl. headers + both image capacities) plus the
+ * image growth it still needs to flatten the segments it admitted — so the
+ * handler's reserved storage never exceeds `bytes`, and a flow can always
+ * flatten what it admitted. A segment is admitted only while its flow's
+ * total stays within the smaller of the per-flow ceiling and what the
+ * budget leaves beside the other flows; otherwise it is refused — dropped
+ * and counted by mmt_tcp_reasm_bytes_dropped(), as for the per-flow
+ * ceiling. Storage is never taken back from another flow: it returns to
+ * the budget when a flow releases blocks or image capacity, or ends. Lowering
+ * the budget below the current usage refuses new reservations until usage
+ * falls below it; the next flatten keeps what fits and drops (counts) the
+ * rest. Transient realloc() copies and the per-flow state records are
+ * metadata outside the budget.
+ * @param  mmt_handler    handler
+ * @param  bytes          budget in bytes; 0 removes the budget (the
+ *                          default: only the per-flow ceiling applies)
+ * @return                1 if successful
+ *                          0 if failed (NULL handler)
+ */
+MMTAPI bool MMTCALL set_tcp_reassembly_budget(
+    mmt_handler_t *mmt_handler,
+    uint64_t bytes
+);
+
 
 /**
  * Set default timedout session - replace for value of CFG_LONG_SESSION_TIMEDOUT

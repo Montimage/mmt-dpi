@@ -115,14 +115,14 @@ callbacks, statistics), one `mmt_handler_t` per packet stream. The order is:
    failure (`src/mmt_core/src/packet_registry.c:616`). It builds the
    protocol registry, loads the plugins and creates the map that tracks live
    handlers (`src/mmt_core/src/packet_registry.c:658-659`,
-   `src/mmt_core/src/packet_registry_handler.c:408`); nothing else
+   `src/mmt_core/src/packet_registry_handler.c:410`); nothing else
    in the API works before it. If it fails, do not call anything else,
    including `close_extraction()`.
 2. Create a handler with `mmt_init_handler()` and check it for `NULL` — on
    failure it fills the `errbuf` you pass in (at least `MMT_ERRBUF_SIZE`
    bytes) (`src/mmt_core/src/packet_registry_handler.c:116`). Each new handler is
    recorded in the global handler map
-   (`src/mmt_core/src/packet_registry_handler.c:263`).
+   (`src/mmt_core/src/packet_registry_handler.c:265`).
 3. Register the attributes you care about with
    `register_extraction_attribute()` (by protocol id and attribute id) or
    `register_extraction_attribute_by_name()`, and optionally packet-,
@@ -132,12 +132,12 @@ callbacks, statistics), one `mmt_handler_t` per packet stream. The order is:
    packet could not be processed, and later packets can still be fed.
 5. Release every handler with `mmt_close_handler()`: it expires the
    handler's sessions, frees everything the handler owns and removes it from
-   the global handler map (`src/mmt_core/src/packet_registry_handler.c:296`,
-   `src/mmt_core/src/packet_registry_handler.c:346`).
+   the global handler map (`src/mmt_core/src/packet_registry_handler.c:298`,
+   `src/mmt_core/src/packet_registry_handler.c:348`).
 6. Tear down the global state last, once, with `close_extraction()`
    (`src/mmt_core/src/packet_registry.c:667`). It force-closes any handler
    still registered (`src/mmt_core/src/packet_registry.c:670`,
-   `src/mmt_core/src/packet_registry_handler.c:414`) and then
+   `src/mmt_core/src/packet_registry_handler.c:416`) and then
    unloads the plugins (`src/mmt_core/src/packet_registry.c:678`), so a
    handler pointer is dangling afterwards: never call `mmt_close_handler()`
    or `packet_process()` on it once `close_extraction()` has run.

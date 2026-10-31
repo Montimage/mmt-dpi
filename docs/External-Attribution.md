@@ -151,7 +151,7 @@ attributed on the port alone.
 
 ```c
 enable_port_classify(mmt);                  // turn on port-based guessing
-enable_port_classify_payload_confirm(mmt);  // require payload confirmation (sdk/include/mmt_core.h:679)
+enable_port_classify_payload_confirm(mmt);  // require payload confirmation (sdk/include/mmt_core.h:710)
 ```
 
 > **OFF by default.** `mmt_init_handler` sets

@@ -271,6 +271,15 @@ bool set_tcp_reassembly_limit(mmt_handler_t *mmt_handler,uint32_t bytes){
     return 1;
 }
 
+/* Issue #563 (F-PERF-009): configure the handler-wide budget on TCP
+ * reassembly storage — the sum of every flow's reserved storage (see
+ * mmt_core.h). 0 removes the budget (the default). */
+bool set_tcp_reassembly_budget(mmt_handler_t *mmt_handler, uint64_t bytes){
+    if(mmt_handler == NULL) return 0;
+    mmt_handler->tcp_reassembly_budget = bytes;
+    return 1;
+}
+
 bool set_fragment_in_packet(mmt_handler_t *mmt_handler,uint32_t fragment_in_packet){
     if ( mmt_handler == NULL ) return 0;
     mmt_handler->fragment_in_packet = fragment_in_packet;

@@ -636,6 +636,15 @@ void ftp_response_packet(ipacket_t *ipacket, unsigned index, ftp_control_session
     }
 }
 
+/* Issue #563: list nodes the data-connection lookups examine, counted only
+ * in the resource_bounds build (-DMMT_FTP_LIST_STATS). */
+#ifdef MMT_FTP_LIST_STATS
+uint64_t mmt_ftp_list_visits;
+#define FTP_LIST_VISIT() (mmt_ftp_list_visits++)
+#else
+#define FTP_LIST_VISIT() ((void) 0)
+#endif
+
 /**
  * Analysis packet data
  * @param  ipacket packet to analysis
@@ -654,6 +663,9 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         return MMT_CONTINUE;
     }
 
+    /* Issue #563: every return below releases the tuple with
+     * free_ftp_tuple6() — free() alone leaked an IPv6 tuple's two address
+     * buffers on every packet. */
     ftp_tuple6_t *tuple6 = ftp_get_tuple6(ipacket);
 
     if(tuple6==NULL){
@@ -661,7 +673,12 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         return MMT_CONTINUE;
     }
 
-    ftp_control_session_t *ftp_list_control = ftp_get_list_control_session(ipacket, index);
+    ftp_context_t *ctx = ftp_get_context(ipacket, index);
+    if (ctx == NULL) {
+        free_ftp_tuple6(tuple6);
+        return MMT_CONTINUE;
+    }
+    ftp_control_session_t *live = &ctx->live;   // sentinel of the live list
     ftp_control_session_t *ftp_control = NULL;
     ftp_data_session_t *ftp_data = NULL;
     if (tuple6->conn_type == MMT_FTP_CONTROL_CONNECTION) {
@@ -669,28 +686,22 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
             ftp_control = (ftp_control_session_t*)ipacket->session->session_data[index];
             int compare = 0;
             if(ftp_control->contrl_conn == NULL){
-                free(tuple6);
+                free_ftp_tuple6(tuple6);
                 return MMT_CONTINUE;
             }
             compare = ftp_compare_tuple6(tuple6, ftp_control->contrl_conn);
             if (compare == 0) {
                 // mmt_debug_log( "FTP: Not correct control connection\n");
-                free(tuple6);
+                free_ftp_tuple6(tuple6);
                 return MMT_CONTINUE;
             } else {
                 ftp_control->contrl_conn->direction = tuple6->direction;
             }
         } else {
             ftp_control = ftp_new_control_session(tuple6);
-            if (ftp_list_control->next == NULL) {
-                ftp_list_control->next = ftp_control;
-            } else {
-                ftp_control_session_t * temp = ftp_list_control;
-                while (temp->next) {
-                    temp = temp->next;
-                }
-                temp->next = ftp_control;
-            }
+            /* Issue #563 (F-PERF-106): O(1) tail append; the session leaves
+             * the list when its flow expires (ftp_session_data_cleanup). */
+            ftp_context_link(ctx, ftp_control);
             ipacket->session->session_data[index] = ftp_control;
         }
     } else {
@@ -700,37 +711,40 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
             if (compare != 0) {
                 ftp_set_tuple6_direction(tuple6, ftp_data->data_conn, compare);
             } else {
-                ftp_control_session_t *temp = ftp_list_control->next;
-                while (temp && temp->current_data_session) {
+                ftp_control_session_t *temp = live->next;
+                while (temp != live && temp->current_data_session) {
+                    FTP_LIST_VISIT();
                     int compare = ftp_compare_tuple6(tuple6, temp->current_data_session->data_conn);
                     if (compare != 0) {
                         ftp_set_tuple6_direction(tuple6, temp->current_data_session->data_conn, compare);
-                        ipacket->session->session_data[index] = temp->current_data_session;
+                        ftp_data_attach(ipacket->session, index, temp->current_data_session);
                         ftp_data = temp->current_data_session;
                         break;
                     }
                     temp = temp->next;
                 }
-                if (temp == NULL || temp->current_data_session == NULL) {
+                if (temp == live || temp->current_data_session == NULL) {
                     /* The transfer this flow belonged to has ended — its data
                      * session was reset for the next one (226): detach rather
                      * than attribute this flow to that next transfer. */
-                    ipacket->session->session_data[index] = NULL;
+                    ftp_data_attach(ipacket->session, index, NULL);
                     ftp_data = NULL;
                 }
             }
         } else {
             // New not FTP control packet
-            if (ftp_list_control->next == NULL) {
+            if (live->next == live) {
                 // mmt_debug_log( "FTP: Cannot find any control connection\n");
+                free_ftp_tuple6(tuple6);   // issue #563: was leaked on this return
                 return MMT_CONTINUE;
             } else {
-                ftp_control_session_t *temp = ftp_list_control->next;
-                while (temp && temp->current_data_session) {
+                ftp_control_session_t *temp = live->next;
+                while (temp != live && temp->current_data_session) {
+                    FTP_LIST_VISIT();
                     int compare = ftp_compare_tuple6(tuple6, temp->current_data_session->data_conn);
                     if (compare != 0) {
                         ftp_set_tuple6_direction(tuple6, temp->current_data_session->data_conn, compare);
-                        ipacket->session->session_data[index] = temp->current_data_session;
+                        ftp_data_attach(ipacket->session, index, temp->current_data_session);
                         ftp_data = temp->current_data_session;
                         break;
                     }
@@ -755,7 +769,7 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     }
 
     // Finished working with tuple6
-    free(tuple6);
+    free_ftp_tuple6(tuple6);
 
     return MMT_CONTINUE;
 }
@@ -763,24 +777,16 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
 ///////////////////////////////// SESSION DATA ANALYSE ////////////////////////////////////////
 
 void * setup_ftp_context(void * proto_context, void * args) {
-    ftp_control_session_t * ftp_list_control_conns;
-    ftp_list_control_conns = (ftp_control_session_t*)malloc(sizeof(ftp_control_session_t));
-    if(ftp_list_control_conns == NULL) return NULL;
-    /* This head is a sentinel: only ->next is ever read (real control sessions
-     * are appended there). Zero every field so the NULL-guarded
-     * free_ftp_control_session() can safely walk and release the whole chain on
-     * teardown without dereferencing uninitialised sentinel pointers. */
-    memset(ftp_list_control_conns, 0, sizeof(ftp_control_session_t));
-    ftp_list_control_conns->next = NULL;
-    return (void*)ftp_list_control_conns;
+    /* Issue #563: the live and retired control-session lists (ftp.h). */
+    return (void*)ftp_new_context();
 }
 
 /**
  * Release the per-handler FTP protocol context allocated by setup_ftp_context().
  *
- * The context is the head of the ftp_control_session_t list stored in the
- * protocol instance's "args" field (see ftp_get_list_control_session()). The
- * list and everything it owns (per-session str_copy/str_combine strings, user
+ * The context holds the control-session lists stored in the protocol
+ * instance's "args" field (see ftp_get_context()). The lists and everything
+ * they own (per-session str_copy/str_combine strings, user
  * credentials, file metadata, connection tuples, ...) are released here on
  * handler teardown. Without this, mmt_close_handler() left the whole tree
  * leaked (Valgrind: 80B definitely + 933B indirectly lost). The signature
@@ -790,10 +796,9 @@ void * setup_ftp_context(void * proto_context, void * args) {
 void cleanup_ftp_context(void * proto_context, void * args) {
     if (proto_context == NULL) return;
     protocol_instance_t * configured_protocol = (protocol_instance_t *) proto_context;
-    ftp_control_session_t * ftp_list_control_conns =
-            (ftp_control_session_t *) configured_protocol->args;
-    if (ftp_list_control_conns != NULL) {
-        free_ftp_control_session(ftp_list_control_conns);
+    ftp_context_t * ctx = (ftp_context_t *) configured_protocol->args;
+    if (ctx != NULL) {
+        ftp_free_context(ctx);
         configured_protocol->args = NULL;
     }
 }
@@ -809,6 +814,8 @@ int init_proto_ftp_struct() {
         }
         register_proto_context_init_cleanup_function(protocol_struct, setup_ftp_context, cleanup_ftp_context, NULL);
         register_session_data_analysis_function(protocol_struct, ftp_session_data_analysis);
+        /* Issue #563: unlink a control session when its flow expires. */
+        register_session_data_cleanup_function(protocol_struct, ftp_session_data_cleanup);
         mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
                 &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITHOUT_RETRANSMISSION,
                 PROTO_FTP, PROTO_FTP);

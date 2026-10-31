@@ -1750,6 +1750,15 @@ static void b_set_tcp_reassembly_limit(void) {
 static void e_set_tcp_reassembly_limit(void) {
     CHECK(set_tcp_reassembly_limit(NULL, 4096) == 0, "NULL handler -> 0");
 }
+static void b_set_tcp_reassembly_budget(void) {
+    CHECK(set_tcp_reassembly_budget(g_cfg, 1u << 20) == 1 && g_cfg->tcp_reassembly_budget == (1u << 20),
+          "explicit handler budget");
+    CHECK(set_tcp_reassembly_budget(g_cfg, 0) == 1 && g_cfg->tcp_reassembly_budget == 0,
+          "0 removes the budget");
+}
+static void e_set_tcp_reassembly_budget(void) {
+    CHECK(set_tcp_reassembly_budget(NULL, 4096) == 0, "NULL handler -> 0");
+}
 
 static void p_debug_printout(const ipacket_t *p) {
     capture_t c;
@@ -3136,6 +3145,7 @@ static const api_contract_t k_contracts[] = {
              e_unregister_attribute_handler_by_name),
     CONTRACT(set_default_session_timed_out, b_set_default_session_timed_out, e_set_default_session_timed_out),
     CONTRACT(set_tcp_reassembly_limit, b_set_tcp_reassembly_limit, e_set_tcp_reassembly_limit),
+    CONTRACT(set_tcp_reassembly_budget, b_set_tcp_reassembly_budget, e_set_tcp_reassembly_budget),
     CONTRACT(set_long_session_timed_out, b_set_long_session_timed_out, e_set_long_session_timed_out),
     CONTRACT(set_short_session_timed_out, b_set_short_session_timed_out, e_set_short_session_timed_out),
     CONTRACT(set_live_session_timed_out, b_set_live_session_timed_out, e_set_live_session_timed_out),

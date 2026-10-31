@@ -703,6 +703,15 @@ struct mmt_handler_struct {
      * set_tcp_reassembly_limit(); the default is
      * MMT_TCP_REASSEMBLY_LIMIT_DEFAULT. */
     uint32_t tcp_reassembly_limit;
+    /* Issue #563 (F-PERF-009): handler-wide budget on TCP reassembly
+     * storage (0 = unlimited, the default), set via
+     * set_tcp_reassembly_budget(), and the gauge it bounds — the sum over
+     * the flows of reserved + owed[0] + owed[1] (mmt_tcp_reasm_t; the owed
+     * image growth is held so a drain can always flatten what was
+     * admitted), charged by proto_tcp.c after each operation. A handler is
+     * single-threaded (THREADING.md): plain fields. */
+    uint64_t tcp_reassembly_budget;
+    uint64_t tcp_reasm_committed;
     /* Issue #245: freelist of mmt_ipacket_slot_t recycled by
      * process_packet_with_reassembly()/clean_packet_with_reassembly() —
      * drained by mmt_close_handler(). */
