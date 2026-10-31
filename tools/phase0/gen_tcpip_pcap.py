@@ -659,6 +659,19 @@ def gen_acc_tls_sni_attribution_pcap(path):
     _acc_tls_pcap(path, "www.google.com", "TLS with attributable SNI")
 
 
+def gen_acc_tls_sni_teams_pcap(path):
+    """Same TLS exchange, SNI teams.microsoft.com (issue #566): Microsoft
+    Teams, which the hostname table labelled livemail until then."""
+    _acc_tls_pcap(path, "teams.microsoft.com", "TLS with Teams SNI")
+
+
+def gen_acc_tls_sni_sharepoint_pcap(path):
+    """Same TLS exchange, SNI contoso.sharepoint.com (issue #566): a
+    SharePoint Online tenant, which the hostname table labelled livemail
+    until then."""
+    _acc_tls_pcap(path, "contoso.sharepoint.com", "TLS with SharePoint SNI")
+
+
 def gen_acc_tls_negative_pcap(path):
     """Plaintext HTTP/1.1 on TCP/443 — port 443 alone must not yield a TLS
     verdict."""
@@ -1995,6 +2008,8 @@ ACC_GENS = {
     "acc_dns_negative": gen_acc_dns_negative_pcap,
     "acc_tls_positive": gen_acc_tls_positive_pcap,
     "acc_tls_sni_attribution": gen_acc_tls_sni_attribution_pcap,
+    "acc_tls_sni_teams": gen_acc_tls_sni_teams_pcap,
+    "acc_tls_sni_sharepoint": gen_acc_tls_sni_sharepoint_pcap,
     "acc_tls_negative": gen_acc_tls_negative_pcap,
     "acc_quic_positive": gen_acc_quic_positive_pcap,
     "acc_quic_v2_positive": gen_acc_quic_v2_positive_pcap,

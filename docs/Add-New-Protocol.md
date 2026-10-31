@@ -70,15 +70,33 @@ Then add a row for **lemonde** to the **`application_class_by_protocol_id`** tab
 
 Now comes the last part where the classification rules for **lemonde** needs to be added. As **lemonde** is a WEB protocol, the classification is directly derived from the **hostnames** of **lemonde** website. An investigation needs to be performed in order to gat the list of domain names for a Web application as there could be many. We will consider here that **lemonde** protocol uses just one hostname **lemonde.fr**.
 
-In the hostname-match data unit **`src/mmt_tcpip/lib/mmt_tcpip_classif_doted_host_names.inc`** (included by `mmt_tcpip_classif_utils.c`) add to the end of **`doted_host_names`** structure the following:
+The hostname table is data, not code (issue #566): its source is the versioned
+data file **`data/hostnames.txt`**, one `<suffix> <PROTO_ID>` entry per line
+under a `# version: YYYY-MM-DD` header. Add a line for every domain name you have:
 
-```c
-    // Add a line for every domain name you have
-    {".lemonde.fr", PROTO_LEMONDE, MMT_STATICSTRING_LEN(".lemonde.fr")},
 ```
+.lemonde.fr PROTO_LEMONDE
+```
+
+set the `version:` line to the date of the change, and regenerate the C table
+**`src/mmt_tcpip/lib/mmt_tcpip_classif_doted_host_names.inc`** (included by
+`mmt_tcpip_classif_utils.c`) — never edit the `.inc` by hand:
+
+```bash
+python3 tools/gen-hostname-table.py           # rewrite the .inc from the data file
+python3 tools/gen-hostname-table.py --check   # exit 1 when the .inc is stale
+```
+
+The generator computes each entry's length and refuses a missing or malformed
+version line, a duplicate suffix, a `PROTO_*` name the protocol header does not
+define, and an uppercase or dotless suffix; the `core_engine` suite runs
+`--check`, so a stale `.inc` fails the tests. A suffix also matches the bare
+domain (`.lemonde.fr` matches `lemonde.fr`), and the longest listed suffix of a
+hostname wins, so entry order carries no meaning. A relabel changes
+classification: rerun both phase0 gates (`tools/phase0/README.md`).
 
 Entries are matched **case-insensitively** (issue #105): they are stored
 lowercased in the hostname trie and lookups fold the wire hostname, so write
-them in lowercase — a mixed-case entry folds onto its lowercase twin.
+them in lowercase — the generator rejects an uppercase suffix.
 
 ## 4- Voilà Voilà

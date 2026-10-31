@@ -1,3 +1,8 @@
+/* GENERATED FILE -- do not edit by hand (issue #566).
+ * Source: data/hostnames.txt, version 2026-10-31; regenerate with
+ *   python3 tools/gen-hostname-table.py
+ * The hostname-suffix table of get_proto_id_by_hostname(), included by
+ * mmt_tcpip_classif_utils.c. 1166 entries. */
 static const protocol_match doted_host_names[] = {
     {".1-clickshare.com", PROTO_DIRECT_DOWNLOAD_LINK,17},
     {".1-upload.com", PROTO_DIRECT_DOWNLOAD_LINK,13},
@@ -223,7 +228,6 @@ static const protocol_match doted_host_names[] = {
     {".citytv.com", PROTO_CITYTV,11},
     {".clicksor.com", PROTO_CLICKSOR,13},
     {".cloudfront.net", PROTO_CLOUDFRONT,15},
-    // Cloudflare hostname patterns (issue #82)
     {".cloudflare.com", PROTO_CLOUDFLARE,15},
     {".cloudflare.net", PROTO_CLOUDFLARE,15},
     {".cloudflarestatus.com", PROTO_CLOUDFLARE,21},
@@ -739,22 +743,20 @@ static const protocol_match doted_host_names[] = {
     {".mevio.com", PROTO_MEVIO,10},
     {".meviodisplayads.com", PROTO_MEVIO,20},
     {".microsoft.com", PROTO_MICROSOFT,14},
-    // Microsoft 365 / Azure AD hostname patterns (issue #82)
-    {".live.net", PROTO_LIVEMAIL,9},
-    {".login.microsoftonline.com", PROTO_LIVEMAIL,26},
-    {".microsoftonline.com", PROTO_LIVEMAIL,20},
+    {".live.net", PROTO_LIVE,9},
+    {".login.microsoftonline.com", PROTO_AZURE,26},
+    {".microsoftonline.com", PROTO_AZURE,20},
     {".msauth.net", PROTO_AZURE,11},
     {".msftauth.net", PROTO_AZURE,13},
-    {".office.com", PROTO_LIVEMAIL,11},
-    {".office.net", PROTO_LIVEMAIL,11},
-    {".office365.com", PROTO_LIVEMAIL,14},
-    {".onedrive.com", PROTO_LIVEMAIL,13},
-    {".sfbassets.com", PROTO_LIVEMAIL,14},
-    {".sharepoint.com", PROTO_LIVEMAIL,15},
-    {".sharepointonline.com", PROTO_LIVEMAIL,21},
+    {".office.com", PROTO_OFFICE365,11},
+    {".office.net", PROTO_OFFICE365,11},
+    {".office365.com", PROTO_OFFICE365,14},
+    {".onedrive.com", PROTO_SKYDRIVE,13},
+    {".sfbassets.com", PROTO_MS_TEAMS,14},
+    {".sharepoint.com", PROTO_SHAREPOINT,15},
+    {".sharepointonline.com", PROTO_SHAREPOINT,21},
     {".sso.microsoftonline.com", PROTO_AZURE,24},
-    {".teams.microsoft.com", PROTO_LIVEMAIL,20},
-    // Azure hostname patterns (issue #82)
+    {".teams.microsoft.com", PROTO_MS_TEAMS,20},
     {".azure.com", PROTO_AZURE,10},
     {".azure-api.net", PROTO_AZURE,14},
     {".azurecr.io", PROTO_AZURE,11},

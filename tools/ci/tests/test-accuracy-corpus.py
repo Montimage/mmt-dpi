@@ -70,6 +70,11 @@ GOOD_FP = {
                              "3\tmeta.ethernet.ip.tcp.unknown\n",
     "acc_tls_sni_attribution.pcap": "2\tmeta.ethernet.ip.tcp.ssl.google\n"
                                     "3\tmeta.ethernet.ip.tcp.unknown\n",
+    # issue #566: SNI attribution through the Microsoft 365 relabel
+    "acc_tls_sni_teams.pcap": "2\tmeta.ethernet.ip.tcp.ssl.ms_teams\n"
+                              "3\tmeta.ethernet.ip.tcp.unknown\n",
+    "acc_tls_sni_sharepoint.pcap": "2\tmeta.ethernet.ip.tcp.ssl.sharepoint\n"
+                                   "3\tmeta.ethernet.ip.tcp.unknown\n",
     "acc_tls_negative.pcap": "2\tmeta.ethernet.ip.tcp.http\n"
                              "3\tmeta.ethernet.ip.tcp.unknown\n",
     "acc_quic_positive.pcap": "3\tmeta.ethernet.ip.udp.quic_ietf\n",
@@ -230,7 +235,9 @@ with Scratch() as s:
     tls_row = [ln.split() for ln in out.splitlines()
                if ln.startswith("tls ") and "|" in ln]
     check("attribution counted as wire, not other",
-          tls_row and tls_row[0][3] == "4" and tls_row[0][5] == "0", out)
+          # four positive TLS cases (plain, google, teams and sharepoint
+          # SNI) of two wire packets each (issue #566)
+          tls_row and tls_row[0][3] == "8" and tls_row[0][5] == "0", out)
     attr_rows = [ln for ln in out.split("# heuristic", 1)[-1].splitlines()
                  if ln.startswith(("ngap ", "nas "))]
     check("nas_5g beneath ngap is not heuristic attribution",

@@ -30,6 +30,10 @@
 # insert_session_into_protocol_context lets it fail each allocation and insert
 # get_session() makes and check the rollback releases what it created.
 #
+# Issue #566: check_hostname_table.sh fails the suite when the committed
+# hostname-suffix .inc is not what tools/gen-hostname-table.py generates from
+# data/hostnames.txt, and checks the generator rejects malformed data.
+#
 # Issue #525: the same library objects (plus mmt_attr_sprintf_compat.c and,
 # since #533, mmt_utils.c) also
 # link test_api_contracts — the public-API contract table, one entry per
@@ -144,6 +148,14 @@ if ( cd "$WORK" && "$SCRIPT_DIR/test_core_engine" > "$WORK/core_engine.log" 2>&1
 else
     cat "$WORK/core_engine.log"
     echo "Core-engine tests: FAILED"
+    exit 1
+fi
+
+echo "Running hostname-table generator checks (issue #566)..."
+if bash "$SCRIPT_DIR/check_hostname_table.sh"; then
+    echo "Hostname-table tests: PASSED"
+else
+    echo "Hostname-table tests: FAILED"
     exit 1
 fi
 

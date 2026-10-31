@@ -1821,6 +1821,40 @@ static void test_hostname_matching(void) {
           (MMT_CONTENT_CDN | MMT_CONTENT_VIDEO),
           "trie: CDN|VIDEO content flags set under folding");
 
+    /* Issue #566 (F-BUG-310): the #82 Microsoft 365 suffixes were all
+     * labelled livemail. The generated table (data/hostnames.txt) gives
+     * Teams, SharePoint, Office and OneDrive their own labels; webmail
+     * suffixes stay livemail. */
+    char h_teams[] = "teams.microsoft.com";
+    CHECK(get_proto_id_by_hostname(&pkt.pub, h_teams, 19) == PROTO_MS_TEAMS,
+          "trie: teams.microsoft.com is ms_teams, not livemail or microsoft");
+    char h_teams_sub[] = "eu.teams.microsoft.com";
+    CHECK(get_proto_id_by_hostname(&pkt.pub, h_teams_sub, 22) == PROTO_MS_TEAMS,
+          "trie: a teams.microsoft.com subdomain is ms_teams");
+    char h_ms[] = "www.microsoft.com";
+    CHECK(get_proto_id_by_hostname(&pkt.pub, h_ms, 17) == PROTO_MICROSOFT,
+          "trie: the longer teams suffix does not capture www.microsoft.com");
+    char h_sp[] = "contoso.sharepoint.com";
+    CHECK(get_proto_id_by_hostname(&pkt.pub, h_sp, 22) == PROTO_SHAREPOINT,
+          "trie: a SharePoint tenant is sharepoint");
+    char h_sp_bare[] = "sharepoint.com";
+    CHECK(get_proto_id_by_hostname(&pkt.pub, h_sp_bare, 14) == PROTO_SHAREPOINT,
+          "trie: bare sharepoint.com is sharepoint");
+    char h_office[] = "www.office.com";
+    CHECK(get_proto_id_by_hostname(&pkt.pub, h_office, 14) == PROTO_OFFICE365,
+          "trie: office.com is office365");
+    char h_onedrive[] = "onedrive.com";
+    CHECK(get_proto_id_by_hostname(&pkt.pub, h_onedrive, 12) == PROTO_SKYDRIVE,
+          "trie: onedrive.com is skydrive (OneDrive's former name)");
+    char h_login[] = "login.microsoftonline.com";
+    CHECK(get_proto_id_by_hostname(&pkt.pub, h_login, 25) == PROTO_AZURE,
+          "trie: Entra ID sign-in is azure");
+    char h_outlook[] = "outlook.com";
+    CHECK(get_proto_id_by_hostname(&pkt.pub, h_outlook, 11) == PROTO_LIVEMAIL,
+          "trie: outlook.com webmail stays livemail");
+    CHECK(_get_proto_id_by_hostname(&pkt.pub, h_sp, 22) == PROTO_SHAREPOINT,
+          "linear: a SharePoint tenant is sharepoint");
+
     char l_upper[] = "WWW.YOUTUBE.COM";
     CHECK(_get_proto_id_by_hostname(&pkt.pub, l_upper, 15) == PROTO_YOUTUBE,
           "linear: all-caps subdomain of .youtube.com");

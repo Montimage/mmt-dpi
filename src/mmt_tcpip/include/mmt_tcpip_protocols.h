@@ -676,6 +676,9 @@ extern "C" {
 #define PROTO_QUIC_IETF               661
 #define PROTO_CLOUDFLARE              662
 #define PROTO_AZURE                   663
+#define PROTO_MS_TEAMS                664
+#define PROTO_SHAREPOINT              665
+#define PROTO_OFFICE365               666
 #define PROTO_HTTP2			700
 #define LAST_IMPLEMENTED_PROTOCOL PROTO_HTTP2
 
@@ -1343,6 +1346,9 @@ extern "C" {
 #define PROTO_QUIC_IETF_ALIAS         "quic_ietf"
 #define PROTO_CLOUDFLARE_ALIAS        "cloudflare"
 #define PROTO_AZURE_ALIAS             "azure"
+#define PROTO_MS_TEAMS_ALIAS          "ms_teams"
+#define PROTO_SHAREPOINT_ALIAS        "sharepoint"
+#define PROTO_OFFICE365_ALIAS         "office365"
 #define PROTO_HTTP2_ALIAS "http2"
 // #define PROTO_FTP_CONTROL_ALIAS "ftp_control"
 // #define PROTO_FTP_DATA_ALIAS "ftp_data"

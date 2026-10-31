@@ -484,6 +484,76 @@
       }
     },
     {
+      "pcap": "acc_tls_sni_teams.pcap",
+      "family": "tls",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_ssl"
+      ],
+      "description": "Same TLS exchange with SNI teams.microsoft.com (Microsoft Teams): the wire protocol is TLS; the hostname table attributes it to ms_teams, no longer to livemail (issue #566).",
+      "sha256": "4f8d22ca64c90ca8af4c77ccca1bad649d2ad5edbca641f42f85c330238259be",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {
+          "ms_teams": 2
+        }
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_tls_sni_teams"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, locally administered MACs; the SNI is a public service host name, no tenant data); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #566",
+        "date": "2026-10-31",
+        "checks": [
+          "bytes identical to acc_tls_positive except the SNI host name and the lengths that depend on it",
+          "attribution (ssl.ms_teams) comes from the .teams.microsoft.com entry of data/hostnames.txt and is reported separately, never counted as wire-protocol accuracy"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_tls_sni_sharepoint.pcap",
+      "family": "tls",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_ssl"
+      ],
+      "description": "Same TLS exchange with SNI contoso.sharepoint.com (a SharePoint Online tenant): the wire protocol is TLS; the hostname table attributes it to sharepoint, no longer to livemail (issue #566).",
+      "sha256": "4fe78b72a21896e19221233f9286c19f780b6e072b12f056fa9cd89e6b8bee9d",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {
+          "sharepoint": 2
+        }
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_tls_sni_sharepoint"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, locally administered MACs; the SNI is a public service host name, no tenant data); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #566",
+        "date": "2026-10-31",
+        "checks": [
+          "bytes identical to acc_tls_positive except the SNI host name and the lengths that depend on it",
+          "attribution (ssl.sharepoint) comes from the .sharepoint.com entry of data/hostnames.txt and is reported separately, never counted as wire-protocol accuracy"
+        ]
+      }
+    },
+    {
       "pcap": "acc_tls_negative.pcap",
       "family": "tls",
       "case": "negative",

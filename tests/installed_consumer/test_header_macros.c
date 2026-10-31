@@ -97,6 +97,13 @@ int main(void) {
 	       "the video content flag is labelled as video");
 	EXPECT(get_application_class_by_protocol_id(PROTO_STACKPATH) == PROTO_CLASS_CDN,
 	       "StackPath is a CDN");
+	/* Issue #566: the Microsoft 365 ids the hostname table labels. */
+	EXPECT(get_application_class_by_protocol_id(PROTO_MS_TEAMS) == PROTO_CLASS_CONVERSATIONAL,
+	       "Microsoft Teams is conversational");
+	EXPECT(get_application_class_by_protocol_id(PROTO_SHAREPOINT) == PROTO_CLASS_CLOUD_STORAGE,
+	       "SharePoint is cloud storage");
+	EXPECT(get_application_class_by_protocol_id(PROTO_OFFICE365) == PROTO_CLASS_WEB,
+	       "Office 365 is web");
 	EXPECT(get_application_class_by_protocol_id(PROTO_UNKNOWN) == PROTO_CLASS_UNKOWN,
 	       "the unknown protocol has the unknown class");
 	EXPECT(strcmp(get_application_class_name_by_protocol_id(PROTO_STACKPATH),
