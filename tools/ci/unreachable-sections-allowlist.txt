@@ -81,6 +81,8 @@ src/mmt_tcpip/lib/protocols/http.c http_header_fields test
 src/mmt_tcpip/lib/protocols/http.c http_session_data_analysis test
 src/mmt_tcpip/lib/protocols/http.c http_session_data_cleanup test
 src/mmt_tcpip/lib/protocols/http.c http_session_data_init test
+src/mmt_tcpip/lib/protocols/http.c ipacket_internal test
+src/mmt_tcpip/lib/protocols/http.c mmt_packet_offset_at_index test
 src/mmt_tcpip/lib/protocols/http.c parse_message_header_lines test
 src/mmt_tcpip/lib/protocols/http2.c fuzz_payload consumer
 src/mmt_tcpip/lib/protocols/http2.c http2_can_write consumer

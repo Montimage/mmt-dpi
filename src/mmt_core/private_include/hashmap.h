@@ -123,6 +123,22 @@ MMTAPI int            hashmap_remove    ( mmt_hashmap_t *, mmt_key_t );
 
 extern void           hashmap_dump      ( mmt_hashmap_t * );
 
+/* Issue #558: the slot of a key. The fragment-map keys (ip_fragment_key(),
+ * ip6_fragment_key()) pack addresses and the datagram id, and `key % 256`
+ * kept only their low byte, so related datagrams shared a few chains. The
+ * key goes through the fmix64 finalizer (MurmurHash3, as mmt_mix64() in
+ * hash_utils.c) first, so every key bit reaches the slot index. */
+static inline unsigned hashmap_slot_index( mmt_key_t key )
+{
+   uint64_t h = (uint64_t) key;
+   h ^= h >> 33;
+   h *= 0xff51afd7ed558ccdULL;
+   h ^= h >> 33;
+   h *= 0xc4ceb9fe1a85ec53ULL;
+   h ^= h >> 33;
+   return (unsigned) (h & (MMT_HASHMAP_NSLOTS - 1));
+}
+
 
 #endif /*_MMT_HASHMAP_H*/
 

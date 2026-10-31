@@ -289,13 +289,19 @@ void _mmt_parse_packet_line_info(ipacket_t * ipacket){
     parse_line_info_reset(ipacket);
 
     for (a = 0; likely( a < end ); a++) {
-        /* Byte-wise CRLF test: the previous get_u16() read a uint16 at an
-         * attacker-controlled (often odd) offset, which is an unaligned load
-         * (ctype/alignment UB). Comparing the two bytes individually is
+        /* Issue #558: jump to the next CR with memchr() instead of testing
+         * every byte; a payload without one (binary data) ends the scan.
+         * The CRLF test stays byte-wise: the previous get_u16() read a uint16
+         * at an attacker-controlled (often odd) offset, which is an unaligned
+         * load (ctype/alignment UB). Comparing the two bytes individually is
          * endian-independent and alignment-safe. Both bytes are in bounds:
-         * the loop guard `a < end` (end == payload_packet_len - 1) keeps
-         * a + 1 <= payload_packet_len - 1. */
-        if ( packet->payload[a] == 0x0d && packet->payload[a + 1] == 0x0a ) {
+         * memchr() searches [a, end) only (end == payload_packet_len - 1), so
+         * the CR found is at a < end and a + 1 <= payload_packet_len - 1. */
+        const uint8_t *cr = (const uint8_t *) memchr(&packet->payload[a], 0x0d, end - a);
+        if ( cr == NULL )
+            break;
+        a = (uint32_t) (cr - packet->payload);
+        if ( packet->payload[a + 1] == 0x0a ) {
 
             line_length =  &packet->payload[a] - packet->line[packet->parsed_lines].ptr;
             packet->line[packet->parsed_lines].len = line_length;

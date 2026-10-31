@@ -582,6 +582,14 @@ struct protocol_instance_struct {
      * proto_status_load()/proto_status_store() below. */
     int analysis_enabled; /**< 1: proto_packet_analyze() runs the analysis chain */
     int classify_enabled; /**< 1: proto_packet_classify_next() runs the classification chain */
+    /* Issue #558: one-entry cache of _get_protocol_stats_from_parent()
+     * (packet_stats.c) — the stats instance this protocol last resolved and
+     * the parent stats it hangs under — so a packet whose layer sits under
+     * the same parent as the previous one skips the parent's encap_proto_stats
+     * map probe. Both point into this handler's stats trees, which are freed
+     * only as a whole (free_handler_protocol_statistics() clears the cache). */
+    proto_statistics_internal_t * stats_cache_parent;
+    proto_statistics_internal_t * stats_cache;
 };
 
 /* Issue #245 (F-PERF-003): pooled reassembly ipacket — a slot owns the

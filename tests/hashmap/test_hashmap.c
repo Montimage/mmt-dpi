@@ -9,6 +9,7 @@
  *   - hashmap_remove (existing and nonexistent keys)
  *   - hashmap_walk (visits all entries)
  *   - Collision handling (keys that hash to the same slot)
+ *   - Slot-index mixing (issue #558)
  *   - Overwrite behavior (inserting same key twice)
  *   - Empty map operations
  *   - Large number of keys
@@ -161,21 +162,60 @@ static void test_walk(void) {
 static void test_collision_handling(void) {
     fprintf(stderr, "  test: collision handling\n");
     mmt_hashmap_t *map = hashmap_alloc();
-    /* MMT_HASHMAP_NSLOTS is 0x100 = 256. Keys 0, 256, 512 all hash to slot 0. */
-    int v0 = 0, v256 = 256, v512 = 512;
-    hashmap_insert_kv(map, 0, &v0);
-    hashmap_insert_kv(map, 256, &v256);
-    hashmap_insert_kv(map, 512, &v512);
+    /* Issue #558: the slot is hashmap_slot_index(key), no longer key % 256 —
+     * search for three keys that really share key 0's slot. */
+    mmt_key_t k[3] = { 0, 0, 0 };
+    int n = 1;
+    for (mmt_key_t key = 1; n < 3 && key < 1000000; key++)
+        if (hashmap_slot_index(key) == hashmap_slot_index(k[0]))
+            k[n++] = key;
+    CHECK(n == 3, "three keys sharing a slot found");
+    int v[3] = { 0, 1, 2 };
+    for (int i = 0; i < 3; i++)
+        hashmap_insert_kv(map, k[i], &v[i]);
+    CHECK(map->slots[hashmap_slot_index(k[0])].lh_first != NULL &&
+          map->slots[hashmap_slot_index(k[0])].lh_first->entries.le_next != NULL,
+          "colliding keys chain in one slot");
 
     void *val = NULL;
-    CHECK(hashmap_get(map, 0, &val) == 1, "should find key 0");
-    CHECK(val == &v0, "key 0 value mismatch");
-    CHECK(hashmap_get(map, 256, &val) == 1, "should find key 256");
-    CHECK(val == &v256, "key 256 value mismatch");
-    CHECK(hashmap_get(map, 512, &val) == 1, "should find key 512");
-    CHECK(val == &v512, "key 512 value mismatch");
+    for (int i = 0; i < 3; i++) {
+        val = NULL;
+        CHECK(hashmap_get(map, k[i], &val) == 1, "should find each colliding key");
+        CHECK(val == &v[i], "colliding key value mismatch");
+    }
+    CHECK(hashmap_remove(map, k[1]) == 1, "remove the middle colliding key");
+    CHECK(hashmap_get(map, k[1], &val) == 0, "removed colliding key is gone");
+    CHECK(hashmap_get(map, k[0], &val) == 1 && val == &v[0] &&
+          hashmap_get(map, k[2], &val) == 1 && val == &v[2],
+          "the other colliding keys survive the removal");
 
     hashmap_free(map);
+}
+
+/* ---- Issue #558: the slot index mixes every key bit ---- */
+static void test_slot_index_mixing(void) {
+    fprintf(stderr, "  test: slot index mixes the key (issue #558)\n");
+    /* key % 256 put every multiple of 256 in slot 0 — the fragment keys
+     * (address bits above, datagram id below) collided the same way. */
+    CHECK(hashmap_slot_index(0) != hashmap_slot_index(256) ||
+          hashmap_slot_index(0) != hashmap_slot_index(512),
+          "keys equal modulo 256 no longer share one slot");
+    /* 4096 keys differing only above their low byte must spread over the
+     * slots: at least half of them used, no slot over 64 keys (the expected
+     * load is 16). */
+    unsigned count[MMT_HASHMAP_NSLOTS] = { 0 };
+    unsigned used = 0, max = 0;
+    for (mmt_key_t i = 0; i < 4096; i++) {
+        unsigned slot = hashmap_slot_index((i << 8) | 0x2a);
+        CHECK(slot < MMT_HASHMAP_NSLOTS, "slot index in range");
+        if (slot >= MMT_HASHMAP_NSLOTS) return;
+        if (count[slot]++ == 0) used++;
+        if (count[slot] > max) max = count[slot];
+    }
+    CHECK(used >= MMT_HASHMAP_NSLOTS / 2, "keys spread over the slots");
+    CHECK(max <= 64, "no slot holds a quarter of the keys' chains");
+    CHECK(hashmap_slot_index(0x123456789abcdef0ULL) ==
+          hashmap_slot_index(0x123456789abcdef0ULL), "slot index is deterministic");
 }
 
 /* ---- Test: overwrite same key ---- */
@@ -372,6 +412,7 @@ int main(int argc, char **argv) {
     test_remove_nonexistent();
     test_walk();
     test_collision_handling();
+    test_slot_index_mixing();
     test_overwrite_key();
     test_empty_map();
     test_large_number_of_keys();

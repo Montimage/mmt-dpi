@@ -107,4 +107,46 @@ static inline ipacket_internal_t * ipacket_internal(const ipacket_t * ipacket) {
     return (ipacket_internal_t *) ipacket;
 }
 
+/**
+ * Issue #558: the inline twin of get_packet_offset_at_index() (mmt_data.c),
+ * which is exported (MMTAPI, part of the ABI) and stays a real function that
+ * forwards here. The engine queries offsets several times per packet, mostly
+ * from the plugins, and each of those went through the PLT to an out-of-line
+ * body; the SDK's own objects now inline the same memoized prefix sum
+ * (issue #19) through the redirect below. Same cache fields, same result.
+ */
+static inline int mmt_packet_offset_at_index(const ipacket_t * ipacket, unsigned index) {
+    ipacket_internal_t * pkt = ipacket_internal(ipacket); // mutable memoization cache only (issue #535: private extension)
+    if (index >= (unsigned) PROTO_PATH_SIZE) {
+        index = PROTO_PATH_SIZE - 1;
+    }
+    if (!pkt->internal_cumulative_offset_valid) {
+        pkt->internal_cumulative_offset_hwm = -1; // nothing summed yet
+        pkt->internal_cumulative_offset_valid = 1;
+    }
+    // Extend the prefix sum only as far as the queried index (high-water mark),
+    // so across a packet the offsets are summed once in total (amortized O(1)
+    // per call) instead of re-summed from 0 on every call.
+    int hwm = pkt->internal_cumulative_offset_hwm;
+    if ((int) index > hwm) {
+        int sum = (hwm >= 0) ? pkt->internal_cumulative_offset[hwm] : 0;
+        int i;
+        for (i = hwm + 1; i <= (int) index; i++) {
+            sum += ipacket->proto_headers_offset->proto_path[i];
+            pkt->internal_cumulative_offset[i] = sum;
+        }
+        pkt->internal_cumulative_offset_hwm = (int) index;
+    }
+    return pkt->internal_cumulative_offset[index];
+}
+
+/* Issue #558: SDK objects (built with -D_MMT_BUILD_SDK, rules/common.mk)
+ * call the inline twin. Everything else — consumers, and the unit suites
+ * that compile a dissector against their own get_packet_offset_at_index()
+ * stub — keeps calling the function. A function-like macro: the name alone
+ * (a function pointer, the definition in mmt_data.c) still means the export. */
+#ifdef _MMT_BUILD_SDK
+#define get_packet_offset_at_index(ipacket, index) mmt_packet_offset_at_index((ipacket), (index))
+#endif
+
 #endif /* MMT_IPACKET_INTERNAL_H */

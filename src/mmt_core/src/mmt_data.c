@@ -2,7 +2,10 @@
 #include "data_defs.h"
 #include "packet_processing.h"
 
-int get_packet_offset_at_index(const ipacket_t * ipacket, unsigned index) {
+/* Issue #558: the parenthesised name keeps the ipacket_internal.h redirect
+ * macro from expanding here — this is the exported symbol (ABI), forwarding
+ * to the inline twin the SDK's own objects call directly. */
+int (get_packet_offset_at_index)(const ipacket_t * ipacket, unsigned index) {
     // Issue #19: memoized cumulative offsets. The per-layer header offsets in
     // proto_headers_offset->proto_path[] are summed once into a prefix-sum cache
     // and reused, so each call is O(1) instead of O(index) — turning the
@@ -11,28 +14,7 @@ int get_packet_offset_at_index(const ipacket_t * ipacket, unsigned index) {
     // and is invalidated by set_classified_proto() and every reassignment of
     // proto_headers_offset, so the value returned is byte-identical to the old
     // re-summation for the current offset state.
-    ipacket_internal_t * pkt = ipacket_internal(ipacket); // mutable memoization cache only (issue #535: private extension)
-    if (index >= (unsigned) PROTO_PATH_SIZE) {
-        index = PROTO_PATH_SIZE - 1;
-    }
-    if (!pkt->internal_cumulative_offset_valid) {
-        pkt->internal_cumulative_offset_hwm = -1; // nothing summed yet
-        pkt->internal_cumulative_offset_valid = 1;
-    }
-    // Extend the prefix sum only as far as the queried index (high-water mark),
-    // so across a packet the offsets are summed once in total (amortized O(1)
-    // per call) instead of re-summed from 0 on every call.
-    int hwm = pkt->internal_cumulative_offset_hwm;
-    if ((int) index > hwm) {
-        int sum = (hwm >= 0) ? pkt->internal_cumulative_offset[hwm] : 0;
-        int i;
-        for (i = hwm + 1; i <= (int) index; i++) {
-            sum += ipacket->proto_headers_offset->proto_path[i];
-            pkt->internal_cumulative_offset[i] = sum;
-        }
-        pkt->internal_cumulative_offset_hwm = (int) index;
-    }
-    return pkt->internal_cumulative_offset[index];
+    return mmt_packet_offset_at_index(ipacket, index);
 }
 
 void invalidate_packet_offset_cache(ipacket_t * ipacket) {

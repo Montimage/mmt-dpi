@@ -215,6 +215,8 @@ void free_handler_protocol_statistics(mmt_handler_t *mmt_handler, protocol_insta
         mmt_free(safe_to_delete);
     }
     protocol->proto_stats = NULL;
+    protocol->stats_cache_parent = NULL;
+    protocol->stats_cache = NULL;
 }
 
 void free_handler_protocols_statistics(mmt_handler_t *mmt_handler) {
@@ -295,9 +297,19 @@ static inline proto_statistics_internal_t * _get_child_protocol_stats(proto_stat
 static inline proto_statistics_internal_t * _get_protocol_stats_from_parent(protocol_instance_t * proto, proto_statistics_internal_t * parent_proto_stats) {
     proto_statistics_internal_t * proto_stats;
     if (parent_proto_stats != NULL /* Always the case for META protocol */) {
+        /* Issue #558: the parent's map holds at most one instance per child
+         * protocol, so the instance cached for this parent is the one the
+         * map lookup would return. */
+        if (likely(proto->stats_cache_parent == parent_proto_stats)) {
+            return proto->stats_cache;
+        }
         proto_stats = _get_child_protocol_stats(parent_proto_stats, proto->protocol->proto_id);
         if (proto_stats == NULL) {
             proto_stats = _create_protocol_stats_instance(proto, parent_proto_stats);
+        }
+        if (proto_stats != NULL) {
+            proto->stats_cache_parent = parent_proto_stats;
+            proto->stats_cache = proto_stats;
         }
     } else {
         proto_stats = proto->proto_stats;

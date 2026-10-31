@@ -112,7 +112,7 @@ void hashmap_cleanup( mmt_hashmap_t *map )
 void hashmap_insert_kv( mmt_hashmap_t *map, mmt_key_t key, void *val )
 {
    if (map == NULL || map->slots == NULL) return;
-   mmt_hslot_t *slot = &map->slots[ key % MMT_HASHMAP_NSLOTS ];
+   mmt_hslot_t *slot = &map->slots[ hashmap_slot_index( key ) ];
    mmt_hent_t  *he   = hent_new();
    if (he == NULL) return;
 
@@ -219,7 +219,7 @@ mmt_hent_t *hmap_lookup( mmt_hashmap_t *map, mmt_key_t key )
    /* F-BUG-007 (issue #199): hashmap_init() leaves slots == NULL after an OOM;
       never index a missing slot array. */
    if( map == NULL || map->slots == NULL ) return NULL;
-   mmt_hslot_t *slot = &map->slots[ key % MMT_HASHMAP_NSLOTS ];
+   mmt_hslot_t *slot = &map->slots[ hashmap_slot_index( key ) ];
    mmt_hent_t  *he   = slot->lh_first;
 
    while(( he != NULL ) && ( he->key != key ))

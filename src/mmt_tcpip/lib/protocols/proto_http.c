@@ -304,27 +304,12 @@ uint16_t http_request_url_offset(ipacket_t * ipacket) {
 }
 
 /**
- * Initializes HTTP parser structure to be associated to the HTTP session data
- **/
-void http_internal_session_data_init(ipacket_t * ipacket, unsigned index) {
-    // debug("[PROTO_HTTP-]> http_internal_session_data_init : %lu session %lu",ipacket->packet_id,ipacket->session->session_id);
-    if(ipacket->session->session_data[index] == NULL){
-        void * http_session_data = (void *) init_http_parser();
-        ipacket->session->session_data[index] = http_session_data;
-    }
-}
-
-
-/**
  * HTTP session data analysis function.
  * Contains compatibility code plus new HTTP parser integration
  **/
 int http_internal_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-    // if(ipacket->session->session_data[index] == NULL){
-    //     http_internal_session_data_init(ipacket,index);
-    // }
     // Backward Compatibility code
     if (packet->payload_packet_len > 32) {
         if ((flow->l4.tcp.http_data_direction != ipacket->session->last_packet_direction)) {
@@ -357,6 +342,16 @@ int http_internal_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     // directions, get the corresponding parser first, then feed it the payload data.
     /* Issue #530: a packet with no payload carries a NULL payload pointer, and
      * llhttp_execute() computes data + len from it (undefined behaviour). */
+    /* Issue #558: the stream parser is allocated here, on the session's first
+     * packet that carries a payload, instead of when HTTP was set on the
+     * session — a session that never reaches this point (or carries no HTTP
+     * byte) costs no parser. It is created right before the bytes it would
+     * have been fed anyway, so the parse — and every attribute it sets — is
+     * unchanged. Under OOM session_data stays NULL and the packet is skipped,
+     * as before (issue #505). */
+    if( ipacket->session->session_data[index] == NULL && packet->payload != NULL ) {
+      ipacket->session->session_data[index] = init_http_parser();
+    }
     if( ipacket->session->session_data[index] != NULL && packet->payload != NULL ) {
       llhttp_errno_t err;
       llhttp_t * parser = &((stream_parser_t *) ipacket->session->session_data[index])->parser[ipacket->session->last_packet_direction];
@@ -420,9 +415,9 @@ int init_proto_http_struct() {
 
         mmt_http_init_detection_bitmask();
 
-        //BW: Add session data initialization, cleanup and analysis routines.
-        //    This is mainly used for HTTP data parsing.
-        register_session_data_initialization_function(protocol_struct, http_internal_session_data_init);
+        //BW: Add session data cleanup and analysis routines.
+        //    This is mainly used for HTTP data parsing. Issue #558: no
+        //    initialization routine — the analysis allocates the parser.
         register_session_data_cleanup_function(protocol_struct, http_internal_session_data_cleanup);
         register_session_data_analysis_function(protocol_struct, http_internal_session_data_analysis);
         return register_protocol(protocol_struct, PROTO_HTTP);
