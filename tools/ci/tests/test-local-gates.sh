@@ -91,6 +91,11 @@ if grep -q 'install-cppcheck.sh' "${WORK}/docker.Dockerfile" 2>/dev/null; then
 else
     fail "the image builds the pinned cppcheck with install-cppcheck.sh"
 fi
+if grep -q 'build-api-reference.sh --install' "${WORK}/docker.Dockerfile" 2>/dev/null; then
+    pass "the image installs the pinned doxygen with build-api-reference.sh --install"
+else
+    fail "the image installs the pinned doxygen with build-api-reference.sh --install"
+fi
 run_args="$(tr '\n' ' ' < "${WORK}/docker.run" 2>/dev/null || true)"
 for want in "-v ${REPO_ROOT}:${REPO_ROOT}" "-w ${REPO_ROOT}" "-u $(id -u):$(id -g)" \
             "--tmpfs ${REPO_ROOT}/docs/.jekyll-cache:mode=1777" \
@@ -111,7 +116,8 @@ esac
 fx="${WORK}/fx-main"
 mkdir -p "${fx}/tools/ci" "${fx}/docs" "${fx}/.github/workflows"
 cp "${GATES}" "${REPO_ROOT}/tools/ci/install-build-deps.sh" \
-   "${REPO_ROOT}/tools/ci/install-cppcheck.sh" "${fx}/tools/ci/"
+   "${REPO_ROOT}/tools/ci/install-cppcheck.sh" \
+   "${REPO_ROOT}/tools/ci/build-api-reference.sh" "${fx}/tools/ci/"
 cp "${REPO_ROOT}/docs/Gemfile" "${REPO_ROOT}/docs/Gemfile.lock" "${fx}/docs/"
 cp "${REPO_ROOT}/.github/workflows/c-cpp.yml" "${fx}/.github/workflows/"
 git -C "${fx}" init -q
@@ -145,7 +151,8 @@ import sys, yaml
 jobs = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["jobs"]
 setup = {"Install git, shellcheck and the cppcheck build prerequisites",
          "Mark the checkout as a safe git directory",
-         "Build the pinned cppcheck release from source"}
+         "Build the pinned cppcheck release from source",
+         "Install the pinned doxygen for the C API reference"}
 for job in ("lint", "verify-helpers", "doc-validators"):
     for st in jobs[job]["steps"]:
         if "run" not in st or st.get("name") in setup:
@@ -198,6 +205,8 @@ jobs:
       run: echo "first \$MODE" >> "${WORK}/trace"
   verify-helpers:
     steps:
+    - name: Install the pinned doxygen for the C API reference
+      run: exit 99
     - name: second
       env:
         GREETING: hello world

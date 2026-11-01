@@ -37,7 +37,7 @@ statuses were last re-verified against the sources for issue #559.
 
 ### H1 — No graded classification confidence — *highest impact*
 - **Where:** `classified_proto_t`'s binary `status` field
-  ([`plugin_defs.h:129`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_core/public_include/plugin_defs.h#L129)); the address/port fallbacks of
+  ([`plugin_defs.h:133`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_core/public_include/plugin_defs.h#L133)); the address/port fallbacks of
   [`proto_tcp.c:1217`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_tcp.c#L1217) and [`proto_udp.c:152`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_udp.c#L152).
 - **Why weak:** the verdict is Classified / NonClassified with no confidence
   score, so the engine cannot distinguish a payload-proven verdict from a

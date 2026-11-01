@@ -524,13 +524,19 @@ jobs:
         # Frozen install (issue #372): the tracked docs/Gemfile.lock is the
         # dependency graph — a Gemfile change without a lock update fails here.
         BUNDLE_FROZEN: "true"
+    - name: Install the pinned doxygen for the C API reference
+      # Issue #582: build-docs-site.sh generates <site>/api/ with this exact
+      # release and fails on any doxygen warning (build-api-reference.sh).
+      run: bash tools/ci/build-api-reference.sh --install
     - name: Documentation checks (blocking)
       # build-docs-site.sh is the one site recipe (issue #386): pages.yml
       # publishes the artifact this same script builds. It runs the
       # source-tree link pass (built .html URLs resolve to their .md sources),
       # the frozen Jekyll 4 build, the lock-diff check (issue #372), the
-      # built-site link pass — the exclusion/front-matter rules are only
-      # enforceable there (issue #247) — and writes the renderer manifest.
+      # C API reference (doxygen over src/mmt_core/public_include, 0 warnings
+      # — issue #582), the built-site link pass — the exclusion/front-matter
+      # rules are only enforceable there (issue #247) — and writes the
+      # renderer manifest.
       run: |
         bash tools/ci/build-docs-site.sh
         bash tools/phase0/ci/check_readme_gates.sh

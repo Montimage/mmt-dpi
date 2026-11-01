@@ -22,6 +22,15 @@
 #   F-DOCS-007  (issue #581) every prototype docs/*.md shows for a public
 #               (MMTAPI) function matches src/mmt_core/public_include, as
 #               tools/ci/public-prototypes.py normalises both.
+#   F-DOCS-008  (issue #582) the Doxyfile scopes the C API reference to
+#               src/mmt_core/public_include with every completeness warning
+#               on, and tools/ci/build-docs-site.sh publishes the
+#               0-warning doxygen output under docs/_site/api.
+#   F-DOCS-009  (issue #582) every `path:line` citation in docs/*.md
+#               resolves to a repository file and range, and lands on the
+#               line its tools/ci/doc-citations.txt row records
+#               (tools/ci/check-doc-citations.py); DECISIONS.md and
+#               troubleshooting.md are exempt as append-only logs.
 #   F-DOCS-014  the unsupported-platform instruction blocks (Homebrew
 #               formulas, ARCH=osx/win32/win64 builds, /opt/windows staging)
 #               are gone from Compilation-and-Installation-Instructions.md,
@@ -259,6 +268,31 @@ proto_out="$(python3 tools/ci/public-prototypes.py --check "${proto_docs[@]}" 2>
 [ "$proto_rc" -le 1 ] || { echo "✗ tools/ci/public-prototypes.py is broken (exit $proto_rc)" >&2; exit 2; }
 check "every public prototype in docs/*.md matches src/mmt_core/public_include" \
       "[ $proto_rc -eq 0 ]"
+
+# --- F-DOCS-008: C API reference (#582) --------------------------------------
+echo ""
+echo "-- F-DOCS-008: C API reference --"
+
+check "Doxyfile scopes the reference to src/mmt_core/public_include" \
+      "grep -Eq '^INPUT +=  *src/mmt_core/public_include *$' Doxyfile"
+for key in WARN_IF_UNDOCUMENTED WARN_IF_DOC_ERROR WARN_IF_INCOMPLETE_DOC WARN_IF_UNDOC_ENUM_VAL; do
+    check "Doxyfile turns on $key" "grep -Eq '^$key += *YES *$' Doxyfile"
+done
+check "tools/ci/build-api-reference.sh fails on any doxygen warning" \
+      "grep -q 'exit 1' tools/ci/build-api-reference.sh && grep -q 'WARN_LOGFILE' tools/ci/build-api-reference.sh"
+check "tools/ci/build-docs-site.sh publishes the reference under docs/_site/api" \
+      "grep -q 'build-api-reference.sh docs/_site/api' tools/ci/build-docs-site.sh"
+
+# --- F-DOCS-009: path:line citations in every docs/*.md (#582) -------------
+echo ""
+echo "-- F-DOCS-009: path:line citations --"
+
+cites_rc=0
+cites_out="$(python3 tools/ci/check-doc-citations.py 2>&1)" || cites_rc=$?
+[ -n "$cites_out" ] && printf '%s\n' "$cites_out" | sed 's/^/    /'
+[ "$cites_rc" -le 1 ] || { echo "✗ tools/ci/check-doc-citations.py is broken (exit $cites_rc)" >&2; exit 2; }
+check "every path:line citation in docs/*.md lands on the line it is for" \
+      "[ $cites_rc -eq 0 ]"
 
 # --- F-DOCS-014: unsupported-platform sections -------------------------------
 echo ""

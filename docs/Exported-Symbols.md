@@ -43,7 +43,7 @@ one of those declarations, or misses one of them.
 > (`nm -D local_install/dpi/lib/libmmt_core.so | grep ' T '` confirms) but have **0 callers**
 > outside their definition/headers (`grep -r <symbol> src sdk/tests sdk/examples tests examples`
 > shows only declaration+definition). They are now marked
-> `__attribute__((deprecated))` in `src/mmt_core/public_include/mmt_core.h:1134,989,707`
+> `__attribute__((deprecated))` in `src/mmt_core/public_include/mmt_core.h:1143,998,715`
 > (and mirrored in `sdk/include/mmt_core.h`) and are scheduled for removal in
 > release 2.0.0 — recorded in `CHANGELOG.md` (issue #232):
 > `setDataLinkType` (obsolete, @obsolete since long), `get_attribute_extracted_data_encap_index`
@@ -55,7 +55,7 @@ one of those declarations, or misses one of them.
 > It is declared `MMTAPI` there, so it stays exported from the hidden-visibility
 > plugin (issue #534) until its removal.
 > Use the correctly named alias `mmt_search_irc_ssl_detect` (same signature and
-> behaviour, defined alongside at `proto_irc.c:340`). The misspelled name is
+> behaviour, defined alongside at `src/mmt_tcpip/lib/protocols/proto_irc.c:340`). The misspelled name is
 > scheduled for removal in release 2.0.0.
 
 > **Deprecation note (2026-10, #541):** 30 public `libmmt_core` functions have

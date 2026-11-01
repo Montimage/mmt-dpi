@@ -1,5 +1,9 @@
-/*
- * File:   protocol_extraction_defs.h
+/**
+ * @file
+ * Plugin-facing definitions: the callback types and structures a
+ * protocol plugin uses to register protocols, attributes, sessions and
+ * classification functions with the core.
+ *
  * Author: montimage
  *
  * Created on 19 mai 2011, 16:33
@@ -160,7 +164,7 @@ typedef enum mmt_classify_verdict_enum {
                                     Post-classifier: process the deeper layers (any nonzero value does). */
     MMT_CLASSIFY_MATCHED  = 1, /**< Classifier: protocol recognised, stop walking the chain
                                     (a positive verdict shares the value of MMT_CLASSIFY_CONTINUE). */
-    /* Issue #546: not a verdict, never returned. A negative enumerator makes
+    /** Issue #546: not a verdict, never returned. A negative enumerator makes
      * GCC and Clang pick int as the enum's compatible type, so a classifier
      * declared `int fn(ipacket_t *, unsigned)` — every in-tree checker and
      * every plugin written before the typedef returned this enum — still
@@ -216,6 +220,17 @@ typedef int (*generic_session_context_cleanup_function)(mmt_opaque_t protocol_co
  */
 typedef void (*generic_session_data_initialization_function)(ipacket_t * ipacket, unsigned index);
 
+/**
+ * Records @p classified_proto at position @p index of the packet's protocol hierarchy:
+ * appends the layer when @p index is past the current tip, updates its offset when the
+ * same protocol is already there, or reclassifies the layer otherwise.
+ * @param ipacket the packet being classified
+ * @param index the position in the protocol hierarchy to set
+ * @param classified_proto the protocol identifier and header offset to record
+ * @return nonzero when the hierarchy was set (appended, updated or reclassified); 0 when the
+ *         protocol identifier is invalid, @p index is not below PROTO_PATH_SIZE or an append
+ *         would go deeper than the handler's classification depth limit.
+ */
 MMTAPI int MMTCALL set_classified_proto(
     ipacket_t *ipacket,
     unsigned index,
@@ -223,13 +238,13 @@ MMTAPI int MMTCALL set_classified_proto(
 );
 
 /**
- * Registers a classification function for the protocol identified by the given @param proto_id. This function should
+ * Registers a classification function for the protocol identified by the given @p proto_id. This function should
  * be used when a protocol wants to complement the classification of another protocol (HTTP adding a classification to TCP).
  * For protocols registering their own classification function, this function SHOULD BE AVOIDED, rather use "register_classification_function".
  * @param proto_id The identifier of the protocol that will use the classification function.
  * @param classification_fct The classification function.
  * @param weight The weight of this classification function. A classification function with a lower weight
- * will be executed before a classification function with a higher weight if the protocol corresponding to @param
+ * will be executed before a classification function with a higher weight if the protocol corresponding to @p
  * proto_id has multiple registered classification functions. Must be either between 0 to 9 or 90 to 100.
  * @return a positive value on success, zero on failure.
  */
@@ -240,7 +255,7 @@ MMTAPI bool MMTCALL register_classification_function_with_parent_protocol(
 );
 
 /**
- * Registers a classification function for the protocol identified by the given @param protocol_struct.
+ * Registers a classification function for the protocol identified by the given @p protocol_struct.
  * This function MUST only be used when a protocol registers its own classification function. This function
  * will always perform what it is supposed to do.
  * @param protocol_struct The protocol structure.
@@ -253,7 +268,7 @@ MMTAPI bool MMTCALL register_classification_function(
 );
 
 /**
- * Registers a classification function for the protocol identified by the given @param protocol_struct.
+ * Registers a classification function for the protocol identified by the given @p protocol_struct.
  * This function MUST only be used when a protocol registers its own classification function. This function
  * will always perform what it is supposed to do.
  * @param protocol_struct The protocol structure.
@@ -274,7 +289,7 @@ MMTAPI bool MMTCALL register_classification_function_full(
 );
 
 /**
- * Registers a pre and post classification functions for the protocol identified by the given @param protocol_struct.
+ * Registers a pre and post classification functions for the protocol identified by the given @p protocol_struct.
  * This function MUST only be used when a protocol registers its own classification function. This function
  * will always perform what it is supposed to do.
  * @param protocol_struct The protocol structure.
@@ -289,7 +304,7 @@ MMTAPI bool MMTCALL register_pre_post_classification_functions(
 );
 
 /**
- * Registers a sessionizer function along with the session context cleanup function for the protocol identified by the given @param protocol_struct.
+ * Registers a sessionizer function along with the session context cleanup function for the protocol identified by the given @p protocol_struct.
  * @param protocol_struct The protocol structure.
  * @param sessionizer_fct The sessionizer function.
  * @param session_context_cleanup_fct The function responsible for cleaning session context. This is required for example when a session times out.
@@ -303,7 +318,7 @@ MMTAPI void MMTCALL register_sessionizer_function(
 );
 
 /**
- * Registers the session key hash function for the protocol identified by the given @param protocol_struct.
+ * Registers the session key hash function for the protocol identified by the given @p protocol_struct.
  * The session store is a hash table keyed on a packed 5-tuple; this function supplies the hash used to
  * bucket sessions. It MUST be consistent with the comparison function registered via
  * register_sessionizer_function: any two keys that compare equal MUST hash to the same value.
@@ -317,7 +332,7 @@ MMTAPI void MMTCALL register_session_hash_function(
 );
 
 /**
- * Registers the session key equality predicate for the protocol identified by the given @param protocol_struct.
+ * Registers the session key equality predicate for the protocol identified by the given @p protocol_struct.
  * When registered, the session store tests two keys for equality with this single call instead of invoking the
  * ordering comparator twice (!cmp(a,b) && !cmp(b,a)) on every probe — the per-packet session lookup's hot path
  * (issue #253, F-PERF-008). The predicate MUST agree with the comparison function registered via
@@ -332,7 +347,7 @@ MMTAPI void MMTCALL register_session_equal_function(
 );
 
 /**
- * Registers a protocol context cleanup function for the protocol identified by the given @param protocol_struct.
+ * Registers a protocol context cleanup function for the protocol identified by the given @p protocol_struct.
  * @param protocol_struct The protocol structure.
  * @param context_init_fct The protocol context initialization function.
  * @param context_cleanup_fct The protocol context cleanup function.
@@ -366,7 +381,7 @@ MMTAPI void MMTCALL register_session_data_cleanup_function(
 );
 
 /**
- * Registers a session data analysis function for the protocol identified by the given @param proto_id. This function should
+ * Registers a session data analysis function for the protocol identified by the given @p proto_id. This function should
  * be used in order to complement the analysis of a protocol.
  * For protocols registering their own analysis function, this function SHOULD BE AVOIDED, rather use "register_session_data_analysis_function".
  * @param proto_id The identifier of the protocol that will use the classification function.
@@ -384,7 +399,7 @@ MMTAPI bool MMTCALL register_session_data_analysis_function_with_protocol(
 );
 
 /**
- * Registers a session data analysis function for the protocol identified by the given @param protocol_struct.
+ * Registers a session data analysis function for the protocol identified by the given @p protocol_struct.
  * This function MUST only be used when a protocol registers its own session data analysis function. This function
  * will always perform what it is supposed to do.
  * @param protocol_struct The protocol structure.
@@ -397,7 +412,7 @@ MMTAPI bool MMTCALL register_session_data_analysis_function(
 );
 
 /**
- * Registers a session data analysis function for the protocol identified by the given @param protocol_struct.
+ * Registers a session data analysis function for the protocol identified by the given @p protocol_struct.
  * This function MUST only be used when a protocol registers its own session data analysis function. This function
  * will always perform what it is supposed to do.
  * @param protocol_struct The protocol structure.
@@ -419,7 +434,7 @@ MMTAPI bool MMTCALL register_session_data_analysis_function_full(
 );
 
 /**
- * Registers a pre and post analysis functions for the protocol identified by the given @param protocol_struct.
+ * Registers a pre and post analysis functions for the protocol identified by the given @p protocol_struct.
  * This function MUST only be used when a protocol registers its own analysis function. This function
  * will always perform what it is supposed to do.
  * @param protocol_struct The protocol structure.
@@ -454,7 +469,6 @@ MMTAPI bool MMTCALL register_protocol_stack(
  * @param s_name The name of the protocol stack to register.
  * @param fct The base classification function corresponding to the protocol stack to register.
  * @param stack_cleanup The cleanup function responsible for freeing the stack internal data.
- * @param stack_internal_packet The pointer to the internal packet structure of the stack to register.
  * @param stack_internal_context The pointer to the stack internal context data.
  * @return a positive value on success, zero value on failure.
  */
@@ -549,8 +563,8 @@ MMTAPI bool MMTCALL unregister_protocol_by_id(
 );
 
 /**
- * Unregisters the protocol defined by the given protocol identifier.
- * @param proto_id the identifier of the protocol to register
+ * Unregisters the protocol defined by the given protocol name (compared case-insensitively).
+ * @param proto_name the name of the protocol to unregister
  * @return PROTO_REGISTERED on success, PROTO_NOT_REGISTERED on failure.
  */
 MMTAPI bool MMTCALL unregister_protocol_by_name(
@@ -572,42 +586,91 @@ MMTAPI protocol_t* MMTCALL get_protocol_struct_by_id(
 //  P R O T O C O L   A C C E S S O R S
 //  - - - - - - - - - - - - - - - - - -
 
+/**
+ * Returns the position of the attribute in the protocol header, as reported by the protocol's get_attribute_position callback.
+ * @param proto the protocol structure whose callback is called (not NULL)
+ * @param proto_id the protocol identifier passed to the callback
+ * @param attr_id the identifier of the attribute
+ * @return the position of the attribute in the protocol header.
+ */
 MMTAPI int MMTCALL get_proto_attribute_position(
     protocol_t *proto,
     mmt_proto_id_t proto_id,
     uint32_t attr_id
 );
 
+/**
+ * Returns the data length of the attribute, as reported by the protocol's get_attribute_data_length_by_id callback.
+ * @param proto the protocol structure whose callback is called (not NULL)
+ * @param proto_id the protocol identifier passed to the callback
+ * @param attr_id the identifier of the attribute
+ * @return the data length of the attribute.
+ */
 MMTAPI int MMTCALL get_proto_attribute_length(
     protocol_t *proto,
     mmt_proto_id_t proto_id,
     uint32_t attr_id
 );
 
+/**
+ * Returns the identifier of the attribute named @p attr_name, as reported by the protocol's get_attribute_id_by_name callback.
+ * @param proto the protocol structure whose callback is called (not NULL)
+ * @param proto_id the protocol identifier passed to the callback
+ * @param attr_name the name of the attribute
+ * @return the identifier of the attribute named @p attr_name.
+ */
 MMTAPI int MMTCALL get_proto_attribute_id(
     protocol_t *proto,
     mmt_proto_id_t proto_id,
     const char *attr_name
 );
 
+/**
+ * Returns the name of the attribute, as reported by the protocol's get_attribute_name_by_id callback.
+ * @param proto the protocol structure whose callback is called (not NULL)
+ * @param proto_id the protocol identifier passed to the callback
+ * @param attr_id the identifier of the attribute
+ * @return the name of the attribute.
+ */
 MMTAPI const char* MMTCALL get_proto_attribute_name(
     protocol_t *proto,
     mmt_proto_id_t proto_id,
     uint32_t attr_id
 );
 
+/**
+ * Returns the data type (::data_types) of the attribute, as reported by the protocol's get_attribute_data_type_by_id callback.
+ * @param proto the protocol structure whose callback is called (not NULL)
+ * @param proto_id the protocol identifier passed to the callback
+ * @param attr_id the identifier of the attribute
+ * @return the data type (::data_types) of the attribute.
+ */
 MMTAPI int MMTCALL get_proto_attribute_type(
     protocol_t *proto,
     mmt_proto_id_t proto_id,
     uint32_t attr_id
 );
 
+/**
+ * Returns the scope of the attribute, as reported by the protocol's get_attribute_scope callback.
+ * @param proto the protocol structure whose callback is called (not NULL)
+ * @param proto_id the protocol identifier passed to the callback
+ * @param attr_id the identifier of the attribute
+ * @return the scope of the attribute.
+ */
 MMTAPI int MMTCALL get_proto_attribute_scope(
     protocol_t *proto,
     mmt_proto_id_t proto_id,
     uint32_t attr_id
 );
 
+/**
+ * Returns whether the attribute exists, as reported by the protocol's is_valid_attribute callback.
+ * @param proto the protocol structure whose callback is called (not NULL)
+ * @param proto_id the protocol identifier passed to the callback
+ * @param attr_id the identifier of the attribute
+ * @return whether the attribute exists.
+ */
 MMTAPI bool MMTCALL is_valid_proto_attribute(
     protocol_t *proto,
     mmt_proto_id_t proto_id,

@@ -60,17 +60,17 @@ src/examples/packet_handler.c:69	mmt_handler = mmt_init_handler\(
 src/examples/packet_handler.c:100	if *\(!packet_process\(mmt_handler
 src/examples/packet_handler.c:108	^	mmt_close_handler\(mmt_handler\);
 src/examples/packet_handler.c:111	^	close_extraction\(\);
-src/mmt_core/public_include/mmt_core.h:185	MMTAPI bool MMTCALL init_extraction\(\);
-src/mmt_core/public_include/mmt_core.h:198	MMTAPI void MMTCALL close_extraction\(\);
-src/mmt_core/public_include/mmt_core.h:1260	MMTAPI char\* MMTCALL mmt_version\(\);
-src/mmt_core/public_include/mmt_core.h:106-110	^#define EVA_IP_FRAGMENT_PACKET 1	^#define EVA_IP_FRAGMENT_DUPLICATED 5
-src/mmt_core/public_include/mmt_core.h:125	^typedef void \(\*generic_evasion_handler_callback\)
-src/mmt_core/public_include/mmt_core.h:218	^MMTAPI void MMTCALL mmt_close_handler\(
-src/mmt_core/public_include/mmt_core.h:230	^MMTAPI uint64_t MMTCALL get_active_session_count\(
-src/mmt_core/public_include/mmt_core.h:332	^MMTAPI bool MMTCALL register_evasion_handler\(
-src/mmt_core/public_include/mmt_core.h:612	^MMTAPI bool MMTCALL set_fragment_in_packet\(
-src/mmt_core/public_include/mmt_core.h:624	^MMTAPI bool MMTCALL set_fragmented_packet_in_session\(
-src/mmt_core/public_include/mmt_core.h:636	^MMTAPI bool MMTCALL set_fragment_in_session\(
+src/mmt_core/public_include/mmt_core.h:190	MMTAPI bool MMTCALL init_extraction\(\);
+src/mmt_core/public_include/mmt_core.h:203	MMTAPI void MMTCALL close_extraction\(\);
+src/mmt_core/public_include/mmt_core.h:1268	MMTAPI char\* MMTCALL mmt_version\(\);
+src/mmt_core/public_include/mmt_core.h:111-115	^#define EVA_IP_FRAGMENT_PACKET 1	^#define EVA_IP_FRAGMENT_DUPLICATED 5
+src/mmt_core/public_include/mmt_core.h:130	^typedef void \(\*generic_evasion_handler_callback\)
+src/mmt_core/public_include/mmt_core.h:223	^MMTAPI void MMTCALL mmt_close_handler\(
+src/mmt_core/public_include/mmt_core.h:236	^MMTAPI uint64_t MMTCALL get_active_session_count\(
+src/mmt_core/public_include/mmt_core.h:338	^MMTAPI bool MMTCALL register_evasion_handler\(
+src/mmt_core/public_include/mmt_core.h:619	^MMTAPI bool MMTCALL set_fragment_in_packet\(
+src/mmt_core/public_include/mmt_core.h:631	^MMTAPI bool MMTCALL set_fragmented_packet_in_session\(
+src/mmt_core/public_include/mmt_core.h:643	^MMTAPI bool MMTCALL set_fragment_in_session\(
 src/mmt_core/src/plugins_engine.c:50-53	secure_getenv\(PLUGINS_DIR_ENV\)	return PLUGINS_REPOSITORY_OPT;
 src/mmt_core/src/plugins_engine.c:94-96	!load_plugin\( path \)	retval = 0;
 TABLE

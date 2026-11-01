@@ -1,5 +1,9 @@
-/*
- * File:   data_defs.h
+/**
+ * @file
+ * Public data types of the MMT-DPI core: attribute and protocol
+ * identifiers, the packet (ipacket_t) and session handles, the extracted
+ * data containers and the attribute data-type and scope enumerations.
+ *
  * Author: montimage
  *
  * Created on 23 mai 2011, 16:34
@@ -43,24 +47,24 @@ extern "C" {
                                Applies to all alias names (protocol, attribute, etc..) .*/
 
 /* Typed aliases for weak int/uint32_t types (ABI-compatible, underlying representation stays uint32_t/int) */
-typedef uint32_t mmt_proto_id_t;
-typedef uint32_t mmt_attribute_id_t;
-/* Index of a protocol inside a packet's protocol path — distinct from mmt_proto_id_t (ABI-compatible, stays unsigned) */
+typedef uint32_t mmt_proto_id_t; ///< Protocol identifier.
+typedef uint32_t mmt_attribute_id_t; ///< Attribute identifier, unique within its protocol.
+/** Index of a protocol inside a packet's protocol path — distinct from mmt_proto_id_t (ABI-compatible, stays unsigned) */
 typedef unsigned mmt_proto_index_t;
 
-/* Opaque data/context pointer used across the public API (ABI-compatible, stays void *).
+/** Opaque data/context pointer used across the public API (ABI-compatible, stays void *).
    Covers user-supplied contexts passed back to callbacks, protocol/stack internal
    contexts, map keys/values and generic memory parameters. */
 typedef void *mmt_opaque_t;
-/* Const-qualified variant of mmt_opaque_t (ABI-compatible, stays const void *). */
+/** Const-qualified variant of mmt_opaque_t (ABI-compatible, stays const void *). */
 typedef const void *mmt_const_opaque_t;
 
-typedef struct mmt_handler_struct               mmt_handler_t;
-typedef struct mmt_session_struct               mmt_session_t;
-typedef struct mmt_tcpip_internal_packet_struct mmt_tcpip_internal_packet_t;
-typedef struct protocol_struct                  protocol_t;
-typedef struct ipacket_struct                   ipacket_t;
-typedef struct proto_statistics_struct          proto_statistics_t;
+typedef struct mmt_handler_struct               mmt_handler_t; ///< Opaque MMT handler: one packet-processing context (see mmt_init_handler()).
+typedef struct mmt_session_struct               mmt_session_t; ///< Opaque session (flow) structure; read it with the get_session_*() accessors.
+typedef struct mmt_tcpip_internal_packet_struct mmt_tcpip_internal_packet_t; ///< Opaque TCP/IP-stack per-packet state; for internal use only.
+typedef struct protocol_struct                  protocol_t; ///< Opaque registered protocol structure.
+typedef struct ipacket_struct                   ipacket_t; ///< Packet being processed (see struct ipacket_struct).
+typedef struct proto_statistics_struct          proto_statistics_t; ///< Protocol statistics instance (see struct proto_statistics_struct).
 /*
  * Byte order (issue #504, F-BUG-009): ntohl/ntohs/htonl/htons come from the
  * system's <arpa/inet.h> — this header used to #undef them and redefine them
@@ -98,7 +102,7 @@ static inline uint64_t swab64(uint64_t x){
 #endif
 #endif
 
-typedef uint64_t mmt_key_t;
+typedef uint64_t mmt_key_t; ///< 64-bit key type.
 
 /**
  * Signature of the function comparing two keys given by their addresses. An implementing function must return true
@@ -140,8 +144,8 @@ typedef struct pkthdr {
     unsigned int len;    /**< length of the packet (off wire) */
     unsigned int original_caplen; /**< Original capture len of the packet when it was captured by interface - not count with reassembly data*/
     unsigned int original_len; /**< Original capture len of the packet when it was captured by interface - not count with reassembly data*/
-    unsigned int probe_id; /** The ID of the probe which are processing current packet*/
-    unsigned int source_id; /** The ID of the interface/source which are processing current packet*/
+    unsigned int probe_id; /**< The ID of the probe which are processing current packet*/
+    unsigned int source_id; /**< The ID of the interface/source which are processing current packet*/
     void * user_args;    /**< Pointer to a user defined argument. Can be NULL, it will not be used by the library. */
 } pkthdr_t;
 
@@ -172,11 +176,11 @@ struct ipacket_struct {
     uint8_t is_completed[PROTO_PATH_SIZE];    /**< 1 - yes, 0 - no: Indicate if the packet is completed to go to parse to next protocol*/
     uint8_t is_fragment[PROTO_PATH_SIZE];                      /**< 1 - yes, 0 - no: Indicate if the packet is a fragmented packet */
     // uint16_t is_outoforder[PROTO_PATH_SIZE];      /** out of order*/
-    uint16_t ipv6_ext_headers_path[PROTO_PATH_SIZE]; /** IPv6 extension header path*/
-    uint32_t ipv6_ext_headers_offset[PROTO_PATH_SIZE]; /**IPv6 extension header offset (Issue #201: widened — long chains exceed 16 bits)*/
-    uint16_t ipv6_ext_headers_len; /* IPv6 header path length*/
-    uint16_t ipv6_overlapping[PROTO_PATH_SIZE]; /** IPv6 fragment header overlaps another fragment*/
-    uint16_t ipv6_outoforder[PROTO_PATH_SIZE]; /** IPv6 fragment header is out of order*/
+    uint16_t ipv6_ext_headers_path[PROTO_PATH_SIZE]; /**< IPv6 extension header path*/
+    uint32_t ipv6_ext_headers_offset[PROTO_PATH_SIZE]; /**< IPv6 extension header offset (Issue #201: widened — long chains exceed 16 bits)*/
+    uint16_t ipv6_ext_headers_len; /**< IPv6 header path length*/
+    uint16_t ipv6_overlapping[PROTO_PATH_SIZE]; /**< IPv6 fragment header overlaps another fragment*/
+    uint16_t ipv6_outoforder[PROTO_PATH_SIZE]; /**< IPv6 fragment header is out of order*/
     int last_callback_fct_id;                           /**< The extra field for tcp packet handler */
     unsigned nb_reassembled_packets[PROTO_PATH_SIZE];          /**< number of packets which are assembled to this packet */
     proto_hierarchy_t * proto_hierarchy;      /**< the protocol layers corresponding to this packet */
@@ -221,7 +225,7 @@ _Static_assert(sizeof(struct ipacket_struct) == 344, "ipacket_t ABI: public part
 
 /**
  * Defines the identification info of a protocol attribute. This identification is defined by the tuple: protocol id and attribute id.
- * @obsolete this structure should never be used! It is maintained for backward compatibility. It will be removed from future versions.
+ * @deprecated this structure should never be used! It is maintained for backward compatibility. It will be removed from future versions.
  */
 struct attribute_description_struct {
     mmt_proto_id_t proto_id;                       /**< identifier of the protocol */
@@ -267,49 +271,52 @@ struct proto_statistics_struct {
     uint64_t sessions_count;              /**< Total number of sessions seen by the protocol  on a particular protocol path */
     uint64_t timedout_sessions_count;     /**< Total number of timedout sessions (this is the difference between sessions count and active sessions count) on a particular protocol path */
     struct proto_statistics_struct *next; /**< next instance of statistics for the same protocol */
-    struct timeval first_packet_time; // The time of the first packet of the protocol
-    struct timeval last_packet_time; // The time of the last packet of the protocol
+    struct timeval first_packet_time; ///< The time of the first packet of the protocol
+    struct timeval last_packet_time; ///< The time of the last packet of the protocol
 };
 
+/** Identifiers of the statistics attributes every protocol carries (registered in packet_stats.c). */
 enum proto_stats_attr {
-    PROTO_HEADER = 0x1000,
-    PROTO_DATA,
-    PROTO_PAYLOAD,
-    PROTO_PACKET_COUNT,
-    PROTO_DATA_VOLUME,
-    PROTO_PAYLOAD_VOLUME,
-    PROTO_FIRST_PACKET_TIME,
-    PROTO_LAST_PACKET_TIME,
-    PROTO_DATA_LEN,
-    PROTO_STATISTICS,
-    PROTO_STATS_ATTRIBUTES_NB = PROTO_STATISTICS - PROTO_HEADER + 1,
+    PROTO_HEADER = 0x1000, ///< Pointer to the start of the protocol header in the packet data (MMT_DATA_POINTER).
+    PROTO_DATA, ///< Pointer to the start of the protocol data, i.e. its header (MMT_DATA_POINTER).
+    PROTO_PAYLOAD, ///< Pointer to the start of the next layer, or of this protocol when it is the last one (MMT_DATA_POINTER).
+    PROTO_PACKET_COUNT, ///< Packets seen by the protocol, summed over its statistics instances (MMT_U64_DATA).
+    PROTO_DATA_VOLUME, ///< Data volume seen by the protocol, summed over its statistics instances (MMT_U64_DATA).
+    PROTO_PAYLOAD_VOLUME, ///< Payload volume seen by the protocol, summed over its statistics instances (MMT_U64_DATA).
+    PROTO_FIRST_PACKET_TIME, ///< Time of the protocol's first packet, from its first statistics instance (MMT_DATA_TIMEVAL).
+    PROTO_LAST_PACKET_TIME, ///< Time of the protocol's last packet, from its first statistics instance (MMT_DATA_TIMEVAL).
+    PROTO_DATA_LEN, ///< Bytes from the protocol's offset to the next layer's offset, or to the captured length (MMT_U64_DATA).
+    PROTO_STATISTICS, ///< The protocol's statistics instances, a proto_statistics_t list (MMT_STATS).
+    PROTO_STATS_ATTRIBUTES_NB = PROTO_STATISTICS - PROTO_HEADER + 1, ///< Number of statistics attributes.
 };
 
+/** Identifiers of the session attributes every protocol carries (registered in packet_stats.c). */
 enum proto_common_attributes {
-    PROTO_SESSION = PROTO_STATISTICS + 1,
-    PROTO_SESSION_ID,
-    PROTO_SESSION_ATTRIBUTES_NB = PROTO_SESSION_ID - PROTO_SESSION + 1,
+    PROTO_SESSION = PROTO_STATISTICS + 1, ///< Session of the packet (MMT_DATA_POINTER, SCOPE_EVENT); extracted only on the session's first packet.
+    PROTO_SESSION_ID, ///< Identifier of the packet's session (MMT_U64_DATA).
+    PROTO_SESSION_ATTRIBUTES_NB = PROTO_SESSION_ID - PROTO_SESSION + 1, ///< Number of session attributes.
 };
 
 
+/** Data of the IP round-trip-time event: the time a session took to answer in the opposite direction. */
 typedef struct ip_rtt_struct{
-    uint8_t direction;
-    struct timeval rtt;
-    mmt_session_t * session;
-}ip_rtt_t;
+    uint8_t direction; ///< Direction of the session's last packet before the direction change.
+    struct timeval rtt; ///< Time elapsed since the session's last activity.
+    mmt_session_t * session; ///< The session concerned.
+}ip_rtt_t; ///< IP round-trip-time event data.
 
-#define PROTO_HEADER_LABEL                      "p_hdr"
-#define PROTO_DATA_LABEL                        "p_data"
-#define PROTO_PAYLOAD_LABEL                     "p_payload"
-#define PROTO_PACKET_COUNT_LABEL                "packet_count"
-#define PROTO_DATA_VOLUME_LABEL                 "data_count"
-#define PROTO_PAYLOAD_VOLUME_LABEL              "payload_count"
-#define PROTO_FIRST_PACKET_TIME_LABEL           "first_packet_time"
-#define PROTO_LAST_PACKET_TIME_LABEL            "last_packet_time"
-#define PROTO_STATISTICS_LABEL                  "stats"
-#define PROTO_SESSION_LABEL                     "session"
-#define PROTO_SESSION_ID_LABEL                  "session_id"
-#define PROTO_DATA_LEN_LABEL                    "p_data_len"
+#define PROTO_HEADER_LABEL                      "p_hdr" ///< Name of the PROTO_HEADER attribute.
+#define PROTO_DATA_LABEL                        "p_data" ///< Name of the PROTO_DATA attribute.
+#define PROTO_PAYLOAD_LABEL                     "p_payload" ///< Name of the PROTO_PAYLOAD attribute.
+#define PROTO_PACKET_COUNT_LABEL                "packet_count" ///< Name of the PROTO_PACKET_COUNT attribute.
+#define PROTO_DATA_VOLUME_LABEL                 "data_count" ///< Name of the PROTO_DATA_VOLUME attribute.
+#define PROTO_PAYLOAD_VOLUME_LABEL              "payload_count" ///< Name of the PROTO_PAYLOAD_VOLUME attribute.
+#define PROTO_FIRST_PACKET_TIME_LABEL           "first_packet_time" ///< Name of the PROTO_FIRST_PACKET_TIME attribute.
+#define PROTO_LAST_PACKET_TIME_LABEL            "last_packet_time" ///< Name of the PROTO_LAST_PACKET_TIME attribute.
+#define PROTO_STATISTICS_LABEL                  "stats" ///< Name of the PROTO_STATISTICS attribute.
+#define PROTO_SESSION_LABEL                     "session" ///< Name of the PROTO_SESSION attribute.
+#define PROTO_SESSION_ID_LABEL                  "session_id" ///< Name of the PROTO_SESSION_ID attribute.
+#define PROTO_DATA_LEN_LABEL                    "p_data_len" ///< Name of the PROTO_DATA_LEN attribute.
 
 /**
  * Returns the protocol name given its identifier.
@@ -462,18 +469,18 @@ MMTAPI mmt_session_t* MMTCALL get_session_parent(
 );
 
 /**
- * Returns the pointer to the mmt handler that is processing the given \session
+ * Returns the pointer to the mmt handler that is processing the given @p session
  * @param session the session structure
- * @return the pointer to the mmt handler that is processing the given \session.
+ * @return the pointer to the mmt handler that is processing the given @p session.
  */
 MMTAPI mmt_handler_t* MMTCALL get_session_handler(
     const mmt_session_t *session
 );
 
 /**
- * Returns the index in the protocol hierarchy of the protocol \session belongs to
+ * Returns the index in the protocol hierarchy of the protocol @p session belongs to
  * @param session the session structure
- * @return the index in the protocol hierarchy of the protocol \session belongs to.
+ * @return the index in the protocol hierarchy of the protocol @p session belongs to.
  */
 MMTAPI uint32_t MMTCALL get_session_protocol_index(
     const mmt_session_t *session
@@ -918,29 +925,28 @@ MMTAPI uint64_t MMTCALL get_session_total_dl_data_byte_count(
 // END OF GET TOTAL SESSION STATISTICS
 
 /**
- * Gets into \tv the session initialization time.
- * @param session the session structure
- * @param tv pointer to timeval struct where the session init time will be copied
+ * Returns the session initialization time.
+ * @param session the session structure (not NULL)
+ * @return the session initialization time.
  */
 MMTAPI struct timeval MMTCALL get_session_init_time(
     const mmt_session_t *session
 );
 
 /**
- * Gets into \tv the session last activity time.
- * @param session the session structure
- * @param tv pointer to timeval struct where the session last activity time will be copied
+ * Returns the session last activity time.
+ * @param session the session structure (not NULL)
+ * @return the session last activity time.
  */
 MMTAPI struct timeval MMTCALL get_session_last_activity_time(
     const mmt_session_t *session
 );
 
 /**
- * Gets into \tv the session last data packet time of specific direction
+ * Returns the session last data packet time of specific direction
  * @param session the session structure
  * @param direction The direction: 0 (initiator) or 1 (remote). Any other
  *        value (e.g. TO_INITIATOR / FROM_SERVER, which are 2) is rejected.
- * @param tv pointer to timeval struct where the session last activity time will be copied
  * @return the timestamp, or a zero timeval when \p session is NULL or
  *         \p direction is not 0 or 1.
  */
@@ -950,9 +956,9 @@ MMTAPI struct timeval MMTCALL get_session_last_data_packet_time_by_direction(
 
 
 /**
- * Gets into \tv the session establishment round trip time.
- * @param session the session structure.
- * @param tv pointer to timeval struct where the session establishment round trip time will be copied.
+ * Returns the session establishment round trip time.
+ * @param session the session structure (not NULL)
+ * @return the session establishment round trip time.
  */
 MMTAPI struct timeval MMTCALL get_session_rtt(
     const mmt_session_t *session
@@ -1114,7 +1120,7 @@ MMTAPI int MMTCALL get_attr_data_len( attribute_t * attr) __attribute__((depreca
 
 /**
  * Returns the relative offset in bytes of the given attribute with respect to its protocol header. <br>
- * If the attribute offset is not known, \POSITION_NOT_KNOWN will be returned.
+ * If the attribute offset is not known, POSITION_NOT_KNOWN will be returned.
  * @param attr pointer to the attribute structure.
  * @return the relative offset in bytes of the given attribute with respect to its protocol header.
  */
@@ -1314,18 +1320,18 @@ MMTAPI const char* MMTCALL get_application_name(
 );
 
 /**
- * Alternative to toupper. Removes dependency on <locale>.
+ * Alternative to toupper. Removes dependency on `<locale>`.
  * @param in input character.
- * @return uppercase of \in.
+ * @return uppercase of @p in.
  */
 MMTAPI char MMTCALL mmt_toupper(
     char in
 );
 
 /**
- * Alternative to tolower. Removes dependency on <locale> .
+ * Alternative to tolower. Removes dependency on `<locale>`.
  * @param in input character.
- * @return lowercase of \in.
+ * @return lowercase of @p in.
  */
 MMTAPI char MMTCALL mmt_tolower(
     char in
@@ -1336,7 +1342,7 @@ MMTAPI char MMTCALL mmt_tolower(
  * @param first string to be compared.
  * @param second string to be compared.
  * @return Zero if both strings are case insensitivly equal, positive value if to indicate that the first character that does
- * not match has a greater case insensitive value in \first than in \second; a negative value indicates the opposite.
+ * not match has a greater case insensitive value in @p first than in @p second; a negative value indicates the opposite.
  */
 MMTAPI int MMTCALL mmt_strcasecmp(
     const char *first,
@@ -1349,7 +1355,7 @@ MMTAPI int MMTCALL mmt_strcasecmp(
  * @param second string to be compared.
  * @param max maximum number of characters to compare.
  * @return Zero indicates that the characters compared in both strings form the same case insensitive string;
- *         a positive value indicates that the first character that does not match has a greater case insensitive value in \first than in \second;
+ *         a positive value indicates that the first character that does not match has a greater case insensitive value in @p first than in @p second;
  *         a negative value indicates the opposite.
  */
 MMTAPI int MMTCALL mmt_strncasecmp(
@@ -1363,7 +1369,7 @@ MMTAPI int MMTCALL mmt_strncasecmp(
  * @param first string to be compared.
  * @param second string to be compared.
  * @return Zero if both strings are equal, positive value if to indicate that the first character that does
- * not match has a greater value in \first than in \second; a negative value indicates the opposite.
+ * not match has a greater value in @p first than in @p second; a negative value indicates the opposite.
  */
 MMTAPI int MMTCALL mmt_strcmp(
     const char *first,
@@ -1376,7 +1382,7 @@ MMTAPI int MMTCALL mmt_strcmp(
  * @param second string to be compared.
  * @param max maximum number of characters to compare.
  * @return Zero indicates that the characters compared in both strings form the same string; positive value if to indicate that the first character that does
- * not match has a greater value in \first than in \second; a negative value indicates the opposite.
+ * not match has a greater value in @p first than in @p second; a negative value indicates the opposite.
  */
 MMTAPI int MMTCALL mmt_strncmp(
     const char *first,
@@ -1385,7 +1391,7 @@ MMTAPI int MMTCALL mmt_strncmp(
 );
 
 /**
- * Writes in a friendly format the attribute pointed by \attr to the stream pointed by \p.
+ * Writes in a friendly format the attribute pointed by @p attr to the stream pointed by @p f.
  * The value is rendered as by mmt_attr_fprintf().
  * @param f Pointer to a FILE object that identifies an output stream.
  * @param attr Pointer to the attribute to format.
@@ -1396,7 +1402,7 @@ MMTAPI int MMTCALL mmt_strncmp(
 MMTAPI int MMTCALL mmt_attr_format(FILE * f, attribute_t * attr);
 
 /**
- * Writes the string value of the attribute pointed by \attr to the stream pointed by \p.
+ * Writes the string value of the attribute pointed by @p attr to the stream pointed by @p f.
  * The value is the same text mmt_attr_snprintf() produces.
  * @param f Pointer to a FILE object that identifies an output stream.
  * @param attr Pointer to the attribute to format.
@@ -1407,19 +1413,19 @@ MMTAPI int MMTCALL mmt_attr_format(FILE * f, attribute_t * attr);
 MMTAPI int MMTCALL mmt_attr_fprintf(FILE * f, attribute_t * attr) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
- * Writes the string value of the attribute pointed by \attr to the C string pointed by \p.
- * If the resulting string would be longer than \len - 1 characters, the remaining characters are discarded and not stored.
- * In this case, the value returned by the function would be higher than \len. <br>
+ * Writes the string value of the attribute pointed by @p attr to the C string pointed by @p buff.
+ * If the resulting string would be longer than @p len - 1 characters, the remaining characters are discarded and not stored.
+ * In this case, the value returned by the function would be higher than @p len. <br>
  * A terminating null character is automatically appended.
  * @param buff Pointer to the C string where the attribute will be written to.
- * <br>The buffer should have a size of at least \len characters.
- * @param len Maximum number of bytes to be written to \buff.
+ * <br>The buffer should have a size of at least @p len characters.
+ * @param len Maximum number of bytes to be written to @p buff.
  * @param attr Pointer to the attribute to print.
- * @return On success, the total number of characters that would have been written if \len had been sufficiently
+ * @return On success, the total number of characters that would have been written if @p len had been sufficiently
  * large, not counting the terminating null character.<br>
  * If a writing error occurs, or the attribute's data type has no text form, a negative value is returned
- * (and \buff, when non-NULL, holds an empty string).<br>
- * Notice that only when the returned value is positive and less than \len, the string has been completely written.<br>
+ * (and @p buff, when non-NULL, holds an empty string).<br>
+ * Notice that only when the returned value is positive and less than @p len, the string has been completely written.<br>
  * An MMT_STATS attribute (protocol statistics) is written as
  * "packets=N,data_volume=N,payload_volume=N,sessions=N,timedout_sessions=N", totalled over all the
  * protocol's statistics instances (one per protocol path).

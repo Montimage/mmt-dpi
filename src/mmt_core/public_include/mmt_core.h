@@ -1,5 +1,9 @@
-/*
- * File:   mmt_core.h
+/**
+ * @file
+ * Main MMT-DPI core API: library and handler lifecycle, packet
+ * processing, protocol and attribute registration and lookup, handler and
+ * session callbacks, and the packet/session accessors.
+ *
  * Author: montimage
  *
  * Created on 27 mai 2011, 16:31
@@ -40,6 +44,7 @@ extern "C" {
 
 #define POSITION_NOT_KNOWN      -1      /**< Attribute position not known code. */
 
+/** Scope of an attribute: how long its extracted value stays valid. */
 typedef enum {
     SCOPE_PACKET = 1,          /**< Packet scope attribute. May change with each packet. */
     SCOPE_SESSION = 2,         /**< Session scope attribute. Will not change during the session lifetime. */
@@ -49,19 +54,19 @@ typedef enum {
 } mmt_attr_scope_t;
 /* Macro aliases for ABI/source compatibility: keep #define for #ifdef checks */
 #ifndef SCOPE_PACKET
-#define SCOPE_PACKET            1
+#define SCOPE_PACKET            1 ///< Macro alias of the ::mmt_attr_scope_t enumerator, for `#ifdef` checks.
 #endif
 #ifndef SCOPE_SESSION
-#define SCOPE_SESSION           2
+#define SCOPE_SESSION           2 ///< Macro alias of the ::mmt_attr_scope_t enumerator, for `#ifdef` checks.
 #endif
 #ifndef SCOPE_SESSION_CHANGING
-#define SCOPE_SESSION_CHANGING  4
+#define SCOPE_SESSION_CHANGING  4 ///< Macro alias of the ::mmt_attr_scope_t enumerator, for `#ifdef` checks.
 #endif
 #ifndef SCOPE_ON_DEMAND
-#define SCOPE_ON_DEMAND         7
+#define SCOPE_ON_DEMAND         7 ///< Macro alias of the ::mmt_attr_scope_t enumerator, for `#ifdef` checks.
 #endif
 #ifndef SCOPE_EVENT
-#define SCOPE_EVENT             0x10
+#define SCOPE_EVENT             0x10 ///< Macro alias of the ::mmt_attr_scope_t enumerator, for `#ifdef` checks.
 #endif
 
 #define ATTRIBUTE_UNSET         0 /**< Code indicating the attribute is not set. */
@@ -81,33 +86,33 @@ typedef enum {
 
 #define MMT_ERRBUF_SIZE 1024 /**< Maximum size of MMT error messages. */
 
-#define STATS_RATES_REPORT      1
-#define STATS_NO_RATES_REPORT   (0xFFFFFFFF - STATS_RATES_REPORT)
+#define STATS_RATES_REPORT      1 ///< Statistics rate-report flag; not read by the SDK.
+#define STATS_NO_RATES_REPORT   (0xFFFFFFFF - STATS_RATES_REPORT) ///< Complement of STATS_RATES_REPORT; not read by the SDK.
 
 #define MMT_CONTINUE    0 /**< Defines the code for continue processing */
 #define MMT_DROP        -1 /**< Defines the code for dropping the packet currently under processing */
 #define MMT_SKIP        -2 /**< Defines the code for skipping further processing of the packet.
                             This means that processing at the current protocol will continue, but
                             the packet will be skipped afterwards. */
-#define MMT_PRINT_INFO "\n\t* * * * * * * * * * * * * * * *\n\t*     M M T - L I B R A R Y   *\n\t* * * * * * * * * * * * * * * *\n\t\n\tWebsite: http://montimage.eu\n\tContact: contact@montimage.eu\n\n\n"
+#define MMT_PRINT_INFO "\n\t* * * * * * * * * * * * * * * *\n\t*     M M T - L I B R A R Y   *\n\t* * * * * * * * * * * * * * * *\n\t\n\tWebsite: http://montimage.eu\n\tContact: contact@montimage.eu\n\n\n" ///< Banner printed by mmt_print_info().
 #ifndef VERSION
-#define VERSION "1.9.1"
+#define VERSION "1.9.1" ///< SDK version string, unless the build defines VERSION.
 #endif
 
 #ifdef GIT_VERSION
 //GIT_VERSION is given by Makefile
-#define MMT_VERSION VERSION " (" GIT_VERSION ")"
+#define MMT_VERSION VERSION " (" GIT_VERSION ")" ///< VERSION followed by the git revision in parentheses.
 #else
-#define MMT_VERSION VERSION
+#define MMT_VERSION VERSION ///< SDK version string; the git revision is appended when the build defines GIT_VERSION.
 #endif
 
 // EVASION TYPE
 
-#define EVA_IP_FRAGMENT_PACKET 1 // Event: too many fragments in one packet
-#define EVA_IP_FRAGMENT_SESSION 2 // Event: too many fragments in one session
-#define EVA_IP_FRAGMENTED_PACKET_SESSION 3 // Event: too many fragmented packet in one session
-#define EVA_IP_FRAGMENT_OVERLAPPED 4 // Event: IP fragmentation overlapping data
-#define EVA_IP_FRAGMENT_DUPLICATED 5 // Event: IP fragmentation duplicated segments
+#define EVA_IP_FRAGMENT_PACKET 1 ///< Evasion event: too many fragments in one packet
+#define EVA_IP_FRAGMENT_SESSION 2 ///< Evasion event: too many fragments in one session
+#define EVA_IP_FRAGMENTED_PACKET_SESSION 3 ///< Evasion event: too many fragmented packet in one session
+#define EVA_IP_FRAGMENT_OVERLAPPED 4 ///< Evasion event: IP fragmentation overlapping data
+#define EVA_IP_FRAGMENT_DUPLICATED 5 ///< Evasion event: IP fragmentation duplicated segments
 
 /**
  * Generic packet handler callback
@@ -221,6 +226,7 @@ MMTAPI void MMTCALL mmt_close_handler(
 
 
 /**
+ * @fn uint64_t get_active_session_count(mmt_handler_t *mmt_handler)
  * Get number of active session
  * @param  mmt_handler MMT Handler
  * @return             number of active session
@@ -298,6 +304,7 @@ MMTAPI bool MMTCALL register_session_timeout_handler(
  * @param mmt_handler pointer to the mmt handler we want to register the session timeout handler with
  * @param session_timer_handler_fct the session timer callback function to register
  * @param user pointer to a user defined argument to be passed to the callback function
+ * @param no_fragmented when nonzero, sessions holding a fragmented packet are skipped
  * @return This function will always succeed; a positive value will be returned.
  */
 MMTAPI bool MMTCALL register_session_timer_handler(
@@ -324,8 +331,7 @@ MMTAPI bool MMTCALL is_registered_attribute(
 /**
  * Registers the evasion handler
  * @param mmt_handler pointer to the mmt handler we want to register the extraction attribute with
- * @param evasion_handler the identifier of the protocol of the attribute.
- * @param attribute_id the identifier of the attribute itself.
+ * @param evasion_handler the evasion callback function to register
  * @param user_args User data
  * @return a positive value upon success, a zero value otherwise.
  */
@@ -403,12 +409,12 @@ MMTAPI bool MMTCALL has_registered_attribute_handler(
 );
 
 /**
- * Indicates if \handler_fct is registered with the attribute defined by \protocol_id and \attribute_id.
+ * Indicates if @p handler_fct is registered with the attribute defined by @p protocol_id and @p attribute_id.
  * @param mmt_handler pointer to the mmt handler we want to check
  * @param proto_id the identifier of the protocol
  * @param attribute_id the identifier of the attribute
  * @param handler_fct the attribute handler callback function to check
- * @return a positive value if \handler_fct handler is already registered; 0 otherwise.
+ * @return a positive value if @p handler_fct handler is already registered; 0 otherwise.
  */
 MMTAPI bool MMTCALL is_registered_attribute_handler(
     mmt_handler_t *mmt_handler,
@@ -497,7 +503,8 @@ MMTAPI bool MMTCALL set_default_session_timed_out(
     uint32_t timedout_value
 );
 
-/* Issue #245 (F-PERF-006, F-BUG-038): per-flow ceiling on TCP reassembly
+/** Default per-flow ceiling, in bytes, on TCP reassembly storage.
+ * Issue #245 (F-PERF-006, F-BUG-038): per-flow ceiling on TCP reassembly
  * bytes; segments beyond the ceiling are dropped (see the TCP session-payload
  * attributes). Issue #380 (F-PERF-002): the ceiling bounds RESERVED storage —
  * the pending-segment blocks including their headers plus both directions'
@@ -642,7 +649,9 @@ MMTAPI bool MMTCALL set_fragment_in_session(
 /**
  * A debug function that can be used as a packet handler callback. It will print out the
  * extracted attributes.
- * @param user user argument. It has no impact at all in this function.
+ * @param ipacket the packet whose extracted attributes are printed
+ * @param user NULL, or a pointer to an int that, when nonzero, suppresses the attribute values.
+ * @return 0.
  */
 MMTAPI int MMTCALL debug_extracted_attributes_printout_handler(
     const ipacket_t *ipacket,
@@ -698,7 +707,6 @@ MMTAPI bool MMTCALL packet_process(
 
 /**
  * Print out pretty list all attributes of all protocol
- * @return [description]
  * @deprecated Debug helper with 0 callers in src/sdk/tests/examples
  *             (exported via nm -D but never used); prefer
  *             iterate_through_protocols(). Removal is scheduled for
@@ -707,8 +715,9 @@ MMTAPI bool MMTCALL packet_process(
 MMTAPI void MMTCALL mmt_print_all_protocols() __attribute__((deprecated("debug helper; prefer iterate_through_protocols; removal in 2.0.0")));
 /**
  * This will be call from probe when probe want to do something from library
+ * by calling the registered session timer handler on the handler's sessions
+ * (see register_session_timer_handler()).
  * @param  mmt_handler pointer to the mmt_handler we want to do the action
- * @param  user_data   [description]
  */
 MMTAPI void MMTCALL process_session_timer_handler(
     mmt_handler_t *mmt_handler
@@ -913,7 +922,7 @@ MMTAPI bool MMTCALL mmt_apply_dpi_profile_by_name(
 
 /**
  * Load custom named DPI profiles from a data file — one profile per line:
- *   <name> <max_depth> <app_protocol_classify> <port_classify> <ip_address_classify> [<legacy>]
+ *   `<name> <max_depth> <app_protocol_classify> <port_classify> <ip_address_classify> [<legacy>]`
  * '#' starts a comment; blank and malformed lines are skipped. Names are
  * case-insensitive, must not collide with a predefined profile or an
  * already-loaded name, and are truncated at 31 chars. Loaded profiles are
@@ -1139,15 +1148,14 @@ MMTAPI void MMTCALL setDataLinkType(
 /**
  * Returns the data link type of the given mmt handler.
  * @param mmt_handler pointer to the mmt handler we want to get its data link type
- * @param dltype identifier of the data link type.
- * @return data identifier of data link type of \mmt_handler
+ * @return data identifier of data link type of @p mmt_handler
  */
 MMTAPI int MMTCALL get_data_link_type(
     mmt_handler_t *mmt_handler
 );
 
 /**
- * Enables the maintenance of protocol statistics for the given \mmt_handler
+ * Enables the maintenance of protocol statistics for the given @p mmt_handler
  * @param mmt_handler mmt handler
  */
 MMTAPI void MMTCALL enable_protocol_statistics(
@@ -1155,7 +1163,7 @@ MMTAPI void MMTCALL enable_protocol_statistics(
 );
 
 /**
- * Disables the maintenance of protocol statistics for the given \mmt_handler
+ * Disables the maintenance of protocol statistics for the given @p mmt_handler
  * @param mmt_handler mmt handler
  */
 MMTAPI void MMTCALL disable_protocol_statistics(
@@ -1244,7 +1252,7 @@ MMTAPI void MMTCALL iterate_through_protocols(
 );
 
 /**
- * Iterates through the registered mmt handlers. The given \iterator_fct will be called for every mmt handler.
+ * Iterates through the registered mmt handlers. The given @p iterator_fct will be called for every mmt handler.
  * @param iterator_fct pointer to the user function that will be called for every registered mmt handler.
  * @param user pointer to the user argument. It will be passed to the iterator callback function.
  */
@@ -1263,8 +1271,8 @@ MMTAPI char* MMTCALL mmt_version();
  * Memory management helpers
  */
 MMTAPI void* MMTCALL mmt_malloc  ( size_t size );
-MMTAPI void* MMTCALL mmt_realloc ( mmt_opaque_t x, size_t size );
-MMTAPI void  MMTCALL mmt_free    ( mmt_opaque_t x );
+MMTAPI void* MMTCALL mmt_realloc ( mmt_opaque_t x, size_t size ); ///< realloc() counterpart: NULL @p x allocates, 0 @p size frees; NULL on failure leaves @p x intact.
+MMTAPI void  MMTCALL mmt_free    ( mmt_opaque_t x ); ///< Frees a block from mmt_malloc() or mmt_realloc(); NULL is a no-op.
 
 /**
  * Per-flow arena (slab) allocator.
@@ -1288,6 +1296,11 @@ MMTAPI void         MMTCALL mmt_arena_reset  ( mmt_arena_t *arena );
 /** Free the arena and every block carved from it. */
 MMTAPI void         MMTCALL mmt_arena_destroy( mmt_arena_t *arena );
 
+/**
+ * Compares the first @p size bytes (at least 1) of @p x and @p y.
+ * @return 0 when they are equal; otherwise the difference, as plain char values, of the first
+ *         differing byte among the first 19, or memcmp()'s result beyond them.
+ */
 static inline int mmt_memcmp( mmt_const_opaque_t x, mmt_const_opaque_t y, size_t size ){
     const char *s1 = (char*)x, *s2 = (char*)y;
     int ret;
@@ -1383,18 +1396,23 @@ static inline int mmt_memcmp( mmt_const_opaque_t x, mmt_const_opaque_t y, size_t
 MMTAPI void MMTCALL mmt_print_info();
 
 /* Typed inline accessors for weak-type scope (ABI-compatible wrappers, file:line mmt_core.h) */
+/** get_attr_scope() with a ::mmt_attr_scope_t result. */
 static inline mmt_attr_scope_t mmt_attr_get_scope_typed(const attribute_t *attr) {
     return (mmt_attr_scope_t)get_attr_scope((attribute_t*)attr);
 }
+/** get_attr_data_type() with an ::data_types result. */
 static inline enum data_types mmt_attr_get_data_type_typed(const attribute_t *attr) {
     return (enum data_types)get_attr_data_type((attribute_t*)attr);
 }
+/** get_attribute_scope() with a ::mmt_attr_scope_t result. */
 static inline mmt_attr_scope_t mmt_attribute_get_scope_typed(mmt_proto_id_t proto_id, uint32_t attribute_id) {
     return (mmt_attr_scope_t)get_attribute_scope((mmt_proto_id_t)proto_id, attribute_id);
 }
+/** get_attribute_data_type() with an ::data_types result. */
 static inline enum data_types mmt_attribute_get_data_type_typed(mmt_proto_id_t proto_id, uint32_t attribute_id) {
     return (enum data_types)get_attribute_data_type((mmt_proto_id_t)proto_id, attribute_id);
 }
+/** get_attr_protocol_id() with an ::mmt_proto_id_t result. */
 static inline mmt_proto_id_t mmt_attr_get_proto_id_typed(const attribute_t *attr) {
     return (mmt_proto_id_t)get_attr_protocol_id((attribute_t*)attr);
 }

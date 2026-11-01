@@ -1,5 +1,9 @@
-/*
- * File:   types_defs.h
+/**
+ * @file
+ * Basic fixed-width types and value structures shared by the
+ * public headers (MAC and IPv6 addresses, strings, binary data, IP
+ * fragments).
+ *
  * Author: montimage
  *
  * Created on 27 mai 2011, 15:59
@@ -109,6 +113,7 @@ typedef struct mmt_string_data_struct {
     uint8_t data[STRING_DATA_LEN];
 } mmt_string_data_t;
 
+/** Defines a calendar date (MMT_DATA_DATE). */
 typedef struct mmt_date {
     uint32_t sec; /**< Second */
     uint32_t min; /**< Minute */
@@ -119,9 +124,10 @@ typedef struct mmt_date {
     uint32_t wday; /**< Day of Week 0..6 */
 } mmt_date_t;
 
+/** Defines a header line value (MMT_HEADER_LINE): a pointer into the packet and a length, not necessarily NUL-terminated. */
 typedef struct mmt_header_line_struct {
-    const char * ptr;
-    uint16_t len;
+    const char * ptr; ///< Start of the value inside the packet data.
+    uint16_t len; ///< Length in bytes of the value.
 }mmt_header_line_t;
 
 /** Defines a generic header line data type */
@@ -130,33 +136,36 @@ typedef struct mmt_generic_header_line_struct {
     const char * hvalue; /**< Header value */
 }mmt_generic_header_line_t;
 
+/** Defines an array of uint16_t numbers (MMT_U16_ARRAY). */
 typedef struct mmt_u16_array_struct{
-	uint32_t len;
-	uint16_t data[ BINARY_64DATA_LEN ];
+	uint32_t len; ///< Number of valid entries in data.
+	uint16_t data[ BINARY_64DATA_LEN ]; ///< Array entries.
 } mmt_u16_array_t;
 
 #ifndef U16_ARRAY_TYPE_LEN
-#define U16_ARRAY_TYPE_LEN  (sizeof(mmt_u16_array_t)) /**< Length in bytes of a 1024binary data type. A 1024binary data type is composed of an int indicating the data length and a char table of 1024 bytes. */
+#define U16_ARRAY_TYPE_LEN  (sizeof(mmt_u16_array_t)) /**< Length in bytes of an mmt_u16_array_t. */
 #endif
 
 
+/** Defines an array of uint32_t numbers (MMT_U32_ARRAY). */
 typedef struct mmt_u32_array_struct{
-	uint32_t len;
-	uint32_t data[ BINARY_64DATA_LEN ];
+	uint32_t len; ///< Number of valid entries in data.
+	uint32_t data[ BINARY_64DATA_LEN ]; ///< Array entries.
 } mmt_u32_array_t;
 
 #ifndef U32_ARRAY_TYPE_LEN
-#define U32_ARRAY_TYPE_LEN  (sizeof(mmt_u32_array_t)) /**< Length in bytes of a 1024binary data type. A 1024binary data type is composed of an int indicating the data length and a char table of 1024 bytes. */
+#define U32_ARRAY_TYPE_LEN  (sizeof(mmt_u32_array_t)) /**< Length in bytes of an mmt_u32_array_t. */
 #endif
 
 
+/** Defines an array of uint64_t numbers (MMT_U64_ARRAY). */
 typedef struct mmt_u64_array_struct{
-	uint32_t len;
-	uint64_t data[ BINARY_64DATA_LEN ];
+	uint32_t len; ///< Number of valid entries in data.
+	uint64_t data[ BINARY_64DATA_LEN ]; ///< Array entries.
 } mmt_u64_array_t;
 
 #ifndef U64_ARRAY_TYPE_LEN
-#define U64_ARRAY_TYPE_LEN  (sizeof(mmt_u64_array_t)) /**< Length in bytes of a 1024binary data type. A 1024binary data type is composed of an int indicating the data length and a char table of 1024 bytes. */
+#define U64_ARRAY_TYPE_LEN  (sizeof(mmt_u64_array_t)) /**< Length in bytes of an mmt_u64_array_t. */
 #endif
 
 /** Defines the different data types that can be used */
@@ -193,9 +202,9 @@ enum data_types {
     MMT_HEADER_LINE, /**< string pointer value with a variable size. The string is not necessary null terminating */
     MMT_GENERIC_HEADER_LINE, /**< structure representing an RFC2822 header line with null terminating field and value elements. */
     MMT_STRING_DATA_POINTER, /**< pointer constant value (size is void *). The data pointed to is of type string with null terminating character included */
-	MMT_U16_ARRAY, /** struct mmt_u16_array_t representing an array of uint16_t numbers */
-	MMT_U32_ARRAY, /** struct mmt_u32_array_t representing an array of uint32_t numbers */
-	MMT_U64_ARRAY  /** struct mmt_u64_array_t representing an array of uint64_t numbers */
+	MMT_U16_ARRAY, /**< struct mmt_u16_array_t representing an array of uint16_t numbers */
+	MMT_U32_ARRAY, /**< struct mmt_u32_array_t representing an array of uint32_t numbers */
+	MMT_U64_ARRAY  /**< struct mmt_u64_array_t representing an array of uint64_t numbers */
 };
 
 // This should be updated whenever data_types is updated.

@@ -197,7 +197,7 @@ rules/arch-linux.mk:20-21	^CFLAGS \+= -std=gnu17$	^CFLAGS \+= \$\(MMT_EXTRA_CFLA
 rules/arch-linux.mk:73-85	^ifneq \(\$\(strip \$\(MMT_CCACHE\)\),\)	^endif$	MMT_CCACHE is an opt-in launcher in front of CC/CXX	override CC  := \$\(MMT_CCACHE\) \$\(CC\)
 .github/workflows/c-cpp.yml:517-522	Set up Ruby	bundler-cache: true	docs CI uses Ruby 3.4	ruby-version: "3.4"
 docs/Gemfile:12-17	^source	^gem "jekyll-seo-tag"	documentation gems	jekyll
-.github/workflows/c-cpp.yml:535	bash tools/ci/build-docs-site.sh	-	CI builds Jekyll
+.github/workflows/c-cpp.yml:541	bash tools/ci/build-docs-site.sh	-	CI builds Jekyll
 rules/common.mk:3-8	^MMT_BASE	^MMT_EXAMS	Make install configuration
 tests/fault_injection/run_tests.sh:134-136	^ *make .* clean	^ *make .* install	fault injection builds and installs SDK
 tests/fault_injection/run_tests.sh:116-121	^if .*SDK_BUILD_PROFILE	^fi	sanitizers skip fault injection engine leg	exit 0

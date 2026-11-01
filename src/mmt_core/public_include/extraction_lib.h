@@ -1,5 +1,10 @@
-/*
- * File:   protocol_extraction_functions.h
+/**
+ * @file
+ * Generic attribute extraction functions that protocol plugins use as
+ * extraction callbacks: raw bytes and 8/16/32-bit integers read at the
+ * attribute's position in the protocol header, with or without
+ * network-to-host byte-order conversion.
+ *
  * Author: montimage
  *
  * Created on 8 mars 2011, 16:04
@@ -22,7 +27,7 @@ extern "C" {
  * @param packet pointer to the packet structure data
  * @param proto_index index of the protocol in the protocols hierarchy
  * @param extracted_data pointer to attribute structure where the extracted data will be stored
- * @return Will always succeed, returns a positive value.
+ * @return Always 0: nothing is extracted.
  */
 MMTAPI int MMTCALL silent_extraction(
     const ipacket_t *packet,
@@ -39,7 +44,7 @@ MMTAPI int MMTCALL silent_extraction(
  * @param packet pointer to the packet structure data
  * @param proto_index index of the protocol in the protocols hierarchy
  * @param extracted_data pointer to the attribute struct where the extracted data will be stored
- * @return Positive value if the extraction succeeded, a negative value otherwise.
+ * @return 1 if the extraction succeeded, 0 when the value lies beyond the captured length, the length is not positive or an argument is NULL.
  */
 
 MMTAPI int MMTCALL general_byte_to_byte_extraction(
@@ -48,30 +53,71 @@ MMTAPI int MMTCALL general_byte_to_byte_extraction(
     attribute_t     *extracted_data
 );
 
+/**
+ * Copies the 16-bit value at the attribute position into extracted_data, converted from network to host byte order.
+ * The attribute position is relative to the protocol at proto_index.
+ * @param packet pointer to the packet structure data
+ * @param proto_index index of the protocol in the protocols hierarchy
+ * @param extracted_data pointer to the attribute struct where the extracted data will be stored
+ * @return 1 if the extraction succeeded, 0 when the value lies beyond the captured length or an argument is NULL.
+ */
 MMTAPI int MMTCALL general_short_extraction_with_ordering_change(
     const ipacket_t *packet,
     mmt_proto_index_t proto_index,
     attribute_t     *extracted_data
 );
 
+/**
+ * Copies the 32-bit value at the attribute position into extracted_data, converted from network to host byte order.
+ * The attribute position is relative to the protocol at proto_index.
+ * @param packet pointer to the packet structure data
+ * @param proto_index index of the protocol in the protocols hierarchy
+ * @param extracted_data pointer to the attribute struct where the extracted data will be stored
+ * @return 1 if the extraction succeeded, 0 when the value lies beyond the captured length or an argument is NULL.
+ */
 MMTAPI int MMTCALL general_int_extraction_with_ordering_change(
     const ipacket_t *packet,
     mmt_proto_index_t proto_index,
     attribute_t     *extracted_data
 );
 
+/**
+ * Copies the byte at the attribute position into extracted_data.
+ * The attribute position is relative to the protocol at proto_index.
+ * @param packet pointer to the packet structure data
+ * @param proto_index index of the protocol in the protocols hierarchy
+ * @param extracted_data pointer to the attribute struct where the extracted data will be stored
+ * @return 1 if the extraction succeeded, 0 when the value lies beyond the captured length or an argument is NULL.
+ */
 MMTAPI int MMTCALL general_char_extraction(
     const ipacket_t *packet,
     mmt_proto_index_t proto_index,
     attribute_t     *extracted_data
 );
 
+/**
+ * Copies the 16-bit value at the attribute position into extracted_data, without byte-order conversion.
+ * @deprecated No known caller (issue #541); removal in 2.0.0.
+ * The attribute position is relative to the protocol at proto_index.
+ * @param packet pointer to the packet structure data
+ * @param proto_index index of the protocol in the protocols hierarchy
+ * @param extracted_data pointer to the attribute struct where the extracted data will be stored
+ * @return 1 if the extraction succeeded, 0 when the value lies beyond the captured length or an argument is NULL.
+ */
 MMTAPI int MMTCALL general_short_extraction(
     const ipacket_t *packet,
     mmt_proto_index_t proto_index,
     attribute_t     *extracted_data
 ) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
+/**
+ * Copies the 32-bit value at the attribute position into extracted_data, without byte-order conversion.
+ * The attribute position is relative to the protocol at proto_index.
+ * @param packet pointer to the packet structure data
+ * @param proto_index index of the protocol in the protocols hierarchy
+ * @param extracted_data pointer to the attribute struct where the extracted data will be stored
+ * @return 1 if the extraction succeeded, 0 when the value lies beyond the captured length or an argument is NULL.
+ */
 MMTAPI int MMTCALL general_int_extraction(
     const ipacket_t *packet,
     mmt_proto_index_t proto_index,

@@ -1,0 +1,172 @@
+# doc-citations.txt — the anchor of every `path:line` citation in docs/*.md
+# (issue #582, F-DOCS-009), checked by tools/ci/check-doc-citations.py from
+# scripts/validate-doc-drift.sh (the doc-validators job).
+#
+# Records are TAB-separated (format: the header of check-doc-citations.py):
+#   cite      <page> <path:range> <head-needle> [<tail-needle>]
+#   delegate  <page> <script that anchors the page's citations>
+#   exempt    <page> <reason>
+#
+# A needle is a fixed substring the range's first (head) or last (tail) line
+# must hold. Moved code: update the line numbers in the page and here, then
+# re-read the cited lines. Changed code: re-verify what the page says before
+# changing the needle.
+
+# Append-only records: each entry describes the tree on its date, and the
+# log may not be rewritten (docs/DECISIONS.md, docs/troubleshooting.md headers).
+exempt	docs/DECISIONS.md	append-only decision log
+exempt	docs/troubleshooting.md	append-only troubleshooting log
+
+# Pages whose citations their own validator anchors with a richer table:
+# a CITATIONS row per range (head, tail and body regexes) and a needle list
+# per heuristic entry. This checker still resolves each of their ranges.
+delegate	docs/AGENT_ENVIRONMENT.md	scripts/validate-agent-environment.sh
+delegate	docs/Phase2-Heuristics.md	scripts/validate-doc-drift.sh
+
+cite	docs/ARCHITECTURE.md	sdk/Makefile:249	MMT_LAYOUT_PLUGINS  := $(LIBTCPIP) $(LIBMOBILE) $(LIBBAPP) $(LIBDICOM)	-
+cite	docs/ARCHITECTURE.md	rules/common.mk:216-223	LIBCORE     := libmmt_core	LIBBAPP     := libmmt_business_app
+cite	docs/ARCHITECTURE.md	rules/common.mk:225-228	ifdef ENABLESEC	endif
+cite	docs/Compilation-and-Installation-Instructions.md	rules/common.mk:76-84	# libxml2 (only the ENABLESEC security/fuzz engines need it): replace the	endif
+cite	docs/Compiling-mmt-sdk-for-ARM-architecture-by-cross-compiler.md	rules/arch-linux.mk:3-4	CC  := gcc	AR  := ar rcsD
+cite	docs/Compiling-mmt-sdk-for-ARM-architecture-by-cross-compiler.md	sdk/Makefile:1	ARCH         ?= linux	-
+cite	docs/Compiling-mmt-sdk-for-ARM-architecture-by-cross-compiler.md	sdk/Makefile:17	include $(RULESDIR)/arch-$(ARCH).mk	-
+cite	docs/DEB_PACKAGE_CHECKLIST.md	rules/common.mk:1	VERSION  := 1.9.1	-
+cite	docs/DEPLOYMENT.md	sdk/Makefile:139	&& echo "$(MMT_LIB)" > $(LDCONF_FILE) && chmod 0644 $(LDCONF_FILE) \	-
+cite	docs/DEPLOYMENT.md	sdk/Makefile:374	umask 022 && echo "$(MMT_LIB)" > $(BUILD_DIR)/etc/ld.so.conf.d/mmt-dpi.conf \	-
+cite	docs/DEPLOYMENT.md	rules/common.mk:7	MMT_PLUGINS ?= $(MMT_BASE)/plugins	-
+cite	docs/DEPLOYMENT.md	src/mmt_core/src/plugins_engine.c:48-60	static const char *plugins_directory(int *from_env)	}
+cite	docs/DEPLOYMENT.md	src/mmt_core/src/plugins_engine.c:50	const char *dir = secure_getenv(PLUGINS_DIR_ENV);	-
+cite	docs/DEPLOYMENT.md	src/mmt_core/private_include/plugins_engine.h:27	#define PLUGINS_DIR_ENV "MMT_DPI_PLUGINS_DIR"	-
+cite	docs/DEPLOYMENT.md	src/mmt_core/src/mmt_log.c:62	int initial = mmt_log_parse_level(getenv("MMT_DPI_LOG_LEVEL"));	-
+cite	docs/DEPLOYMENT.md	src/mmt_core/src/dpi_profiles.c:254	const char *profiles_path = getenv("MMT_DPI_PROFILES_FILE");	-
+cite	docs/DEPLOYMENT.md	src/mmt_core/src/dpi_profiles.c:265	const char *name = getenv("MMT_DPI_PROFILE");	-
+cite	docs/DEPLOYMENT.md	src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c:672	const char *path = getenv("MMT_DPI_PORT_MAP_FILE");	-
+cite	docs/DEPLOYMENT.md	src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c:570	const char *path = getenv("MMT_DPI_IP_RANGES_FILE");	-
+cite	docs/DEPLOYMENT.md	src/mmt_core/src/hash_utils.c:253-255	const char * v = getenv("MMT_DETERMINISTIC_SEED");	return getauxval(AT_SECURE) == 0;
+cite	docs/DEPLOYMENT.md	src/mmt_security/tips_report.c:970	const char *d = secure_getenv("MMT_SEC_REACTION_DIR");	-
+cite	docs/DEPLOYMENT.md	rules/common.mk:8	MMT_EXAMS ?= $(MMT_BASE)/examples	-
+cite	docs/DEVELOPMENT.md	rules/common.mk:159-171	# SHOWLOG = 1 to compile in mmt_log_debug() lines; logger defaults to debug (#545)	endif
+cite	docs/DEVELOPMENT.md	rules/common.mk:87-93	ifdef DEBUG	endif
+cite	docs/DEVELOPMENT.md	rules/common.mk:38-43	ifdef NDEBUG	endif
+cite	docs/DEVELOPMENT.md	rules/common.mk:94-98	# VALGRIND = 1 to compile for Valgrind test	endif
+cite	docs/DEVELOPMENT.md	rules/common.mk:225-228	ifdef ENABLESEC	endif
+cite	docs/DEVELOPMENT.md	rules/common.mk:100-127	# BUILD=asan to compile with AddressSanitizer + UndefinedBehaviorSanitizer.	endif
+cite	docs/DEVELOPMENT.md	rules/common.mk:129-157	# BUILD=tsan to compile with ThreadSanitizer.	endif
+cite	docs/DEVELOPMENT.md	rules/common.mk:21-24	ifndef VERBOSE	endif
+cite	docs/DEVELOPMENT.md	sdk/Makefile:412	deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir	-
+cite	docs/Data-Types.md	src/mmt_core/public_include/types_defs.h:88	} mmt_binary_data_t;	-
+cite	docs/Data-Types.md	src/mmt_core/public_include/types_defs.h:101	} mmt_binary_var_data_t;	-
+cite	docs/Data-Types.md	src/mmt_core/public_include/types_defs.h:104	typedef struct mmt_string_data_struct {	-
+cite	docs/Data-Types.md	src/mmt_core/public_include/types_defs.h:201	MMT_STRING_LONG_DATA, /**< text string data constant value. Len plus data. Data is expected to be	-
+cite	docs/Exported-Symbols.md	src/mmt_tcpip/lib/protocols/proto_irc.c:359-360	MMTAPI uint8_t mmt_search_irc_ssl_detect_ninty_percent_but_very_fast(ipacket_t * ipacket)	__attribute__((deprecated("use mmt_search_irc_ssl_detect; removal in 2.0.0")));
+cite	docs/Exported-Symbols.md	src/mmt_tcpip/lib/protocols/proto_irc.c:340	uint8_t mmt_search_irc_ssl_detect(ipacket_t * ipacket) {	-
+cite	docs/Exported-Symbols.md	src/mmt_core/public_include/mmt_core.h:1143	MMTAPI void MMTCALL setDataLinkType(	-
+cite	docs/Exported-Symbols.md	src/mmt_core/public_include/mmt_core.h:998	MMTAPI void* MMTCALL get_attribute_extracted_data_encap_index(	-
+cite	docs/Exported-Symbols.md	src/mmt_core/public_include/mmt_core.h:715	MMTAPI void MMTCALL mmt_print_all_protocols() __attribute__((deprecated("debug helper; prefer	-
+cite	docs/External-Attribution.md	src/mmt_core/public_include/mmt_core.h:779	MMTAPI bool MMTCALL enable_port_classify_payload_confirm(	-
+cite	docs/Global-Handler.md	src/mmt_core/public_include/mmt_core.h:1268	MMTAPI char* MMTCALL mmt_version();	-
+cite	docs/Global-Handler.md	src/mmt_core/public_include/mmt_core.h:190	MMTAPI bool MMTCALL init_extraction();	-
+cite	docs/Global-Handler.md	src/mmt_core/public_include/mmt_core.h:203	MMTAPI void MMTCALL close_extraction();	-
+cite	docs/MMT-Attributes.md	src/mmt_core/src/proto_meta.c:136	{META_CLASSIFICATION_METHOD, META_CLASSIFICATION_METHOD_ALIAS, MMT_U8_DATA, sizeof (uint8_t),	-
+cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_tcp.c:1230	retval.proto_id =  mmt_guess_protocol_by_port_number(ipacket);	-
+cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_udp.c:165	retval.proto_id = mmt_guess_protocol_by_port_number(ipacket);	-
+cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_tcp.c:1226	retval.proto_id = get_proto_id_from_address(ipacket);	-
+cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_udp.c:160	retval.proto_id = get_proto_id_from_address(ipacket);	-
+cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/http.c:942	mmt_int_http_add_connection_by(ipacket, proto, MMT_CLASSIFICATION_METHOD_IP);	-
+cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_ssl.c:842	mmt_int_ssl_add_connection_by(ipacket, proto, MMT_CLASSIFICATION_METHOD_IP);	-
+cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/http.c:933	mmt_int_http_add_connection_by(ipacket, proto, MMT_CLASSIFICATION_METHOD_HOSTNAME);	-
+cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_ssl.c:602	mmt_int_ssl_add_connection_by(ipacket, proto, MMT_CLASSIFICATION_METHOD_HOSTNAME);	-
+cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_ssl.c:644	mmt_int_ssl_add_connection_by(ipacket, proto, MMT_CLASSIFICATION_METHOD_HOSTNAME);	-
+cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:653	ipacket->session->classification_method = MMT_CLASSIFICATION_METHOD_DPI;	-
+cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c:217	void mmt_change_internal_flow_protocol_by(ipacket_t * ipacket, uint16_t detected_protocol,	-
+cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:893	static inline void attr_dispatch_leave(mmt_handler_t * mmt_handler) {	-
+cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_registry_attr.c:125	static void release_registered_attribute(mmt_handler_t *mmt_handler, attribute_internal_t *attr) {	-
+cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:906	static inline int next_attribute_handler(const struct attribute_internal_struct * attr, int h,	-
+cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:954	static inline void dispatch_budget_update(uint32_t len, uint32_t * high, uint32_t * budget) {	-
+cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:933	static inline uint32_t next_attribute_element(const mmt_handler_t * mmt_handler, uint32_t proto,	-
+cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_registry_attr.c:325	int owned = (temp_attr->extraction_owner == handler_fct);	-
+cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:999	attr->data = NULL;	-
+cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:1590	if (mmt->packet_scratch_head != NULL) mmt_packet_scratch_release(mmt);	-
+cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_registry_attr.c:148	mmt_packet_scratch_destroy(mmt_handler); // issue #506: adopted attribute values	-
+cite	docs/MMT-Attributes.md	src/mmt_core/public_include/proto_meta.h:34	META_CLASSIFICATION_METHOD, /**< How the session's application verdict was reached, an	-
+cite	docs/MMT-Attributes.md	src/mmt_core/public_include/data_defs.h:516	MMTAPI uint8_t MMTCALL get_session_classification_method(	-
+cite	docs/MMT-Attributes.md	src/mmt_core/public_include/data_defs.h:526	MMTAPI const char* MMTCALL get_classification_method_name(	-
+cite	docs/MMT-Attributes.md	src/mmt_core/public_include/data_defs.h:38-44	#define MMT_CLASSIFICATION_METHOD_NONE       0 /**< no application verdict (or none yet) */	#define MMT_CLASSIFICATION_METHOD_NB         6 /**< number of classification methods */
+cite	docs/MMT-Attributes.md	src/mmt_core/public_include/plugin_defs.h:58	MMTAPI bool MMTCALL mmt_packet_scratch_adopt(	-
+cite	docs/MMT-Handler.md	src/mmt_core/public_include/mmt_core.h:223	MMTAPI void MMTCALL mmt_close_handler(	-
+cite	docs/MMT-Handler.md	src/mmt_core/public_include/mmt_core.h:236	MMTAPI uint64_t MMTCALL get_active_session_count(	-
+cite	docs/MMT-Handler.md	src/mmt_core/public_include/mmt_core.h:338	MMTAPI bool MMTCALL register_evasion_handler(	-
+cite	docs/MMT-Handler.md	src/mmt_core/public_include/mmt_core.h:130	typedef void (*generic_evasion_handler_callback) (const ipacket_t * ipacket, mmt_proto_id_t	-
+cite	docs/MMT-Handler.md	src/mmt_core/public_include/mmt_core.h:111-115	#define EVA_IP_FRAGMENT_PACKET 1 ///< Evasion event: too many fragments in one packet	#define EVA_IP_FRAGMENT_DUPLICATED 5 ///< Evasion event: IP fragmentation duplicated segments
+cite	docs/MMT-Handler.md	src/mmt_core/public_include/mmt_core.h:619	MMTAPI bool MMTCALL set_fragment_in_packet(	-
+cite	docs/MMT-Handler.md	src/mmt_core/public_include/mmt_core.h:631	MMTAPI bool MMTCALL set_fragmented_packet_in_session(	-
+cite	docs/MMT-Handler.md	src/mmt_core/public_include/mmt_core.h:643	MMTAPI bool MMTCALL set_fragment_in_session(	-
+cite	docs/MMT-Packet.md	src/mmt_core/public_include/data_defs.h:141-194	typedef struct pkthdr {	};
+cite	docs/MMT-Packet.md	src/mmt_core/public_include/data_defs.h:197-224	Issue #535 (F-CLEAN-001): the public packet layout is pinned	#endif
+cite	docs/MMT-Packet.md	src/mmt_core/public_include/data_defs.h:373	#define MMT_NO_PROTO_ID    UINT32_MAX /**< get_protocol_id_at_index(): no protocol at that index */	-
+cite	docs/MMT-Packet.md	src/mmt_core/public_include/data_defs.h:374	#define MMT_NO_PROTO_INDEX UINT_MAX   /**< get_protocol_index_by_id/_by_name(): protocol not in the	-
+cite	docs/MMT-Protocol.md	src/mmt_core/private_include/packet_processing.h:624	struct protocol_struct {	-
+cite	docs/MMT-Session.md	src/mmt_core/private_include/packet_processing.h:192	struct mmt_session_struct {	-
+cite	docs/MMT-Session.md	src/mmt_core/public_include/data_defs.h:63	typedef struct mmt_session_struct               mmt_session_t; ///< Opaque session (flow)	-
+cite	docs/Memory-Management.md	src/mmt_core/src/memory.c:9-18	// B5 (remote-DoS hardening): allocation failure used to call abort(), which	// block is left untouched (standard realloc semantics).
+cite	docs/Memory-Management.md	src/mmt_core/src/packet_pipeline.c:1625	bool mmt_packet_scratch_adopt(const ipacket_t *ipacket, mmt_opaque_t value,	-
+cite	docs/Memory-Management.md	src/mmt_core/src/packet_pipeline.c:1590	if (mmt->packet_scratch_head != NULL) mmt_packet_scratch_release(mmt);	-
+cite	docs/Memory-Management.md	src/mmt_core/src/packet_pipeline.c:1649	void mmt_packet_scratch_release(mmt_handler_t *mmt_handler) {	-
+cite	docs/Memory-Management.md	src/mmt_core/src/packet_registry_attr.c:148	mmt_packet_scratch_destroy(mmt_handler); // issue #506: adopted attribute values	-
+cite	docs/Memory-Management.md	src/mmt_core/src/memory.c:40-45	if( unlikely( x == NULL )) {	}
+cite	docs/Memory-Management.md	src/mmt_core/src/memory.c:73-79	if( unlikely( x1 == NULL )) {	}
+cite	docs/Memory-Management.md	src/mmt_tcpip/lib/http_parser_integration.h:90-107	inline static stream_parser_t * init_http_parser() {	}
+cite	docs/Memory-Management.md	src/mmt_core/public_include/plugin_defs.h:58	MMTAPI bool MMTCALL mmt_packet_scratch_adopt(	-
+cite	docs/Memory-Management.md	src/mmt_core/public_include/mmt_core.h:1292-1293	/** Carve `size` aligned bytes from the arena (NULL on OOM). */	MMTAPI void*        MMTCALL mmt_arena_alloc  ( mmt_arena_t *arena, size_t size );
+cite	docs/Protocol-Modeling.md	src/mmt_core/private_include/packet_processing.h:624	struct protocol_struct {	-
+cite	docs/Protocol-Modeling.md	src/mmt_core/private_include/packet_processing.h:630	uint32_t proto_id; /**< unique identifier of the protocol. */	-
+cite	docs/Protocol-Modeling.md	src/mmt_core/private_include/packet_processing.h:631	const char * protocol_name; /**< The name of the protocol. Must be unique. */	-
+cite	docs/Protocol-Modeling.md	src/mmt_core/private_include/packet_processing.h:627	int has_session; /**< indicates if the protocol has a session context or not. */	-
+cite	docs/Protocol-Modeling.md	src/mmt_core/private_include/packet_processing.h:645	mmt_classify_next_t classify_next; /**< For internal use. MUST not be changed. */	-
+cite	docs/Protocol-Modeling.md	src/mmt_core/private_include/packet_processing.h:646	mmt_analyser_t data_analyser; /**< For internal use. Must not be chagned.*/	-
+cite	docs/Protocol-Modeling.md	src/mmt_core/private_include/packet_processing.h:648-649	void * attributes_map; /**< For internal use. MUST not be changed. */	void * attributes_names_map; /**< For internal use. MUST not be changed. */
+cite	docs/Protocol-Statistics.md	src/mmt_core/public_include/data_defs.h:279-291	enum proto_stats_attr {	};
+cite	docs/Protocol-Statistics.md	src/mmt_core/public_include/mmt_core.h:1101	MMTAPI proto_statistics_t* MMTCALL get_protocol_stats(	-
+cite	docs/Protocol-Statistics.md	src/mmt_core/public_include/mmt_core.h:1121	MMTAPI void MMTCALL get_protocol_stats_path(	-
+cite	docs/Protocol-Statistics.md	src/mmt_core/public_include/mmt_core.h:1111	MMTAPI void MMTCALL get_children_stats(proto_statistics_t * parent_stats,	-
+cite	docs/Protocol-Statistics.md	src/mmt_core/public_include/mmt_core.h:1131	MMTAPI void MMTCALL reset_statistics(proto_statistics_t * stats);	-
+cite	docs/THREADING.md	src/mmt_core/src/packet_registry.c:677-689	void close_extraction() {	}
+cite	docs/USER_GUIDE.md	install.sh:356-423	# The package sets below install the default-profile build (compiler, make,	}
+cite	docs/USER_GUIDE.md	rules/common.mk:3-8	MMT_BASE ?=/opt/mmt	MMT_EXAMS ?= $(MMT_BASE)/examples
+cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry.c:626	bool init_extraction()	-
+cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry.c:668-669	if (!init_plugins()) return 0; // Issue #503: a plugin load/init failure fails init_extraction()	if (!init_handlers_map()) {
+cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry_handler.c:414	mmt_configured_handlers_map = init_map_space(pointer_comp_fn_pt, pointer_hash_fn);	-
+cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry_handler.c:116	mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * errbuf )	-
+cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry_handler.c:269	if(!insert_key_value(mmt_configured_handlers_map, (void *) new_handler, (void *) new_handler)){	-
+cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_pipeline.c:1576	bool packet_process(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet) {	-
+cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry_handler.c:302	void mmt_close_handler(mmt_handler_t *mmt_handler) {	-
+cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry_handler.c:352	delete_key_value(mmt_configured_handlers_map, mmt_handler);	-
+cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry.c:677	void close_extraction() {	-
+cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry.c:680	close_handlers_map();	-
+cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry_handler.c:420	iterate_through_mmt_handlers(mmt_close_handler_internal, NULL);	-
+cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry.c:688	close_plugins();	-
+cite	docs/USER_GUIDE.md	src/examples/packet_handler.c:63	if(!init_extraction()){	-
+cite	docs/USER_GUIDE.md	src/examples/packet_handler.c:69	mmt_handler = mmt_init_handler(DLT_EN10MB, 0, mmt_errbuf);	-
+cite	docs/USER_GUIDE.md	src/examples/packet_handler.c:100	if(!packet_process(mmt_handler,&header,data)){	-
+cite	docs/USER_GUIDE.md	src/examples/packet_handler.c:108	mmt_close_handler(mmt_handler);	-
+cite	docs/USER_GUIDE.md	src/examples/packet_handler.c:111	close_extraction();	-
+cite	docs/USER_GUIDE.md	src/mmt_core/src/plugins_engine.c:50-53	const char *dir = secure_getenv(PLUGINS_DIR_ENV);	return PLUGINS_REPOSITORY_OPT;
+cite	docs/USER_GUIDE.md	src/mmt_core/src/plugins_engine.c:94-96	} else if( !load_plugin( path )) {	retval = 0;
+cite	docs/USER_GUIDE.md	sdk/Makefile:110-113	@ umask 022 && cp -R $(SDKXAM)/* $(MMT_EXAMS) \	@ echo "[MMT-]> Installed  "$(SDKXAM)" at "$(MMT_EXAMS)
+cite	docs/ci-audit-2026-10.md	src/mmt_tcpip/lib/llhttp_api.c:47-48	parser->type = type;	parser->settings = (void*) settings;
+cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/llhttp.h:14-16	#define LLHTTP_VERSION_MAJOR 9	#define LLHTTP_VERSION_PATCH 3
+cite	docs/llhttp-migration.md	rules/common.mk:492-494	MMT_GCC_MIN       := 11	MMT_LIBSTDCXX_MIN := $(MMT_GCC_MIN)
+cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/http_parser_integration.h:24	llhttp_t parser[2]; /** Array of two HTTP parsers. **/	-
+cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/http_parser_integration.c:153	static llhttp_settings_t settings =	-
+cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/http_parser_integration.c:155-162	.on_header_field = header_field_cb	,.on_message_complete = message_complete_cb
+cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/http_parser_integration.c:10-148	int message_begin_cb (llhttp_t *p)	}
+cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/http_parser_integration.h:100-103	llhttp_init(& parser->parser[0], HTTP_BOTH, get_settings());	parser->parser[1].data = init_stream_processor();
+cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/http_parser_integration.c:127	//llhttp_should_keep_alive(parser);	-
+cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/protocols/proto_http.c:367	err = llhttp_execute(parser, (const char *) packet->payload, packet->payload_packet_len);	-
+cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/protocols/proto_http.c:368	if (err == HPE_PAUSED_UPGRADE || llhttp_get_upgrade(parser)) {	-
+cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/protocols/proto_http.c:372	debug("[PROTO_HTTP-]> Error while parsing this HTTP message -Error %s: %s\n",	-
+cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/protocols/proto_http.c:380	llhttp_reset(parser);	-
+cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/protocols/proto_http.c:378-379	* llhttp_reset() preserves type, settings and parser->data (the	* stream processor) — the same property http_parser_init() had. */
+cite	docs/llhttp-migration.md	rules/common.mk:173-178	# HTTP strict-mode (issue #204, F-BUG-060; issue #222, F-DEP-201): the	# llhttp_set_lenient_*() if a deployment ever needs it.
+cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/protocols/proto_http.c:370	} else if (err != HPE_OK) {	-
+cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/protocols/proto_http.c:378-380	* llhttp_reset() preserves type, settings and parser->data (the	llhttp_reset(parser);

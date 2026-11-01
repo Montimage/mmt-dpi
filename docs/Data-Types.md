@@ -79,22 +79,22 @@ The list of supported data types is defined in [types_defs.h](https://github.com
 ```c
    MMT_BINARY_DATA, /**< binary constant value */
 ```
-   Identifier of binary data. Defined as `mmt_binary_data_t` in `sdk/include/types_defs.h:89` — a `uint32_t len` followed by `uint8_t data[BINARY_64DATA_LEN]` (64 bytes). Total length is `BINARY_64DATA_TYPE_LEN` (68 bytes).
+   Identifier of binary data. Defined as `mmt_binary_data_t` in `src/mmt_core/public_include/types_defs.h:88` — a `uint32_t len` followed by `uint8_t data[BINARY_64DATA_LEN]` (64 bytes). Total length is `BINARY_64DATA_TYPE_LEN` (68 bytes).
 
 ```c
    MMT_BINARY_VAR_DATA, /**< binary constant value with variable size given by function getExtractionDataSizeByProtocolAndFieldIds */
 ```
-   Identifier of binary data. Defined as `mmt_binary_var_data_t` in `sdk/include/types_defs.h:101` — a `uint32_t len` followed by `uint8_t data[BINARY_1024DATA_LEN]` (1024 bytes). Total length is `BINARY_1024DATA_TYPE_LEN` (1028 bytes).
+   Identifier of binary data. Defined as `mmt_binary_var_data_t` in `src/mmt_core/public_include/types_defs.h:101` — a `uint32_t len` followed by `uint8_t data[BINARY_1024DATA_LEN]` (1024 bytes). Total length is `BINARY_1024DATA_TYPE_LEN` (1028 bytes).
 
 ```c
    MMT_STRING_DATA, /**< text string data constant value. Len plus data. Data is expected to be '\0' terminated and maximum BINARY_64DATA_LEN long */
 ```
-   Identifier of a text string (null-terminated). Defined as `mmt_string_data_struct` in `sdk/include/types_defs.h:106` — a `uint32_t len` followed by `char data[BINARY_64DATA_LEN]` (64 bytes max, null-terminated). Total length is `BINARY_64DATA_TYPE_LEN` (68 bytes).
+   Identifier of a text string (null-terminated). Defined as `mmt_string_data_struct` in `src/mmt_core/public_include/types_defs.h:104` — a `uint32_t len` followed by `char data[BINARY_64DATA_LEN]` (64 bytes max, null-terminated). Total length is `BINARY_64DATA_TYPE_LEN` (68 bytes).
 
 ```c
    MMT_STRING_LONG_DATA_POINTER, /**< text string data constant value. Len plus data. Data is expected to be '\0' terminated and maximum STRING_DATA_LEN octets long */
 ```
-   Identifier of a long text string (null-terminated). Defined as `MMT_STRING_LONG_DATA` in `sdk/include/types_defs.h:197` — a `uint32_t len` followed by `char data[STRING_DATA_LEN]` (1504 bytes max). Total length is `STRING_DATA_TYPE_LEN` (1508 bytes).
+   Identifier of a long text string (null-terminated). Defined as `MMT_STRING_LONG_DATA` in `src/mmt_core/public_include/types_defs.h:201` — a `uint32_t len` followed by `char data[STRING_DATA_LEN]` (1504 bytes max). Total length is `STRING_DATA_TYPE_LEN` (1508 bytes).
 
 ```c
    MMT_STRING_DATA_POINTER, /**< pointer constant value (size is void *). The data pointed to is of type string with null terminating character included */

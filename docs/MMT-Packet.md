@@ -65,7 +65,7 @@ struct ipacket_struct {
 };
 ```
 
-Structures from `src/mmt_core/public_include/data_defs.h:137-190` (installed
+Structures from `src/mmt_core/public_include/data_defs.h:141-194` (installed
 as `sdk/include/data_defs.h`). The structure holds the public fields only
 (issue #535): the engine's per-packet state — embedded storage for the path
 arrays and the meta-data, the original data pointer, the offset cache and the
@@ -74,7 +74,7 @@ classifier-walk bookkeeping — lives in a private extension that embeds it
 the packet: a consumer receives an `ipacket_t *` and must never allocate, copy
 or embed an `ipacket_t`. The offsets of the public fields are pinned by
 `_Static_assert`s on the shipped LP64 targets
-(`src/mmt_core/public_include/data_defs.h:192-220`); after an in-place write
+(`src/mmt_core/public_include/data_defs.h:197-224`); after an in-place write
 to `proto_headers_offset->proto_path[]`, call the exported
 `invalidate_packet_offset_cache()`.
 ### User API ###
@@ -121,7 +121,7 @@ MMTAPI uint32_t MMTCALL get_protocol_id_at_index(
     unsigned index
 );
 ```
-This function returns the identifier of the protocol at the given index if such index exists, `MMT_NO_PROTO_ID` otherwise (`src/mmt_core/public_include/data_defs.h:366`).
+This function returns the identifier of the protocol at the given index if such index exists, `MMT_NO_PROTO_ID` otherwise (`src/mmt_core/public_include/data_defs.h:373`).
 
 ```c
 MMTAPI unsigned MMTCALL get_protocol_index_by_id(
@@ -129,7 +129,7 @@ MMTAPI unsigned MMTCALL get_protocol_index_by_id(
     mmt_proto_id_t proto_id
 );
 ```
-This function returns the index of the protocol given by its id. If the protocol id is not valid or the protocol does not appear in the protocol hierarchy, `MMT_NO_PROTO_INDEX` is returned (`src/mmt_core/public_include/data_defs.h:367`).
+This function returns the index of the protocol given by its id. If the protocol id is not valid or the protocol does not appear in the protocol hierarchy, `MMT_NO_PROTO_INDEX` is returned (`src/mmt_core/public_include/data_defs.h:374`).
 
 ```c
 MMTAPI unsigned MMTCALL get_protocol_index_by_name(
@@ -137,7 +137,7 @@ MMTAPI unsigned MMTCALL get_protocol_index_by_name(
     const char *proto_name
 );
 ```
-This function returns the index of the protocol given by its name. If the protocol name is not valid or the protocol does not appear in the protocol hierarchy, `MMT_NO_PROTO_INDEX` is returned (`src/mmt_core/public_include/data_defs.h:367`).
+This function returns the index of the protocol given by its name. If the protocol name is not valid or the protocol does not appear in the protocol hierarchy, `MMT_NO_PROTO_INDEX` is returned (`src/mmt_core/public_include/data_defs.h:374`).
 
 ```c
 MMTAPI uint64_t MMTCALL get_session_id_from_packet(

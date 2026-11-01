@@ -16,21 +16,27 @@
 #                                     bundle exec jekyll build in docs/, with
 #                                     site.github.build_revision = HEAD)
 #   3. lock unchanged                (git diff --exit-code docs/Gemfile.lock)
-#   4. built-site link check         (tools/ci/check-site-links.sh docs/_site)
-#   5. renderer guard + manifest     (docs/_site/build-manifest.json)
+#   4. C API reference               (tools/ci/build-api-reference.sh
+#                                     docs/_site/api: the pinned doxygen over
+#                                     src/mmt_core/public_include, 0 warnings
+#                                     — issue #582)
+#   5. built-site link check         (tools/ci/check-site-links.sh docs/_site)
+#   6. renderer guard + manifest     (docs/_site/build-manifest.json)
 #
-# The manifest records the renderer that produced the artifact (Jekyll,
-# kramdown, Ruby, Bundler versions), the sha256 of docs/Gemfile.lock, the
+# The manifest records the renderers that produced the artifact (Jekyll,
+# kramdown, Ruby, Bundler and doxygen versions), the sha256 of docs/Gemfile.lock, the
 # source commit, and a digest of the built site: sha256 over the sorted
 # "<sha256>  <path>" lines of every file in docs/_site except the manifest.
 # The build fails when the renderer is not Jekyll 4.
 #
 # Exit codes: 0 = site built and verified, 1 = a check failed (broken link,
-# lock drift, wrong renderer major, build error), 2 = helper broken (bundle
-# or git missing).
+# lock drift, wrong renderer major, build error, doxygen warning), 2 = helper
+# broken (bundle, git or doxygen missing).
 #
 # Usage: bash tools/ci/build-docs-site.sh
-#        (run `cd docs && bundle install` once first on a fresh machine)
+#        (run `cd docs && bundle install` and
+#        `bash tools/ci/build-api-reference.sh --install` once first on a
+#        fresh machine)
 
 set -euo pipefail
 
@@ -71,11 +77,16 @@ git diff --exit-code -- docs/Gemfile.lock || {
   exit 1
 }
 
+api_rc=0
+bash tools/ci/build-api-reference.sh docs/_site/api || api_rc=$?
+[ "$api_rc" -eq 0 ] || exit "$api_rc"
+DOXYGEN_VERSION="$(doxygen --version | awk '{print $1}')"
+
 bash tools/ci/check-site-links.sh docs/_site
 
 (
   cd docs
-  SOURCE_COMMIT="$commit" bundle exec ruby -rjson -rdigest -rjekyll -rkramdown -e '
+  SOURCE_COMMIT="$commit" DOXYGEN_VERSION="$DOXYGEN_VERSION" bundle exec ruby -rjson -rdigest -rjekyll -rkramdown -e '
     major = Jekyll::VERSION.split(".").first.to_i
     if major != 4
       warn "✗ renderer is Jekyll #{Jekyll::VERSION}; the published site must be built by Jekyll 4"
@@ -92,7 +103,8 @@ bash tools/ci/check-site-links.sh docs/_site
         "jekyll" => Jekyll::VERSION,
         "kramdown" => Kramdown::VERSION,
         "ruby" => RUBY_VERSION,
-        "bundler" => Bundler::VERSION
+        "bundler" => Bundler::VERSION,
+        "doxygen" => ENV.fetch("DOXYGEN_VERSION")
       },
       "gemfile_lock_sha256" => Digest::SHA256.file("Gemfile.lock").hexdigest,
       "source_commit" => ENV.fetch("SOURCE_COMMIT"),
@@ -105,4 +117,4 @@ bash tools/ci/check-site-links.sh docs/_site
   '
 ) || exit 1
 
-echo "✓ docs/_site built by the locked Jekyll 4 recipe (manifest: docs/_site/build-manifest.json)"
+echo "✓ docs/_site built by the locked Jekyll 4 recipe, API reference under docs/_site/api (manifest: docs/_site/build-manifest.json)"

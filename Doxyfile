@@ -1,0 +1,61 @@
+# Doxyfile — the C API reference of the public headers (issue #582,
+# F-DOCS-008).
+#
+# Scope: src/mmt_core/public_include, the headers `make install` ships under
+# $(MMT_BASE)/dpi/include. tools/ci/build-api-reference.sh runs it with the
+# pinned doxygen (DOXYGEN_PINNED_VERSION there) and fails on any warning, so
+# every MMTAPI function, struct, typedef, enum (and enum value) and macro of
+# those headers must carry a doc comment. tools/ci/build-docs-site.sh
+# publishes the HTML under <site>/api/ in the same Pages artifact.
+#
+# Only the keys that differ from doxygen's defaults are set. The build
+# script appends OUTPUT_DIRECTORY and WARN_LOGFILE on stdin, so the defaults
+# below only matter for a bare `doxygen Doxyfile` from the repository root.
+
+PROJECT_NAME           = "MMT-DPI"
+PROJECT_BRIEF          = "C API reference"
+OUTPUT_DIRECTORY       = build/api-reference
+
+INPUT                  = src/mmt_core/public_include
+FILE_PATTERNS          = *.h
+RECURSIVE              = NO
+STRIP_FROM_PATH        = src/mmt_core/public_include
+
+OPTIMIZE_OUTPUT_FOR_C  = YES
+JAVADOC_AUTOBRIEF      = YES
+EXTRACT_ALL            = NO
+EXTRACT_STATIC         = YES
+
+# MMTAPI/MMTCALL (mmt_exports.h) are linkage markers; expanding them to
+# nothing keeps every exported prototype readable as plain C. Doxygen 1.9.8
+# misparses `__attribute__((deprecated("...")))` (it invents members or merges
+# the declaration into the next one), so attributes expand to nothing too.
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+PREDEFINED             = MMTAPI= MMTCALL= "__attribute__(x)="
+
+# The 0-warning gate: undocumented members (functions, variables, typedefs,
+# macros, compounds and enum values), documentation errors and incompletely
+# documented parameter lists all count.
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_IF_INCOMPLETE_DOC = YES
+WARN_IF_UNDOC_ENUM_VAL = YES
+WARN_NO_PARAMDOC       = NO
+WARN_AS_ERROR          = NO
+QUIET                  = YES
+
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+HTML_OUTPUT            = html
+# Site navigation (tools/ci/check-site-links.sh): every published page links
+# the landing page and the docs index.
+HTML_FOOTER            = tools/ci/doxygen-footer.html
+TIMESTAMP              = NO
+SEARCHENGINE           = NO
+GENERATE_TREEVIEW      = NO
+HAVE_DOT               = NO
+# Stays NO with the pinned 1.9.8+ds-2build5 package: that build still emits
+# the polyfill.io CDN script for MathJax pages (removed in 0ubuntu0.1).
+USE_MATHJAX            = NO

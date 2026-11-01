@@ -25,8 +25,9 @@
 # digest-pinned image (jobs.lint.container.image), holding shellcheck from
 # its apt, cppcheck built by tools/ci/install-cppcheck.sh (the release the
 # findings ratchet was measured with), the SDK build dependencies
-# (tools/ci/install-build-deps.sh), PyYAML, jq, ccache, and Ruby with the
-# gems of docs/Gemfile.lock. The image is built on first use and tagged with
+# (tools/ci/install-build-deps.sh), PyYAML, jq, ccache, the pinned doxygen
+# of the C API reference (tools/ci/build-api-reference.sh --install), and
+# Ruby with the gems of docs/Gemfile.lock. The image is built on first use and tagged with
 # a digest of its inputs, so later runs reuse it and a changed input
 # rebuilds it. The checkout is bind-mounted at its own path and the steps run
 # as your user, so what they write is yours. docker or podman is required
@@ -111,16 +112,18 @@ PYEOF
     esac
     ctx="$(mktemp -d)"
     cp "$ROOT/tools/ci/install-build-deps.sh" "$ROOT/tools/ci/install-cppcheck.sh" \
+       "$ROOT/tools/ci/build-api-reference.sh" \
        "$ROOT/docs/Gemfile" "$ROOT/docs/Gemfile.lock" "$ctx/"
     cat > "$ctx/Dockerfile" <<EOF
 FROM ${image}
 RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries
-COPY install-build-deps.sh install-cppcheck.sh /opt/mmt-gates/
+COPY install-build-deps.sh install-cppcheck.sh build-api-reference.sh /opt/mmt-gates/
 RUN bash /opt/mmt-gates/install-build-deps.sh ubuntu-24.04 deb \\
  && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \\
       curl gawk shellcheck python3-yaml jq pkg-config ccache ruby ruby-dev zlib1g-dev libssl-dev libyaml-dev libffi-dev \\
  && rm -rf /var/lib/apt/lists/*
 RUN bash /opt/mmt-gates/install-cppcheck.sh
+RUN bash /opt/mmt-gates/build-api-reference.sh --install && rm -rf /var/lib/apt/lists/*
 COPY Gemfile Gemfile.lock /opt/mmt-gates/docs/
 ENV BUNDLE_PATH=/opt/mmt-gates/bundle
 RUN cd /opt/mmt-gates/docs \\
@@ -192,6 +195,9 @@ SETUP_STEPS = {
         "Install git, shellcheck and the cppcheck build prerequisites",
         "Mark the checkout as a safe git directory",
         "Build the pinned cppcheck release from source",
+    ],
+    "verify-helpers": [
+        "Install the pinned doxygen for the C API reference",
     ],
 }
 # `${{ … }}` values, answered as on a pull request into main.

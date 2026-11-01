@@ -190,13 +190,21 @@ gem install bundler
 ```
 
 `docs/Gemfile:12-17` defines Jekyll and its plugins. CI builds the site with
-`tools/ci/build-docs-site.sh` (`.github/workflows/c-cpp.yml:535`): source and
+`tools/ci/build-docs-site.sh` (`.github/workflows/c-cpp.yml:541`): source and
 built-site link checks around a frozen Jekyll 4 build, the lock-unchanged
 check, and a `docs/_site/build-manifest.json` recording the renderer versions,
 the lock digest and a site digest. GitHub Pages publishes the artifact that
 same script builds (`.github/workflows/pages.yml`, issue #386) — there is no
 separate deployment-time renderer; `docs/_config.yml` declares the Pages
 `url`/`baseurl`, so local builds use the published `/mmt-dpi` prefix too.
+The same build generates the C API reference under `docs/_site/api/`
+(issue #582): `tools/ci/build-api-reference.sh` runs the root `Doxyfile` over
+`src/mmt_core/public_include` and fails on any doxygen warning, so every
+public function, struct, typedef, enum value and macro needs a doc comment.
+It needs doxygen 1.9.8, the gate's pinned release:
+`bash tools/ci/build-api-reference.sh --install` installs it on Ubuntu 24.04
+(the exact `1.9.8+ds-2build5` package of the release pocket, as both CI jobs
+do); another release only warns locally and fails under `CI=true`.
 
 No application `.env` file is required: this is a Make-built SDK, configured
 through make variables (`sdk/Makefile:8-12`, `rules/common.mk:3-8`), and the
@@ -303,7 +311,9 @@ over fake suites with a stub `make`, and the weak-type ratchet self-test
 source-signing self-test `test-source-signing.sh`, issue #538, which drives
 `tools/ci/sign-source-tarball.sh` on fixture `debian/` trees, and the
 site-navigation self-test `test-site-links.sh`, issue #579, which runs
-`tools/ci/check-site-links.sh` on fixture source trees and built sites) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
+`tools/ci/check-site-links.sh` on fixture source trees and built sites, and
+the docs-citation self-test `test-doc-citations.sh`, issue #582, which runs
+`tools/ci/check-doc-citations.py` on fixture pages and registries) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
 #387); the first three build nothing, `sdk_coverage` builds its own
 `BUILD=coverage` SDK whatever the mode and cleans `sdk/` afterwards. `installed_consumer` (issue #374) drives the
 other
@@ -767,7 +777,7 @@ Facts a later agent cannot infer from the build system alone (issue #480).
   it cannot drift from them; `--full` adds `bash tests/run_all_tests.sh` and
   the two phase0 gates. By default it runs them in a container built once
   from the `lint` job's digest-pinned `ubuntu:24.04` with the pinned cppcheck
-  (needs docker or podman, else exit 2); `--host` runs them on this machine,
+  and doxygen (needs docker or podman, else exit 2); `--host` runs them on this machine,
   `--list` prints them. The image's Ruby is Ubuntu 24.04's 3.2, not CI's 3.4.
 - **Pull-request test selection (issue #656).** On a pull request CI runs
   only the tests the changed paths select: `tools/ci/classify-changes.sh`

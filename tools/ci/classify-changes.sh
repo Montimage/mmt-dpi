@@ -43,8 +43,8 @@
 #     tracked files share is looked up with its parent directory);
 #   - a list the tiers below `full` would leave without a suite or harness.
 # Markdown, docs/, src/, the map, this script's self-test, the shape
-# ratchets and the unreachable-section allowlist (which name paths as data)
-# are never read as references; a reference in any other
+# ratchets, the unreachable-section allowlist and the docs-citation registry
+# (which name paths as data) are never read as references; a reference in any other
 # tracked file counts, comments included (over-selection is safe), except
 # that a C file uses another C source or header only through an #include.
 #
@@ -195,14 +195,15 @@ check_coverage() {
 # script's self-test name paths as data, they do not run them. The shape
 # ratchets (issue #547) and the unreachable-section allowlist (issue #541)
 # name src/ functions as data too, and the gates that read them run in
-# verify-helpers on every tier.
+# verify-helpers on every tier; the docs-citation registry (issue #582) names
+# the src/ lines docs/*.md cites, and its gate runs in doc-validators.
 FILES="${WORK}/files"
 list_files() {
     if [ -e .git ] && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         git ls-files -z --cached --others --exclude-standard
     else
         find . -path ./.git -prune -o -type f -print0 | sed -z 's|^\./||'
-    fi | { grep -zvE '^(docs|src)/|\.md$|^tools/ci/test-map\.txt$|^tools/ci/tests/test-classify-changes\.sh$|^tools/ci/(function-shape|param-count)-ratchet\.txt$|^tools/ci/unreachable-sections-allowlist\.txt$' || true; } > "${FILES}"
+    fi | { grep -zvE '^(docs|src)/|\.md$|^tools/ci/test-map\.txt$|^tools/ci/tests/test-classify-changes\.sh$|^tools/ci/(function-shape|param-count)-ratchet\.txt$|^tools/ci/unreachable-sections-allowlist\.txt$|^tools/ci/doc-citations\.txt$' || true; } > "${FILES}"
 }
 declare -A BASE_COUNT=()
 count_basenames() {

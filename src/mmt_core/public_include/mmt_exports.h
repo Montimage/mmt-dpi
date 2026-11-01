@@ -1,3 +1,7 @@
+/**
+ * @file
+ * Export markers of libmmt_core: MMTAPI and MMTCALL.
+ */
 
 #ifndef _MMT_EXPORTS_H
 #define _MMT_EXPORTS_H
@@ -17,9 +21,9 @@
      #define MMTAPI extern
    #endif
  #else
-   #define MMTAPI extern
+   #define MMTAPI extern ///< Export marker of a public libmmt_core declaration: a plain `extern` for consumers.
  #endif
- #define MMTCALL
+ #define MMTCALL ///< Calling-convention marker of a public function; empty on every supported toolchain.
 
 
 #endif /*_MMT_EXPORTS_H*/

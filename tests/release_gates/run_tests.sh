@@ -106,6 +106,11 @@
 # fixture source trees and built sites (a [TOC] line, a guide without layout
 # or title, a docs-index label that names another title, a page without a
 # link to the site root or the docs index; no Jekyll).
+# It also runs the docs-citation self-test beside
+# tools/ci/check-doc-citations.py (issue #582), which drives the real checker
+# on fixture pages and registries (slid, out-of-range, unregistered, stale,
+# basename-only and sdk/include/ citations, an undeclared append-only
+# exemption, a missing delegate) and then on the real docs tree.
 set -e
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/ci/tests"
 python3 "${TESTS_DIR}/test-release-gates.py" "$@"
@@ -135,3 +140,4 @@ bash "${TESTS_DIR}/test-source-signing.sh"
 bash "${TESTS_DIR}/test-shape-ratchet.sh"
 bash "${TESTS_DIR}/test-unreachable-sections.sh"
 bash "${TESTS_DIR}/test-site-links.sh"
+bash "${TESTS_DIR}/test-doc-citations.sh"

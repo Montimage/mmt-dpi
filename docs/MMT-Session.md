@@ -23,7 +23,7 @@ title: "MMT Sessions"
 
 ### Session Structure ###
 
-The full `mmt_session_struct` is defined in `src/mmt_core/private_include/packet_processing.h:193` (not exposed in public SDK headers — only `mmt_session_t` typedef is public via `sdk/include/data_defs.h:44`).
+The full `mmt_session_struct` is defined in `src/mmt_core/private_include/packet_processing.h:192` (not exposed in public SDK headers — only `mmt_session_t` typedef is public via `src/mmt_core/public_include/data_defs.h:63`).
 ```c
 /**
  * Defines the structure of a session.

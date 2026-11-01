@@ -211,6 +211,12 @@ want_tier "$L" family
 suite_in "$L" sdk_coverage
 expect_tier family "two tcpip dissectors" src/mmt_tcpip/lib/protocols/proto_dns.c \
     src/mmt_tcpip/lib/protocols/proto_ssl.c
+# The docs-citation registry (issue #582) names the source lines docs/*.md
+# cites; it is data, not a consumer, so a family file it names stays family.
+grep -qF 'src/mmt_tcpip/lib/protocols/proto_ssl.c:' "${REPO_ROOT}/tools/ci/doc-citations.txt" \
+    || bad "tools/ci/doc-citations.txt no longer names proto_ssl.c (fixture premise)"
+expect_tier family "a family file the docs-citation registry names" \
+    src/mmt_tcpip/lib/protocols/proto_ssl.c
 
 # AC2: shared code, build, workflows, runners, the selection, unmapped.
 for p in src/mmt_core/src/packet_processing.c src/mmt_core/public_include/mmt_core.h \

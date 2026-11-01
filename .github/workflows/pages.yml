@@ -7,9 +7,11 @@ name: Deploy documentation site to Pages
 #
 # The site is built by tools/ci/build-docs-site.sh — the same script, frozen
 # docs/Gemfile.lock and Jekyll 4 graph the verify-helpers job in c-cpp.yml
-# runs on every PR (issue #386). The deploy job publishes that uploaded
-# artifact as-is; nothing rebuilds it at deployment time (the former
-# actions/jekyll-build-pages step rendered with github-pages' Jekyll 3.10).
+# runs on every PR (issue #386), including the C API reference it generates
+# with the pinned doxygen under <site>/api/ (issue #582). The deploy job
+# publishes that uploaded artifact as-is; nothing rebuilds it at deployment
+# time (the former actions/jekyll-build-pages step rendered with
+# github-pages' Jekyll 3.10).
 # The artifact carries build-manifest.json (renderer versions, lock and site
 # digests), served at <site>/build-manifest.json.
 
@@ -21,6 +23,12 @@ on:
       - ".github/workflows/pages.yml"
       - "tools/ci/build-docs-site.sh"
       - "tools/ci/check-site-links.sh"
+      # The C API reference under <site>/api/ (issue #582) is generated from
+      # the public headers by the same build.
+      - "Doxyfile"
+      - "src/mmt_core/public_include/**"
+      - "tools/ci/build-api-reference.sh"
+      - "tools/ci/doxygen-footer.html"
   workflow_dispatch:
 
 # Least privilege: the build only reads the tree; the Pages-deployment scopes
@@ -49,6 +57,9 @@ jobs:
         env:
           # Same frozen install as the PR verification (issue #372).
           BUNDLE_FROZEN: "true"
+      - name: Install the pinned doxygen for the C API reference
+        # Issue #582: the C API reference under <site>/api/.
+        run: bash tools/ci/build-api-reference.sh --install
       # A broken link should fail the deploy, not ship — the same script and
       # checks gate PRs in the verify-helpers job of c-cpp.yml (issues #247,
       # #386).
