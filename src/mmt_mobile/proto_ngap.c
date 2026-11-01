@@ -163,6 +163,11 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 	case NGAP_ATT_RAN_UE_ID:
 		*((uint64_t *) extracted_data->data) = msg.ran_ue_id;
 		break;
+	case NGAP_ATT_SRVCC_OPERATION_POSSIBLE:
+		if( !msg.has_srvcc_operation_possible )
+			return 0;
+		*((uint8_t *) extracted_data->data) = msg.srvcc_operation_possible;
+		break;
 	}
 	return 1;
 }
@@ -200,7 +205,8 @@ static attribute_metadata_t _attributes_metadata[] = {
 		{NGAP_ATT_PDU_PRESENT,    NGAP_PDU_PRESENT_ALIAS,    MMT_U8_DATA,      sizeof( uint8_t),           POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
 
 		{NGAP_ATT_AMF_UE_ID,      NGAP_AMF_UE_ID_ALIAS,      MMT_U64_DATA,     sizeof( uint64_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{NGAP_ATT_RAN_UE_ID,      NGAP_RAN_UE_ID_ALIAS,      MMT_U64_DATA,     sizeof( uint64_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att}
+		{NGAP_ATT_RAN_UE_ID,      NGAP_RAN_UE_ID_ALIAS,      MMT_U64_DATA,     sizeof( uint64_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{NGAP_ATT_SRVCC_OPERATION_POSSIBLE, NGAP_SRVCC_OPERATION_POSSIBLE_ALIAS, MMT_U8_DATA, sizeof( uint8_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att}
 };
 
 int init_proto_ngap_struct() {

@@ -26,6 +26,11 @@ typedef struct ngap_message{
 		const uint8_t *data;
 		size_t size;
 	}nas_pdu; //pdu of NAS-5G
+	/* Issue #574: the Rel-16 IE SRVCCOperationPossible (id 177, TS 38.413
+	 * §9.3.1.128) of a DownlinkNASTransport or PathSwitchRequestAcknowledge:
+	 * possible (0) or notPossible (1), read only when decoding */
+	uint8_t has_srvcc_operation_possible;
+	uint8_t srvcc_operation_possible;
 }ngap_message_t;
 
 /**

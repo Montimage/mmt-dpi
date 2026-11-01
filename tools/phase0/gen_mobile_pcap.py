@@ -524,6 +524,33 @@ ACC_NGAP_UPLINK_NAS_TRANSPORT = bytes.fromhex(
 ACC_NGAP_UE_CONTEXT_RELEASE_COMPLETE = bytes.fromhex(
     "2029000f000002" "000a4002" "0001" "00554002" "0001")
 
+# Issue #574: one Rel-16 IE per family, the ones the dissectors map.
+# TS 36.413 S1AP initiatingMessage InitialContextSetupRequest (procedureCode
+# 9): MME-UE-S1AP-ID 7, eNB-UE-S1AP-ID 9, UE-AMBR, one E-RAB (QCI 9, ARP 1,
+# GTP-TEID 1, transport address 192.168.0.1, Rel-16 BearerType and
+# Packet-LossRate extensions), UESecurityCapabilities, SecurityKey and the
+# Rel-16 NRUESecurityCapabilities (IE 269: NEA1-NEA3, NIA1-NIA3). These are
+# the issue #523 vector bytes (tests/s1ap_ngap_decode): asn1c v1.5.3 run on
+# the unmodified, class-based 36413-g10.asn, a codec independent of the
+# derived schema the SDK decodes with.
+ACC_S1AP_REL16_ICS_REQUEST = bytes.fromhex(
+    "0009007d000007"
+    "00000002" "0007"
+    "00080002" "0009"
+    "0042000a" "1805f5e1006002faf080"
+    "00180026" "000034002165200904000001114002000a0f80c0a800010000000103"
+    "074201000000e9000100"
+    "006b0005" "1c000e0000"
+    "00490020" "01" + "00" * 31
+    + "010d4005" "1c000e0000")
+# TS 38.413 NGAP initiatingMessage DownlinkNASTransport (procedureCode 4):
+# ACC_NGAP_DOWNLINK_NAS_TRANSPORT plus the Rel-16 SRVCCOperationPossible
+# (IE 177, criticality ignore) notPossible.
+ACC_NGAP_DOWNLINK_NAS_TRANSPORT_SRVCC = bytes.fromhex(
+    "00044020000004" "000a0002" "0001" "00550002" "0001"
+    "0026000807" + ACC_5G_AUTHENTICATION_REQUEST.hex()
+    + "00b1400140")
+
 # RFC 9260 SCTP payload protocol identifiers / IANA SCTP ports.
 PPID_UNSPECIFIED, PPID_S1AP, PPID_NGAP = 0, 18, 60
 PORT_S1AP, PORT_NGAP = 36412, 38412
@@ -618,6 +645,22 @@ def gen_acc_ngap_positive_pcap(path):
                40414, PORT_NGAP)
 
 
+def gen_acc_s1ap_rel16_positive_pcap(path):
+    """S1AP InitialContextSetupRequest carrying the Rel-16
+    NRUESecurityCapabilities (IE 269), MME to eNB on PPID 18 (issue #574)."""
+    _acc_write(path, "S1AP Rel-16 NRUESecurityCapabilities",
+               [("core", ACC_S1AP_REL16_ICS_REQUEST, PPID_S1AP)],
+               40422, PORT_S1AP)
+
+
+def gen_acc_ngap_rel16_positive_pcap(path):
+    """NGAP DownlinkNASTransport carrying the Rel-16 SRVCCOperationPossible
+    (IE 177), AMF to gNB on PPID 60 (issue #574)."""
+    _acc_write(path, "NGAP Rel-16 SRVCCOperationPossible",
+               [("core", ACC_NGAP_DOWNLINK_NAS_TRANSPORT_SRVCC, PPID_NGAP)],
+               40423, PORT_NGAP)
+
+
 def gen_acc_ngap_negative_pcap(path):
     """Plain text on PPID 0 to port 38412: the port alone must not yield NGAP."""
     _acc_write(path, "non-NGAP text on SCTP port 38412",
@@ -685,6 +728,8 @@ ACC_GENS = {
     "acc_s1ap_ambiguous": gen_acc_s1ap_ambiguous_pcap,
     "acc_ngap_positive": gen_acc_ngap_positive_pcap,
     "acc_ngap_negative": gen_acc_ngap_negative_pcap,
+    "acc_s1ap_rel16_positive": gen_acc_s1ap_rel16_positive_pcap,
+    "acc_ngap_rel16_positive": gen_acc_ngap_rel16_positive_pcap,
     "acc_nas_positive": gen_acc_nas_positive_pcap,
     "acc_nas_negative": gen_acc_nas_negative_pcap,
     "acc_nas_eps_ambiguous": gen_acc_nas_eps_ambiguous_pcap,

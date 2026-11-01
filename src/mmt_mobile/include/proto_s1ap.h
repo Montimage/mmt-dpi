@@ -42,6 +42,10 @@
 #define S1AP_ENTITY_ENODEB_ALIAS  "enb_entity"  //current entity concerning the packet
 #define S1AP_ENTITY_MME_ALIAS     "mme_entity"  //current entity concerning the packet
 
+//Rel-16 IEs (issue #574): NRUESecurityCapabilities (IE 269)
+#define S1AP_NR_ENCRYPTION_ALGORITHMS_ALIAS "nr_encryption_algorithms"
+#define S1AP_NR_INTEGRITY_ALGORITHMS_ALIAS  "nr_integrity_algorithms"
+
 
 /*
  * NAS ciphering (issue #452): ue_ipv4, m_tmsi and imsi are read from the NAS
@@ -88,7 +92,14 @@ enum{
 
 	S1AP_ATT_ENTITY_UE,  //full information of UE represented by an s1ap_entity_t object
 	S1AP_ATT_ENTITY_ENODEB, //full information of eNodeB represented by an s1ap_entity_t object
-	S1AP_ATT_ENTITY_MME //full information of MME represented by an s1ap_entity_t object
+	S1AP_ATT_ENTITY_MME, //full information of MME represented by an s1ap_entity_t object
+
+	/* Issue #574, appended so that no existing id moves: the Rel-16 IE
+	 * NRUESecurityCapabilities (id 269, TS 36.413 §9.2.1.127) of an
+	 * InitialContextSetupRequest, as the first 16 bits of each bitmap
+	 * (most significant bit = NEA1 / NIA1) */
+	S1AP_ATT_NR_ENCRYPTION_ALGORITHMS,
+	S1AP_ATT_NR_INTEGRITY_ALGORITHMS
 };
 
 //status of an entity in EPC/LTE network
@@ -225,8 +236,20 @@ struct s1ap_message; /* defined in s1ap/s1ap_common.h (internal header) */
  * S1AP_MAX_ENTITIES entities, or when allocation fails.
  * s1ap_entities_count() reports how many entities are currently tracked and
  * s1ap_entities_reset() drops them all.
+ *
+ * Issue #574 (F-BUG-203): a UE is found by its IMSI or M-TMSI, or by its
+ * eNB-UE-S1AP-ID or MME-UE-S1AP-ID on the same S1 association only -- those
+ * ids are unique per node, so two eNodeBs reusing one keep two UEs. A UE
+ * leaves the store when a UEContextReleaseComplete names it (the update
+ * then returns its id one last time and inserts nothing for an unknown UE),
+ * and when no message named it for S1AP_UE_IDLE_TIMEOUT seconds of capture
+ * time: a sweep, run at most once per S1AP_UE_SWEEP_INTERVAL capture
+ * seconds, removes those UEs. eNodeBs and MMEs are not evicted. Entity ids
+ * are never reused until s1ap_entities_reset().
  */
 #define S1AP_MAX_ENTITIES 4096
+#define S1AP_UE_IDLE_TIMEOUT   7200
+#define S1AP_UE_SWEEP_INTERVAL 60
 
 /* Exported by libmmt_tmobile, which is built -fvisibility=hidden (issue #534). */
 MMTAPI uint32_t s1ap_entities_update( s1ap_entity_type_t type, const struct s1ap_message *msg );

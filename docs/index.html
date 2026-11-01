@@ -11,12 +11,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MMT-DPI — Deep packet inspection for 673 protocols, in C</title>
   <link rel="icon" href="favicon.ico">
-  <meta name="description" content="MMT-DPI is a high-performance C library for deep packet inspection: classify 673 protocols, extract 7,481 named attributes, and track per-flow sessions. Apache-2.0. Linux. Plugin-extensible.">
+  <meta name="description" content="MMT-DPI is a high-performance C library for deep packet inspection: classify 673 protocols, extract 7,484 named attributes, and track per-flow sessions. Apache-2.0. Linux. Plugin-extensible.">
 
   <!-- Open Graph / social -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="MMT-DPI — Deep packet inspection, in C">
-  <meta property="og:description" content="Classify 673 protocols, extract 7,481 named attributes, track per-flow sessions. Open-source C library by Montimage.">
+  <meta property="og:description" content="Classify 673 protocols, extract 7,484 named attributes, track per-flow sessions. Open-source C library by Montimage.">
   <meta property="og:url" content="https://montimage-projects.github.io/mmt-dpi/">
   <meta name="theme-color" content="#1A1A1A">
 
@@ -476,7 +476,7 @@
         <p class="hero-sub">
           Link <code>libmmt_core</code>, register the protocol fields you need, and process packets from a
           pcap or a live interface. MMT&#8209;DPI classifies <strong>673 protocols</strong>, extracts
-          <strong>7,481 typed attributes</strong>, and tracks per-flow sessions — all behind one callback API.
+          <strong>7,484 typed attributes</strong>, and tracks per-flow sessions — all behind one callback API.
         </p>
         <div class="cta-row">
           <a class="btn btn-primary" href="#quick-start">▸ Install MMT-DPI</a>
@@ -535,7 +535,7 @@
     <section class="stats">
       <div class="wrap stats-grid">
         <div class="stat"><div class="num">673</div><div class="lbl">protocols classified</div></div>
-        <div class="stat"><div class="num">7,481</div><div class="lbl">named attributes</div></div>
+        <div class="stat"><div class="num">7,484</div><div class="lbl">named attributes</div></div>
         <div class="stat"><div class="num">5G</div><div class="lbl">LTE &amp; mobile core</div></div>
         <div class="stat"><div class="num">6</div><div class="lbl"><a href="https://github.com/montimage-projects/mmt-dpi/actions/workflows/install-smoke.yml">Linux distros smoke-tested</a></div></div>
       </div>
@@ -676,7 +676,7 @@
     <span class="t-com">// ... same pcap / packet_process() loop as Tier 1 ...</span>
 }</pre>
             </div>
-            <p class="api-note">Each attribute has a typed value — numeric fields come back as <code>uint*_t*</code>, while header strings like <code>http/host</code> are <code>mmt_header_line_t*</code> (a <code>ptr</code>+<code>len</code> pair, not null-terminated). Names map to MMT's 7,481 attributes; the engine classifies by payload signature, so these resolve regardless of port. See <a href="MMT-Attributes.html">MMT-Attributes</a>.</p>
+            <p class="api-note">Each attribute has a typed value — numeric fields come back as <code>uint*_t*</code>, while header strings like <code>http/host</code> are <code>mmt_header_line_t*</code> (a <code>ptr</code>+<code>len</code> pair, not null-terminated). Names map to MMT's 7,484 attributes; the engine classifies by payload signature, so these resolve regardless of port. See <a href="MMT-Attributes.html">MMT-Attributes</a>.</p>
           </div>
 
           <!-- TIER 3 -->
@@ -848,7 +848,7 @@
       <div class="faq">
         <details open>
           <summary>What exactly is MMT-DPI?</summary>
-          <p>A high-performance C library for deep packet inspection. It classifies network traffic into 673 protocols and lets you extract 7,481 named, typed attributes from packets, server logs, and structured events — for real-time analysis. It's the extraction core inside the broader Montimage Monitoring Tool (MMT) suite. In the committed <a href="https://github.com/montimage-projects/mmt-dpi/blob/main/tools/phase0/baseline/perf/throughput.txt">replay benchmark</a> (one thread, one aarch64 host), <code>bigFlows.pcap</code> classifies at about 3.5 million packets per second with no attribute fetched and 3.0 million with eight fetched per packet, and the <a href="https://github.com/montimage-projects/mmt-dpi/actions/workflows/phase0-baseline.yml">instruction-count gate</a> fails a change that raises the replay's instructions per packet by more than 2%.</p>
+          <p>A high-performance C library for deep packet inspection. It classifies network traffic into 673 protocols and lets you extract 7,484 named, typed attributes from packets, server logs, and structured events — for real-time analysis. It's the extraction core inside the broader Montimage Monitoring Tool (MMT) suite. In the committed <a href="https://github.com/montimage-projects/mmt-dpi/blob/main/tools/phase0/baseline/perf/throughput.txt">replay benchmark</a> (one thread, one aarch64 host), <code>bigFlows.pcap</code> classifies at about 3.5 million packets per second with no attribute fetched and 3.0 million with eight fetched per packet, and the <a href="https://github.com/montimage-projects/mmt-dpi/actions/workflows/phase0-baseline.yml">instruction-count gate</a> fails a change that raises the replay's instructions per packet by more than 2%.</p>
         </details>
         <details>
           <summary>Which platforms are supported?</summary>
@@ -876,7 +876,7 @@
     <!-- FINAL CTA -->
     <section class="final wrap">
       <h2>Stop writing byte-offset parsers.<br><span class="accent">Start querying packets by name.</span></h2>
-      <p>673 protocols, 7,481 attributes, plugin-extensible — open source under Apache-2.0. One command and you're running.</p>
+      <p>673 protocols, 7,484 attributes, plugin-extensible — open source under Apache-2.0. One command and you're running.</p>
       <div class="cta-row">
         <a class="btn btn-primary" href="#quick-start">▸ Install MMT-DPI</a>
         <a class="btn btn-ghost" href="https://github.com/montimage-projects/mmt-dpi" target="_blank" rel="noopener">★ Star on GitHub</a>

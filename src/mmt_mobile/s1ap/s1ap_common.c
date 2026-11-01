@@ -10,6 +10,7 @@
 #include <pthread.h>
 #include <arpa/inet.h> /* ntohl(); asn1c v1.5.3 asn_system.h no longer includes <netinet/in.h> */
 #include "s1ap_common.h"
+#include "S1ap-NRUESecurityCapabilities.h" /* issue #574 */
 #include "nas/nas_msg.h"
 #include "proto_s1ap.h"
 
@@ -123,6 +124,32 @@ static inline uint32_t _bit_string_to_uint32_t( const BIT_STRING_t *t){
 	uint32_t val;
 	memcpy( &val, t->buf, sizeof( val ));
 	return val;
+}
+
+/* the first 16 bits of a BIT STRING (SIZE (16, ...)), most significant first */
+static inline uint16_t _bit_string_to_uint16_t( const BIT_STRING_t *t ){
+	if( t->size < 2 || t->buf == NULL )
+		return 0;
+	return (uint16_t)(( t->buf[0] << 8 ) | t->buf[1] );
+}
+
+/*
+ * Issue #574: NRUESecurityCapabilities (id 269), added after r10.5.0 (see
+ * src/mmt_mobile/asn1c/support/DELTA-r16.1.0.md), carries the NR encryption
+ * and integrity algorithms the UE supports (TS 36.413 §9.2.1.127). It is
+ * optional: a value that does not decode is skipped, as an unknown IE is.
+ */
+static inline void _decode_s1ap_nr_ue_security_capabilities(
+		s1ap_message_t *message,
+		S1ap_IE_t *ie_p) {
+	S1ap_NRUESecurityCapabilities_t *caps = NULL;
+	if( _any_to_type_aper( &ie_p->value, &asn_DEF_S1ap_NRUESecurityCapabilities, (void**)&caps ) == 0
+			&& caps != NULL ){
+		message->nr_encryption_algorithms = _bit_string_to_uint16_t( &caps->nRencryptionAlgorithms );
+		message->nr_integrity_algorithms  = _bit_string_to_uint16_t( &caps->nRintegrityProtectionAlgorithms );
+		message->has_nr_ue_security_capabilities = 1;
+	}
+	ASN_STRUCT_FREE( asn_DEF_S1ap_NRUESecurityCapabilities, caps );
 }
 
 
@@ -380,11 +407,15 @@ static inline int _decode_s1ap_initialContextSetupRequest(
 			decoded += tempDecoded;
 			XER_FPRINT(&asn_DEF_S1ap_E_RABToBeSetupListCtxtSUReq, s1apERABToBeSetupListCtxtSUReq_p);
 			ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABToBeSetupListCtxtSUReq, s1apERABToBeSetupListCtxtSUReq_p);
-
-			goto _finish;
 		}
 		break;
-
+		/* issue #574: the IEs after the E-RAB list are visited too, so the
+		 * message-level Rel-16 IE below is read wherever it is placed */
+		case S1ap_ProtocolIE_ID_id_NRUESecurityCapabilities:
+			_decode_s1ap_nr_ue_security_capabilities( message, ie_p );
+			break;
+		default:
+			break;
 		}
 	}
 
@@ -931,6 +962,43 @@ static inline int _decode_s1ap_UEContextReleaseRequest(
 }
 
 /*
+ * Issue #574: UEContextReleaseComplete (successfulOutcome of procedure 23)
+ * ends the UE-associated S1 connection it names by its MME-UE-S1AP-ID and
+ * eNB-UE-S1AP-ID: proto_s1ap.c removes that UE from the entity store. The
+ * optional IEs (UserLocationInformation, SecondaryRATDataUsageReportList,
+ * ...) are not needed for that and are skipped.
+ */
+static inline int _decode_s1ap_UEContextReleaseComplete(
+		s1ap_message_t *message,
+		ANY_t *any_p) {
+	S1ap_UEContextReleaseComplete_t *complete_p = NULL;
+	int i, decoded = 0, tempDecoded = 0;
+	if (any_p == NULL) {
+		S1AP_ERROR("NULL ANY_t value\n");
+		return -1;
+	}
+
+	tempDecoded = _any_to_type_aper(any_p, &asn_DEF_S1ap_UEContextReleaseComplete, (void**)&complete_p);
+	if (tempDecoded < 0 || complete_p == NULL) {
+		S1AP_ERROR("Decoding of S1ap_UEContextReleaseComplete failed\n");
+		ASN_STRUCT_FREE(asn_DEF_S1ap_UEContextReleaseComplete, complete_p);
+		return -1;
+	}
+
+	for (i = 0; i < complete_p->s1ap_UEContextReleaseComplete_ies.list.count; i++) {
+		tempDecoded = _decode_mme_enb_ue_id( message, complete_p->s1ap_UEContextReleaseComplete_ies.list.array[i] );
+		if (tempDecoded < 0) {
+			decoded = -1;
+			break;
+		}
+		decoded += tempDecoded;
+	}
+
+	ASN_STRUCT_FREE(asn_DEF_S1ap_UEContextReleaseComplete, complete_p);
+	return decoded;
+}
+
+/*
  * Issue #452: a DownlinkNASTransport is decoded only to learn the NAS
  * ciphering algorithm a Security Mode Command selects for its UE-associated
  * S1 connection. The message fields are left untouched.
@@ -1038,6 +1106,8 @@ static int _decode_s1ap_successfulOutcomeMessage(s1ap_message_t *message,
 		message->mme_status = S1AP_ENTITY_STATUS_ATTACHED;
 		return _decode_s1ap_S1SetupResponse( message, &initiating_p->value);
 		break;
+	case S1ap_ProcedureCode_id_UEContextRelease:
+		return _decode_s1ap_UEContextReleaseComplete( message, &initiating_p->value );
 	}
 
 	return ret;

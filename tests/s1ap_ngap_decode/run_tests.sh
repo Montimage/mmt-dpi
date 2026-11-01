@@ -208,9 +208,11 @@ LD_LIBRARY_PATH="${LIB}:${LD_LIBRARY_PATH:-}" \
 # load_plugins() falls back to PLUGINS_REPOSITORY_OPT = ${PREFIX}/plugins —
 # the just-installed, profile-matched plugins. A CWD-visible plugins/ (e.g.
 # the repo-root symlink to sdk/lib) would shadow them with the wrong build.
+# Its argument is the accuracy corpus, whose Rel-16 captures it replays
+# (issue #574).
 (cd "${WORK}" && \
 LD_LIBRARY_PATH="${LIB}:${LD_LIBRARY_PATH:-}" \
-    "${SCRIPT_DIR}/test_s1ap_ngap_packets")
+    "${SCRIPT_DIR}/test_s1ap_ngap_packets" "${REPO_ROOT}/tools/phase0/ci/accuracy")
 
 echo
 echo "✓ S1AP/NGAP decode regression tests passed"

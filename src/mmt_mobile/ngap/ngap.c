@@ -98,6 +98,14 @@ static inline void _get_set_nas_pdu( action_t act, ngap_message_t *msg, const NG
 	msg->nas_pdu.size = nas_pdu->size;
 }
 
+/* issue #574: SRVCCOperationPossible (IE 177), added in r16.1.0 */
+static inline void _get_srvcc_operation_possible( action_t act, ngap_message_t *msg, const NGAP_SRVCCOperationPossible_t *v ){
+	if( act != GET_ACTION || v == NULL )
+		return;
+	msg->srvcc_operation_possible     = (uint8_t) *v;
+	msg->has_srvcc_operation_possible = 1;
+}
+
 static inline bool _decode_NGAP_InitialUEMessage_t(action_t act, ngap_message_t *msg, NGAP_InitialUEMessage_t *data){
 	int i, decoded = 0;
 	for( i=0; i<_NGAP_IE_COUNT(data); i++){
@@ -129,6 +137,9 @@ static inline bool _decode_NGAP_DownlinkNASTransport(action_t act, ngap_message_
 			break;
 		case NGAP_DownlinkNASTransport_IEs__value_PR_RAN_UE_NGAP_ID:
 			_get_set_ran_ue_ngap_id( act, msg, ie_p->value.choice.RAN_UE_NGAP_ID );
+			break;
+		case NGAP_DownlinkNASTransport_IEs__value_PR_SRVCCOperationPossible:
+			_get_srvcc_operation_possible( act, msg, ie_p->value.choice.SRVCCOperationPossible );
 			break;
 		default:
 			break;
@@ -426,6 +437,9 @@ static inline bool _decode_NGAP_PathSwitchRequestAcknowledge(action_t act, ngap_
 			break;
 		case NGAP_PathSwitchRequestAcknowledgeIEs__value_PR_RAN_UE_NGAP_ID:
 			_get_set_ran_ue_ngap_id( act, msg, ie_p->value.choice.RAN_UE_NGAP_ID );
+			break;
+		case NGAP_PathSwitchRequestAcknowledgeIEs__value_PR_SRVCCOperationPossible:
+			_get_srvcc_operation_possible( act, msg, ie_p->value.choice.SRVCCOperationPossible );
 			break;
 		default:
 			break;

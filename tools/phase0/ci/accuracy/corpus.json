@@ -819,6 +819,38 @@
       }
     },
     {
+      "pcap": "acc_s1ap_rel16_positive.pcap",
+      "family": "s1ap",
+      "case": "positive",
+      "description": "S1AP InitialContextSetupRequest carrying the Rel-16 NRUESecurityCapabilities IE (id 269), MME to eNB on SCTP PPID 18 / port 36412.",
+      "sha256": "db34d40645b0ce4691217408a8152bd0832320f30ea8e744a57a32f86a62700b",
+      "expected": {
+        "packets": 1,
+        "wire": 1,
+        "abstain": 0,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_mobile_pcap.py",
+          "pcap": "acc_s1ap_rel16_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, locally administered MACs, 3GPP test PLMN 001/01 and test IMSI/SUCI MSIN 0123456789); no captured traffic, no third-party data, no real subscriber. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #574",
+        "date": "2026-11-01",
+        "checks": [
+          "TS 36.413 InitiatingMessage procedureCode 9 (InitialContextSetup) with MME-UE-S1AP-ID 7, eNB-UE-S1AP-ID 9, UEAggregateMaximumBitrate, E-RABToBeSetupListCtxtSUReq (one E-RAB: QCI 9, ARP priority 1, GTP-TEID 1, transport address 192.168.0.1, Rel-16 BearerType and Packet-LossRate extensions), UESecurityCapabilities, SecurityKey (test key 0x01 then zeros) and NRUESecurityCapabilities (id 269, criticality ignore: NEA1-NEA3, NIA1-NIA3)",
+          "the PDU is the issue #523 independent vector: asn1c v1.5.3 run on the unmodified, class-based 36413-g10.asn, a codec independent of the derived schema the SDK decodes with; tests/s1ap_ngap_decode decodes every level of it with the derived schema; the E-RAB's NAS-PDU is a 3-octet stub (07 42 01, an EMM Attach Accept header) carried as an opaque OCTET STRING, since the SDK decodes no EPS NAS protocol",
+          "SCTP common header + one DATA chunk with a valid RFC 9260 CRC32c; PPID 18 = S1AP (IANA), source port 36412 (MME side)",
+          "issue #574 (TS 36.413 r16 Rel-16 IE mapping): SDK extraction returns s1ap.procedure_code 9, s1ap.nr_encryption_algorithms 0xE000 and s1ap.nr_integrity_algorithms 0xE000; tests/s1ap_ngap_decode replays this capture and asserts them"
+        ]
+      }
+    },
+    {
       "pcap": "acc_ngap_positive.pcap",
       "family": "ngap",
       "case": "positive",
@@ -877,6 +909,38 @@
         "checks": [
           "payload is not an APER NGAP-PDU (the NGAP decoder rejects it)",
           "expected handling: abstention (sctp_data without an application), never ngap"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_ngap_rel16_positive.pcap",
+      "family": "ngap",
+      "case": "positive",
+      "description": "NGAP DownlinkNASTransport (5GMM Authentication Request) carrying the Rel-16 SRVCCOperationPossible IE (id 177), AMF to gNB on SCTP PPID 60 / port 38412.",
+      "sha256": "8d16b5ff1306772731aceafea0b6fc5aa7f225900fbb3903d095f18b6989603c",
+      "expected": {
+        "packets": 1,
+        "wire": 1,
+        "abstain": 0,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_mobile_pcap.py",
+          "pcap": "acc_ngap_rel16_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, locally administered MACs, 3GPP test PLMN 001/01 and test IMSI/SUCI MSIN 0123456789); no captured traffic, no third-party data, no real subscriber. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #574",
+        "date": "2026-11-01",
+        "checks": [
+          "TS 38.413 InitiatingMessage procedureCode 4 (DownlinkNASTransport) with AMF-UE-NGAP-ID 1, RAN-UE-NGAP-ID 1, NAS-PDU and SRVCCOperationPossible (id 177, criticality ignore, optional): the acc_nas_positive DownlinkNASTransport PDU with that one IE appended to its protocolIEs (count 3 to 4, open-type length 0x1b to 0x20); the IE value is the APER ENUMERATED {possible, notPossible, ...} notPossible (0x40: extension bit 0, index 1)",
+          "NAS-PDU is the TS 24.501 plain 5GMM Authentication Request (ngKSI 0, ABBA 0x0000) of acc_nas_positive",
+          "SCTP common header + one DATA chunk with a valid RFC 9260 CRC32c; PPID 60 = NGAP (IANA), source port 38412 (AMF side)",
+          "issue #574 (TS 38.413 r16 Rel-16 IE mapping): SDK extraction returns ngap.procedure_code 4 and ngap.srvcc_operation_possible 1 (notPossible); tests/s1ap_ngap_decode replays this capture and asserts it; nas_5g beneath ngap is encapsulation, not attribution"
         ]
       }
     },

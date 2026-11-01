@@ -27,6 +27,14 @@
  * and, once a handler close had freed the store, read freed entities. The
  * two-handler scenario below asserts each handler sees its own packet, and
  * under SANITIZE=asan that no freed entity is read.
+ *
+ * Issue #574 (F-BUG-203): the S1AP ids of a UE are unique per node, so two
+ * eNodeBs reusing an eNB-UE-S1AP-ID keep two UEs, and a
+ * UEContextReleaseComplete removes the UE it names; the Rel-16 IEs mapped
+ * into s1ap.nr_encryption_algorithms and ngap.srvcc_operation_possible are
+ * extracted from whole frames, and from the accuracy-corpus captures
+ * acc_s1ap_rel16_positive.pcap / acc_ngap_rel16_positive.pcap
+ * (tools/phase0/ci/accuracy/, the directory given as argv[1]).
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,6 +45,7 @@
 #include "tcpip/mmt_tcpip.h"
 #include "mobile/mmt_mobile.h"
 #include "mobile/proto_s1ap.h"
+#include "mobile/proto_ngap.h"
 
 static int failures = 0;
 static int checks   = 0;
@@ -68,9 +77,50 @@ static const uint8_t S1SETUP_REQUEST[] = {
 };
 #define S1SETUP_NAME_DIGIT 29
 
+/* Issue #574: InitialUEMessage naming its UE by eNB-UE-S1AP-ID 5 only,
+ * and the UEContextReleaseComplete (MME-UE-S1AP-ID 7, eNB-UE-S1AP-ID 5)
+ * test_s1ap_ngap_decode.c decodes */
+static const uint8_t S1AP_INITIAL_UE_ENB5[] = {
+	0x00, 0x0c, 0x00, 0x09, 0x00, 0x00, 0x01, 0x00, 0x08, 0x00,
+	0x02, 0x00, 0x05
+};
+static const uint8_t S1AP_RELEASE_COMPLETE[] = {
+	0x20, 0x17, 0x00, 0x0f, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00,
+	0x02, 0x00, 0x07, 0x00, 0x08, 0x00, 0x02, 0x00, 0x05
+};
+
+/* The InitialContextSetupRequest of test_s1ap_ngap_decode.c encoded by the
+ * class-based codec (issue #523); its Rel-16 NRUESecurityCapabilities
+ * (IE 269) lists NEA1-NEA3 and NIA1-NIA3. */
+static const uint8_t S1AP_REL16_ICS_REQUEST[] = {
+	0x00, 0x09, 0x00, 0x7d, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x02, 0x00,
+	0x07, 0x00, 0x08, 0x00, 0x02, 0x00, 0x09, 0x00, 0x42, 0x00, 0x0a, 0x18,
+	0x05, 0xf5, 0xe1, 0x00, 0x60, 0x02, 0xfa, 0xf0, 0x80, 0x00, 0x18, 0x00,
+	0x26, 0x00, 0x00, 0x34, 0x00, 0x21, 0x65, 0x20, 0x09, 0x04, 0x00, 0x00,
+	0x01, 0x11, 0x40, 0x02, 0x00, 0x0a, 0x0f, 0x80, 0xc0, 0xa8, 0x00, 0x01,
+	0x00, 0x00, 0x00, 0x01, 0x03, 0x07, 0x42, 0x01, 0x00, 0x00, 0x00, 0xe9,
+	0x00, 0x01, 0x00, 0x00, 0x6b, 0x00, 0x05, 0x1c, 0x00, 0x0e, 0x00, 0x00,
+	0x00, 0x49, 0x00, 0x20, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x01, 0x0d, 0x40, 0x05, 0x1c, 0x00, 0x0e, 0x00, 0x00,
+};
+
+/* The NGAP DownlinkNASTransport of test_s1ap_ngap_decode.c carrying the
+ * Rel-16 SRVCCOperationPossible (IE 177) notPossible */
+static const uint8_t NGAP_DL_NAS_SRVCC[] = {
+	0x00, 0x04, 0x40, 0x1d, 0x00, 0x00, 0x04, 0x00, 0x0a, 0x00, 0x02, 0x00,
+	0x01, 0x00, 0x55, 0x00, 0x02, 0x00, 0x02, 0x00, 0x26, 0x00, 0x05, 0x04,
+	0x7e, 0x00, 0x56, 0x01, 0x00, 0xb1, 0x00, 0x01, 0x40
+};
+
 /* ------------------------------------------------------------------ */
 
 static char g_path[512];
+
+/* IPv4 addresses of the frames build_sctp_data_frame() builds */
+static uint8_t g_ip_src[4] = { 10, 0, 0, 0 };
+static uint8_t g_ip_dst[4] = { 192, 168, 0, 0 };
 
 /* what the S1AP packet handler extracted from the last packet */
 static char g_enb_name[64];
@@ -154,7 +204,8 @@ static uint8_t *build_sctp_data_frame(size_t *out_len,
 	p[8] = 64; p[9] = 132;
 	tot = (uint16_t)(ip + sctp + dhdr + payload_len);
 	p[2] = (uint8_t)(tot >> 8); p[3] = (uint8_t)(tot & 0xFF);
-	p[12] = 10; p[16] = 192; p[17] = 168;
+	memcpy(p + 12, g_ip_src, 4);
+	memcpy(p + 16, g_ip_dst, 4);
 	p += ip;
 	/* sctp common header */
 	p[0] = (uint8_t)(sport >> 8); p[1] = (uint8_t)(sport & 0xFF);
@@ -281,6 +332,177 @@ static void test_s1ap_two_handlers(void) {
 	mmt_close_handler(a);
 }
 
+/* ------------------------------------------------------------------ */
+/* Issue #574: UE keying per node, release, Rel-16 IE attributes        */
+/* ------------------------------------------------------------------ */
+
+static uint32_t g_ue_id;      /* s1ap.ue_id, 0 when not extracted */
+static int      g_nr_enc;     /* s1ap.nr_encryption_algorithms, -1 when not */
+static int      g_nr_int;     /* s1ap.nr_integrity_algorithms, -1 when not */
+static int      g_srvcc;      /* ngap.srvcc_operation_possible, -1 when not */
+static int      g_proc;       /* s1ap/ngap.procedure_code, -1 when not */
+
+static int mobile_attr_handler(const ipacket_t *ipacket, void *user_args) {
+	const uint32_t *ue  = get_attribute_extracted_data(ipacket, PROTO_S1AP, S1AP_ATT_UE_ID);
+	const uint16_t *enc = get_attribute_extracted_data(ipacket, PROTO_S1AP, S1AP_ATT_NR_ENCRYPTION_ALGORITHMS);
+	const uint16_t *itg = get_attribute_extracted_data(ipacket, PROTO_S1AP, S1AP_ATT_NR_INTEGRITY_ALGORITHMS);
+	const uint8_t *srvcc = get_attribute_extracted_data(ipacket, PROTO_NGAP, NGAP_ATT_SRVCC_OPERATION_POSSIBLE);
+	const uint16_t *s1proc = get_attribute_extracted_data(ipacket, PROTO_S1AP, S1AP_ATT_PROCEDURE_CODE);
+	const uint16_t *ngproc = get_attribute_extracted_data(ipacket, PROTO_NGAP, NGAP_ATT_PROCEDURE_CODE);
+	(void)user_args;
+	g_proc   = s1proc ? *s1proc : ngproc ? *ngproc : -1;
+	g_ue_id  = ue  ? *ue  : 0;
+	g_nr_enc = enc ? *enc : -1;
+	g_nr_int = itg ? *itg : -1;
+	g_srvcc  = srvcc ? *srvcc : -1;
+	return 0;
+}
+
+/* drive one S1AP (PPID 18) or NGAP (PPID 60) PDU from src to dst */
+static void drive_mobile(mmt_handler_t *h, const uint8_t src[4], const uint8_t dst[4],
+		uint16_t port, uint32_t ppid, const uint8_t *pdu, size_t len) {
+	size_t flen;
+	uint8_t *f;
+
+	memcpy(g_ip_src, src, 4);
+	memcpy(g_ip_dst, dst, 4);
+	f = build_sctp_data_frame(&flen, port, port, ppid, (uint16_t)(16 + len), pdu, len);
+	g_ue_id = 0;
+	g_nr_enc = g_nr_int = g_srvcc = -1;
+	drive(h, f, flen);
+	free(f);
+}
+
+static uint32_t drive_s1ap_ue(mmt_handler_t *h, const uint8_t enb[4],
+		const uint8_t mme[4], const uint8_t *pdu, size_t len) {
+	drive_mobile(h, enb, mme, 36412, 18, pdu, len);
+	return g_ue_id;
+}
+
+static void test_mobile_ue_keying_and_rel16(void) {
+	static const uint8_t ENB_A[4] = { 10, 0, 0, 1 }, ENB_B[4] = { 10, 0, 0, 2 };
+	static const uint8_t MME[4] = { 10, 0, 0, 100 }, AMF[4] = { 10, 0, 0, 200 };
+	static const uint8_t GNB[4] = { 10, 0, 0, 3 };
+	static const uint8_t SRC0[4] = { 10, 0, 0, 0 }, DST0[4] = { 192, 168, 0, 0 };
+	char errbuf[1024];
+	uint32_t a, b, a2;
+	mmt_handler_t *h = mmt_init_handler(1 /*DLT_EN10MB*/, 0, errbuf);
+
+	if (h == NULL) {
+		fprintf(stderr, "mmt_init_handler: %s\n", errbuf);
+		exit(1);
+	}
+	register_extraction_attribute(h, PROTO_S1AP, S1AP_ATT_UE_ID);
+	register_extraction_attribute(h, PROTO_S1AP, S1AP_ATT_NR_ENCRYPTION_ALGORITHMS);
+	register_extraction_attribute(h, PROTO_S1AP, S1AP_ATT_NR_INTEGRITY_ALGORITHMS);
+	register_extraction_attribute(h, PROTO_NGAP, NGAP_ATT_SRVCC_OPERATION_POSSIBLE);
+	register_packet_handler(h, 1, mobile_attr_handler, NULL);
+
+	a = drive_s1ap_ue(h, ENB_A, MME, S1AP_INITIAL_UE_ENB5, sizeof(S1AP_INITIAL_UE_ENB5));
+	b = drive_s1ap_ue(h, ENB_B, MME, S1AP_INITIAL_UE_ENB5, sizeof(S1AP_INITIAL_UE_ENB5));
+	CHECK("S1AP: two eNodeBs reusing eNB-UE-S1AP-ID 5 keep two UEs",
+			a > 0 && b > 0 && a != b);
+	CHECK("S1AP: eNodeB A's id 5 again names its UE",
+			drive_s1ap_ue(h, ENB_A, MME, S1AP_INITIAL_UE_ENB5, sizeof(S1AP_INITIAL_UE_ENB5)) == a);
+	CHECK("S1AP: UEContextReleaseComplete reports the UE it releases",
+			drive_s1ap_ue(h, ENB_A, MME, S1AP_RELEASE_COMPLETE, sizeof(S1AP_RELEASE_COMPLETE)) == a);
+	a2 = drive_s1ap_ue(h, ENB_A, MME, S1AP_INITIAL_UE_ENB5, sizeof(S1AP_INITIAL_UE_ENB5));
+	CHECK("S1AP: after the release eNodeB A's id 5 is a new UE",
+			a2 > 0 && a2 != a && a2 != b);
+	CHECK("S1AP: eNodeB B's UE is untouched by A's release",
+			drive_s1ap_ue(h, ENB_B, MME, S1AP_INITIAL_UE_ENB5, sizeof(S1AP_INITIAL_UE_ENB5)) == b);
+
+	drive_mobile(h, MME, ENB_A, 36412, 18, S1AP_REL16_ICS_REQUEST, sizeof(S1AP_REL16_ICS_REQUEST));
+	CHECK("S1AP: Rel-16 NRUESecurityCapabilities extracted (NEA1-3, NIA1-3)",
+			g_nr_enc == 0xE000 && g_nr_int == 0xE000);
+	drive_mobile(h, ENB_A, MME, 36412, 18, S1AP_INITIAL_UE_ENB5, sizeof(S1AP_INITIAL_UE_ENB5));
+	CHECK("S1AP: a message without it extracts none", g_nr_enc == -1 && g_nr_int == -1);
+
+	drive_mobile(h, AMF, GNB, 38412, 60, NGAP_DL_NAS_SRVCC, sizeof(NGAP_DL_NAS_SRVCC));
+	CHECK("NGAP: Rel-16 SRVCCOperationPossible extracted (notPossible)", g_srvcc == 1);
+
+	memcpy(g_ip_src, SRC0, 4);
+	memcpy(g_ip_dst, DST0, 4);
+	mmt_close_handler(h);
+}
+
+/* Issue #574: replay an accuracy-corpus capture (classic little-endian
+ * pcap, LINKTYPE_ETHERNET, as the corpus generator writes it)
+ * through h; the attributes of its last packet stay in g_*. Returns the
+ * packet count, -1 when the file cannot be read. */
+static int replay_corpus_pcap(mmt_handler_t *h, const char *dir, const char *name,
+		uint16_t *proc) {
+	static const uint8_t PCAP_MAGIC_LE[4] = { 0xd4, 0xc3, 0xb2, 0xa1 };
+	static uint8_t frame[65535];
+	char path[1024];
+	uint8_t ghdr[24], rhdr[16];
+	uint32_t caplen;
+	int n = 0;
+	FILE *fp;
+
+	snprintf(path, sizeof(path), "%s/%s", dir, name);
+	fp = fopen(path, "rb");
+	if (fp == NULL)
+		return -1;
+	if (fread(ghdr, 1, sizeof(ghdr), fp) != sizeof(ghdr)
+			|| memcmp(ghdr, PCAP_MAGIC_LE, 4) != 0
+			|| ghdr[20] != 1 || ghdr[21] || ghdr[22] || ghdr[23]) {
+		fclose(fp);
+		return -1;
+	}
+	while (fread(rhdr, 1, sizeof(rhdr), fp) == sizeof(rhdr)) {
+		caplen = (uint32_t)rhdr[8] | (uint32_t)rhdr[9] << 8
+			| (uint32_t)rhdr[10] << 16 | (uint32_t)rhdr[11] << 24;
+		if (caplen > sizeof(frame) || fread(frame, 1, caplen, fp) != caplen) {
+			fclose(fp);
+			return -1;
+		}
+		g_ue_id = 0;
+		g_nr_enc = g_nr_int = g_srvcc = -1;
+		g_proc = -1;
+		drive(h, frame, caplen);
+		n++;
+	}
+	fclose(fp);
+	*proc = (uint16_t)g_proc;
+	return n;
+}
+
+static void test_mobile_rel16_corpus(const char *dir) {
+	char errbuf[1024];
+	uint16_t proc = 0;
+	int n;
+	mmt_handler_t *h = mmt_init_handler(1 /*DLT_EN10MB*/, 0, errbuf);
+
+	if (h == NULL) {
+		fprintf(stderr, "mmt_init_handler: %s\n", errbuf);
+		exit(1);
+	}
+	register_extraction_attribute(h, PROTO_S1AP, S1AP_ATT_PROCEDURE_CODE);
+	register_extraction_attribute(h, PROTO_S1AP, S1AP_ATT_NR_ENCRYPTION_ALGORITHMS);
+	register_extraction_attribute(h, PROTO_S1AP, S1AP_ATT_NR_INTEGRITY_ALGORITHMS);
+	register_extraction_attribute(h, PROTO_NGAP, NGAP_ATT_PROCEDURE_CODE);
+	register_extraction_attribute(h, PROTO_NGAP, NGAP_ATT_SRVCC_OPERATION_POSSIBLE);
+	register_packet_handler(h, 1, mobile_attr_handler, NULL);
+	register_packet_handler(h, 2, packet_handler, NULL);
+
+	n = replay_corpus_pcap(h, dir, "acc_s1ap_rel16_positive.pcap", &proc);
+	CHECK("corpus acc_s1ap_rel16_positive.pcap: one S1AP packet read", n == 1);
+	CHECK("corpus acc_s1ap_rel16_positive.pcap: S1AP InitialContextSetupRequest (procedure 9)",
+			n == 1 && strstr(g_path, ".s1ap") != NULL && proc == 9);
+	CHECK("corpus acc_s1ap_rel16_positive.pcap: Rel-16 NRUESecurityCapabilities extracted (NEA1-3, NIA1-3)",
+			n == 1 && g_nr_enc == 0xE000 && g_nr_int == 0xE000);
+
+	n = replay_corpus_pcap(h, dir, "acc_ngap_rel16_positive.pcap", &proc);
+	CHECK("corpus acc_ngap_rel16_positive.pcap: one NGAP packet read", n == 1);
+	CHECK("corpus acc_ngap_rel16_positive.pcap: NGAP DownlinkNASTransport (procedure 4)",
+			n == 1 && strstr(g_path, ".ngap") != NULL && proc == 4);
+	CHECK("corpus acc_ngap_rel16_positive.pcap: Rel-16 SRVCCOperationPossible extracted (notPossible)",
+			n == 1 && g_srvcc == 1);
+
+	mmt_close_handler(h);
+}
+
 /* feed a frame, then assert the classified path does/doesn't contain a
  * protocol name */
 static void expect_path(mmt_handler_t *h, const char *label,
@@ -295,7 +517,7 @@ static void expect_path(mmt_handler_t *h, const char *label,
 			(notwant == NULL || strstr(g_path, notwant) == NULL));
 }
 
-int main(void) {
+int main(int argc, char **argv) {
 	mmt_handler_t *h;
 	char errbuf[1024];
 	size_t flen;
@@ -412,6 +634,13 @@ int main(void) {
 
 	/* ---------------- #507: S1AP extraction cache ------------------- */
 	test_s1ap_two_handlers();
+
+	/* ---------------- #574: UE keying, release, Rel-16 IEs ---------- */
+	test_mobile_ue_keying_and_rel16();
+	if (argc > 1)
+		test_mobile_rel16_corpus(argv[1]);
+	else
+		CHECK("accuracy-corpus directory given (argv[1])", 0);
 
 	close_extraction();
 

@@ -11,6 +11,9 @@
 //A linked-list containing all entities (UE, eNodeB, MME, gw) of the current LTE network being monitored
 typedef struct s1ap_entities_struct{
 	s1ap_entity_t entity;
+	//issue #574: kept beside the installed s1ap_entity_t, whose layout stays
+	uint64_t s1_link;   //S1 association the UE's S1AP ids were seen on
+	uint64_t last_seen; //capture time (seconds) of the last message naming it
 	struct s1ap_entities_struct *next;
 }s1ap_entities_t;
 
@@ -27,6 +30,11 @@ typedef struct s1ap_entities_struct{
  */
 static s1ap_entities_t *list_heads[ S1AP_ENTITY_TYPE_GW + 1 ] = { NULL };
 static uint32_t         entities_count = 0;
+//issue #574: the last id given; eviction lowers entities_count, so ids are
+//not derived from it (a later entity would reuse a live one's id)
+static uint32_t         last_entity_id = 0;
+//issue #574: capture time from which the next idle-UE sweep may run
+static uint64_t         next_sweep = 0;
 //bumped each time the store is freed, so that a per-thread extraction cache
 //filled before that (issue #507) is never taken for a later packet
 static uint64_t         entities_generation = 0;
@@ -45,6 +53,8 @@ static inline void _free_entities_list(){
 		}
 	}
 	entities_count = 0;
+	last_entity_id = 0;
+	next_sweep     = 0;
 	entities_generation ++;
 	pthread_mutex_unlock( &mutex );
 	//the NAS ciphering algorithms learned per UE go with the entities (#452)
@@ -64,6 +74,27 @@ static inline void _free_entities_list(){
 							   || HAS_VAL( msg->m_tmsi )  \
 							   || HAS_VAL( msg->ue_ipv4 ) \
 							   || HAS_VAL( msg->enb_ue_id ) || HAS_VAL( msg->mme_ue_id) )
+
+//issue #574: a UEContextReleaseComplete ends the UE-associated S1 connection
+#define IS_UE_RELEASE_COMPLETE( msg ) ((msg)->procedure_code == S1AP_ProcedureCode_id_UEContextRelease \
+		&& (msg)->pdu_present == S1AP_PDU_Present_successfulOutcome)
+
+/**
+ * Issue #574 (F-BUG-203): does the UE node p match msg? An IMSI or an M-TMSI
+ * names a UE in the whole network, but an eNB-UE-S1AP-ID is unique only
+ * within its eNodeB and an MME-UE-S1AP-ID within its MME (TS 36.413
+ * §9.2.3.3, §9.2.3.4): they are compared on the same S1 association only.
+ */
+static inline bool _is_same_ue( const s1ap_entities_t *p, const s1ap_message_t *msg ){
+	if( HAS_VAL( msg->m_tmsi) && msg->m_tmsi == p->entity.data.ue.m_tmsi )
+		return true;
+	if( HAS_FLAG( msg, has_imsi ) && memcmp( msg->imsi, p->entity.data.ue.imsi, sizeof( msg->imsi)) == 0 )
+		return true;
+	if( p->s1_link != msg->s1_link )
+		return false;
+	return ( HAS_VAL( msg->enb_ue_id ) && msg->enb_ue_id == p->entity.data.ue.enb_ue_s1ap_id )
+		|| ( HAS_VAL( msg->mme_ue_id ) && msg->mme_ue_id == p->entity.data.ue.mme_ue_s1ap_id );
+}
 
 
 
@@ -107,25 +138,9 @@ static inline s1ap_entities_t* _find_entity_node( s1ap_entity_type_t type, const
 
 	//find ue
 	if( type == S1AP_ENTITY_TYPE_UE && IS_CONTAIN_UE( msg )){
-
-		for( p = head; p != NULL; p = p->next ){
-			//same m_tmsi
-			if( HAS_VAL( msg->m_tmsi) && msg->m_tmsi == p->entity.data.ue.m_tmsi )
+		for( p = head; p != NULL; p = p->next )
+			if( _is_same_ue( p, msg ))
 				return p;
-			//same ENB_UE_ID
-			if( HAS_VAL( msg->enb_ue_id ) && msg->enb_ue_id == p->entity.data.ue.enb_ue_s1ap_id )
-				return p;
-			//same MME_UE_ID
-			if( HAS_VAL( msg->mme_ue_id ) && msg->mme_ue_id == p->entity.data.ue.mme_ue_s1ap_id )
-				return p;
-			//same imsi
-			if( HAS_FLAG( msg, has_imsi ) && memcmp( msg->imsi, p->entity.data.ue.imsi, sizeof( msg->imsi)) == 0 )
-				return p;
-
-			//same ip
-			//if( HAS_VAL( msg->ue_ipv4) && msg->ue_ipv4 == p->entity.ipv4 )
-			//	return p;
-		}
 		return NULL;
 	}
 
@@ -182,6 +197,52 @@ static inline void _update_entity( s1ap_entity_type_t type, s1ap_entity_t *p, co
 	}
 }
 
+//unlink node from the list of its type and free it
+static inline void _remove_entity_node( s1ap_entity_type_t type, s1ap_entities_t *node ){
+	s1ap_entities_t **pp;
+	for( pp = &list_heads[ type ]; *pp != NULL; pp = &(*pp)->next )
+		if( *pp == node ){
+			*pp = node->next;
+			mmt_free( node );
+			entities_count --;
+			return;
+		}
+}
+
+/**
+ * Issue #574: remove the UEs no message named for S1AP_UE_IDLE_TIMEOUT
+ * seconds of capture time. It runs at most once per S1AP_UE_SWEEP_INTERVAL
+ * capture seconds, so a packet does not walk the UE list each time, and
+ * again at once when the capture clock goes back past the last sweep.
+ */
+static inline void _sweep_idle_ues( uint64_t now ){
+	if( now == 0 || ( now < next_sweep && next_sweep - now <= S1AP_UE_SWEEP_INTERVAL ))
+		return;
+	next_sweep = now + S1AP_UE_SWEEP_INTERVAL;
+	s1ap_entities_t **pp = &list_heads[ S1AP_ENTITY_TYPE_UE ];
+	while( *pp != NULL ){
+		s1ap_entities_t *p = *pp;
+		if( now > p->last_seen && now - p->last_seen > S1AP_UE_IDLE_TIMEOUT ){
+			*pp = p->next;
+			mmt_free( p );
+			entities_count --;
+		}else
+			pp = &p->next;
+	}
+}
+
+//issue #574: a UE's S1AP ids are those of its current S1 connection, so the
+//ids learned on another association are dropped when it moves
+static inline void _update_ue_link( s1ap_entities_t *node, const s1ap_message_t *msg ){
+	if( !HAS_VAL( msg->enb_ue_id ) && !HAS_VAL( msg->mme_ue_id ))
+		return;
+	if( node->s1_link != msg->s1_link ){
+		node->entity.data.ue.enb_ue_s1ap_id = 0;
+		node->entity.data.ue.mme_ue_s1ap_id = 0;
+		node->s1_link = msg->s1_link;
+	}
+}
+
 /**
  * Update information of a node in the linked-list of an entity given by the s1ap_message_t
  * If the linked-list does not contain the entity,
@@ -196,10 +257,16 @@ static inline s1ap_entities_t* _update_entities_list( s1ap_entity_type_t type, c
 			|| (type == S1AP_ENTITY_TYPE_UE    && IS_CONTAIN_UE(msg)) ))
 		return NULL;
 
+	if( type == S1AP_ENTITY_TYPE_UE )
+		_sweep_idle_ues( msg->timestamp );
+
 	s1ap_entities_t *node = _find_entity_node( type, msg );
 
 	//not found any entity
 	if( node == NULL ){
+		//issue #574: a release of a UE the store does not hold adds nothing
+		if( type == S1AP_ENTITY_TYPE_UE && IS_UE_RELEASE_COMPLETE( msg ))
+			return NULL;
 		//bound the process-global, attacker-fed store (F-BUG-086):
 		//once the ceiling is reached, unknown entities are dropped
 		if( entities_count >= S1AP_MAX_ENTITIES )
@@ -214,9 +281,17 @@ static inline s1ap_entities_t* _update_entities_list( s1ap_entity_type_t type, c
 		//append to the head of this type's list
 		node->next       = list_heads[ type ];
 		list_heads[ type ] = node;
-		node->entity.id  = ++entities_count;
+		//0 means "no entity" (S1AP_ATT_*_ID, parent)
+		if( ++last_entity_id == 0 )
+			++last_entity_id;
+		node->entity.id  = last_entity_id;
+		entities_count ++;
 	}
 
+	if( type == S1AP_ENTITY_TYPE_UE )
+		_update_ue_link( node, msg );
+	if( HAS_VAL( msg->timestamp ))
+		node->last_seen = msg->timestamp;
 	//update information of the node in the linked-list with the information in msg
 	_update_entity( type, &node->entity, msg );
 
@@ -294,9 +369,15 @@ static inline void _assign_enb_mme_ip( s1ap_message_t *msg, const ipacket_t * pa
 	}
 }
 
+//issue #574: the unordered pair of the association's IPv4 addresses
+static inline uint64_t _s1_link_key( uint32_t ip_a, uint32_t ip_b ){
+	return ip_a < ip_b ? ((uint64_t) ip_a << 32) | ip_b : ((uint64_t) ip_b << 32) | ip_a;
+}
+
 static inline int _parse_s1ap_packet( s1ap_message_t *msg, const ipacket_t * packet, unsigned proto_index ){
 
 	memset(msg, 0, sizeof(s1ap_message_t));
+	msg->timestamp = (uint64_t) packet->p_hdr->ts.tv_sec;
 
 	int offset = get_packet_offset_at_index(packet, proto_index);
 
@@ -349,6 +430,10 @@ static inline int _parse_s1ap_packet( s1ap_message_t *msg, const ipacket_t * pac
 
 	//decode S1AP packet
 	int ret = s1ap_decode( msg, & packet->data[offset], data_len );
+
+	uint32_t ip_src, ip_dst;
+	if( _get_ip_src_dst( packet, &ip_src, &ip_dst ))
+		msg->s1_link = _s1_link_key( ip_src, ip_dst );
 
 	//we can use IP src-dst before SCTP as IP of eNodeB and MME
 	//S1SetupRequest: a message from eNodeB --> MME
@@ -459,6 +544,10 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 		cache.enb = _snapshot_entity( &cache.enb_copy, node_enb );
 		cache.mme = _snapshot_entity( &cache.mme_copy, node_mme );
 		cache.ue  = _snapshot_entity( &cache.ue_copy,  node_ue );
+
+		//issue #574: the S1 connection ends; this packet still reports the UE
+		if( node_ue != NULL && IS_UE_RELEASE_COMPLETE( &msg ))
+			_remove_entity_node( S1AP_ENTITY_TYPE_UE, node_ue );
 	}
 
 	mmt_binary_data_t *b;
@@ -582,6 +671,15 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 		IF_TRUE_UNLOCK_AND_RETURN( !cache.mme, 0 );
 		_copy_binary_data_type( extracted_data->data, cache.mme );
 		break;
+
+	case S1AP_ATT_NR_ENCRYPTION_ALGORITHMS:
+		IF_TRUE_UNLOCK_AND_RETURN( !HAS_FLAG( &msg, has_nr_ue_security_capabilities ), 0 );
+		*((uint16_t *) extracted_data->data) = msg.nr_encryption_algorithms;
+		break;
+	case S1AP_ATT_NR_INTEGRITY_ALGORITHMS:
+		IF_TRUE_UNLOCK_AND_RETURN( !HAS_FLAG( &msg, has_nr_ue_security_capabilities ), 0 );
+		*((uint16_t *) extracted_data->data) = msg.nr_integrity_algorithms;
+		break;
 	}//end of switch
 
 
@@ -622,6 +720,9 @@ static attribute_metadata_t s1ap_attributes_metadata[] = {
 		{S1AP_ATT_ENTITY_UE,      S1AP_ENTITY_UE_ALIAS,      MMT_BINARY_VAR_DATA, BINARY_1024DATA_TYPE_LEN,    POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
 		{S1AP_ATT_ENTITY_MME,     S1AP_ENTITY_MME_ALIAS,     MMT_BINARY_VAR_DATA, BINARY_1024DATA_TYPE_LEN,    POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
 		{S1AP_ATT_ENTITY_ENODEB,  S1AP_ENTITY_ENODEB_ALIAS,  MMT_BINARY_VAR_DATA, BINARY_1024DATA_TYPE_LEN,    POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+
+		{S1AP_ATT_NR_ENCRYPTION_ALGORITHMS, S1AP_NR_ENCRYPTION_ALGORITHMS_ALIAS, MMT_U16_DATA, sizeof( uint16_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ATT_NR_INTEGRITY_ALGORITHMS,  S1AP_NR_INTEGRITY_ALGORITHMS_ALIAS,  MMT_U16_DATA, sizeof( uint16_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
 
 };
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
@@ -731,8 +832,12 @@ uint32_t s1ap_entities_update( s1ap_entity_type_t type, const s1ap_message_t *ms
 	uint32_t id = 0;
 	pthread_mutex_lock( &mutex );
 	s1ap_entities_t *node = _update_entities_list( type, msg );
-	if( node != NULL )
+	if( node != NULL ){
 		id = node->entity.id;
+		//issue #574: as for a packet, the release removes the UE it names
+		if( type == S1AP_ENTITY_TYPE_UE && IS_UE_RELEASE_COMPLETE( msg ))
+			_remove_entity_node( type, node );
+	}
 	pthread_mutex_unlock( &mutex );
 	return id;
 }

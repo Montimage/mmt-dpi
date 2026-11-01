@@ -61,6 +61,7 @@
 #include "S1ap-SecurityKey.h"
 #include "S1ap-BearerType.h"
 #include "S1ap-Packet-LossRate.h"
+#include "NGAP_SRVCCOperationPossible.h"
 
 static int failures = 0;
 static int checks   = 0;
@@ -1308,6 +1309,154 @@ static void test_s1ap_entity_store_cap(void) {
 	CHECK("store drains on reset", s1ap_entities_count() == 0);
 }
 
+/* ------------------------------------------------------------------ */
+/* Issue #574 (F-BUG-203): UEs keyed per node, removed on release and  */
+/* by age                                                              */
+/* ------------------------------------------------------------------ */
+
+/* S1 associations: (eNB 10.0.0.1 | 10.0.0.2, MME 10.0.0.100), as
+ * proto_s1ap.c keys them -- (lower address << 32) | higher address */
+#define LINK_A 0x0a0000010a000064ULL
+#define LINK_B 0x0a0000020a000064ULL
+
+/* UEContextReleaseComplete (successfulOutcome of procedure 23):
+ * MME-UE-S1AP-ID 7, eNB-UE-S1AP-ID 5 -- the frame
+ * test_s1ap_ngap_packets.c drives */
+static const uint8_t VECTOR_UE_CONTEXT_RELEASE_COMPLETE[] = {
+	0x20, 0x17, 0x00, 0x0f, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00,
+	0x02, 0x00, 0x07, 0x00, 0x08, 0x00, 0x02, 0x00, 0x05
+};
+
+/* insert or refresh the UE named by (link, ids) at capture second ts */
+static uint32_t ue_update(uint64_t link, uint32_t enb_ue_id, uint32_t mme_ue_id,
+		uint64_t ts) {
+	s1ap_message_t msg;
+	memset(&msg, 0, sizeof(msg));
+	msg.s1_link   = link;
+	msg.enb_ue_id = enb_ue_id;
+	msg.mme_ue_id = mme_ue_id;
+	msg.timestamp = ts;
+	return s1ap_entities_update(S1AP_ENTITY_TYPE_UE, &msg);
+}
+
+/* release the UE named by (link, enb_ue_id) as a UEContextReleaseComplete */
+static uint32_t ue_release(uint64_t link, uint32_t enb_ue_id) {
+	s1ap_message_t msg;
+	memset(&msg, 0, sizeof(msg));
+	msg.procedure_code = S1AP_ProcedureCode_id_UEContextRelease;
+	msg.pdu_present    = S1AP_PDU_Present_successfulOutcome;
+	msg.s1_link        = link;
+	msg.enb_ue_id      = enb_ue_id;
+	return s1ap_entities_update(S1AP_ENTITY_TYPE_UE, &msg);
+}
+
+static void test_s1ap_ue_keying_per_node(void) {
+	s1ap_message_t msg;
+	uint32_t a, b, c, a2, d, e;
+
+	printf("S1AP UEs keyed per node, removed on release (issue #574, F-BUG-203):\n");
+	s1ap_entities_reset();
+	a = ue_update(LINK_A, 5, 0, 0);
+	b = ue_update(LINK_B, 5, 0, 0);
+	CHECK("two eNodeBs reusing eNB-UE-S1AP-ID 5 keep two UEs",
+			a > 0 && b > 0 && a != b && s1ap_entities_count() == 2);
+	CHECK("the id on its own eNodeB names the same UE",
+			ue_update(LINK_A, 5, 7, 0) == a && s1ap_entities_count() == 2);
+	c = ue_update(LINK_B, 0, 7, 0);
+	CHECK("MME-UE-S1AP-ID 7 on another association is another UE",
+			c > 0 && c != a && c != b && s1ap_entities_count() == 3);
+
+	/* the decoder reads the release: procedure, outcome and both ids */
+	memset(&msg, 0, sizeof(msg));
+	CHECK("UEContextReleaseComplete decodes",
+			s1ap_decode(&msg, VECTOR_UE_CONTEXT_RELEASE_COMPLETE,
+					sizeof(VECTOR_UE_CONTEXT_RELEASE_COMPLETE)) == 0
+			&& msg.procedure_code == S1ap_ProcedureCode_id_UEContextRelease
+			&& msg.pdu_present == S1AP_PDU_PR_successfulOutcome
+			&& msg.mme_ue_id == 7 && msg.enb_ue_id == 5);
+	msg.s1_link = LINK_A;
+	CHECK("UEContextReleaseComplete removes the UE it names",
+			s1ap_entities_update(S1AP_ENTITY_TYPE_UE, &msg) == a
+			&& s1ap_entities_count() == 2);
+	CHECK("the other eNodeB's UE with the same id stays",
+			ue_update(LINK_B, 5, 0, 0) == b && s1ap_entities_count() == 2);
+	CHECK("a release of an unknown UE inserts nothing",
+			s1ap_entities_update(S1AP_ENTITY_TYPE_UE, &msg) == 0
+			&& s1ap_entities_count() == 2);
+	a2 = ue_update(LINK_A, 5, 0, 0);
+	CHECK("a new S1 connection gets a new id, never a reused one",
+			a2 > c && s1ap_entities_count() == 3);
+
+	/* an IMSI names the UE on any association; its old ids go with it */
+	memset(&msg, 0, sizeof(msg));
+	strcpy(msg.imsi, "001010123456789");
+	msg.has_imsi  = 1;
+	msg.s1_link   = LINK_A;
+	msg.enb_ue_id = 9;
+	d = s1ap_entities_update(S1AP_ENTITY_TYPE_UE, &msg);
+	msg.s1_link   = LINK_B;
+	msg.enb_ue_id = 3;
+	CHECK("the IMSI follows the UE to another eNodeB",
+			d > 0 && s1ap_entities_update(S1AP_ENTITY_TYPE_UE, &msg) == d);
+	e = ue_update(LINK_A, 9, 0, 0);
+	CHECK("the S1AP id it had on the previous eNodeB no longer names it",
+			e > 0 && e != d);
+
+	s1ap_entities_reset();
+	CHECK("store drains on reset", s1ap_entities_count() == 0);
+}
+
+static void test_s1ap_ue_eviction_bounds(void) {
+	const uint64_t t0 = 1000;
+	uint32_t i, id, keep, refused = 0, mismatched = 0, max_seen = 0;
+
+	printf("S1AP UE eviction bounds the store (issue #574):\n");
+	s1ap_entities_reset();
+	/* attach/release churn: three times the ceiling of S1 connections */
+	for (i = 1; i <= 3 * S1AP_MAX_ENTITIES; i++) {
+		id = ue_update(LINK_A, i, 0, 0);
+		if (id == 0)
+			refused++;
+		if (s1ap_entities_count() > max_seen)
+			max_seen = s1ap_entities_count();
+		if (ue_release(LINK_A, i) != id)
+			mismatched++;
+	}
+	CHECK("released connections never fill the store (none refused)", refused == 0);
+	CHECK("each release removed the UE it named", mismatched == 0);
+	CHECK("the store held one UE at most, none after",
+			max_seen == 1 && s1ap_entities_count() == 0);
+
+	/* UEs that are never released: fill the ceiling at capture second t0 */
+	for (i = 1; i <= S1AP_MAX_ENTITIES; i++)
+		ue_update(LINK_A, i, 0, t0);
+	CHECK("store full of UEs refuses a new one",
+			s1ap_entities_count() == S1AP_MAX_ENTITIES
+			&& ue_update(LINK_A, S1AP_MAX_ENTITIES + 1, 0, t0) == 0);
+	keep = ue_update(LINK_A, 1, 0, t0 + S1AP_UE_IDLE_TIMEOUT);
+	CHECK("a UE idle for exactly the timeout is not evicted",
+			keep > 0 && s1ap_entities_count() == S1AP_MAX_ENTITIES);
+	id = ue_update(LINK_A, S1AP_MAX_ENTITIES + 1, 0,
+			t0 + S1AP_UE_IDLE_TIMEOUT + S1AP_UE_SWEEP_INTERVAL);
+	CHECK("UEs idle past the timeout are evicted, the new UE fits",
+			id > 0 && s1ap_entities_count() == 2);
+	CHECK("the UE seen within the timeout is kept",
+			ue_update(LINK_A, 1, 0, t0 + S1AP_UE_IDLE_TIMEOUT + S1AP_UE_SWEEP_INTERVAL) == keep);
+	CHECK("an evicted UE comes back as a new entity",
+			ue_update(LINK_A, 2, 0, t0 + S1AP_UE_IDLE_TIMEOUT + S1AP_UE_SWEEP_INTERVAL) > id
+			&& s1ap_entities_count() == 3);
+
+	/* without a capture clock nothing ages */
+	s1ap_entities_reset();
+	ue_update(LINK_A, 1, 0, 0);
+	ue_update(LINK_A, 2, 0, 0);
+	CHECK("UEs seen without a timestamp are not swept by one",
+			ue_update(LINK_A, 2, 0, 0) > 0 && s1ap_entities_count() == 2);
+
+	s1ap_entities_reset();
+	CHECK("store drains on reset", s1ap_entities_count() == 0);
+}
+
 /* F-BUG-089: encode must not let msg->pdu_present overwrite the decoded
  * CHOICE discriminant — only the union arm the wire actually carried may
  * be re-encoded and freed. */
@@ -1726,6 +1875,15 @@ static void test_s1ap_rel16_independent_vector(void) {
 			msg.procedure_code == S1ap_ProcedureCode_id_InitialContextSetup
 			&& msg.qos_qci == 9 && msg.qos_priority_level == 1
 			&& msg.gtp_teid == 1 && memcmp(&msg.gw_ipv4, SGW, 4) == 0);
+	/* issue #574: the Rel-16 IE after the E-RAB list is mapped */
+	CHECK("Rel-16 NRUESecurityCapabilities (IE 269) extracted",
+			msg.has_nr_ue_security_capabilities
+			&& msg.nr_encryption_algorithms == 0xE000   /* NEA1-NEA3 */
+			&& msg.nr_integrity_algorithms == 0xE000);  /* NIA1-NIA3 */
+	memset(&msg, 0, sizeof(msg));
+	CHECK("a request without it reports none",
+			s1ap_decode(&msg, VECTOR_ICS_REQUEST, sizeof(VECTOR_ICS_REQUEST)) == 0
+			&& !msg.has_nr_ue_security_capabilities);
 
 	rv = aper_decode(NULL, &asn_DEF_S1AP_PDU, (void **)&pdu,
 			REL16_ICS_REQUEST, sizeof(REL16_ICS_REQUEST), 0, 0);
@@ -1781,6 +1939,80 @@ static void test_s1ap_rel16_independent_vector(void) {
 	ASN_STRUCT_FREE(asn_DEF_S1AP_PDU, pdu);
 }
 
+/* ------------------------------------------------------------------ */
+/* Issue #574: the Rel-16 NGAP IE SRVCCOperationPossible (id 177)      */
+/* ------------------------------------------------------------------ */
+
+static size_t put_ngap_srvcc_ie(uint8_t *out, long value) {
+	NGAP_SRVCCOperationPossible_t v = value;
+	uint8_t val[8];
+	size_t n = ngap_ie_value(&asn_DEF_NGAP_SRVCCOperationPossible, &v, val, sizeof(val));
+	return n ? put_ie(out, NGAP_ProtocolIE_ID_id_SRVCCOperationPossible, val, n) : 0;
+}
+
+/* DownlinkNASTransport (AMF-UE-NGAP-ID 1, RAN-UE-NGAP-ID 2, a 4-octet
+ * NAS-PDU) carrying SRVCCOperationPossible notPossible -- the frame
+ * test_s1ap_ngap_packets.c drives */
+static const uint8_t NGAP_DL_NAS_SRVCC[] = {
+	0x00, 0x04, 0x40, 0x1d, 0x00, 0x00, 0x04, 0x00, 0x0a, 0x00, 0x02, 0x00,
+	0x01, 0x00, 0x55, 0x00, 0x02, 0x00, 0x02, 0x00, 0x26, 0x00, 0x05, 0x04,
+	0x7e, 0x00, 0x56, 0x01, 0x00, 0xb1, 0x00, 0x01, 0x40
+};
+
+static void test_ngap_rel16_srvcc(void) {
+	static const uint8_t nas[] = { 0x7E, 0x00, 0x56, 0x01 };
+	uint8_t ies[128], scratch[160], pdu[192], out[256];
+	ngap_message_t msg, back;
+	size_t n = 0, len;
+	uint32_t enc;
+
+	printf("NGAP Rel-16 SRVCCOperationPossible (issue #574):\n");
+	n += put_ngap_amf_ie(ies + n, NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID, 1);
+	n += put_ngap_ran_ie(ies + n, 2);
+	n += put_ngap_nas_ie(ies + n, nas, sizeof(nas));
+	n += put_ngap_srvcc_ie(ies + n, NGAP_SRVCCOperationPossible_notPossible);
+	len = put_s1ap_pdu(pdu, 0x00, NGAP_ProcedureCode_id_DownlinkNASTransport,
+			0x40, 4, ies, n, scratch);
+	CHECK("the packet test's DownlinkNASTransport is this encoding",
+			len == sizeof(NGAP_DL_NAS_SRVCC)
+			&& memcmp(pdu, NGAP_DL_NAS_SRVCC, len) == 0);
+	memset(&msg, 0, sizeof(msg));
+	CHECK("DownlinkNASTransport: SRVCCOperationPossible notPossible extracted",
+			decode_ngap(&msg, pdu, (uint32_t)len)
+			&& msg.has_srvcc_operation_possible
+			&& msg.srvcc_operation_possible == NGAP_SRVCCOperationPossible_notPossible
+			&& msg.amf_ue_id == 1 && msg.ran_ue_id == 2);
+	/* the encode path leaves the IE as it was */
+	msg.ran_ue_id = 3;
+	enc = encode_ngap(out, sizeof(out), &msg, pdu, (uint32_t)len);
+	memset(&back, 0, sizeof(back));
+	CHECK("encode_ngap keeps it",
+			enc > 0 && decode_ngap(&back, out, enc) && back.ran_ue_id == 3
+			&& back.has_srvcc_operation_possible
+			&& back.srvcc_operation_possible == NGAP_SRVCCOperationPossible_notPossible);
+
+	n = 0;
+	n += put_ngap_amf_ie(ies + n, NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID, 1);
+	n += put_ngap_ran_ie(ies + n, 2);
+	n += put_ngap_srvcc_ie(ies + n, NGAP_SRVCCOperationPossible_possible);
+	len = put_s1ap_pdu(pdu, 0x20, NGAP_ProcedureCode_id_PathSwitchRequest,
+			0x00, 3, ies, n, scratch);
+	memset(&msg, 0, sizeof(msg));
+	CHECK("PathSwitchRequestAcknowledge: SRVCCOperationPossible possible extracted",
+			decode_ngap(&msg, pdu, (uint32_t)len)
+			&& msg.has_srvcc_operation_possible
+			&& msg.srvcc_operation_possible == NGAP_SRVCCOperationPossible_possible);
+
+	n = 0;
+	n += put_ngap_amf_ie(ies + n, NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID, 1);
+	n += put_ngap_ran_ie(ies + n, 2);
+	len = put_s1ap_pdu(pdu, 0x00, NGAP_ProcedureCode_id_DownlinkNASTransport,
+			0x40, 2, ies, n, scratch);
+	memset(&msg, 0, sizeof(msg));
+	CHECK("a message without it reports none",
+			decode_ngap(&msg, pdu, (uint32_t)len) && !msg.has_srvcc_operation_possible);
+}
+
 int main(void) {
 	/* The logger reads MMT_DPI_LOG_LEVEL once: run with its default (off). */
 	unsetenv("MMT_DPI_LOG_LEVEL");
@@ -1797,10 +2029,13 @@ int main(void) {
 	test_ngap_get_nas_pdu();
 	test_s1ap_decode_failure_no_leak();
 	test_s1ap_entity_store_cap();
+	test_s1ap_ue_keying_per_node();
+	test_s1ap_ue_eviction_bounds();
 	test_ngap_choice_discriminant();
 	test_ngap_message_decoders();
 	test_rel16_generation();
 	test_s1ap_rel16_independent_vector();
+	test_ngap_rel16_srvcc();
 	test_s1ap_malformed_pdus_silent();
 
 	printf("\n%d checks, %d failure(s)\n", checks, failures);

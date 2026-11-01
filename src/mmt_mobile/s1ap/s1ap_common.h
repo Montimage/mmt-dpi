@@ -432,6 +432,23 @@ typedef struct s1ap_message{
 	uint8_t has_mme_name;
 	uint8_t has_imsi;
 
+	/* Issue #574: the Rel-16 IE NRUESecurityCapabilities (id 269, TS 36.413
+	 * §9.2.1.127) of an InitialContextSetupRequest -- the first 16 bits of
+	 * its NR encryption and integrity algorithm bitmaps */
+	uint8_t  has_nr_ue_security_capabilities;
+	uint16_t nr_encryption_algorithms;
+	uint16_t nr_integrity_algorithms;
+
+	/* Issue #574: S1AP ids are unique only per node (TS 36.413 §9.2.3.3,
+	 * §9.2.3.4), so the entity store compares them on the S1 association
+	 * the message was carried on -- the unordered pair of its IPv4
+	 * addresses, (lower << 32) | higher, 0 when unknown. timestamp is the
+	 * capture time of its packet in seconds (0 when unknown), the clock of
+	 * the idle-UE eviction. Neither is read from the PDU: proto_s1ap.c sets
+	 * them from the packet. */
+	uint64_t s1_link;
+	uint64_t timestamp;
+
 }s1ap_message_t;
 
 int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
