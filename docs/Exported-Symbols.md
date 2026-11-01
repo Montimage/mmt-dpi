@@ -51,11 +51,11 @@ one of those declarations, or misses one of them.
 
 > **Deprecation note (2026-09, #237):** `mmt_search_irc_ssl_detect_ninty_percent_but_very_fast`
 > (libmmt_tcpip) keeps its exported symbol for ABI stability but is now
-> `__attribute__((deprecated))` in `src/mmt_tcpip/lib/protocols/proto_irc.c:376-377`.
+> `__attribute__((deprecated))` in `src/mmt_tcpip/lib/protocols/proto_irc.c:359-360`.
 > It is declared `MMTAPI` there, so it stays exported from the hidden-visibility
 > plugin (issue #534) until its removal.
 > Use the correctly named alias `mmt_search_irc_ssl_detect` (same signature and
-> behaviour, defined alongside at `proto_irc.c:356`). The misspelled name is
+> behaviour, defined alongside at `proto_irc.c:340`). The misspelled name is
 > scheduled for removal in release 2.0.0.
 
 > **Deprecation note (2026-10, #541):** 30 public `libmmt_core` functions have

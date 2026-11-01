@@ -1035,7 +1035,7 @@ static void test_classification(void) {
 	for (int side = 0; side < 2; side++) {
 		mmt_internal_tcpip_id_struct *id = side ? &g_dst : &g_src;
 		flow_reset();
-		MMT_ADD_PROTOCOL_TO_BITMASK(id->detected_protocol_bitmask, PROTO_FTP);
+		id->detected_host_protos |= mmt_host_proto_bit(PROTO_FTP); /* issue #562 */
 		id->ftp_ip.ipv4 = side ? CLIENT : SERVER;   /* src: packet daddr, dst: packet saddr */
 		id->ftp_timer_set = 1;
 		id->ftp_timer = 100;

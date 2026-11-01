@@ -24,16 +24,16 @@ static void mmt_add_connection_as_bittorrent(ipacket_t * ipacket, const uint8_t 
         if (ipacket->session->setup_packet_direction == ipacket->session->last_packet_direction) {
             /*Packet direction from client to server*/
             if (packet->udp != NULL) {
-                insert_to_local_protos(packet->udp->dest, PROTO_BITTORRENT, 17 /*UDP*/, &dst->local_protos);
+                insert_to_local_protos(packet->udp->dest, PROTO_BITTORRENT, 17 /*UDP*/, dst);
             } else if (packet->tcp != NULL) {
-                insert_to_local_protos(packet->tcp->dest, PROTO_BITTORRENT, 6 /*TCP*/, &dst->local_protos);
+                insert_to_local_protos(packet->tcp->dest, PROTO_BITTORRENT, 6 /*TCP*/, dst);
             }
         } else {
             /*Packet direction from server to client*/
             if (packet->udp != NULL) {
-                insert_to_local_protos(packet->udp->source, PROTO_BITTORRENT, 17 /*UDP*/, &src->local_protos);
+                insert_to_local_protos(packet->udp->source, PROTO_BITTORRENT, 17 /*UDP*/, src);
             } else if (packet->tcp != NULL) {
-                insert_to_local_protos(packet->tcp->source, PROTO_BITTORRENT, 6 /*TCP*/, &src->local_protos);
+                insert_to_local_protos(packet->tcp->source, PROTO_BITTORRENT, 6 /*TCP*/, src);
             }
         }
     }
@@ -398,7 +398,7 @@ int mmt_check_bittorrent_tcp(ipacket_t * ipacket, unsigned index) {
                     /*Packet direction from client to server*/
                     uint32_t app = PROTO_UNKNOWN;
                     if (packet->tcp != NULL && packet->actual_payload_len > 0) {
-                        app = check_local_proto_by_port_nb(packet->tcp->dest, &dst->local_protos);
+                        app = check_local_proto_by_port_nb(packet->tcp->dest, dst);
                     }
                     if (app == PROTO_BITTORRENT) {
                         mmt_add_connection_as_bittorrent(ipacket,
@@ -409,7 +409,7 @@ int mmt_check_bittorrent_tcp(ipacket_t * ipacket, unsigned index) {
                     /*Packet direction from server to client*/
                     uint32_t app = PROTO_UNKNOWN;
                     if (packet->tcp != NULL && packet->actual_payload_len > 0) {
-                        app = check_local_proto_by_port_nb(packet->tcp->source, &src->local_protos);
+                        app = check_local_proto_by_port_nb(packet->tcp->source, src);
                     }
                     if (app == PROTO_BITTORRENT) {
                         mmt_add_connection_as_bittorrent(ipacket,
@@ -440,7 +440,7 @@ int mmt_check_bittorrent_udp(ipacket_t * ipacket, unsigned index) {
                 /*Packet direction from client to server*/
                 uint32_t app = PROTO_UNKNOWN;
                 if (packet->udp != NULL && packet->actual_payload_len > 0) {
-                    app = check_local_proto_by_port_nb(packet->udp->dest, &dst->local_protos);
+                    app = check_local_proto_by_port_nb(packet->udp->dest, dst);
                 }
                 if (app == PROTO_BITTORRENT) {
                     goto bittorrent_found;
@@ -449,7 +449,7 @@ int mmt_check_bittorrent_udp(ipacket_t * ipacket, unsigned index) {
                 /*Packet direction from server to client*/
                 uint32_t app = PROTO_UNKNOWN;
                 if (packet->udp != NULL && packet->actual_payload_len > 0) {
-                    app = check_local_proto_by_port_nb(packet->udp->source, &src->local_protos);
+                    app = check_local_proto_by_port_nb(packet->udp->source, src);
                 }
                 if (app == PROTO_BITTORRENT) {
                     goto bittorrent_found;

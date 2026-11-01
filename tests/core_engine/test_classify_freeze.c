@@ -71,8 +71,8 @@ static __thread int g_identity_ok;
 
 static protocol_t *g_parent;
 
-/* The walk publishes the checker's registration node (its stable identity,
- * what proto_checkers[] and the claim store) — never the frozen entry. */
+/* The walk publishes the checker's registration node (its stable identity:
+ * the claim stores it, proto_checkers[] its id) — never the frozen entry. */
 static void trace(ipacket_t *ipacket, char tag, generic_classification_function self) {
     mmt_classify_proto_t *n;
     void *cur = ipacket_internal(ipacket)->mmt_current_classifier;

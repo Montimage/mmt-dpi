@@ -246,12 +246,25 @@ mmt_ip6_id_t * get_ip6_id(internal_ip_proto_context_t * tcpip_context, struct in
     return retval;
 }
 
+/* Issue #562 (F-PERF-104): a host record owns its lazily-allocated cold
+ * extension (port cache, IRC DCC ports) — free it with the record. Records
+ * the sessions released while their extension is NULL cost nothing more. */
+static inline void free_ip4_id(mmt_ip4_id_t * id) {
+    mmt_host_ext_release(&id->id_internal_context);
+    mmt_free(id);
+}
+
+static inline void free_ip6_id(mmt_ip6_id_t * id) {
+    mmt_host_ext_release(&id->id_internal_context);
+    mmt_free(id);
+}
+
 void free_ipv4_data(void * key, void * value, void * args) {
-    mmt_free((mmt_ip4_id_t *) value);
+    free_ip4_id((mmt_ip4_id_t *) value);
 }
 
 void free_ipv6_data(void * key, void * value, void * args) {
-    mmt_free((mmt_ip6_id_t *) value);
+    free_ip6_id((mmt_ip6_id_t *) value);
 }
 
 void free_session_data(void * key, void * value, void * args) {
@@ -269,13 +282,13 @@ void free_session_data(void * key, void * value, void * args) {
         id_low->count -= 1;
         if (id_low->count == 0) {
             _deleteID4(tcpip_context, & id_low->ip);
-            mmt_free(id_low);
+            free_ip4_id(id_low);
         }
         id_high->count -= 1;
 
         if (id_high->count == 0) {
             _deleteID4(tcpip_context, & id_high->ip);
-            mmt_free(id_high);
+            free_ip4_id(id_high);
         }
     } else {
         mmt_ip6_id_t * id_low = session_key->lower_ip;
@@ -284,13 +297,13 @@ void free_session_data(void * key, void * value, void * args) {
         id_low->count -= 1;
         if (id_low->count == 0) {
             deleteID6(tcpip_context, & id_low->ip);
-            mmt_free(id_low);
+            free_ip6_id(id_low);
         }
         id_high->count -= 1;
 
         if (id_high->count == 0) {
             deleteID6(tcpip_context, & id_high->ip);
-            mmt_free(id_high);
+            free_ip6_id(id_high);
         }
     }
 
@@ -370,7 +383,7 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
                     mmt_ip4_id_t * id_low = (mmt_ip4_id_t *) ((mmt_session_key_t *) retval->session_key)->lower_ip;
                     _deleteID4(tcpip_context, & id_low->ip);
                     tcpip_context->ips_count -= 1;
-                    mmt_free(id_low);
+                    free_ip4_id(id_low);
                 }
                 // mmt_free(session_key->lower_ip);
                 // mmt_free(session_key->higher_ip);
@@ -397,7 +410,7 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
                     mmt_ip6_id_t * id_low = (mmt_ip6_id_t *) ((mmt_session_key_t *) retval->session_key)->lower_ip;
                     deleteID6(tcpip_context, & id_low->ip);
                     tcpip_context->ips_count -= 1;
-                    mmt_free(id_low);
+                    free_ip6_id(id_low);
                 }
                 // mmt_free(session_key->lower_ip);
                 // mmt_free(session_key->higher_ip);
@@ -421,11 +434,11 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
                 if (session_key->ip_type == 4) {
                     mmt_ip4_id_t * id_low = (mmt_ip4_id_t *) ((mmt_session_key_t *)retval->session_key)->lower_ip;
                     _deleteID4(tcpip_context, & id_low->ip);
-                    mmt_free(id_low);
+                    free_ip4_id(id_low);
                 } else {
                     mmt_ip6_id_t * id_low = (mmt_ip6_id_t *) ((mmt_session_key_t *)retval->session_key)->lower_ip;
                     deleteID6(tcpip_context, & id_low->ip);
-                    mmt_free(id_low);
+                    free_ip6_id(id_low);
                 }
                 tcpip_context->ips_count -= 1;
             }
@@ -434,11 +447,11 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
                 if (session_key->ip_type == 4) {
                     mmt_ip4_id_t * id_high = (mmt_ip4_id_t *) ((mmt_session_key_t *)retval->session_key)->higher_ip;
                     _deleteID4(tcpip_context, & id_high->ip);
-                    mmt_free(id_high);
+                    free_ip4_id(id_high);
                 } else {
                     mmt_ip6_id_t * id_high = (mmt_ip6_id_t *) ((mmt_session_key_t *)retval->session_key)->higher_ip;
                     deleteID6(tcpip_context, & id_high->ip);
-                    mmt_free(id_high);
+                    free_ip6_id(id_high);
                 }
                 tcpip_context->ips_count -= 1;
             }

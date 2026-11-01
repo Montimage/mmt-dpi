@@ -107,9 +107,71 @@ typedef struct mmt_conv_proto_last_seen_signalling_struct {
     struct timeval last_seen;
 }mmt_conv_proto_last_seen_signalling_t;
 
-typedef struct mmt_internal_tcpip_id_struct {
-    MMT_PROTOCOL_BITMASK detected_protocol_bitmask;
+/* Issue #562 (F-PERF-104): the cold part of a host record — the per-host
+ * port cache of the four protocols that use it (STUN, BitTorrent, eDonkey,
+ * RTP) and the IRC DCC port table. It was inline (612 B of a 960 B record)
+ * although most hosts never take a write to either; it is now allocated by
+ * the first write (mmt_host_ext_get()) and freed with the host
+ * (mmt_host_ext_release()). A host without it reads as the zeroed fields of
+ * a fresh record: no cached port, no DCC port. */
+typedef struct mmt_internal_tcpip_id_ext_struct {
     mmt_server_local_proto_t local_protos;
+#ifdef PROTO_IRC
+    MMT_INTERNAL_TIMESTAMP_TYPE last_time_port_used[16];
+    uint16_t irc_port[16];
+    uint8_t irc_number_of_port;
+#endif
+} mmt_internal_tcpip_id_ext_t;
+
+/* Issue #562 (F-PERF-104): the host record kept only the protocols a
+ * classifier asks about (MMT_HOST_HAS_PROTOCOL) instead of a 1,024-bit
+ * MMT_PROTOCOL_BITMASK (128 B). One bit per tracked protocol; asking about
+ * an untracked protocol does not compile (MMT_HOST_PROTO_BIT_<PROTO>). */
+#define MMT_HOST_PROTO_BIT_PROTO_FTP              (1u << 0)
+#define MMT_HOST_PROTO_BIT_PROTO_SPOTIFY          (1u << 1)
+#define MMT_HOST_PROTO_BIT_PROTO_PPLIVE           (1u << 2)
+#define MMT_HOST_PROTO_BIT_PROTO_DIRECTCONNECT    (1u << 3)
+#define MMT_HOST_PROTO_BIT_PROTO_IRC              (1u << 4)
+#define MMT_HOST_PROTO_BIT_PROTO_YAHOO            (1u << 5)
+#define MMT_HOST_PROTO_BIT_PROTO_GADUGADU         (1u << 6)
+#define MMT_HOST_PROTO_BIT_PROTO_MSN              (1u << 7)
+#define MMT_HOST_PROTO_BIT_PROTO_GNUTELLA         (1u << 8)
+#define MMT_HOST_PROTO_BIT_PROTO_BATTLEFIELD      (1u << 9)
+#define MMT_HOST_PROTO_BIT_PROTO_POPO             (1u << 10)
+#define MMT_HOST_PROTO_BIT_PROTO_THUNDER          (1u << 11)
+#define MMT_HOST_PROTO_BIT_PROTO_OSCAR            (1u << 12)
+#define MMT_HOST_PROTO_BIT_PROTO_WORLDOFWARCRAFT  (1u << 13)
+#define MMT_HOST_PROTO_TRACKED                    14
+
+/* The bit of a detected protocol in the host record, 0 when no classifier
+ * asks a host about it (mmt_internal_add_connection_by()). */
+static inline uint16_t mmt_host_proto_bit(uint32_t proto) {
+    switch (proto) {
+    case PROTO_FTP:             return MMT_HOST_PROTO_BIT_PROTO_FTP;
+    case PROTO_SPOTIFY:         return MMT_HOST_PROTO_BIT_PROTO_SPOTIFY;
+    case PROTO_PPLIVE:          return MMT_HOST_PROTO_BIT_PROTO_PPLIVE;
+    case PROTO_DIRECTCONNECT:   return MMT_HOST_PROTO_BIT_PROTO_DIRECTCONNECT;
+    case PROTO_IRC:             return MMT_HOST_PROTO_BIT_PROTO_IRC;
+    case PROTO_YAHOO:           return MMT_HOST_PROTO_BIT_PROTO_YAHOO;
+    case PROTO_GADUGADU:        return MMT_HOST_PROTO_BIT_PROTO_GADUGADU;
+    case PROTO_MSN:             return MMT_HOST_PROTO_BIT_PROTO_MSN;
+    case PROTO_GNUTELLA:        return MMT_HOST_PROTO_BIT_PROTO_GNUTELLA;
+    case PROTO_BATTLEFIELD:     return MMT_HOST_PROTO_BIT_PROTO_BATTLEFIELD;
+    case PROTO_POPO:            return MMT_HOST_PROTO_BIT_PROTO_POPO;
+    case PROTO_THUNDER:         return MMT_HOST_PROTO_BIT_PROTO_THUNDER;
+    case PROTO_OSCAR:           return MMT_HOST_PROTO_BIT_PROTO_OSCAR;
+    case PROTO_WORLDOFWARCRAFT: return MMT_HOST_PROTO_BIT_PROTO_WORLDOFWARCRAFT;
+    default:                    return 0;
+    }
+}
+
+/* Whether a host record has seen `protocol` detected (non-NULL host). */
+#define MMT_HOST_HAS_PROTOCOL(host, protocol) \
+    (((host)->detected_host_protos & MMT_HOST_PROTO_BIT_##protocol) != 0)
+
+typedef struct mmt_internal_tcpip_id_struct {
+    mmt_internal_tcpip_id_ext_t *ext; /**< issue #562: cold part, NULL until its first write */
+    uint16_t detected_host_protos;    /**< issue #562: MMT_HOST_PROTO_BIT_* of the protocols detected on this host */
     mmt_conv_proto_last_seen_signalling_t conv_proto;
 #ifdef PROTO_FTP
     mmt_ip_addr_t ftp_ip;
@@ -124,9 +186,6 @@ typedef struct mmt_internal_tcpip_id_struct {
 #ifdef PROTO_YAHOO
     MMT_INTERNAL_TIMESTAMP_TYPE yahoo_video_lan_timer;
 #endif
-#endif
-#ifdef PROTO_IRC
-    MMT_INTERNAL_TIMESTAMP_TYPE last_time_port_used[16];
 #endif
 #ifdef PROTO_FTP
     MMT_INTERNAL_TIMESTAMP_TYPE ftp_timer;
@@ -176,9 +235,6 @@ typedef struct mmt_internal_tcpip_id_struct {
 #ifdef PROTO_PPLIVE
     uint16_t pplive_vod_cli_port;
 #endif
-#ifdef PROTO_IRC
-    uint16_t irc_port[16];
-#endif
 #ifdef PROTO_GADUGADU
     uint16_t gg_ft_port;
 #endif
@@ -188,20 +244,11 @@ typedef struct mmt_internal_tcpip_id_struct {
     uint16_t jabber_file_transfer_port[2];
 #endif
 #ifdef PROTO_GNUTELLA
-    uint16_t detected_gnutella_port;
-#endif
-#ifdef PROTO_GNUTELLA
     uint16_t detected_gnutella_udp_port1;
     uint16_t detected_gnutella_udp_port2;
 #endif
 #ifdef PROTO_SOULSEEK
     uint16_t soulseek_listen_port;
-#endif
-#ifdef PROTO_IRC
-    uint8_t irc_number_of_port;
-#endif
-#ifdef PROTO_OSCAR
-    uint8_t oscar_ssl_session_id[33];
 #endif
 #ifdef PROTO_GADUGADU
     uint8_t gg_call_id[2][7];

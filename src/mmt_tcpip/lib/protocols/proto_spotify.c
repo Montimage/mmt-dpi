@@ -47,7 +47,7 @@ int mmt_check_spotify(ipacket_t * ipacket, unsigned index) {
                 /* first octet is 00 */
                 if ((payload_len >= 16) && (packet->payload[0] == 0x00)) {
                     //Now check if SPOTIFY was already detected for the source address
-                    if (src != NULL && MMT_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, PROTO_SPOTIFY)) {
+                    if (src != NULL && MMT_HOST_HAS_PROTOCOL(src, PROTO_SPOTIFY)) {
                         flow->l4.tcp.spotify_stage = 2;
                         mmt_internal_add_connection(ipacket, PROTO_SPOTIFY, MMT_REAL_PROTOCOL);
                         return 1;

@@ -189,8 +189,9 @@ typedef struct mmt_tcp_reasm_s {
  * Defines the structure of a session.
  */
 struct mmt_session_struct {
-    uint8_t family;                          /**< identifier of the application family to which this session belongs. */
-
+    /* Issue #562 (F-PERF-012): the byte-wide fields (family, is_fragmenting)
+     * sit in the tail byte group with the status bits, so the record has no
+     * padding hole before an 8-byte field. */
     uint32_t session_protocol_index;         /**< index of the protocol to which the session belongs */
     uint32_t session_timeout_delay;          /**< The inactivity delay after which the session can be considered as expired */
     uint32_t session_timeout_milestone;      /**< The time expressed as seconds since Epoch (1st Jan 1970) when the session will be considered as expired */
@@ -208,7 +209,6 @@ struct mmt_session_struct {
     uint64_t session_id;                     /**< session identifier */
     uint64_t fragmented_packet_count;        /**< number of fragmented packets which are in this session*/
     uint64_t fragment_count;                 /**< number of fragments which are in this session*/
-    uint8_t is_fragmenting;                  /** 1 - session is processing a fragmented packet, 0 - session is not processing any fragmented packet*/
     /* Total statistics */
     uint64_t packet_count;                   /**< tracks the number of packets */
     uint64_t packet_cap_count;               /**< number of packets which are captured as in this session - include fragmented packets*/
@@ -245,10 +245,13 @@ struct mmt_session_struct {
      * instead of re-walking the whole chain. The winning checker keeps its
      * per-packet role on the flow (stage machines, SNI/hostname service
      * detection); the ~98 non-owning checkers are no-ops on a committed flow.
-     * NULL when the layer converged without a winning checker (port/IP
+     * 0 when the layer converged without a winning checker (port/IP
      * fallback, plugin-side set_classified_proto) — such layers keep the
-     * full walk so late reclassification stays possible. */
-    mmt_classify_proto_t *proto_checkers[PROTO_PATH_SIZE];
+     * full walk so late reclassification stays possible.
+     * Issue #562 (F-PERF-012): a slot holds the checker's id
+     * (mmt_classify_proto_t.id, mmt_classifier_by_id()), 2 B instead of an
+     * 8 B node pointer. */
+    uint16_t proto_checkers[PROTO_PATH_SIZE];
 
     /* BW: MMT content type */
     struct {
@@ -291,6 +294,8 @@ struct mmt_session_struct {
      * fallbacks, classifier claims in set_classified_proto). It sits in the
      * padding before tcp_reasm, so the session does not grow. */
     uint8_t classification_method;
+    uint8_t family;                          /**< identifier of the application family to which this session belongs. */
+    uint8_t is_fragmenting;                  /** 1 - session is processing a fragmented packet, 0 - session is not processing any fragmented packet*/
     /* Issue #245: the TCP reassembly fields (segment lists, payload image
      * buffers, block chain) moved into the lazily-allocated mmt_tcp_reasm_t
      * extension above — a session that never reassembles TCP payload pays
@@ -444,6 +449,7 @@ struct session_timer_handler_struct{
 struct mmt_classify_proto_struct {
     uint32_t weight;
     uint8_t legacy; /**< Issue #540: 1 = defunct-service checker, walked only when the handler's legacy_classify is set */
+    uint16_t id;    /**< Issue #562: slot in mmt_classifier_slots (mmt_classifier_by_id()), 0 = none (table full) */
     generic_classification_function classify_me; /**< Issue #546: typed verdict (was int) */
     uint32_t selection_mask; /**< Issue #560: the checker's packet-selection guard (0 = none recorded), set by mmt_classifier_set_guard() */
     uint32_t excluded_proto; /**< Issue #560: the protocol id the checker's excluded bitmask holds (PROTO_UNKNOWN = none) */
@@ -451,11 +457,35 @@ struct mmt_classify_proto_struct {
     mmt_classify_proto_t * previous;
 };
 
+/*
+ * Issue #562 (F-PERF-012): every registered checker node gets a small id —
+ * its slot in this process-wide table — so mmt_session_t.proto_checkers[]
+ * records a 2 B id per layer instead of an 8 B node pointer. Slot 0 is never
+ * used: id 0 means "no recorded checker" (the full walk). A node takes the
+ * first free slot when registered (register_classification_function_internal)
+ * and frees it before the node is freed (free_registered_protocols()), so a
+ * session id naming a freed node reads NULL. With every slot taken a node
+ * gets id 0 and is never dispatched directly — it is still walked, so
+ * verdicts are unchanged.
+ */
+#define MMT_CLASSIFIER_ID_SLOTS 1024
+extern mmt_classify_proto_t * mmt_classifier_slots[MMT_CLASSIFIER_ID_SLOTS];
+
+/* The node of a checker id, NULL for id 0, an id past the table or a freed slot. */
+static inline mmt_classify_proto_t * mmt_classifier_by_id(uint16_t id) {
+    return (id != 0 && id < MMT_CLASSIFIER_ID_SLOTS)
+            ? __atomic_load_n(&mmt_classifier_slots[id], __ATOMIC_ACQUIRE) : NULL;
+}
+
+/* packet_registry_classify.c — issue #562: give a node an id (0 when the
+ * table is full) / clear its slot before the node is freed. */
+uint16_t mmt_classifier_id_assign(mmt_classify_proto_t * node);
+void mmt_classifier_id_release(mmt_classify_proto_t * node);
 /**
  * Issue #560 (F-PERF-005, checker walk part 1): one checker of a frozen
- * chain. The registration node stays the checker's identity — what
- * mmt_session_t.proto_checkers[] and the classifier claim store — so a chain
- * re-frozen after a late registration never invalidates a stored pointer;
+ * chain. The registration node stays the checker's identity — the claim
+ * stores it, mmt_session_t.proto_checkers[] its id (#562) — so a chain
+ * re-frozen after a late registration never invalidates either;
  * the walk itself reads only these contiguous entries. selection_mask and
  * excluded_proto are copied from the node for the central guard of #561.
  */

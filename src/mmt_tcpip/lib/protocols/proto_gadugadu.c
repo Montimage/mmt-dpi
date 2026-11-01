@@ -284,8 +284,7 @@ static enum gadugadu_stage_result mmt_gadugadu_search_src_peer(ipacket_t * ipack
 
     /*mirinda file detection */
     if (packet->tcp != NULL && src != NULL) {
-        if (MMT_COMPARE_PROTOCOL_TO_BITMASK
-                (src->detected_protocol_bitmask, PROTO_GADUGADU) != 0
+        if (MMT_HOST_HAS_PROTOCOL(src, PROTO_GADUGADU) != 0
                 && ((src->gg_ft_ip_address == packet->iph->saddr && src->gg_ft_port == packet->tcp->source)
                 || (src->gg_ft_ip_address == packet->iph->daddr && src->gg_ft_port == packet->tcp->dest))) {
             if ((packet->tick_timestamp - src->gg_timeout) < gadugadu_peer_connection_timeout) {
@@ -297,8 +296,7 @@ static enum gadugadu_stage_result mmt_gadugadu_search_src_peer(ipacket_t * ipack
                 src->gg_ft_ip_address = 0;
                 src->gg_ft_port = 0;
             }
-        } else if (MMT_COMPARE_PROTOCOL_TO_BITMASK
-                (src->detected_protocol_bitmask, PROTO_GADUGADU) != 0 && (packet->tcp->dest == htons(80)
+        } else if (MMT_HOST_HAS_PROTOCOL(src, PROTO_GADUGADU) != 0 && (packet->tcp->dest == htons(80)
                 || packet->tcp->source ==
                 htons(80))
                 && packet->payload_packet_len == 12 && (mmt_memcmp(src->gg_call_id[0], &packet->payload[5], 4) == 0
@@ -314,9 +312,7 @@ static enum gadugadu_stage_result mmt_gadugadu_search_src_peer(ipacket_t * ipack
 
             }
 
-        } else if (MMT_COMPARE_PROTOCOL_TO_BITMASK
-                (src->detected_protocol_bitmask,
-                PROTO_GADUGADU) != 0
+        } else if (MMT_HOST_HAS_PROTOCOL(src, PROTO_GADUGADU) != 0
                 && packet->payload_packet_len == 8 &&
                 (mmt_memcmp(src->gg_call_id[0], &packet->payload[0], 4) == 0 || (src->gg_call_id[1][0]
                 &&
@@ -342,8 +338,7 @@ static enum gadugadu_stage_result mmt_gadugadu_search_dst_peer(ipacket_t * ipack
     struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
 
     if (packet->tcp != NULL && dst != NULL) {
-        if (MMT_COMPARE_PROTOCOL_TO_BITMASK
-                (dst->detected_protocol_bitmask, PROTO_GADUGADU) != 0
+        if (MMT_HOST_HAS_PROTOCOL(dst, PROTO_GADUGADU) != 0
                 && ((dst->gg_ft_ip_address == packet->iph->saddr && dst->gg_ft_port == packet->tcp->source)
                 || (dst->gg_ft_ip_address == packet->iph->daddr && dst->gg_ft_port == packet->tcp->dest))) {
             if ((packet->tick_timestamp - dst->gg_timeout) < gadugadu_peer_connection_timeout) {
@@ -355,8 +350,7 @@ static enum gadugadu_stage_result mmt_gadugadu_search_dst_peer(ipacket_t * ipack
                 dst->gg_ft_ip_address = 0;
                 dst->gg_ft_port = 0;
             }
-        } else if (MMT_COMPARE_PROTOCOL_TO_BITMASK
-                (dst->detected_protocol_bitmask, PROTO_GADUGADU) != 0 && (packet->tcp->dest == htons(80)
+        } else if (MMT_HOST_HAS_PROTOCOL(dst, PROTO_GADUGADU) != 0 && (packet->tcp->dest == htons(80)
                 || packet->tcp->source ==
                 htons(80))
                 && packet->payload_packet_len == 12 && (mmt_memcmp(dst->gg_call_id[0], &packet->payload[0], 4) == 0
@@ -372,9 +366,7 @@ static enum gadugadu_stage_result mmt_gadugadu_search_dst_peer(ipacket_t * ipack
 
             }
 
-        } else if (MMT_COMPARE_PROTOCOL_TO_BITMASK
-                (dst->detected_protocol_bitmask,
-                PROTO_GADUGADU) != 0
+        } else if (MMT_HOST_HAS_PROTOCOL(dst, PROTO_GADUGADU) != 0
                 && packet->payload_packet_len == 8 &&
                 (mmt_memcmp(dst->gg_call_id[0], &packet->payload[0], 4) == 0 || (dst->gg_call_id[1][0]
                 &&

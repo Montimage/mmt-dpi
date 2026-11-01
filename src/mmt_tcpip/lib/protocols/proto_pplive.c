@@ -30,7 +30,7 @@ static int pplive_tcp_check_vod_port(ipacket_t * ipacket) {
     struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
 
     if (src != NULL && src->pplive_vod_cli_port == packet->tcp->source
-            && MMT_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, PROTO_PPLIVE)) {
+            && MMT_HOST_HAS_PROTOCOL(src, PROTO_PPLIVE)) {
         if (src->pplive_last_packet_time_set == 1 && (MMT_INTERNAL_TIMESTAMP_TYPE)
                 (packet->tick_timestamp - src->pplive_last_packet_time) < pplive_connection_timeout) {
             mmt_int_pplive_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
@@ -44,7 +44,7 @@ static int pplive_tcp_check_vod_port(ipacket_t * ipacket) {
     }
 
     if (dst != NULL && dst->pplive_vod_cli_port == packet->tcp->dest
-            && MMT_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, PROTO_PPLIVE)) {
+            && MMT_HOST_HAS_PROTOCOL(dst, PROTO_PPLIVE)) {
         if (dst->pplive_last_packet_time_set == 1 && (MMT_INTERNAL_TIMESTAMP_TYPE)
                 (packet->tick_timestamp - dst->pplive_last_packet_time) < pplive_connection_timeout) {
             mmt_int_pplive_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
@@ -362,7 +362,7 @@ int mmt_check_pplive_udp(ipacket_t * ipacket, unsigned index) {
 
 
         if (src != NULL && src->pplive_vod_cli_port == packet->udp->source
-                && MMT_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, PROTO_PPLIVE)) {
+                && MMT_HOST_HAS_PROTOCOL(src, PROTO_PPLIVE)) {
             if (src->pplive_last_packet_time_set == 1 && (MMT_INTERNAL_TIMESTAMP_TYPE)
                     (packet->tick_timestamp - src->pplive_last_packet_time) < pplive_connection_timeout) {
                 mmt_int_pplive_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
@@ -376,7 +376,7 @@ int mmt_check_pplive_udp(ipacket_t * ipacket, unsigned index) {
         }
 
         if (dst != NULL && dst->pplive_vod_cli_port == packet->udp->dest
-                && MMT_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, PROTO_PPLIVE)) {
+                && MMT_HOST_HAS_PROTOCOL(dst, PROTO_PPLIVE)) {
             if (dst->pplive_last_packet_time_set == 1 && (MMT_INTERNAL_TIMESTAMP_TYPE)
                     (packet->tick_timestamp - dst->pplive_last_packet_time) < pplive_connection_timeout) {
                 mmt_int_pplive_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);

@@ -28,6 +28,13 @@
  *     twice and requires different seeds;
  *   - MMT_DETERMINISTIC_SEED=1 restores the legacy sequence exactly
  *     (fmix64(0x243F6A8885A308D3 + k * 0x9E3779B97F4A7C15), k = 1, 2, ...).
+ *
+ * Issue #562 coverage (F-PERF-007):
+ *   - every slot carries a 16-bit hash tag: a probe passing another key's
+ *     slot compares the tag and calls the equality predicate only on a tag
+ *     match, so absent-key lookups almost never call it, present-key
+ *     lookups call it about once, and forced-collision keys (one hash, one
+ *     tag) still resolve exactly through the predicate.
  */
 #include <stdbool.h>
 #include <stdint.h>
@@ -389,6 +396,73 @@ static void test_parked_index_nomem(void) {
     clear_timeout_milestones(&h);
 }
 
+/* ---- issue #562: the per-slot hash tag skips the predicate on mismatches -- */
+static long g_equal_calls = 0;
+static bool int_key_equal(void *a, void *b) { g_equal_calls++; return *(int *)a == *(int *)b; }
+static uint64_t const_key_hash(void *k) { (void) k; return 0x2A; }
+
+static void test_slot_tags(void) {
+    fprintf(stderr, "  test: per-slot hash tags skip the predicate on mismatches\n");
+    enum { N = 1000 };
+    static int keys[N], absent[N], vals[N];
+    void *store = init_session_map_space(int_key_comp, int_key_hash, int_key_equal);
+    CHECK(store != NULL, "init_session_map_space should succeed");
+    if (store == NULL) return;
+    protocol_instance_t pc = make_proto_ctx(store);
+    for (int i = 0; i < N; i++) { keys[i] = 2 * i; absent[i] = 2 * i + 1; vals[i] = i; }
+    for (int i = 0; i < N; i++)
+        CHECK(insert_session_into_protocol_context(&pc, &keys[i], &vals[i]) == 1, "insert should succeed");
+
+    g_equal_calls = 0;
+    int found = 0;
+    for (int i = 0; i < N; i++)
+        if (get_session_from_protocol_context_by_session_key(&pc, &keys[i]) == &vals[i]) found++;
+    CHECK(found == N, "every present key is found");
+    CHECK(g_equal_calls >= N && g_equal_calls <= N + 8,
+          "a present-key lookup calls the predicate once (a tag mismatch skips the others)");
+    fprintf(stderr, "    %d present-key lookups: %ld predicate calls\n", N, g_equal_calls);
+
+    g_equal_calls = 0;
+    int missed = 0;
+    for (int i = 0; i < N; i++)
+        if (get_session_from_protocol_context_by_session_key(&pc, &absent[i]) == NULL) missed++;
+    CHECK(missed == N, "no absent key is found");
+    CHECK(g_equal_calls <= 8, "absent-key lookups skip the predicate on every tag mismatch");
+    fprintf(stderr, "    %d absent-key lookups: %ld predicate calls\n", N, g_equal_calls);
+
+    /* A duplicate insert and a remove still find their key through the tag. */
+    CHECK(insert_session_into_protocol_context(&pc, &keys[5], &vals[6]) == 0, "a duplicate is refused");
+    CHECK(delete_session_from_protocol_context(&pc, &keys[5]) == 1
+          && get_session_from_protocol_context_by_session_key(&pc, &keys[5]) == NULL,
+          "a removed key is gone");
+    CHECK(get_session_from_protocol_context_by_session_key(&pc, &keys[6]) == &vals[6],
+          "its neighbours survive the removal");
+    /* Shrinking rehashes the tags with the keys. */
+    for (int i = 0; i < N; i++) delete_session_from_protocol_context(&pc, &keys[i]);
+    for (int i = 0; i < 4; i++)
+        CHECK(insert_session_into_protocol_context(&pc, &keys[i], &vals[i]) == 1, "re-insert after shrink");
+    for (int i = 0; i < 4; i++)
+        CHECK(get_session_from_protocol_context_by_session_key(&pc, &keys[i]) == &vals[i],
+              "re-inserted keys are found after the shrink rehash");
+    clear_sessions_from_protocol_context(&pc);
+    CHECK(get_session_from_protocol_context_by_session_key(&pc, &keys[0]) == NULL, "a reset table is empty");
+    delete_session_map_space(store);
+
+    /* Forced collisions: one hash, one tag — the predicate decides. */
+    store = init_session_map_space(int_key_comp, const_key_hash, int_key_equal);
+    CHECK(store != NULL, "init_session_map_space should succeed (const hash)");
+    if (store == NULL) return;
+    pc = make_proto_ctx(store);
+    for (int i = 0; i < 8; i++)
+        CHECK(insert_session_into_protocol_context(&pc, &keys[i], &vals[i]) == 1, "colliding insert");
+    for (int i = 0; i < 8; i++)
+        CHECK(get_session_from_protocol_context_by_session_key(&pc, &keys[i]) == &vals[i],
+              "a colliding key resolves through the predicate");
+    CHECK(get_session_from_protocol_context_by_session_key(&pc, &absent[0]) == NULL,
+          "an absent colliding key misses");
+    delete_session_map_space(store);
+}
+
 int main(int argc, char **argv) {
     /* `seed` mode: print the process's first table seeds only (run_tests.sh
      * compares two runs). */
@@ -406,6 +480,7 @@ int main(int argc, char **argv) {
     test_session_iteration();
     test_parked_index_order();
     test_parked_index_nomem();
+    test_slot_tags();
 
     if (g_failures == 0) {
         fprintf(stderr, "ALL CHECKS PASSED\n");

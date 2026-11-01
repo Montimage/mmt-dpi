@@ -595,7 +595,7 @@ int set_classified_proto(ipacket_t * ipacket, unsigned index, classified_proto_t
          * back to the historical full walk. */
         if (ipacket->session != NULL) {
             for (unsigned s = index; s < PROTO_PATH_SIZE; s++) {
-                ipacket->session->proto_checkers[s] = NULL;
+                ipacket->session->proto_checkers[s] = 0;
             }
         }
 
@@ -624,7 +624,7 @@ int set_classified_proto(ipacket_t * ipacket, unsigned index, classified_proto_t
          * layer's engine. */
         if (ipacket->session != NULL) {
             for (unsigned s = index; s < PROTO_PATH_SIZE; s++) {
-                ipacket->session->proto_checkers[s] = NULL;
+                ipacket->session->proto_checkers[s] = 0;
             }
         }
 
@@ -777,7 +777,9 @@ int proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * config
                     ipacket->proto_hierarchy->len > (index + 1) &&
                     ipacket->proto_hierarchy->proto_path[index + 1] != PROTO_UNKNOWN) {
                 expected_proto = ipacket->proto_hierarchy->proto_path[index + 1];
-                direct = ipacket->session->proto_checkers[index + 1];
+                /* Issue #562: the slot holds the checker's id; a freed
+                 * checker's id reads NULL (the full walk). */
+                direct = mmt_classifier_by_id(ipacket->session->proto_checkers[index + 1]);
             }
             pi->mmt_classifier_claim = NULL;
             if (direct != NULL) {
@@ -815,15 +817,14 @@ int proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * config
                      * dispatch directly: prefer the plugin-funnel claim —
                      * it also covers checkers that classify via
                      * add_connection/set_classified_proto without returning
-                     * a MATCHED verdict — else the verdict winner. A NULL
+                     * a MATCHED verdict — else the verdict winner. A 0
                      * store means "converged without identifiable owner":
-                     * such layers keep the full walk. Safe to store node
-                     * pointers: classify chains live as long as the handler,
-                     * sessions cannot outlive it. */
-                    ipacket->session->proto_checkers[index + 1] =
-                            (pi->mmt_classifier_claim != NULL)
-                            ? (mmt_classify_proto_t *) pi->mmt_classifier_claim
+                     * such layers keep the full walk. Issue #562: the slot
+                     * stores the owner's id (mmt_classifier_by_id()). */
+                    const mmt_classify_proto_t *owner = (pi->mmt_classifier_claim != NULL)
+                            ? (const mmt_classify_proto_t *) pi->mmt_classifier_claim
                             : winner;
+                    ipacket->session->proto_checkers[index + 1] = (owner != NULL) ? owner->id : 0;
                 }
                 return post_ret;
             }

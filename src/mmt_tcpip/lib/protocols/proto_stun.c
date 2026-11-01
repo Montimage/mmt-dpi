@@ -230,8 +230,8 @@ int check_tango_udp(ipacket_t * ipacket) {
         flow->l4.udp.tango_like_packet++;
     }
     if (flow->l4.udp.tango_like_packet >= 1) {
-        insert_to_local_protos(packet->udp->dest, PROTO_TANGO, 17 /*UDP*/, &dst->local_protos);
-        insert_to_local_protos(packet->udp->source, PROTO_TANGO, 17 /*UDP*/, &src->local_protos);
+        insert_to_local_protos(packet->udp->dest, PROTO_TANGO, 17 /*UDP*/, dst);
+        insert_to_local_protos(packet->udp->source, PROTO_TANGO, 17 /*UDP*/, src);
         mmt_internal_add_connection(ipacket, PROTO_TANGO, MMT_REAL_PROTOCOL);
         //fprintf(stdout, "Test from tango pattern\n");
         return 1;
@@ -245,26 +245,26 @@ int check_tango_udp(ipacket_t * ipacket) {
         if (((ntohl(packet->iph->saddr) & 0xFFFFF800 /* 255.255.248.0 */) == 0xC753A800 /* 199.83.168.0 */)
                 || ((ntohl(packet->iph->daddr) & 0xFFFFF800 /* 255.255.248.0 */) == 0xC753A800 /* 199.83.168.0 */)) {
             mmt_internal_add_connection_by(ipacket, PROTO_TANGO, MMT_REAL_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP); /* #567: address-range match */
-            insert_to_local_protos(packet->udp->dest, PROTO_TANGO, 17 /*UDP*/, &dst->local_protos);
-            insert_to_local_protos(packet->udp->source, PROTO_TANGO, 17 /*UDP*/, &src->local_protos);
+            insert_to_local_protos(packet->udp->dest, PROTO_TANGO, 17 /*UDP*/, dst);
+            insert_to_local_protos(packet->udp->source, PROTO_TANGO, 17 /*UDP*/, src);
             return 1;
         }
         if (((ntohl(packet->iph->saddr) & 0xFFFFFFF8 /* 255.255.255.248 */) == 0x48FBF370 /* 72.251.243.112/29 */)
                 || ((ntohl(packet->iph->daddr) & 0xFFFFFFF8 /* 255.255.255.248 */) == 0x48FBF370 /* 72.251.243.112/29 */)) {
             mmt_internal_add_connection_by(ipacket, PROTO_TANGO, MMT_REAL_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP); /* #567: address-range match */
-            insert_to_local_protos(packet->udp->dest, PROTO_TANGO, 17 /*UDP*/, &dst->local_protos);
-            insert_to_local_protos(packet->udp->source, PROTO_TANGO, 17 /*UDP*/, &src->local_protos);
+            insert_to_local_protos(packet->udp->dest, PROTO_TANGO, 17 /*UDP*/, dst);
+            insert_to_local_protos(packet->udp->source, PROTO_TANGO, 17 /*UDP*/, src);
             return 1;
         }
     }
 
     uint32_t proto; 
-    proto = check_local_proto_by_port_nb(packet->udp->dest, &dst->local_protos);
+    proto = check_local_proto_by_port_nb(packet->udp->dest, dst);
     if (proto == PROTO_TANGO) {
         mmt_internal_add_connection(ipacket, PROTO_TANGO, MMT_CORRELATED_PROTOCOL);
         return 1;
     }
-    proto = check_local_proto_by_port_nb(packet->udp->source, &src->local_protos);
+    proto = check_local_proto_by_port_nb(packet->udp->source, src);
     if (proto == PROTO_TANGO) {
         mmt_internal_add_connection(ipacket, PROTO_TANGO, MMT_CORRELATED_PROTOCOL);
         return 1;
@@ -284,8 +284,8 @@ uint32_t check_apple_facetime_signaling_udp(ipacket_t * ipacket) {
          */
         if ((((ntohl(packet->iph->saddr) & 0xFF000000 /* 255.0.0.0 */) == 0x11000000 /* 17.0.0.0 */)
                 || ((ntohl(packet->iph->daddr) & 0xFF000000 /* 255.0.0.0 */) == 0x11000000 /* 17.0.0.0 */)) && (packet->payload_packet_len == 16)) {
-            insert_to_local_protos(packet->udp->dest, PROTO_FACETIME, 17 /*UDP*/, &dst->local_protos);
-            insert_to_local_protos(packet->udp->source, PROTO_FACETIME, 17 /*UDP*/, &src->local_protos);
+            insert_to_local_protos(packet->udp->dest, PROTO_FACETIME, 17 /*UDP*/, dst);
+            insert_to_local_protos(packet->udp->source, PROTO_FACETIME, 17 /*UDP*/, src);
             mmt_internal_add_connection(ipacket, PROTO_FACETIME, MMT_REAL_PROTOCOL);
             return 1;
         }
@@ -307,8 +307,8 @@ uint32_t check_stun_internal(ipacket_t * ipacket) {
         if (((ntohl(packet->iph->daddr) & 0xFFFFFC00 /* 255.255.252.0 */) == 0x67021C00 /* 103.2.28.0/22 */)) {
             mmt_internal_add_connection_by(ipacket, PROTO_LINE, MMT_REAL_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP); /* #567: address-range match */
             //In addition, report the port number of the source address
-            insert_to_local_protos(packet->udp->dest, PROTO_LINE, 17 /*UDP*/, &dst->local_protos);
-            insert_to_local_protos(packet->udp->source, PROTO_LINE, 17 /*UDP*/, &src->local_protos);
+            insert_to_local_protos(packet->udp->dest, PROTO_LINE, 17 /*UDP*/, dst);
+            insert_to_local_protos(packet->udp->source, PROTO_LINE, 17 /*UDP*/, src);
             return PROTO_LINE;
         }
     }
@@ -322,18 +322,18 @@ uint32_t check_stun_internal(ipacket_t * ipacket) {
         switch (proto) {
             case PROTO_YAHOO:
                 mmt_internal_add_connection_by(ipacket, PROTO_YAHOOMSG, MMT_CORRELATED_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP);
-                insert_to_local_protos(packet->udp->dest, PROTO_YAHOOMSG, 17 /*UDP*/, &dst->local_protos);
-                insert_to_local_protos(packet->udp->source, PROTO_YAHOOMSG, 17 /*UDP*/, &src->local_protos);
+                insert_to_local_protos(packet->udp->dest, PROTO_YAHOOMSG, 17 /*UDP*/, dst);
+                insert_to_local_protos(packet->udp->source, PROTO_YAHOOMSG, 17 /*UDP*/, src);
                 return PROTO_YAHOOMSG;
             case PROTO_GOOGLE:
                 mmt_internal_add_connection_by(ipacket, PROTO_GTALK, MMT_CORRELATED_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP);
-                insert_to_local_protos(packet->udp->dest, PROTO_GTALK, 17 /*UDP*/, &dst->local_protos);
-                insert_to_local_protos(packet->udp->source, PROTO_GTALK, 17 /*UDP*/, &src->local_protos);
+                insert_to_local_protos(packet->udp->dest, PROTO_GTALK, 17 /*UDP*/, dst);
+                insert_to_local_protos(packet->udp->source, PROTO_GTALK, 17 /*UDP*/, src);
                 return PROTO_GTALK;
             default:
                 mmt_internal_add_connection_by(ipacket, proto, MMT_CORRELATED_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP);
-                insert_to_local_protos(packet->udp->dest, proto, 17 /*UDP*/, &dst->local_protos);
-                insert_to_local_protos(packet->udp->source, proto, 17 /*UDP*/, &src->local_protos);
+                insert_to_local_protos(packet->udp->dest, proto, 17 /*UDP*/, dst);
+                insert_to_local_protos(packet->udp->source, proto, 17 /*UDP*/, src);
                 return proto;
         }
     }

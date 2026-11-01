@@ -182,10 +182,9 @@ static enum msn_stage_result mmt_msn_first_packet_gateway(ipacket_t * ipacket) {
                     && mmt_memcmp(packet->content_line.ptr, "application/x-www-form-urlencoded", 33) == 0)
                     )) {
                 if ((src != NULL
-                        && MMT_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, PROTO_MSN)
+                        && MMT_HOST_HAS_PROTOCOL(src, PROTO_MSN)
                         != 0) || (dst != NULL
-                        && MMT_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask,
-                        PROTO_MSN)
+                        && MMT_HOST_HAS_PROTOCOL(dst, PROTO_MSN)
                         != 0)) {
                     mmt_int_msn_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                     return MSN_STAGE_DONE;
@@ -431,9 +430,9 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
     /* finished examining the secone packet only */
     /* direct user connection (file transfer,...) */
 
-    if ((src != NULL && MMT_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, PROTO_MSN) != 0)
+    if ((src != NULL && MMT_HOST_HAS_PROTOCOL(src, PROTO_MSN) != 0)
             || (dst != NULL
-            && MMT_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, PROTO_MSN) != 0)) {
+            && MMT_HOST_HAS_PROTOCOL(dst, PROTO_MSN) != 0)) {
         if (ipacket->session->data_packet_count == 1 &&
                 packet->payload_packet_len > 12 && mmt_memcmp(packet->payload, "recipientid=", 12) == 0) {
             mmt_int_msn_add_connection(ipacket, MMT_REAL_PROTOCOL);
@@ -473,9 +472,9 @@ static void mmt_search_udp_msn_misc(ipacket_t * ipacket) {
     struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
 
     /* do we have an msn login ? */
-    if ((src == NULL || MMT_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, PROTO_MSN) == 0)
+    if ((src == NULL || MMT_HOST_HAS_PROTOCOL(src, PROTO_MSN) == 0)
             && (dst == NULL
-            || MMT_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, PROTO_MSN) == 0)) {
+            || MMT_HOST_HAS_PROTOCOL(dst, PROTO_MSN) == 0)) {
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MSN);
         return;
     }

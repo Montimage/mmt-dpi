@@ -144,8 +144,8 @@ static void mmt_add_connection_as_edonkey(ipacket_t * ipacket, const uint8_t sav
     mmt_change_internal_flow_packet_protocol(ipacket, PROTO_EDONKEY, MMT_REAL_PROTOCOL);
 
     if (packet->udp != NULL) {
-        insert_to_local_protos(packet->udp->dest, PROTO_EDONKEY, 17 /*UDP*/, &dst->local_protos);
-        insert_to_local_protos(packet->udp->source, PROTO_EDONKEY, 17 /*UDP*/, &src->local_protos);
+        insert_to_local_protos(packet->udp->dest, PROTO_EDONKEY, 17 /*UDP*/, dst);
+        insert_to_local_protos(packet->udp->source, PROTO_EDONKEY, 17 /*UDP*/, src);
     } else if (packet->tcp != NULL) {
         /* avoid implications of missclassification */
         if (ipacket->mmt_handler->ip_address_classify == 1)
@@ -158,8 +158,8 @@ static void mmt_add_connection_as_edonkey(ipacket_t * ipacket, const uint8_t sav
         /* for source and dst port 80 & 443 avoid inserting eDonkey as local proto! avoid false positives */
         if (sport == 80 || sport == 443 || dport == 80 || dport == 443) return;
 
-        insert_to_local_protos(packet->tcp->dest, PROTO_EDONKEY, 6 /*TCP*/, &dst->local_protos);
-        insert_to_local_protos(packet->tcp->source, PROTO_EDONKEY, 6 /*TCP*/, &src->local_protos);
+        insert_to_local_protos(packet->tcp->dest, PROTO_EDONKEY, 6 /*TCP*/, dst);
+        insert_to_local_protos(packet->tcp->source, PROTO_EDONKEY, 6 /*TCP*/, src);
     }
 }
 
@@ -221,12 +221,12 @@ int mmt_int_edonkey_tcp(ipacket_t * ipacket) {
     struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
 
     uint32_t app;
-    app = check_local_proto_by_port_nb(packet->tcp->dest, &dst->local_protos);
+    app = check_local_proto_by_port_nb(packet->tcp->dest, dst);
     if (app == PROTO_EDONKEY) {
         mmt_add_connection_as_edonkey(ipacket, MMT_PROTOCOL_SAFE_DETECTION, MMT_PROTOCOL_PLAIN_DETECTION);
         return 1; 
     }
-    app = check_local_proto_by_port_nb(packet->tcp->source, &src->local_protos);
+    app = check_local_proto_by_port_nb(packet->tcp->source, src);
     if (app == PROTO_EDONKEY) {
         mmt_add_connection_as_edonkey(ipacket, MMT_PROTOCOL_SAFE_DETECTION, MMT_PROTOCOL_PLAIN_DETECTION);
         return 1;
@@ -310,12 +310,12 @@ int mmt_int_edonkey_udp(ipacket_t * ipacket) {
     struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
 
     uint32_t app;
-    app = check_local_proto_by_port_nb(packet->udp->dest, &dst->local_protos);
+    app = check_local_proto_by_port_nb(packet->udp->dest, dst);
     if (app == PROTO_EDONKEY) {
         mmt_add_connection_as_edonkey(ipacket, MMT_PROTOCOL_SAFE_DETECTION, MMT_PROTOCOL_PLAIN_DETECTION);
         return 1;
     }
-    app = check_local_proto_by_port_nb(packet->udp->source, &src->local_protos);
+    app = check_local_proto_by_port_nb(packet->udp->source, src);
     if (app == PROTO_EDONKEY) {
         mmt_add_connection_as_edonkey(ipacket, MMT_PROTOCOL_SAFE_DETECTION, MMT_PROTOCOL_PLAIN_DETECTION);
         return 1;

@@ -350,11 +350,17 @@ typedef struct udphdr __attribute__((aligned(1))) mmt_una_udphdr_t;
 
     /* safe src/dst protocol check macros... */
 
-#define MMT_SRC_HAS_PROTOCOL(src,protocol) ((src) != NULL && MMT_COMPARE_PROTOCOL_TO_BITMASK((src)->detected_protocol_bitmask,(protocol)) != 0)
+    /* Issue #562: the host record keeps one bit per tracked protocol
+     * (MMT_HOST_PROTO_BIT_* in mmt_tcpip_plugin_structs.h). `protocol` is
+     * pasted, not expanded, so each macro pastes it itself: passing it on
+     * to another macro would expand PROTO_X to its number first. */
+#define MMT_SRC_HAS_PROTOCOL(src,protocol) ((src) != NULL && ((src)->detected_host_protos & MMT_HOST_PROTO_BIT_##protocol) != 0)
 
-#define MMT_DST_HAS_PROTOCOL(dst,protocol) ((dst) != NULL && MMT_COMPARE_PROTOCOL_TO_BITMASK((dst)->detected_protocol_bitmask,(protocol)) != 0)
+#define MMT_DST_HAS_PROTOCOL(dst,protocol) ((dst) != NULL && ((dst)->detected_host_protos & MMT_HOST_PROTO_BIT_##protocol) != 0)
 
-#define MMT_SRC_OR_DST_HAS_PROTOCOL(src,dst,protocol) (MMT_SRC_HAS_PROTOCOL(src,protocol) || MMT_SRC_HAS_PROTOCOL(dst,protocol))
+#define MMT_SRC_OR_DST_HAS_PROTOCOL(src,dst,protocol) \
+    (((src) != NULL && ((src)->detected_host_protos & MMT_HOST_PROTO_BIT_##protocol) != 0) \
+     || ((dst) != NULL && ((dst)->detected_host_protos & MMT_HOST_PROTO_BIT_##protocol) != 0))
 
     /**
      * convenience macro to check for excluded protocol

@@ -49,13 +49,13 @@ statuses were last re-verified against the sources for issue #559.
 - **Next step:** introduce a confidence/score concept. This is an ABI change to a
   public struct used across many plugins — large, must be staged. #75's
   payload-confirm predicate (`mmt_payload_confirms_proto`,
-  [`mmt_tcpip_plugin_internal.c:485`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c#L485)) is a side-effect-free building block
+  [`mmt_tcpip_plugin_internal.c:488`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c#L488)) is a side-effect-free building block
   toward this.
 
 ### H2 — Port-only attribution accepted without payload evidence — *mitigated by #75*
 - **Where:** `mmt_guess_protocol_by_port_number` in the fallbacks
   ([`proto_tcp.c:1230`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_tcp.c#L1230), [`proto_udp.c:165`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_udp.c#L165)); the demotion gate
-  [`mmt_tcpip_plugin_internal.c:562`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c#L562).
+  [`mmt_tcpip_plugin_internal.c:565`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c#L565).
 - **Why weak:** a port number alone is the weakest signal; services move ports
   and ports get squatted.
 - **Status:** addressed by the default-off `enable_port_classify_payload_confirm()`
@@ -97,8 +97,8 @@ statuses were last re-verified against the sources for issue #559.
 - **Why weak:** a TCP-named field is consulted in the UDP path to set
   `MMT_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION`. On UDP the gate is
   always taken: `mmt_connection_tracking` clears the field on every packet
-  ([`mmt_tcpip_plugin_internal.h:340`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.h#L340)) and only the TCP sequence check sets
-  it ([`mmt_tcpip_plugin_internal.h:462`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.h#L462)). The author's "do we need to keep
+  ([`mmt_tcpip_plugin_internal.h:380`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.h#L380)) and only the TCP sequence check sets
+  it ([`mmt_tcpip_plugin_internal.h:502`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.h#L502)). The author's "do we need to keep
   this???" TODO was removed by the marker triage (issue #232) without an answer.
 - **Next step:** trace which selection-bitmask consumers depend on this bit for
   UDP; drop the `if` (behaviour-neutral) or rename the bit if it is vestigial.

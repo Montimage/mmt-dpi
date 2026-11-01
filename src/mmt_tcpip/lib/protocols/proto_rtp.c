@@ -639,10 +639,10 @@ static void mmt_int_rtp_add_connection(ipacket_t * ipacket) {
                 mmt_internal_add_connection_by(ipacket, proto, MMT_CORRELATED_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP);
                 return;
         }
-    }else if((proto = check_local_proto_by_port_nb(packet->udp->dest, &dst->local_protos)) != PROTO_UNKNOWN) {
+    }else if((proto = check_local_proto_by_port_nb(packet->udp->dest, dst)) != PROTO_UNKNOWN) {
         mmt_internal_add_connection(ipacket, proto, MMT_CORRELATED_PROTOCOL);
         return;
-    }else if((proto = check_local_proto_by_port_nb(packet->udp->source, &src->local_protos)) != PROTO_UNKNOWN) {
+    }else if((proto = check_local_proto_by_port_nb(packet->udp->source, src)) != PROTO_UNKNOWN) {
         mmt_internal_add_connection(ipacket, proto, MMT_CORRELATED_PROTOCOL);
         return;
     } else if ((proto = get_local_conv_proto(ipacket)) != PROTO_UNKNOWN) {

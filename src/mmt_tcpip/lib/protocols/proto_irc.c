@@ -25,10 +25,12 @@ static void mmt_int_irc_add_connection(ipacket_t * ipacket) {
 }
 
 
-static uint8_t mmt_is_duplicate(struct mmt_internal_tcpip_id_struct *id_t, uint16_t port) {
+/* Issue #562: the DCC port table lives in the host's extension; `ext` may
+ * be NULL (no port stored yet). */
+static uint8_t mmt_is_duplicate(const mmt_internal_tcpip_id_ext_t *ext, uint16_t port) {
     unsigned index = 0;
-    while (index < id_t->irc_number_of_port) {
-        if (port == id_t->irc_port[index])
+    while (ext != NULL && index < ext->irc_number_of_port) {
+        if (port == ext->irc_port[index])
             return 1;
         index++;
     }
@@ -390,14 +392,13 @@ static uint8_t mmt_irc_match_dcc_port(ipacket_t * ipacket) {
     uint16_t dport = 0;
     uint16_t counter = 0;
 
-    if (!(dst != NULL && MMT_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, PROTO_IRC)
+    if (!(dst != NULL && MMT_HOST_HAS_PROTOCOL(dst, PROTO_IRC)
             && ((MMT_INTERNAL_TIMESTAMP_TYPE)
             (packet->tick_timestamp - dst->irc_ts)) <
             irc_timeout)
             && !(src != NULL
             &&
-            MMT_COMPARE_PROTOCOL_TO_BITMASK
-            (src->detected_protocol_bitmask, PROTO_IRC)
+            MMT_HOST_HAS_PROTOCOL(src, PROTO_IRC)
             && ((MMT_INTERNAL_TIMESTAMP_TYPE)
             (packet->tick_timestamp - src->irc_ts)) < irc_timeout)) {
         return 0;
@@ -406,19 +407,21 @@ static uint8_t mmt_irc_match_dcc_port(ipacket_t * ipacket) {
         sport = packet->tcp->source;
         dport = packet->tcp->dest;
     }
-    if (dst != NULL) {
-        for (counter = 0; counter < dst->irc_number_of_port; counter++) {
-            if (dst->irc_port[counter] == sport || dst->irc_port[counter] == dport) {
-                dst->last_time_port_used[counter] = packet->tick_timestamp;
+    if (dst != NULL && dst->ext != NULL) {
+        mmt_internal_tcpip_id_ext_t *ext = dst->ext;
+        for (counter = 0; counter < ext->irc_number_of_port; counter++) {
+            if (ext->irc_port[counter] == sport || ext->irc_port[counter] == dport) {
+                ext->last_time_port_used[counter] = packet->tick_timestamp;
                 mmt_int_irc_add_connection(ipacket);
                 return 1;
             }
         }
     }
-    if (src != NULL) {
-        for (counter = 0; counter < src->irc_number_of_port; counter++) {
-            if (src->irc_port[counter] == sport || src->irc_port[counter] == dport) {
-                src->last_time_port_used[counter] = packet->tick_timestamp;
+    if (src != NULL && src->ext != NULL) {
+        mmt_internal_tcpip_id_ext_t *ext = src->ext;
+        for (counter = 0; counter < ext->irc_number_of_port; counter++) {
+            if (ext->irc_port[counter] == sport || ext->irc_port[counter] == dport) {
+                ext->last_time_port_used[counter] = packet->tick_timestamp;
                 mmt_int_irc_add_connection(ipacket);
                 return 1;
             }
@@ -486,18 +489,22 @@ static uint8_t mmt_irc_line_has_second_signal(const struct mmt_int_one_line_stru
 static void mmt_irc_save_dcc_port(struct mmt_internal_tcpip_id_struct *host,
         uint16_t port, MMT_INTERNAL_TIMESTAMP_TYPE ts, const char *done_log) {
     (void) done_log;
-    if (host->irc_number_of_port < 16 && port != 0) {
-        if (!mmt_is_duplicate(host, port)) {
-            host->irc_port[host->irc_number_of_port]
+    /* Issue #562: the table lives in the host's extension, allocated by the
+     * first stored port; under OOM the port is not stored (irc_ts still is). */
+    mmt_internal_tcpip_id_ext_t *ext = host->ext;
+    const uint8_t stored = (ext != NULL) ? ext->irc_number_of_port : 0;
+    if (stored < 16 && port != 0) {
+        if (!mmt_is_duplicate(ext, port) && (ext = mmt_host_ext_get(host)) != NULL) {
+            ext->irc_port[ext->irc_number_of_port]
                     = port;
-            host->irc_number_of_port++;
+            ext->irc_number_of_port++;
         }
         host->irc_ts = ts;
-    } else if (port != 0 && host->irc_number_of_port == 16) {
-        if (!mmt_is_duplicate(host, port)) {
+    } else if (port != 0 && stored == 16) {
+        if (!mmt_is_duplicate(ext, port)) {
             int less = 0;
-            MMT_IRC_FIND_LESS(host->last_time_port_used, less);
-            host->irc_port[less] = port;
+            MMT_IRC_FIND_LESS(ext->last_time_port_used, less);
+            ext->irc_port[less] = port;
         }
         host->irc_ts = ts;
     }

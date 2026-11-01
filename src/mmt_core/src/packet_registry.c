@@ -498,6 +498,7 @@ void free_registered_protocol(protocol_t * protocol) {
     while (temp_class != NULL) {
         safe_to_delete_c = temp_class;
         temp_class = temp_class->next;
+        mmt_classifier_id_release(safe_to_delete_c); /* issue #562 */
         mmt_free(safe_to_delete_c);
     }
     //Clear the classification function if it exists

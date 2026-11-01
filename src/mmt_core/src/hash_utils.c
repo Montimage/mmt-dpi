@@ -72,6 +72,14 @@ static inline uint64_t mmt_mix64(uint64_t h) {
 // Empty/tombstone states are encoded in the key pointer rather than a
 // separate field: real keys are heap-allocated structures, so NULL and the
 // 0x1 sentinel can never collide with a live key.
+//
+// Issue #562 (F-PERF-007): each live slot also carries a 16-bit tag — the top
+// 16 bits of its key's hash — in an array that follows the slots in the same
+// allocation (mmt_oa_tags()). A probe compares the tag first and calls the
+// equality predicate only when it matches, so a probe passing a slot of
+// another key no longer dereferences that key (a heap object, usually a
+// cache miss): a mismatch reaches equal() once per 65,536 on average. The
+// tag of an EMPTY or TOMB slot is never read.
 
 #define MMT_SLOT_EMPTY ((void *) NULL)
 #define MMT_SLOT_TOMB  ((void *) (uintptr_t) 1)
@@ -136,8 +144,19 @@ static inline bool mmt_oa_key_equal(const mmt_oa_table * t, void * a, void * b) 
 
 #define MMT_OA_INITIAL_CAP ((size_t) 16) // power of two
 
+// Issue #562: one slot array allocation holds cap slots, then cap tags.
+#define MMT_OA_SLOT_BYTES (sizeof(mmt_oa_slot) + sizeof(uint16_t))
+
+static inline uint16_t * mmt_oa_tags(const mmt_oa_table * t) {
+    return (uint16_t *) (t->slots + t->cap);
+}
+
+static inline uint16_t mmt_oa_tag_of(uint64_t h) {
+    return (uint16_t) (h >> 48); // the index uses the low bits
+}
+
 static void mmt_oa_alloc_slots(mmt_oa_table * t, size_t cap) {
-    t->slots = (mmt_oa_slot *) calloc(cap, sizeof(mmt_oa_slot));
+    t->slots = (mmt_oa_slot *) calloc(cap, MMT_OA_SLOT_BYTES);
     if (t->slots == NULL) { t->cap = 0; return; }
     t->cap   = cap;
     // calloc zero-fills -> every slot's key is NULL (MMT_SLOT_EMPTY).
@@ -146,12 +165,14 @@ static void mmt_oa_alloc_slots(mmt_oa_table * t, size_t cap) {
 // Insert a known-unique key into a tombstone-free table (used during resize).
 static void mmt_oa_put_raw(mmt_oa_table * t, void * key, void * value) {
     size_t mask = t->cap - 1;
-    size_t i = (size_t) mmt_oa_hash_of(t, key) & mask;
+    uint64_t h = mmt_oa_hash_of(t, key);
+    size_t i = (size_t) h & mask;
     while (t->slots[i].key != MMT_SLOT_EMPTY) {
         i = (i + 1) & mask;
     }
     t->slots[i].key   = key;
     t->slots[i].value = value;
+    mmt_oa_tags(t)[i] = mmt_oa_tag_of(h);
 }
 
 static void mmt_oa_resize(mmt_oa_table * t, size_t new_cap) {
@@ -192,11 +213,11 @@ static inline void mmt_oa_maybe_shrink(mmt_oa_table * t) {
 // array back to the initial capacity — a large table is an mmap'd block, so
 // freeing it returns the memory to the OS instead of the allocator's cache.
 static void mmt_oa_reset(mmt_oa_table * t) {
-    mmt_oa_slot * fresh = (mmt_oa_slot *) calloc(MMT_OA_INITIAL_CAP, sizeof(mmt_oa_slot));
+    mmt_oa_slot * fresh = (mmt_oa_slot *) calloc(MMT_OA_INITIAL_CAP, MMT_OA_SLOT_BYTES);
     if (fresh == NULL) {
         // OOM: fall back to the old behaviour — wipe the slots in place; the
         // table stays usable, only the memory release is skipped.
-        memset(t->slots, 0, t->cap * sizeof(mmt_oa_slot));
+        memset(t->slots, 0, t->cap * MMT_OA_SLOT_BYTES);
     } else {
         free(t->slots);
         t->slots = fresh;
@@ -296,7 +317,10 @@ static int mmt_oa_insert(mmt_oa_table * t, void * key, void * value) {
     }
 
     size_t mask = t->cap - 1;
-    size_t i = (size_t) mmt_oa_hash_of(t, key) & mask;
+    uint64_t h = mmt_oa_hash_of(t, key);
+    size_t i = (size_t) h & mask;
+    uint16_t * tags = mmt_oa_tags(t);
+    const uint16_t tag = mmt_oa_tag_of(h);
     size_t tomb = 0;
     bool have_tomb = false;
     bool found_empty = false;
@@ -312,7 +336,7 @@ static int mmt_oa_insert(mmt_oa_table * t, void * key, void * value) {
         if (k == MMT_SLOT_EMPTY) { found_empty = true; break; }
         if (k == MMT_SLOT_TOMB) {
             if (!have_tomb) { tomb = i; have_tomb = true; }
-        } else if (mmt_oa_key_equal(t, k, key)) {
+        } else if (tags[i] == tag && mmt_oa_key_equal(t, k, key)) {
             return 0; // duplicate: mirror the old map (no overwrite)
         }
         i = (i + 1) & mask;
@@ -324,6 +348,7 @@ static int mmt_oa_insert(mmt_oa_table * t, void * key, void * value) {
     }
     t->slots[dst].key   = key;
     t->slots[dst].value = value;
+    tags[dst] = tag;
     t->size++;
     return 1;
 }
@@ -331,12 +356,15 @@ static int mmt_oa_insert(mmt_oa_table * t, void * key, void * value) {
 static void * mmt_oa_find(mmt_oa_table * t, void * key) {
     if (t == NULL || t->slots == NULL || t->cap == 0) return NULL;
     size_t mask = t->cap - 1;
-    size_t i = (size_t) mmt_oa_hash_of(t, key) & mask;
+    uint64_t h = mmt_oa_hash_of(t, key);
+    size_t i = (size_t) h & mask;
+    const uint16_t * tags = mmt_oa_tags(t);
+    const uint16_t tag = mmt_oa_tag_of(h);
     void * k;
     for (size_t n = 0; n < t->cap; n++) {
         k = t->slots[i].key;
         if (k == MMT_SLOT_EMPTY) break;
-        if (k != MMT_SLOT_TOMB && mmt_oa_key_equal(t, k, key)) {
+        if (k != MMT_SLOT_TOMB && tags[i] == tag && mmt_oa_key_equal(t, k, key)) {
             return t->slots[i].value;
         }
         i = (i + 1) & mask;
@@ -349,14 +377,17 @@ static void * mmt_oa_find(mmt_oa_table * t, void * key) {
 static void mmt_oa_remove(mmt_oa_table * t, void * key) {
     if (t == NULL || t->slots == NULL || t->cap == 0) return;
     size_t mask = t->cap - 1;
-    size_t i = (size_t) mmt_oa_hash_of(t, key) & mask;
+    uint64_t h = mmt_oa_hash_of(t, key);
+    size_t i = (size_t) h & mask;
+    const uint16_t * tags = mmt_oa_tags(t);
+    const uint16_t tag = mmt_oa_tag_of(h);
     void * k;
     // Bounded probe: a table whose slots are all TOMB/non-empty must not
     // loop forever looking for an EMPTY terminator.
     for (size_t n = 0; n < t->cap; n++) {
         k = t->slots[i].key;
         if (k == MMT_SLOT_EMPTY) break;
-        if (k != MMT_SLOT_TOMB && mmt_oa_key_equal(t, k, key)) {
+        if (k != MMT_SLOT_TOMB && tags[i] == tag && mmt_oa_key_equal(t, k, key)) {
             // Tombstone the slot: a probe sequence may run through it, so it
             // cannot be reset to EMPTY (that would truncate later lookups).
             t->slots[i].key   = MMT_SLOT_TOMB;

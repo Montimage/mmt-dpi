@@ -79,11 +79,14 @@ void mmt_internal_add_connection_by(ipacket_t * ipacket, uint16_t detected_proto
 
     mmt_change_internal_flow_packet_protocol_by(ipacket, detected_protocol, protocol_type, method);
 
+    /* Issue #562: only the protocols a classifier asks a host about are
+     * kept (mmt_host_proto_bit() is 0 for the others). */
+    const uint16_t host_bit = mmt_host_proto_bit(detected_protocol);
     if (src != NULL) {
-        MMT_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, detected_protocol);
+        src->detected_host_protos |= host_bit;
     }
     if (dst != NULL) {
-        MMT_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, detected_protocol);
+        dst->detected_host_protos |= host_bit;
     }
 }
 

@@ -21,6 +21,40 @@
 #include <string.h>
 #include <pthread.h>
 
+/* Issue #562 (F-PERF-012): the checker-id table (packet_processing.h,
+ * mmt_classifier_by_id()). Registration is rare and may come from several
+ * plugins' init, so ids are handed out under a mutex; workers only load a
+ * slot (acquire), never under the lock. */
+mmt_classify_proto_t * mmt_classifier_slots[MMT_CLASSIFIER_ID_SLOTS];
+static pthread_mutex_t mmt_classifier_slots_lock = PTHREAD_MUTEX_INITIALIZER;
+
+uint16_t mmt_classifier_id_assign(mmt_classify_proto_t * node) {
+    uint16_t id = 0;
+    pthread_mutex_lock(&mmt_classifier_slots_lock);
+    for (uint16_t i = 1; i < MMT_CLASSIFIER_ID_SLOTS; i++) {
+        if (__atomic_load_n(&mmt_classifier_slots[i], __ATOMIC_RELAXED) == NULL) {
+            __atomic_store_n(&mmt_classifier_slots[i], node, __ATOMIC_RELEASE);
+            id = i;
+            break;
+        }
+    }
+    pthread_mutex_unlock(&mmt_classifier_slots_lock);
+    node->id = id;
+    return id;
+}
+
+void mmt_classifier_id_release(mmt_classify_proto_t * node) {
+    if (node == NULL || node->id == 0 || node->id >= MMT_CLASSIFIER_ID_SLOTS) {
+        return;
+    }
+    pthread_mutex_lock(&mmt_classifier_slots_lock);
+    if (__atomic_load_n(&mmt_classifier_slots[node->id], __ATOMIC_RELAXED) == node) {
+        __atomic_store_n(&mmt_classifier_slots[node->id], NULL, __ATOMIC_RELEASE);
+    }
+    pthread_mutex_unlock(&mmt_classifier_slots_lock);
+    node->id = 0;
+}
+
 /**
  * Register classificaiton function internal - insert this function into right position: for example: classify FTP after HTTP -> HTTP 10, FTP 50
  * @param  proto              Protocol ID
@@ -41,6 +75,7 @@ int register_classification_function_internal(protocol_t * proto, generic_classi
     temp->next = NULL;
     temp->previous = NULL;
     temp->classify_me = classification_fct;
+    (void) mmt_classifier_id_assign(temp); /* issue #562: 0 when the table is full */
 
     mmt_classify_proto_t * temp_list = proto->classify_next.classify_protos;
     if (temp_list == NULL) {

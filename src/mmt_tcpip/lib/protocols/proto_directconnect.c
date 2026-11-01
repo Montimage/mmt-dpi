@@ -282,7 +282,7 @@ int mmt_search_directconnect_udp(ipacket_t * ipacket) {
 
     if (packet->payload_packet_len > 58) {
         if (src != NULL
-                && MMT_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, PROTO_DIRECTCONNECT)==0) {
+                && MMT_HOST_HAS_PROTOCOL(src, PROTO_DIRECTCONNECT)==0) {
             if (packet->payload[0] == '$'
                     && packet->payload[packet->payload_packet_len - 1] == '|'
                     && mmt_memcmp(&packet->payload[1], "SR ", 3) == 0) {
@@ -311,7 +311,7 @@ int mmt_search_directconnect_udp(ipacket_t * ipacket) {
 
         }
         if (dst != NULL
-                && MMT_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, PROTO_DIRECTCONNECT)==0) {
+                && MMT_HOST_HAS_PROTOCOL(dst, PROTO_DIRECTCONNECT)==0) {
             if (packet->payload[0] == '$'
                     && packet->payload[packet->payload_packet_len - 1] == '|'
                     && mmt_memcmp(&packet->payload[1], "SR ", 3) == 0) {

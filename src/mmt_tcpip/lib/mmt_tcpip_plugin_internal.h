@@ -116,11 +116,45 @@ void mmt_tcpip_load_external_port_map(void);
  * counterpart of _free_proto_avltrees(), invoked from cleanup_tcpip_plugin()). */
 void mmt_tcpip_free_external_port_map(void);
 
+/* Issue #562 (F-PERF-104): the host record's cold extension (port cache,
+ * IRC DCC ports), allocated by the first write. NULL when the host is NULL
+ * or the allocation fails — the caller then skips its write, so the host
+ * reads as before the write (nothing cached). */
+static inline mmt_internal_tcpip_id_ext_t *
+mmt_host_ext_get(struct mmt_internal_tcpip_id_struct * host) {
+    if (host == NULL) {
+        return NULL;
+    }
+    if (host->ext == NULL) {
+        mmt_internal_tcpip_id_ext_t *ext = (mmt_internal_tcpip_id_ext_t *) mmt_malloc(sizeof (*ext));
+        if (ext == NULL) {
+            return NULL;
+        }
+        memset(ext, 0, sizeof (*ext));
+        host->ext = ext;
+    }
+    return host->ext;
+}
+
+/* Issue #562: free a host record's extension (before the record itself). */
+static inline void
+mmt_host_ext_release(struct mmt_internal_tcpip_id_struct * host) {
+    if (host != NULL && host->ext != NULL) {
+        mmt_free(host->ext);
+        host->ext = NULL;
+    }
+}
+
+/* The application protocol cached for `portnb` on a host, 0 when none. A
+ * host without its extension has nothing cached (issue #562). */
 static inline uint32_t
-check_local_proto_by_port_nb(uint16_t portnb, mmt_server_local_proto_t * local_protos) {
+check_local_proto_by_port_nb(uint16_t portnb, const struct mmt_internal_tcpip_id_struct * host) {
+    if (host == NULL || host->ext == NULL) {
+        return 0;
+    }
+    const mmt_server_local_proto_t * local_protos = &host->ext->local_protos;
     index_t i = local_protos->index;
     int count = 0;
-    //while(count < 64 && local_protos->port_proto_mapping[i.index].port != 0) {^M
     while (count < 64) {
         if (local_protos->port_proto_mapping[i.index].port == portnb) {
             return local_protos->port_proto_mapping[i.index].appproto;
@@ -131,9 +165,15 @@ check_local_proto_by_port_nb(uint16_t portnb, mmt_server_local_proto_t * local_p
     return 0;
 }
 
+/* Cache `appproto` for `portnb` on a host (allocating its extension). */
 static inline void
-insert_to_local_protos(uint16_t portnb, uint32_t appproto, uint16_t l4proto, mmt_server_local_proto_t * local_protos) {
-    if (check_local_proto_by_port_nb(portnb, local_protos) == 0) {
+insert_to_local_protos(uint16_t portnb, uint32_t appproto, uint16_t l4proto, struct mmt_internal_tcpip_id_struct * host) {
+    if (check_local_proto_by_port_nb(portnb, host) == 0) {
+        mmt_internal_tcpip_id_ext_t * ext = mmt_host_ext_get(host);
+        if (ext == NULL) {
+            return;
+        }
+        mmt_server_local_proto_t * local_protos = &ext->local_protos;
         local_protos->port_proto_mapping[local_protos->index.index].port = portnb;
         local_protos->port_proto_mapping[local_protos->index.index].appproto = appproto;
         local_protos->port_proto_mapping[local_protos->index.index].l4proto = l4proto;

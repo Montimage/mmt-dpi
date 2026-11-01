@@ -45,6 +45,15 @@ extern "C" {
         struct mmt_internal_tcpip_id_struct id_internal_context; /**< internal id related classification struct */
     } mmt_ip6_id_t;
 
+    /* Issue #562 (F-PERF-104): one host record per distinct IP address — the
+     * cold port cache / IRC DCC table moved to a lazily-allocated extension
+     * and the 128 B protocol bitmask became 14 tracked bits (968 B / 984 B
+     * before). Pinned so a new per-host field is a deliberate decision. */
+#if !defined(__cplusplus) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+    _Static_assert(sizeof (mmt_ip4_id_t) <= 256, "issue #562: IPv4 host record within 256 B");
+    _Static_assert(sizeof (mmt_ip6_id_t) <= 256, "issue #562: IPv6 host record within 256 B");
+#endif
+
     /**
      * Defines the structure of the key of a session.
      */
