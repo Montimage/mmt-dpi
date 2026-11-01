@@ -1439,7 +1439,7 @@ def _rtmp_s0s1s2():
 def _teamviewer_cmd(cmd, body):
     """TeamViewer command: protocol version 0x1724 in the first two bytes and
     the command in the third (the reverse-engineered OpenDPI/nDPI signature
-    proto_teamviewer.c:23 keys on; 0x12 = CMD_MASTERCOMMAND), then an assumed
+    proto_teamviewer.c:21 keys on; 0x12 = CMD_MASTERCOMMAND), then an assumed
     little-endian 32-bit body length and the body."""
     return b"\x17\x24" + bytes([cmd]) + struct.pack("<I", len(body)) + body
 
@@ -1452,7 +1452,7 @@ def _teamviewer_udp(seq, cmd, body):
 
 def _steam_version(v):
     """Legacy Steam directory/content-server handshake (the reverse-engineered
-    OpenDPI/nDPI signature proto_steam.c:22-35 applies): the client opens the
+    OpenDPI/nDPI signature proto_steam.c:20-33 applies): the client opens the
     connection with its protocol version as a 4-byte big-endian integer."""
     return struct.pack("!I", v)
 
@@ -1485,7 +1485,7 @@ def _wow_logon_challenge_reply():
 
 def _xbox_udp(msg_type, length):
     """Xbox UDP message shape the classifier keys on (OpenDPI/nDPI
-    signature, proto_xbox.c:34-42): four zero bytes, type, 0x58 ('X'),
+    signature, proto_xbox.c:32-40): four zero bytes, type, 0x58 ('X'),
     the datagram length, three zero bytes, zero padding to `length`."""
     hdr = b"\x00" * 4 + bytes([msg_type, 0x58, length]) + b"\x00" * 3
     return hdr + b"\x00" * (length - len(hdr))

@@ -13,7 +13,7 @@ title: "MMT Protocol"
 
 ![Collaboration diagram for protocol_struct](images/mmt-protocol-struct.png)
 
-Full `protocol_struct` definition: `src/mmt_core/private_include/packet_processing.h:584`.
+Full `protocol_struct` definition: `src/mmt_core/private_include/packet_processing.h:624`.
 
 ## Definition ##
 **MMT Protocol** is a structure that represents overall context of a network protocol such as: Eth, IP, TCP, UDP, RTP, etc. It contains unique identifier for a protocol, session and attribute context and different utility function pointers.  Each network protocol needs to registered before being processed in `mmt-core`. 

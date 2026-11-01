@@ -18,7 +18,7 @@ int mmt_check_vnc(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
+            && !MMT_FLOW_EXCLUDES(packet->flow, PROTO_VNC)
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
         /* search over TCP */
         if (packet->tcp) {
@@ -46,10 +46,10 @@ int mmt_check_vnc(ipacket_t * ipacket, unsigned index) {
                 }
             }
         }
-        MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_VNC);
+        MMT_EXCLUDE_PROTOCOL(flow, PROTO_VNC);
         return 0;
     }
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_VNC);
+    MMT_EXCLUDE_PROTOCOL(flow, PROTO_VNC);
     return 0;
 }
 
@@ -62,6 +62,9 @@ int init_proto_vnc_struct() {
         mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
                 &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
                 PROTO_UNKNOWN, PROTO_VNC);
+        /* issue #561: a closed guard excludes the protocol on the flow, which
+         * the walk's skip would lose — the checker keeps its own guard */
+        mmt_checker_keeps_local_guard(PROTO_VNC);
 
         return register_protocol(protocol_struct, PROTO_VNC);
     } else {

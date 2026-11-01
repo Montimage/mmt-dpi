@@ -208,6 +208,43 @@ typedef struct udphdr __attribute__((aligned(1))) mmt_una_udphdr_t;
 
 #define MMT_BITMASK_CONTAINS_NEGATED_BITMASK(a,b) mmt_bitmask_contains_negated_bitmask(&(a),&(b))
 
+    /* Issue #561 (F-PERF-005 part 2, F-PERF-105): a flow's exclusion set is
+     * dense. Only the ids listed in excluded_protocols.def can be excluded,
+     * each at its own slot, so the session carries MMT_EXCL_SET_WORDS words
+     * instead of a 1,024-bit MMT_PROTOCOL_BITMASK. The macros paste the
+     * protocol name into its slot (MMT_EXCL_SLOT_PROTO_X): an id without a
+     * row does not compile. `protocol` must be the PROTO_X name itself —
+     * passed on through another macro it would expand to its number first. */
+    enum mmt_excluded_slot_enum {
+#define MMT_EXCLUDABLE(protocol) MMT_EXCL_SLOT_##protocol,
+#include "excluded_protocols.def"
+#undef MMT_EXCLUDABLE
+        MMT_EXCL_SLOT_COUNT
+    };
+
+#define MMT_EXCL_SET_WORDS ((MMT_EXCL_SLOT_COUNT + 63) / 64)
+    _Static_assert(MMT_EXCL_SLOT_COUNT <= 256,
+        "excluded_protocols.def holds more than 256 ids: the dense exclusion "
+        "set of issue #561 is sized for at most 4 words");
+
+    typedef struct mmt_excluded_set_struct {
+        uint64_t words[MMT_EXCL_SET_WORDS];
+    } mmt_excluded_set_t;
+
+    static inline void mmt_excluded_set_add(mmt_excluded_set_t *set, unsigned slot) {
+        set->words[slot >> 6] |= ((uint64_t)1) << (slot & 0x3F);
+    }
+
+    static inline int mmt_excluded_set_has(const mmt_excluded_set_t *set, unsigned slot) {
+        return (int) ((set->words[slot >> 6] >> (slot & 0x3F)) & 1);
+    }
+
+    /* Exclude `protocol` on a (non-NULL) flow, and test whether it is excluded. */
+#define MMT_EXCLUDE_PROTOCOL(flow, protocol) \
+    mmt_excluded_set_add(&(flow)->excluded_protos, MMT_EXCL_SLOT_##protocol)
+#define MMT_FLOW_EXCLUDES(flow, protocol) \
+    mmt_excluded_set_has(&(flow)->excluded_protos, MMT_EXCL_SLOT_##protocol)
+
 #define MMT_PARSE_PACKET_LINE_INFO(ipacket, packet)                        \
                         if (packet->packet_lines_parsed_complete != 1) {        \
                                 mmt_parse_packet_line_info(ipacket);      \
@@ -302,8 +339,26 @@ typedef struct udphdr __attribute__((aligned(1))) mmt_una_udphdr_t;
      * (configured_protocols.c), which stores them in the frozen classifier
      * chain. Weak, so a test that compiles a protocol unit without
      * configured_protocols.c still links (the call is then skipped). */
+    /* Issue #561: the hook also records the unit's detection set, which the
+     * walk tests the packet's detected protocol against (the central guard).
+     * mmt_tcpip_record_local_guard() marks a unit whose checker keeps its own
+     * guard (mmt_checker_keeps_local_guard()): its chain entry gets no
+     * central guard. */
     void mmt_tcpip_record_checker_guard(uint32_t excluded_proto,
-        MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_mask) __attribute__((weak));
+        MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_mask,
+        const MMT_PROTOCOL_BITMASK *detection) __attribute__((weak));
+    void mmt_tcpip_record_local_guard(uint32_t excluded_proto) __attribute__((weak));
+
+    /* Issue #561: called by a protocol unit's init, after its
+     * mmt_init_classify_bitmasks*() call, when the walk must not evaluate its
+     * checker's guard: the checker evaluates its own, because a closed guard
+     * has a side effect (the checker excludes itself) the walk's skip would
+     * lose, or it never had one (mmt_check_gtp). */
+    static inline void mmt_checker_keeps_local_guard(uint32_t excluded_proto) {
+        if (mmt_tcpip_record_local_guard != NULL) {
+            mmt_tcpip_record_local_guard(excluded_proto);
+        }
+    }
 
     static inline void mmt_init_classify_bitmasks(
         MMT_SELECTION_BITMASK_PROTOCOL_SIZE *selection_bitmask,
@@ -318,7 +373,7 @@ typedef struct udphdr __attribute__((aligned(1))) mmt_una_udphdr_t;
         }
         MMT_SAVE_AS_BITMASK(*excluded_protocol_bitmask, excluded_proto);
         if (mmt_tcpip_record_checker_guard != NULL) {
-            mmt_tcpip_record_checker_guard(excluded_proto, selection_value);
+            mmt_tcpip_record_checker_guard(excluded_proto, selection_value, detection_bitmask);
         }
     }
 
@@ -344,7 +399,7 @@ typedef struct udphdr __attribute__((aligned(1))) mmt_una_udphdr_t;
         }
         MMT_SAVE_AS_BITMASK(*excluded_protocol_bitmask, excluded_proto);
         if (mmt_tcpip_record_checker_guard != NULL) {
-            mmt_tcpip_record_checker_guard(excluded_proto, selection_value);
+            mmt_tcpip_record_checker_guard(excluded_proto, selection_value, detection_bitmask);
         }
     }
 
@@ -367,7 +422,8 @@ typedef struct udphdr __attribute__((aligned(1))) mmt_una_udphdr_t;
      * a protocol is excluded if the flow is known and either the protocol is not detected at all
      * or the excluded bitmask contains the protocol
      */
-#define MMT_FLOW_PROTOCOL_EXCLUDED(flow,protocol) ((flow) != NULL && (MMT_COMPARE_PROTOCOL_TO_BITMASK((flow)->excluded_protocol_bitmask, (protocol)) != 0 ) )
+#define MMT_FLOW_PROTOCOL_EXCLUDED(flow,protocol) ((flow) != NULL \
+    && mmt_excluded_set_has(&(flow)->excluded_protos, MMT_EXCL_SLOT_##protocol) != 0)
 
 
 

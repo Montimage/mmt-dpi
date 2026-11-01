@@ -826,12 +826,12 @@ void mmt_classify_irc_tcp(ipacket_t * ipacket, unsigned index) {
     uint16_t http_content_ptr_len = 0;
 
     if (flow->detected_protocol_stack[0] != PROTO_IRC && ipacket->session->data_packet_count > 70) {
-        MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_IRC);
+        MMT_EXCLUDE_PROTOCOL(flow, PROTO_IRC);
         return;
     }
     if (flow->detected_protocol_stack[0] != PROTO_IRC && ipacket->session->data_packet_count > 30 &&
             flow->l4.tcp.irc_stage2 == 0) {
-        MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_IRC);
+        MMT_EXCLUDE_PROTOCOL(flow, PROTO_IRC);
         return;
     }
     mmt_irc_touch_detected_peer(ipacket);
@@ -868,10 +868,7 @@ void mmt_classify_irc_tcp(ipacket_t * ipacket, unsigned index) {
 }
 
 int mmt_check_irc(ipacket_t * ipacket, unsigned index) {
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+    { /* guard evaluated by the classifier walk (issue #561) */
 
         mmt_classify_irc_tcp(ipacket, index);
     }

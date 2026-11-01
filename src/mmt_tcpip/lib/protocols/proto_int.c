@@ -85,7 +85,7 @@ static int _classify_int_from_udp_or_tcp(ipacket_t * ipacket, unsigned index, bo
 	_not_found_int:
 	//checked but not found
 	//=> exclude from the next check
-	MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_INT);
+	MMT_EXCLUDE_PROTOCOL(ipacket->internal_packet->flow, PROTO_INT);
 	return NOT_FOUND;
 
 }

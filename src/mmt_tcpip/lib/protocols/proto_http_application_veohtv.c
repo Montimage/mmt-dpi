@@ -14,9 +14,7 @@ static void mmt_int_veohtv_add_connection(ipacket_t * ipacket, mmt_protocol_type
 
 int mmt_check_veohtv_tcp(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+    { /* guard evaluated by the classifier walk (issue #561) */
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
@@ -40,15 +38,14 @@ int mmt_check_veohtv_tcp(ipacket_t * ipacket, unsigned index) {
                     return 1;
                 }
                 if (flow->l4.tcp.veoh_tv_stage == 2) {
-                    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask,
-                            PROTO_HTTP_APPLICATION_VEOHTV);
+                    MMT_EXCLUDE_PROTOCOL(flow, PROTO_HTTP_APPLICATION_VEOHTV);
                     return 0;
                 }
                 mmt_int_veohtv_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return 1;
             } else if (ipacket->session->data_packet_count_direction[(ipacket->session->setup_packet_direction == 1) ? 0 : 1] > 3) {
                 if (flow->l4.tcp.veoh_tv_stage == 2) {
-                    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP_APPLICATION_VEOHTV);
+                    MMT_EXCLUDE_PROTOCOL(flow, PROTO_HTTP_APPLICATION_VEOHTV);
                     return 0;
                 }
                 mmt_int_veohtv_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
@@ -56,7 +53,7 @@ int mmt_check_veohtv_tcp(ipacket_t * ipacket, unsigned index) {
             } else {
                 if (ipacket->session->data_packet_count > 10) {
                     if (flow->l4.tcp.veoh_tv_stage == 2) {
-                        MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP_APPLICATION_VEOHTV);
+                        MMT_EXCLUDE_PROTOCOL(flow, PROTO_HTTP_APPLICATION_VEOHTV);
                         return 0;
                     }
                     mmt_int_veohtv_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
@@ -65,16 +62,14 @@ int mmt_check_veohtv_tcp(ipacket_t * ipacket, unsigned index) {
                 return 4;
             }
         } 
-        MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP_APPLICATION_VEOHTV);
+        MMT_EXCLUDE_PROTOCOL(flow, PROTO_HTTP_APPLICATION_VEOHTV);
     }
     return 0;
 }
 
 int mmt_check_veohtv_udp(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+    { /* guard evaluated by the classifier walk (issue #561) */
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
@@ -95,7 +90,7 @@ int mmt_check_veohtv_udp(ipacket_t * ipacket, unsigned index) {
             return 1;
         }
 
-        MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP_APPLICATION_VEOHTV);
+        MMT_EXCLUDE_PROTOCOL(flow, PROTO_HTTP_APPLICATION_VEOHTV);
     }
     return 0;
 }

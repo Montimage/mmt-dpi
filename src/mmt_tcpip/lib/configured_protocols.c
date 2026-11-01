@@ -34,17 +34,63 @@ int mmt_register_classifier(uint32_t parent_proto,
  * init_tcpip_plugin() run before its inter_proto_table[] loop, which copies
  * the entry of each row's excluded_proto into the checker's chain node. */
 static MMT_SELECTION_BITMASK_PROTOCOL_SIZE checker_selection[PROTO_MAX_IDENTIFIER];
+/* Issue #561: the unit's detection set (its words), and whether the unit's
+ * checker keeps its own guard (mmt_checker_keeps_local_guard()). */
+static const uint64_t *checker_detection[PROTO_MAX_IDENTIFIER];
+static uint8_t checker_local_guard[PROTO_MAX_IDENTIFIER];
 
 void mmt_tcpip_record_checker_guard(uint32_t excluded_proto,
-        MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_mask) {
+        MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_mask,
+        const MMT_PROTOCOL_BITMASK *detection) {
     if (excluded_proto != PROTO_UNKNOWN && excluded_proto < PROTO_MAX_IDENTIFIER) {
         checker_selection[excluded_proto] = selection_mask;
+        checker_detection[excluded_proto] = (detection != NULL) ? detection->bitmask : NULL;
+        checker_local_guard[excluded_proto] = 0;
     }
+}
+
+void mmt_tcpip_record_local_guard(uint32_t excluded_proto) {
+    if (excluded_proto != PROTO_UNKNOWN && excluded_proto < PROTO_MAX_IDENTIFIER) {
+        checker_local_guard[excluded_proto] = 1;
+    }
+}
+
+/* Issue #561: each excludable protocol's slot in a flow's dense exclusion
+ * set, plus one (0: not excludable — excluded_protocols.def has no row). */
+static const uint16_t excluded_slot_of[PROTO_MAX_IDENTIFIER] = {
+#define MMT_EXCLUDABLE(protocol) [protocol] = MMT_EXCL_SLOT_##protocol + 1,
+#include "excluded_protocols.def"
+#undef MMT_EXCLUDABLE
+};
+
+/* Issue #561 (F-PERF-005, checker walk part 2): the guard view of a packet
+ * about to walk the TCP or UDP chain — what every guarded checker opened
+ * with: the packet's selection word, its detection set (one protocol, saved
+ * by the TCP/UDP pre-classifier with MMT_SAVE_AS_BITMASK, or none after
+ * mmt_reset_internal_packet_scalars()), and the flow's exclusion set, which the
+ * walk reads live (an earlier checker of the same walk may exclude). */
+static void mmt_tcpip_guard_view(const ipacket_t *ipacket, mmt_classify_guard_view_t *view) {
+    const struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    uint32_t w;
+    view->selection = packet->mmt_selection_packet;
+    view->detected_word = 0;
+    view->detected_bits = 0;
+    for (w = 0; w < MMT_PROTOCOL_BITMASK_NUM_WORDS; w++) {
+        if (packet->detection_bitmask.bitmask[w] != 0) {
+            view->detected_word = w;
+            view->detected_bits = packet->detection_bitmask.bitmask[w];
+            break;
+        }
+    }
+    view->excluded = (packet->flow != NULL) ? packet->flow->excluded_protos.words : NULL;
 }
 
 /* Store one inter_proto_table[] row's guard inputs in its chain node; 0 (an
  * init failure, like a failed legacy mark) when the row names an excluded
- * protocol no translation unit recorded — a wrong excluded_proto column. */
+ * protocol no translation unit recorded — a wrong excluded_proto column — or
+ * one without a dense exclusion slot. Issue #561: the node gets the unit's
+ * detection set, so the walk evaluates its guard, unless the unit keeps its
+ * own guard. */
 static int mmt_set_inter_proto_guard(protocol_t *parent,
         generic_classification_function classify_fn, uint32_t excluded_proto,
         const char *name) {
@@ -52,8 +98,11 @@ static int mmt_set_inter_proto_guard(protocol_t *parent,
         return 1;
     }
     if (excluded_proto >= PROTO_MAX_IDENTIFIER || checker_selection[excluded_proto] == 0
+            || excluded_slot_of[excluded_proto] == 0
             || !mmt_classifier_set_guard(parent, classify_fn,
-                    checker_selection[excluded_proto], excluded_proto)) {
+                    checker_selection[excluded_proto], excluded_proto,
+                    checker_local_guard[excluded_proto] ? NULL : checker_detection[excluded_proto],
+                    (uint16_t) (excluded_slot_of[excluded_proto] - 1))) {
         mmt_stderr_log("Error recording the guard of classification function %s (excluded protocol %u)\n Exiting\n",
                 name, (unsigned) excluded_proto);
         return 0;
@@ -154,6 +203,13 @@ int init_tcpip_plugin() {
 #undef MMT_INTER_PROTO_LEGACY
 #undef MMT_INTER_PROTO
     };
+    /* Issue #561: the TCP and UDP chains' guard view, before any row's guard
+     * is recorded (mmt_classifier_set_guard() needs it). */
+    if (!mmt_classifier_set_guard_view(get_protocol_struct_by_id(PROTO_TCP), mmt_tcpip_guard_view)
+            || !mmt_classifier_set_guard_view(get_protocol_struct_by_id(PROTO_UDP), mmt_tcpip_guard_view)) {
+        mmt_stderr_log("Error installing the TCP/UDP classifier guard view\n Exiting\n");
+        return 0;
+    }
     for (size_t i = 0; i < sizeof(inter_proto_table)/sizeof(inter_proto_table[0]); i++) {
         protocol_t *parent;
         if (!mmt_register_classifier(inter_proto_table[i].parent,

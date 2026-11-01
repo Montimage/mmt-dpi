@@ -915,7 +915,7 @@ static int classify(const char *payload, uint16_t sport, uint16_t dport, unsigne
 }
 
 static int excluded(void) {
-	return MMT_COMPARE_PROTOCOL_TO_BITMASK(g_flow.excluded_protocol_bitmask, PROTO_FTP) != 0;
+	return MMT_FLOW_EXCLUDES(&g_flow, PROTO_FTP) != 0;
 }
 
 static void test_classification(void) {
@@ -983,10 +983,9 @@ static void test_classification(void) {
 	g_flow.l4.tcp.seen_syn = 1;
 	CHECK(classify("500 what\r\n", 21, CPORT, 1, 4) == 0, "no FTP code after 3 packets: rejected");
 
-	/* Guards. */
-	flow_reset();
-	g_ip.mmt_selection_packet = 0;
-	CHECK(classify("USER x\r\n", CPORT, 21, 0, 1) == 0 && !excluded(), "selection guard closed");
+	/* Guards. The selection / detection / exclusion guard is evaluated by
+	 * the classifier walk since issue #561 (tests/core_engine
+	 * test_classify_freeze.c); the checker keeps only its payload checks. */
 	flow_reset();
 	CHECK(classify("", CPORT, 21, 0, 1) == 0, "empty payload skipped");
 

@@ -114,9 +114,7 @@ static mmt_int_stun_result_t mmt_int_check_stun(ipacket_t * ipacket, const uint8
 
 int mmt_check_stun_tcp(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+    { /* guard evaluated by the classifier walk (issue #561) */
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
@@ -134,7 +132,7 @@ int mmt_check_stun_tcp(ipacket_t * ipacket, unsigned index) {
                 return 1;
             }
         }
-        MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_STUN);
+        MMT_EXCLUDE_PROTOCOL(flow, PROTO_STUN);
     }
     return 0;
 }
@@ -343,9 +341,7 @@ uint32_t check_stun_internal(ipacket_t * ipacket) {
 
 int mmt_check_stun_udp(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+    { /* guard evaluated by the classifier walk (issue #561) */
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
@@ -356,12 +352,12 @@ int mmt_check_stun_udp(ipacket_t * ipacket, unsigned index) {
             return 4;
         } else {
             if (check_viber_udp(ipacket) || check_tango_udp(ipacket) || check_apple_facetime_signaling_udp(ipacket)) {
-                MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_STUN);
+                MMT_EXCLUDE_PROTOCOL(flow, PROTO_STUN);
                 return 4;
             }
         }
 
-        MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_STUN);
+        MMT_EXCLUDE_PROTOCOL(flow, PROTO_STUN);
     }
     return 0;
 }

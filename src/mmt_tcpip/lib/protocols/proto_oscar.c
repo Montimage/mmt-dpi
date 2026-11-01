@@ -219,7 +219,7 @@ void mmt_classify_oscar(ipacket_t * ipacket, unsigned index) {
 
 
         if (packet->detected_protocol_stack[0] != PROTO_OSCAR) {
-            MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_OSCAR);
+            MMT_EXCLUDE_PROTOCOL(flow, PROTO_OSCAR);
             return;
         }
     }
@@ -227,15 +227,13 @@ void mmt_classify_oscar(ipacket_t * ipacket, unsigned index) {
 
 int mmt_check_oscar(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+    { /* guard evaluated by the classifier walk (issue #561) */
 
         /* Every OSCAR signature needs TCP (mmt_classify_oscar() does nothing
          * else): exclude a UDP flow at once instead of re-running the checker
          * on each of its packets. */
         if (packet->tcp == NULL) {
-            MMT_ADD_PROTOCOL_TO_BITMASK(packet->flow->excluded_protocol_bitmask, PROTO_OSCAR);
+            MMT_EXCLUDE_PROTOCOL(packet->flow, PROTO_OSCAR);
             return 0;
         }
         mmt_classify_oscar(ipacket, index);

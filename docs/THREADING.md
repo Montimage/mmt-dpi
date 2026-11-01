@@ -76,7 +76,8 @@ Each global has a dedicated `pthread_mutex_t`:
   array is published with a release store and read with an acquire load, so
   handlers created concurrently, from cold, freeze it once and walk it
   race-free. A registration (or a `mmt_classifier_mark_legacy()` /
-  `mmt_classifier_set_guard()` call) after the freeze moves the array onto a
+  `mmt_classifier_set_guard()` / `mmt_classifier_set_guard_view()` call,
+  issue #561) after the freeze moves the array onto a
   retired list, freed only at teardown, and the walk uses the list until the
   next `mmt_init_handler()` freezes it again — so a registration made after
   handlers exist but while no worker runs (rule 3) is walked by every handler
@@ -265,7 +266,7 @@ so they need no locking as long as the "one handler per worker" rule holds:
    `close_extraction()` once, on a single thread. It force-closes any handler
    still registered and runs the internal `close_plugins()` /
    `free_registered_protocols()` steps itself
-   (`src/mmt_core/src/packet_registry.c:676-688`); a handler must not be
+   (`src/mmt_core/src/packet_registry.c:677-689`); a handler must not be
    used or closed after it returns. The single-threaded embedding sequence is
    in [USER_GUIDE.md §3](./USER_GUIDE.md#3-minimum-embedding-pattern).
 

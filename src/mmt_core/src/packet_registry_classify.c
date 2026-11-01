@@ -125,6 +125,8 @@ static void classify_entry_fill(mmt_classify_entry_t *e, mmt_classify_proto_t *n
     e->node = n;
     e->selection_mask = n->selection_mask;
     e->excluded_proto = (uint16_t) n->excluded_proto;
+    e->detection = n->detection;
+    e->excluded_slot = n->excluded_slot;
     e->legacy = n->legacy;
 }
 

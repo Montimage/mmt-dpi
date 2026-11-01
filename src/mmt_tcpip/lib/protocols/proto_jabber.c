@@ -275,18 +275,19 @@ void mmt_classify_jabber_tcp(ipacket_t * ipacket, unsigned index) {
 
 
 
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_UNENCRYPED_JABBER);
+    MMT_EXCLUDE_PROTOCOL(flow, PROTO_UNENCRYPED_JABBER);
 
 #ifdef PROTO_TRUPHONE
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_TRUPHONE);
+    MMT_EXCLUDE_PROTOCOL(flow, PROTO_TRUPHONE);
 #endif
 }
 
 int mmt_check_jabber(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+    /* Issue #561: the classifier walk evaluated this checker's guard, on
+     * PROTO_UNENCRYPED_JABBER; the second protocol its excluded bitmask holds
+     * (TRUPHONE, see init_proto_unencryped_jabber_struct) is tested here. */
+    if (!MMT_FLOW_EXCLUDES(packet->flow, PROTO_TRUPHONE)) {
 
         /* Despite the name, the XML stanza match below does not depend on
          * TCP, which is why the checker is also registered on UDP. */

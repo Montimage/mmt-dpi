@@ -185,7 +185,7 @@ static void test_excluded_flow_not_reclassified(void)
 
     struct mmt_internal_tcpip_session_struct flow;
     memset(&flow, 0, sizeof(flow));
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow.excluded_protocol_bitmask, PROTO_DTLS)
+    MMT_EXCLUDE_PROTOCOL(&flow, PROTO_DTLS);
 
     uint8_t *b = build_dtls_datagram(DTLS_CONTENT_TYPE_HANDSHAKE, DTLS_VERSION_1_2, DATAGRAM_LEN);
     int r = run_classify_dtls(&flow, PROTO_UNKNOWN, b, DATAGRAM_LEN);

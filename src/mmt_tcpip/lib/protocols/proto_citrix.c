@@ -81,9 +81,7 @@ static int check_citrix_payload(ipacket_t * ipacket) {
 int mmt_check_citrix(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet =
         (mmt_tcpip_internal_packet_t *) ipacket->internal_packet;
-    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+    { /* guard evaluated by the classifier walk (issue #561) */
 
         if (check_citrix_payload(ipacket)) {
             mmt_internal_add_connection(ipacket, PROTO_CITRIX, MMT_REAL_PROTOCOL);
@@ -91,7 +89,7 @@ int mmt_check_citrix(ipacket_t * ipacket, unsigned index) {
         }
 
         /* No match on this packet — exclude from future checks for this flow */
-        MMT_ADD_PROTOCOL_TO_BITMASK(packet->flow->excluded_protocol_bitmask, PROTO_CITRIX);
+        MMT_EXCLUDE_PROTOCOL(packet->flow, PROTO_CITRIX);
     }
     return 0;
 }

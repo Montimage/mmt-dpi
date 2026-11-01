@@ -408,6 +408,7 @@ void init_protocol_struct(protocol_t * proto) {
     proto->classify_next.pre_classify = NULL;
     proto->classify_next.classify_protos = NULL;
     proto->classify_next.post_classify = NULL;
+    proto->classify_next.guard_view = NULL;
     /* Issue #560: a re-initialised slot retires its frozen chain (freed at
      * teardown by free_registered_protocols(): a worker may still walk it).
      * Like the reads above, this assumes the struct was zeroed at allocation. */

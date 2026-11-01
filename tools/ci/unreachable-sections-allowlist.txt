@@ -98,6 +98,8 @@ src/mmt_tcpip/lib/protocols/proto_rtp.c dummy_estimation config
 src/mmt_tcpip/lib/protocols/proto_skype.c mmt_bitmask_compare test
 src/mmt_tcpip/lib/protocols/proto_skype.c mmt_check_skype_tcp test
 src/mmt_tcpip/lib/protocols/proto_skype.c mmt_check_skype_udp test
+src/mmt_tcpip/lib/protocols/proto_skype.c mmt_excluded_set_add test
+src/mmt_tcpip/lib/protocols/proto_skype.c mmt_excluded_set_has test
 src/mmt_tcpip/lib/protocols/rfc2822utils.c get_field_len test
 src/mmt_tcpip/lib/protocols/rfc2822utils.c get_next_header_line_length test
 src/mmt_tcpip/lib/protocols/rfc2822utils.c get_next_non_white_space_offset_no_limit test

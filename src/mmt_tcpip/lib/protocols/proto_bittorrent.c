@@ -384,9 +384,7 @@ static void mmt_int_search_bittorrent_tcp(ipacket_t * ipacket) {
 
 int mmt_check_bittorrent_tcp(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+    { /* guard evaluated by the classifier walk (issue #561) */
 
         if (packet->detected_protocol_stack[0] != PROTO_BITTORRENT) {
             /* check for tcp retransmission here */
@@ -426,9 +424,7 @@ int mmt_check_bittorrent_tcp(ipacket_t * ipacket, unsigned index) {
 
 int mmt_check_bittorrent_udp(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+    { /* guard evaluated by the classifier walk (issue #561) */
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
@@ -484,7 +480,7 @@ bittorrent_found:
                 return 4;
             }
 
-            MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_BITTORRENT);
+            MMT_EXCLUDE_PROTOCOL(flow, PROTO_BITTORRENT);
         }
     }
     return 0;

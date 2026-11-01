@@ -461,7 +461,7 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
            n port 443 flows exclude flow bitmask after first packet itself */
     }
 mmt_msn_exclude:
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MSN);
+    MMT_EXCLUDE_PROTOCOL(flow, PROTO_MSN);
 }
 
 static void mmt_search_udp_msn_misc(ipacket_t * ipacket) {
@@ -475,7 +475,7 @@ static void mmt_search_udp_msn_misc(ipacket_t * ipacket) {
     if ((src == NULL || MMT_HOST_HAS_PROTOCOL(src, PROTO_MSN) == 0)
             && (dst == NULL
             || MMT_HOST_HAS_PROTOCOL(dst, PROTO_MSN) == 0)) {
-        MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MSN);
+        MMT_EXCLUDE_PROTOCOL(flow, PROTO_MSN);
         return;
     }
 
@@ -493,13 +493,11 @@ static void mmt_search_udp_msn_misc(ipacket_t * ipacket) {
 
 int mmt_check_msn_tcp(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+    { /* guard evaluated by the classifier walk (issue #561) */
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
         /* this if request should always be true */
-        if (MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MSN) == 0) {
+        if (MMT_FLOW_EXCLUDES(flow, PROTO_MSN) == 0) {
             /* we deal with tcp now */
             /* msn can use http for connection, so http and unknown packets
              * enter the msn detection (POST /gateway ...). Issue #540
@@ -519,13 +517,11 @@ int mmt_check_msn_tcp(ipacket_t * ipacket, unsigned index) {
 
 int mmt_check_msn_udp(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+    { /* guard evaluated by the classifier walk (issue #561) */
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
         /* this if request should always be true */
-        if (MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MSN) == 0) {
+        if (MMT_FLOW_EXCLUDES(flow, PROTO_MSN) == 0) {
             mmt_search_udp_msn_misc(ipacket);
         }
     }

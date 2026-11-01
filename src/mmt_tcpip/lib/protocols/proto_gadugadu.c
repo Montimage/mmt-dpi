@@ -422,15 +422,12 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
         }
     }
 
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_GADUGADU);
+    MMT_EXCLUDE_PROTOCOL(flow, PROTO_GADUGADU);
 
 }
 
 int mmt_check_gadugadu(ipacket_t * ipacket, unsigned index) {
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+    { /* guard evaluated by the classifier walk (issue #561) */
 
         /* Every signature needs TCP: a UDP flow reaches the final exclusion
          * on its first packet, so the UDP registration cannot misclassify. */

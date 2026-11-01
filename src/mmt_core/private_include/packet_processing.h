@@ -50,6 +50,7 @@ typedef struct mmt_classify_proto_struct           mmt_classify_proto_t;
 typedef struct mmt_classify_next_struct            mmt_classify_next_t;
 typedef struct mmt_classify_entry_struct           mmt_classify_entry_t;
 typedef struct mmt_classify_chain_struct           mmt_classify_chain_t;
+typedef struct mmt_classify_guard_view_struct      mmt_classify_guard_view_t;
 typedef struct mmt_proto_data_analysis_proc_struct mmt_analyse_me_t;
 typedef struct mmt_proto_data_analysis_struct      mmt_analyser_t;
 
@@ -453,6 +454,8 @@ struct mmt_classify_proto_struct {
     generic_classification_function classify_me; /**< Issue #546: typed verdict (was int) */
     uint32_t selection_mask; /**< Issue #560: the checker's packet-selection guard (0 = none recorded), set by mmt_classifier_set_guard() */
     uint32_t excluded_proto; /**< Issue #560: the protocol id the checker's excluded bitmask holds (PROTO_UNKNOWN = none) */
+    const uint64_t *detection; /**< Issue #561: the checker's detection set (1,024-bit words), NULL = no central guard */
+    uint16_t excluded_slot;    /**< Issue #561: excluded_proto's slot in the flow's dense exclusion set */
     mmt_classify_proto_t * next;
     mmt_classify_proto_t * previous;
 };
@@ -486,16 +489,50 @@ void mmt_classifier_id_release(mmt_classify_proto_t * node);
  * chain. The registration node stays the checker's identity — the claim
  * stores it, mmt_session_t.proto_checkers[] its id (#562) — so a chain
  * re-frozen after a late registration never invalidates either;
- * the walk itself reads only these contiguous entries. selection_mask and
- * excluded_proto are copied from the node for the central guard of #561.
+ * the walk itself reads only these contiguous entries. The guard inputs
+ * (selection_mask, detection, excluded_slot) are copied from the node for the
+ * central guard (issue #561, mmt_classify_guard_open()).
  */
 struct mmt_classify_entry_struct {
     generic_classification_function classify_me;
     mmt_classify_proto_t *node;  /**< the registration node (stable identity) */
+    const uint64_t *detection;   /**< node->detection (NULL = no central guard) */
     uint32_t selection_mask;     /**< node->selection_mask */
     uint16_t excluded_proto;     /**< node->excluded_proto (ids < PROTO_MAX_IDENTIFIER) */
+    uint16_t excluded_slot;      /**< node->excluded_slot */
     uint8_t legacy;              /**< node->legacy */
 };
+
+/**
+ * Issue #561 (F-PERF-005, checker walk part 2): what a chain's checkers are
+ * guarded on, read once per walk from the packet by the parent's guard_view
+ * hook (the tcpip plugin's for TCP and UDP). A guarded checker — an entry
+ * with a detection set — is called only when its guard is open
+ * (mmt_classify_guard_open()); the checker no longer tests it itself.
+ */
+struct mmt_classify_guard_view_struct {
+    uint32_t selection;       /**< the packet's selection word */
+    uint32_t detected_word;   /**< the word of the 1,024-bit detection sets holding the packet's detected protocol */
+    uint64_t detected_bits;   /**< the packet's bits in that word (0: none — every guard is closed) */
+    const uint64_t *excluded; /**< the flow's dense exclusion set (NULL: no flow — every guard is closed) */
+};
+
+/** Fills the guard view of a packet about to walk a chain (issue #561). */
+typedef void (*mmt_classify_guard_view_function)(const ipacket_t *ipacket, mmt_classify_guard_view_t *view);
+
+/**
+ * Issue #561: a guarded checker's guard — the test every checker used to open
+ * with: its selection mask is all set in the packet's selection word, its
+ * detection set holds the packet's detected protocol, and the flow has not
+ * excluded its protocol. O(1): one word of each set.
+ */
+static inline int mmt_classify_guard_open(const mmt_classify_guard_view_t *view,
+        uint32_t selection_mask, const uint64_t *detection, uint16_t excluded_slot) {
+    return (selection_mask & view->selection) == selection_mask
+            && (detection[view->detected_word] & view->detected_bits) != 0
+            && view->excluded != NULL
+            && ((view->excluded[excluded_slot >> 6] >> (excluded_slot & 63)) & 1) == 0;
+}
 
 /**
  * Issue #560: a classification chain frozen into one allocation, built by
@@ -526,6 +563,9 @@ struct mmt_classify_next_struct {
      * Published with release / read with acquire (__atomic builtins). */
     mmt_classify_chain_t * frozen;
     mmt_classify_chain_t * retired; /**< Issue #560: superseded chains, freed with the list */
+    /** Issue #561: fills the per-walk guard view of this chain's guarded
+     * checkers; NULL when none is guarded (mmt_classifier_set_guard_view()). */
+    mmt_classify_guard_view_function guard_view;
 };
 
 struct mmt_proto_data_analysis_proc_struct {
@@ -665,26 +705,50 @@ static inline int mmt_classifier_mark_legacy(protocol_t *proto,
 }
 
 /**
+ * Issue #561: install the hook that fills the guard view of `proto`'s chain
+ * (mmt_classify_guard_view_t), before mmt_classifier_set_guard() gives a
+ * checker of that chain a central guard. Header-inline: no libmmt_core
+ * export.
+ * @return 1 when installed, 0 on a NULL argument
+ */
+static inline int mmt_classifier_set_guard_view(protocol_t *proto,
+        mmt_classify_guard_view_function fn) {
+    if (proto == NULL || fn == NULL) {
+        return 0;
+    }
+    proto->classify_next.guard_view = fn;
+    mmt_classify_chain_invalidate(&proto->classify_next);
+    return 1;
+}
+
+/**
  * Issue #560: record the guard inputs of the chain node(s) of `fn` registered
  * on `proto` — the checker's packet-selection mask and the protocol id its
- * excluded bitmask holds — so the frozen entry carries them (for #561's
- * central guard; the walk does not read them yet). Header-inline like
- * mmt_classifier_mark_legacy(): no libmmt_core export.
+ * excluded bitmask holds — so the frozen entry carries them. Issue #561: with
+ * a `detection` set the walk evaluates the guard (mmt_classify_guard_open(),
+ * with the flow's exclusion bit at `excluded_slot`) and calls the checker
+ * only when it is open; NULL leaves the checker unguarded (it keeps its own
+ * guard). Header-inline like mmt_classifier_mark_legacy(): no libmmt_core
+ * export.
  * @return 1 when at least one node was updated, 0 when `fn` is not registered
- * on `proto` or `excluded_proto` is not a protocol id
+ * on `proto`, `excluded_proto` is not a protocol id, or a `detection` set is
+ * given for a chain without a guard_view hook
  */
 static inline int mmt_classifier_set_guard(protocol_t *proto,
         generic_classification_function fn, uint32_t selection_mask,
-        uint32_t excluded_proto) {
+        uint32_t excluded_proto, const uint64_t *detection, uint16_t excluded_slot) {
     mmt_classify_proto_t *n;
     int set = 0;
-    if (proto == NULL || fn == NULL || excluded_proto >= PROTO_MAX_IDENTIFIER) {
+    if (proto == NULL || fn == NULL || excluded_proto >= PROTO_MAX_IDENTIFIER
+            || (detection != NULL && proto->classify_next.guard_view == NULL)) {
         return 0;
     }
     for (n = proto->classify_next.classify_protos; n != NULL; n = n->next) {
         if (n->classify_me == fn) {
             n->selection_mask = selection_mask;
             n->excluded_proto = excluded_proto;
+            n->detection = detection;
+            n->excluded_slot = excluded_slot;
             set = 1;
         }
     }

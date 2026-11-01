@@ -25,9 +25,7 @@ static uint8_t is_special_aimini_host(struct mmt_int_one_line_struct host_line) 
 
 int mmt_check_aimini_tcp(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+    { /* guard evaluated by the classifier walk (issue #561) */
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
@@ -67,16 +65,14 @@ int mmt_check_aimini_tcp(ipacket_t * ipacket, unsigned index) {
             }
         }
 
-        MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_AIMINI);
+        MMT_EXCLUDE_PROTOCOL(flow, PROTO_AIMINI);
     }
     return 0;
 }
 
 int mmt_check_aimini_udp(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+    { /* guard evaluated by the classifier walk (issue #561) */
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
@@ -228,7 +224,7 @@ int mmt_check_aimini_udp(ipacket_t * ipacket, unsigned index) {
             return 1;
         }
 
-        MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_AIMINI);
+        MMT_EXCLUDE_PROTOCOL(flow, PROTO_AIMINI);
     }
     return 0;
 }

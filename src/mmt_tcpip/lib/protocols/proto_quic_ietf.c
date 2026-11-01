@@ -352,7 +352,7 @@ static int _classify_quic_ietf_from_data_offset(ipacket_t *ipacket, unsigned ses
 	_not_found_quic_ietf:
 	//checked but not found
 	//=> exclude from the next check
-	//MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_QUIC_IETF);
+	//MMT_EXCLUDE_PROTOCOL(ipacket->internal_packet->flow, PROTO_QUIC_IETF);
 	return NOT_FOUND;
 }
 

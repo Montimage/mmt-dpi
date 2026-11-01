@@ -14,7 +14,13 @@
  *   - on the TCP and UDP chains, the nodes carrying a guard are exactly the
  *     .def rows with an excluded protocol, in the weight-sorted registration
  *     order of the file, each with a nonzero selection mask and its row's
- *     legacy flag.
+ *     legacy flag;
+ *   - issue #561: the TCP and UDP chains have a guard view, and every
+ *     guarded node has a detection set holding PROTO_UNKNOWN — the walk
+ *     evaluates its guard — except the checkers that keep their own guard
+ *     (local_guard[] below; check_inter_proto_excluded.py ties the list to
+ *     the sources); one excluded protocol keeps one dense slot, distinct
+ *     protocols distinct slots.
  *
  * The rows are expanded from the same .def in this translation unit.
  */
@@ -56,6 +62,21 @@ static const chain_row_t rows[] = {
 };
 #define N_ROWS (sizeof(rows) / sizeof(rows[0]))
 
+/* Issue #561: the checkers whose unit calls mmt_checker_keeps_local_guard():
+ * three keep their own guard, mmt_check_gtp never had one. */
+static const char *const local_guard[] = { "mmt_check_gtp", "mmt_check_ndn_http", "mmt_check_tpkt", "mmt_check_vnc" };
+
+static int keeps_local_guard(const char *fn) {
+    size_t i;
+    for (i = 0; i < sizeof(local_guard) / sizeof(local_guard[0]); i++) {
+        if (strcmp(local_guard[i], fn) == 0) return 1;
+    }
+    return 0;
+}
+
+/* Issue #561: the dense slot each excluded protocol got (0xFFFF: none yet). */
+static uint16_t g_slot_of[PROTO_MAX_IDENTIFIER];
+
 /* The frozen views are the list, node for node, in list order. */
 static void check_frozen(uint32_t id, const protocol_t *p) {
     const mmt_classify_chain_t *c = p->classify_next.frozen;
@@ -68,7 +89,8 @@ static void check_frozen(uint32_t id, const protocol_t *p) {
         const mmt_classify_entry_t *e = &c->entries[i];
         same = i < c->count && e->node == n && e->classify_me == n->classify_me
                 && e->legacy == n->legacy && e->selection_mask == n->selection_mask
-                && e->excluded_proto == n->excluded_proto;
+                && e->excluded_proto == n->excluded_proto && e->detection == n->detection
+                && e->excluded_slot == n->excluded_slot;
         if (same && !n->legacy) {
             same = j < c->default_count && c->default_entries[j].node == n;
             j++;
@@ -86,7 +108,7 @@ static void check_guards(uint32_t parent, const char *name) {
     const protocol_t *p = get_protocol_struct_by_id(parent);
     const mmt_classify_proto_t *n;
     const chain_row_t *want[N_ROWS];
-    size_t nw = 0, k = 0, a, b;
+    size_t nw = 0, k = 0, a, b, central = 0;
     if (p == NULL) {
         CHECK(0, "%s: parent protocol not registered", name);
         return;
@@ -100,6 +122,7 @@ static void check_guards(uint32_t parent, const char *name) {
         want[b] = r;
     }
     CHECK(nw > 0, "%s: no .def row with an excluded protocol", name);
+    CHECK(p->classify_next.guard_view != NULL, "%s: no guard view (issue #561)", name);
     for (n = p->classify_next.classify_protos; n != NULL; n = n->next) {
         if (n->excluded_proto == PROTO_UNKNOWN) {
             CHECK(n->selection_mask == 0, "%s: a node without an excluded protocol has a selection mask", name);
@@ -114,16 +137,39 @@ static void check_guards(uint32_t parent, const char *name) {
               "%s: guarded node %zu is not row %s (excluded %u, weight %d)", name, k, want[k]->fn,
               (unsigned) want[k]->excluded, want[k]->weight);
         CHECK(n->selection_mask != 0, "%s: %s has no recorded selection mask", name, want[k]->fn);
+        if (keeps_local_guard(want[k]->fn)) {
+            CHECK(n->detection == NULL, "%s: %s keeps its own guard but is guarded by the walk",
+                  name, want[k]->fn);
+        } else {
+            CHECK(n->detection != NULL && (n->detection[0] & 1u) != 0,
+                  "%s: %s has no detection set holding PROTO_UNKNOWN", name, want[k]->fn);
+            central++;
+        }
+        if (n->excluded_proto < PROTO_MAX_IDENTIFIER) {
+            uint32_t q;
+            if (g_slot_of[n->excluded_proto] == 0xFFFFu) {
+                for (q = 0; q < PROTO_MAX_IDENTIFIER; q++) {
+                    CHECK(g_slot_of[q] != n->excluded_slot, "%s: %s shares slot %u with protocol %u",
+                          name, want[k]->fn, (unsigned) n->excluded_slot, (unsigned) q);
+                }
+                g_slot_of[n->excluded_proto] = n->excluded_slot;
+            }
+            CHECK(g_slot_of[n->excluded_proto] == n->excluded_slot,
+                  "%s: %s: one excluded protocol, two slots", name, want[k]->fn);
+            CHECK(n->excluded_slot < 256, "%s: %s: slot %u past the 4-word set", name, want[k]->fn,
+                  (unsigned) n->excluded_slot);
+        }
         k++;
     }
     CHECK(k == nw, "%s: %zu guarded nodes for %zu .def rows", name, k, nw);
-    printf("  %s: %zu guarded checkers, in .def order\n", name, k);
+    printf("  %s: %zu guarded checkers, in .def order; the walk evaluates %zu guards\n", name, k, central);
 }
 
 int main(void) {
     char errbuf[256];
     uint32_t id, frozen = 0;
-    printf("=== frozen classifier chain test (issue #560) ===\n");
+    printf("=== frozen classifier chain test (issues #560, #561) ===\n");
+    memset(g_slot_of, 0xFF, sizeof(g_slot_of));
     printf("  %zu inter_proto_classif_list.def rows\n", N_ROWS);
     if (!init_extraction()) {
         printf("  FAIL: init_extraction() failed\n");

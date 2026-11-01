@@ -192,7 +192,7 @@ int mmt_int_edonkey_tcp(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
     /* skip excluded connections */
-    if (MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_EDONKEY) != 0)
+    if (MMT_FLOW_EXCLUDES(flow, PROTO_EDONKEY) != 0)
         return 0;
 
     /* source and dst port must be 80 443 or > 1024 */
@@ -271,7 +271,7 @@ int mmt_int_edonkey_tcp(ipacket_t * ipacket) {
     }
 exclude_edk_tcp:
 
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_EDONKEY);
+    MMT_EXCLUDE_PROTOCOL(flow, PROTO_EDONKEY);
 
     return 0;
 }
@@ -281,7 +281,7 @@ int mmt_int_edonkey_udp(ipacket_t * ipacket) {
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
     /* skip excluded connections */
-    if (MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_EDONKEY) != 0)
+    if (MMT_FLOW_EXCLUDES(flow, PROTO_EDONKEY) != 0)
         return 0;
 
     /* source and dst port must be 80 443 or > 1024 */
@@ -357,16 +357,14 @@ int mmt_int_edonkey_udp(ipacket_t * ipacket) {
 
 exclude_edk_udp:
 
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_EDONKEY);
+    MMT_EXCLUDE_PROTOCOL(flow, PROTO_EDONKEY);
 
     return 0;
 }
 
 int mmt_check_edonkey(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+    { /* guard evaluated by the classifier walk (issue #561) */
 
         if (packet->detected_protocol_stack[0] != PROTO_EDONKEY) {
             /* check for retransmission here */
@@ -376,7 +374,7 @@ int mmt_check_edonkey(ipacket_t * ipacket, unsigned index) {
                 return mmt_int_edonkey_udp(ipacket);
             }
         }
-        MMT_ADD_PROTOCOL_TO_BITMASK(packet->flow->excluded_protocol_bitmask, PROTO_EDONKEY);
+        MMT_EXCLUDE_PROTOCOL(packet->flow, PROTO_EDONKEY);
     }
     return 0;
 }

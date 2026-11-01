@@ -61,7 +61,7 @@ int classify_dtls_from_udp(ipacket_t * ipacket, unsigned index) {
 	dtls_header_t *dtls;
 
 	if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-			&& MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
+			&& !MMT_FLOW_EXCLUDES(packet->flow, PROTO_DTLS)
 			&& MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
 		/* skip marked packets: an already-classified flow must not be re-claimed by DTLS */
@@ -90,7 +90,7 @@ int classify_dtls_from_udp(ipacket_t * ipacket, unsigned index) {
 		return 1;
 
 		_not_found_dtls:
-		MMT_ADD_PROTOCOL_TO_BITMASK(packet->flow->excluded_protocol_bitmask, PROTO_DTLS)
+		MMT_EXCLUDE_PROTOCOL(packet->flow, PROTO_DTLS);
 		return 0;
 	}
 	return 0;

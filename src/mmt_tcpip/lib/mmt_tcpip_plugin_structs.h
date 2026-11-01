@@ -529,8 +529,11 @@ typedef struct mmt_internal_tcpip_session_struct {
 
     /* ALL protocol specific 64 bit variables here */
 
-    /* protocols which have marked a connection as excluded for a given protocol, multiple u64 */
-    MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
+    /* protocols which have marked a connection as excluded for a given protocol.
+     * Issue #561 (F-PERF-105): a dense set over excluded_protocols.def
+     * (MMT_EXCLUDE_PROTOCOL / MMT_FLOW_EXCLUDES), 24 B instead of a 128 B
+     * bit-per-protocol-id MMT_PROTOCOL_BITMASK. */
+    mmt_excluded_set_t excluded_protos;
 
 #ifdef PROTO_RTP
     uint32_t rtp_ssid[2];
@@ -610,6 +613,14 @@ typedef struct mmt_internal_tcpip_session_struct {
      * The verdict depends only on the two addresses, which a flow keeps. */
     uint16_t ip_range_verdict[2];
 } mmt_internal_tcpip_session_t;
+
+/* Issue #561 (F-PERF-105): the dense exclusion set took the session record
+ * from 232 B to at most 136 B on LP64 targets (the default protocol set);
+ * a field added later must not give the 96 B back unnoticed. */
+_Static_assert(sizeof(void *) != 8
+        || sizeof(struct mmt_internal_tcpip_session_struct) <= 232 - 96,
+    "mmt_internal_tcpip_session_struct grew back past the issue #561 budget "
+    "(232 B before the dense exclusion set, minus 96 B)");
 
 typedef struct mmt_int_one_line_struct {
     const uint8_t *ptr;

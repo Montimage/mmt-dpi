@@ -118,16 +118,14 @@ int mmt_check_quic(ipacket_t * ipacket, unsigned index)
 {
 	struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 	int ver_offs;
-    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+    { /* guard evaluated by the classifier walk (issue #561) */
     	struct mmt_internal_tcpip_session_struct *flow = packet->flow;
         if(packet->udp != NULL){
         	uint16_t sport = ntohs(packet->udp->source), dport = ntohs(packet->udp->dest);
         	// debug("QUIC: Calculating QUIC over UDP");
         	if((((sport == 80) || (dport == 80) || (sport == 443) || (dport == 443))))
 			    {
-			     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_QUIC);
+			     MMT_EXCLUDE_PROTOCOL(flow, PROTO_QUIC);
 				// Minimum-length gate: the public-header reads below touch up to
 				// QUIC_MIN_PAYLOAD_LEN bytes, but the selection mask only guarantees
 				// one payload byte. Bail out on short datagrams before any multi-byte
@@ -142,7 +140,7 @@ int mmt_check_quic(ipacket_t * ipacket, unsigned index)
 			       if (sequence(packet->payload, packet->payload_packet_len) < 1)
 			       {
 			         
-			         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_QUIC);
+			         MMT_EXCLUDE_PROTOCOL(flow, PROTO_QUIC);
 			       }
 
 			       // debug("QUIC: Found QUIC");
@@ -183,10 +181,10 @@ int mmt_check_quic(ipacket_t * ipacket, unsigned index)
 			   } 
 			   else
 			   {
-			     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_QUIC);
+			     MMT_EXCLUDE_PROTOCOL(flow, PROTO_QUIC);
 			   }
         }
-        MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_QUIC);
+        MMT_EXCLUDE_PROTOCOL(flow, PROTO_QUIC);
         return 0;
 
     }

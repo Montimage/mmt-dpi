@@ -13,7 +13,10 @@
  *     the frozen chain, and the list while the chain is not frozen;
  *   src/mmt_core/private_include/packet_processing.h —
  *     mmt_classifier_mark_legacy() and mmt_classifier_set_guard() update the
- *     node and drop the frozen copy.
+ *     node and drop the frozen copy;
+ *   issue #561 (checker walk part 2) — the walk evaluates a guarded
+ *     checker's guard on the parent's guard view (mmt_classify_guard_open())
+ *     and skips the checker when it is closed, frozen or not.
  *
  * Every checker of the fake parent appends its tag to a trace and the last
  * one matches, so one packet's trace is the exact walk order. The default
@@ -153,7 +156,8 @@ static int frozen_matches_list(const protocol_t *p) {
         const mmt_classify_entry_t *e = &c->entries[i];
         if (i >= c->count || e->node != n || e->classify_me != n->classify_me
                 || e->legacy != n->legacy || e->selection_mask != n->selection_mask
-                || e->excluded_proto != n->excluded_proto) return 0;
+                || e->excluded_proto != n->excluded_proto || e->detection != n->detection
+                || e->excluded_slot != n->excluded_slot) return 0;
         if (!n->legacy) {
             if (j >= c->default_count || c->default_entries[j].node != n) return 0;
             j++;
@@ -181,9 +185,9 @@ static void test_freeze_and_order(mmt_handler_t **out) {
     CHECK(register_classification_function_with_parent_protocol(TEST_PARENT, chk_l, 20) == 1, "l registered");
     CHECK(register_classification_function_with_parent_protocol(TEST_PARENT, chk_z, 90) == 1, "z registered");
     CHECK(mmt_classifier_mark_legacy(g_parent, chk_l) == 1, "l marked legacy");
-    CHECK(mmt_classifier_set_guard(g_parent, chk_a, 0x92u, TEST_CHILD) == 1, "a's guard recorded");
-    CHECK(mmt_classifier_set_guard(g_parent, chk_n, 1u, TEST_CHILD) == 0, "an unregistered checker has no guard");
-    CHECK(mmt_classifier_set_guard(g_parent, chk_a, 1u, PROTO_MAX_IDENTIFIER) == 0,
+    CHECK(mmt_classifier_set_guard(g_parent, chk_a, 0x92u, TEST_CHILD, NULL, 0) == 1, "a's guard recorded");
+    CHECK(mmt_classifier_set_guard(g_parent, chk_n, 1u, TEST_CHILD, NULL, 0) == 0, "an unregistered checker has no guard");
+    CHECK(mmt_classifier_set_guard(g_parent, chk_a, 1u, PROTO_MAX_IDENTIFIER, NULL, 0) == 0,
           "an out-of-range excluded protocol is refused");
     CHECK(g_parent->classify_next.frozen == NULL && g_parent->classify_next.retired == NULL,
           "registrations before the first handler freeze nothing and retire nothing");
@@ -232,7 +236,7 @@ static void test_late_registration(mmt_handler_t *h) {
     }
 
     /* The plugins' list mutators drop the frozen copy too. */
-    CHECK(mmt_classifier_set_guard(g_parent, chk_n, 0x10u, TEST_CHILD) == 1, "n's guard recorded after the freeze");
+    CHECK(mmt_classifier_set_guard(g_parent, chk_n, 0x10u, TEST_CHILD, NULL, 0) == 1, "n's guard recorded after the freeze");
     CHECK(g_parent->classify_next.frozen == NULL && retired_count(g_parent) == 2, "set_guard drops the frozen copy");
     mmt_classify_chains_freeze();
     CHECK(frozen_matches_list(g_parent), "re-frozen with n's guard");
@@ -319,6 +323,81 @@ static void test_publication(mmt_handler_t *h) {
     if (h2 != NULL) mmt_close_handler(h2);
 }
 
+/* ----------------- issue #561: the central guard ----------------------- */
+
+static mmt_classify_guard_view_t g_view;  /* what the parent's hook publishes */
+static uint64_t g_view_excluded[4];        /* the flow's dense exclusion set */
+static int g_view_calls;
+static uint64_t g_det_b[16];               /* b's detection set */
+static uint64_t g_det_c[16];               /* c's detection set */
+
+static void test_guard_view(const ipacket_t *ipacket, mmt_classify_guard_view_t *view) {
+    (void) ipacket;
+    /* atomic: the hook stays installed for the concurrent tests that follow */
+    __atomic_add_fetch(&g_view_calls, 1, __ATOMIC_RELAXED);
+    *view = g_view;
+}
+
+/* The guard open on every test below unless a case closes one input. */
+static void view_open(void) {
+    memset(g_view_excluded, 0, sizeof(g_view_excluded));
+    g_view.selection = 0x3u;
+    g_view.detected_word = 0;
+    g_view.detected_bits = 1u; /* PROTO_UNKNOWN */
+    g_view.excluded = g_view_excluded;
+}
+
+static void test_central_guard(mmt_handler_t *h) {
+    int pass, calls;
+    fprintf(stderr, "  test: the walk evaluates the guards (issue #561)\n");
+    g_det_b[0] = 1u;                              /* b detects on PROTO_UNKNOWN */
+    g_det_c[0] = 1u;
+    g_det_c[1] = (uint64_t) 1u << (70 - 64);      /* c also on protocol 70 */
+    CHECK(mmt_classifier_set_guard(g_parent, chk_b, 0x1u, TEST_CHILD, g_det_b, 5) == 0,
+          "a detection set needs the parent's guard view");
+    CHECK(mmt_classifier_set_guard_view(g_parent, NULL) == 0, "a NULL hook is refused");
+    CHECK(mmt_classifier_set_guard_view(g_parent, test_guard_view) == 1, "the guard view installed");
+    CHECK(mmt_classifier_set_guard(g_parent, chk_b, 0x1u, TEST_CHILD, g_det_b, 5) == 1, "b guarded on slot 5");
+    CHECK(mmt_classifier_set_guard(g_parent, chk_c, 0x2u, TEST_CHILD, g_det_c, 130) == 1, "c guarded on slot 130");
+    for (pass = 0; pass < 2; pass++) {
+        /* pass 0: the list walk (not frozen yet); pass 1: the frozen walk */
+        const char *what = pass ? "frozen" : "list";
+        if (pass) {
+            mmt_classify_chains_freeze();
+            CHECK(frozen_matches_list(g_parent), "frozen with the guards");
+        } else {
+            CHECK(g_parent->classify_next.frozen == NULL, "set_guard dropped the frozen copy");
+        }
+        view_open();
+        calls = __atomic_load_n(&g_view_calls, __ATOMIC_RELAXED);
+        CHECK(strcmp(walk(h), "bacz") == 0, what);
+        CHECK(__atomic_load_n(&g_view_calls, __ATOMIC_RELAXED) == calls + 1, "the view is read once per walk");
+        g_view.selection = 0x2u;
+        CHECK(strcmp(walk(h), "acz") == 0, "a selection bit missing closes b's guard");
+        view_open();
+        g_view_excluded[0] = (uint64_t) 1u << 5;
+        CHECK(strcmp(walk(h), "acz") == 0, "b excluded on the flow (slot 5)");
+        g_view_excluded[2] = (uint64_t) 1u << (130 - 128);
+        CHECK(strcmp(walk(h), "az") == 0, "c excluded on the flow (slot 130, third word)");
+        view_open();
+        g_view.detected_word = 1;
+        g_view.detected_bits = (uint64_t) 1u << (70 - 64);
+        CHECK(strcmp(walk(h), "acz") == 0, "detected protocol 70: in c's detection set, not in b's");
+        g_view.detected_bits = 0;
+        CHECK(strcmp(walk(h), "az") == 0, "no detected protocol: every guard closed");
+        view_open();
+        g_view.excluded = NULL;
+        CHECK(strcmp(walk(h), "az") == 0, "no flow: every guard closed");
+    }
+    /* Unguarded again, for the tests that follow. */
+    CHECK(mmt_classifier_set_guard(g_parent, chk_b, 0, PROTO_UNKNOWN, NULL, 0) == 1, "b unguarded");
+    CHECK(mmt_classifier_set_guard(g_parent, chk_c, 0, PROTO_UNKNOWN, NULL, 0) == 1, "c unguarded");
+    mmt_classify_chains_freeze();
+    view_open();
+    g_view.selection = 0;
+    CHECK(strcmp(walk(h), "bacz") == 0, "unguarded checkers are walked whatever the view");
+}
+
 static void test_concurrent_freeze(void) {
     enum { N = 4 };
     pthread_t t[N];
@@ -338,7 +417,7 @@ static void test_concurrent_freeze(void) {
 
 int main(void) {
     mmt_handler_t *h = NULL;
-    fprintf(stderr, "classify_freeze: the frozen classification chain (issue #560)\n");
+    fprintf(stderr, "classify_freeze: the frozen classification chain (issues #560, #561)\n");
     CHECK(init_extraction() == 1, "init_extraction succeeds");
     CHECK(register_protocol_stack(TEST_STACK_ID, (char *) "cf_stack", stack_classify) == 1, "stack registered");
     g_parent = register_plain(TEST_PARENT, "cf_parent");
@@ -351,6 +430,7 @@ int main(void) {
         test_late_registration(h);
         test_freeze_oom(h);
         test_publication(h);
+        test_central_guard(h);
         mmt_close_handler(h);
     }
     test_concurrent_freeze();

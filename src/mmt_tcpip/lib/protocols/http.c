@@ -1115,30 +1115,30 @@ static inline uint16_t http_request_url_offset(ipacket_t * ipacket) {
 }
 
 static inline void http_bitmask_exclude(struct mmt_internal_tcpip_session_struct *flow) {
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP);
+    MMT_EXCLUDE_PROTOCOL(flow, PROTO_HTTP);
 #ifdef PROTO_MPEG
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MPEG);
+    MMT_EXCLUDE_PROTOCOL(flow, PROTO_MPEG);
 #endif
 #ifdef PROTO_WINDOWSMEDIA
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_WINDOWSMEDIA);
+    MMT_EXCLUDE_PROTOCOL(flow, PROTO_WINDOWSMEDIA);
 #endif
 #ifdef PROTO_REALMEDIA
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_REALMEDIA);
+    MMT_EXCLUDE_PROTOCOL(flow, PROTO_REALMEDIA);
 #endif
 #ifdef PROTO_AVI
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_AVI);
+    MMT_EXCLUDE_PROTOCOL(flow, PROTO_AVI);
 #endif
 #ifdef PROTO_OGG
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_OGG);
+    MMT_EXCLUDE_PROTOCOL(flow, PROTO_OGG);
 #endif
 #ifdef PROTO_MOVE
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MOVE);
+    MMT_EXCLUDE_PROTOCOL(flow, PROTO_MOVE);
 #endif
 #ifdef PROTO_OFF
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_OFF);
+    MMT_EXCLUDE_PROTOCOL(flow, PROTO_OFF);
 #endif
 #ifdef PROTO_XBOX
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_XBOX);
+    MMT_EXCLUDE_PROTOCOL(flow, PROTO_XBOX);
 #endif
 }
 
@@ -1722,10 +1722,7 @@ http_parse_detection:
 }
 
 int mmt_check_http(ipacket_t * ipacket, unsigned index) {
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+    { /* guard evaluated by the classifier walk (issue #561) */
             mmt_classify_http(ipacket, index);
     }
     return 4;

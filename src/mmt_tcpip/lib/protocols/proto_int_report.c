@@ -178,7 +178,7 @@ static int _classify_inband_network_telemetry_from_udp(ipacket_t * ipacket, unsi
 
 	_not_found_int_report:
 	//=> exclude from the next check
-	MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_INT_REPORT);
+	MMT_EXCLUDE_PROTOCOL(ipacket->internal_packet->flow, PROTO_INT_REPORT);
 	return 0;
 }
 

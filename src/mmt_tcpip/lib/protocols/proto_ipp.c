@@ -14,9 +14,7 @@ static void mmt_int_ipp_add_connection(ipacket_t * ipacket, mmt_protocol_type_t 
 
 int mmt_check_ipp(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+    { /* guard evaluated by the classifier walk (issue #561) */
 
         struct mmt_internal_tcpip_session_struct * flow = packet->flow;
 
@@ -73,7 +71,7 @@ search_for_next_pattern:
                 return 1;
             }
         }
-        MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_IPP);
+        MMT_EXCLUDE_PROTOCOL(flow, PROTO_IPP);
 
     }
     return 0;

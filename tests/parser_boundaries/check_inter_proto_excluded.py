@@ -13,12 +13,27 @@ excluded bitmask after the call (MMT_ADD_PROTOCOL_TO_BITMASK on
 excluded_protocol_bitmask) must be listed in EXTRA_EXCLUSIONS: its frozen
 entry carries only the first id, which a central guard (#561) has to know.
 
+Issue #561: the walk evaluates each guarded checker's guard (selection mask,
+detection set, exclusion), so a checker no longer opens with it. A checker
+whose unit calls mmt_checker_keeps_local_guard() on its id keeps its own
+guard instead (its closed guard has a side effect) and must still test the
+packet's selection word — except a checker that never had a guard
+(UNGUARDED); every other checker of a row with an excluded
+protocol must not, and must test each EXTRA_EXCLUSIONS id itself
+(MMT_FLOW_EXCLUDES(packet->flow, PROTO_X)).
+
 Usage: check_inter_proto_excluded.py [REPO_ROOT]   exit 0 pass, 1 fail
 """
 import glob
 import os
 import re
 import sys
+
+# Issue #561: checkers that never opened with the guard although their unit
+# records one (selection mask, excluded id). Their unit calls
+# mmt_checker_keeps_local_guard() so the walk evaluates none, and they test no
+# selection word.
+UNGUARDED = {"mmt_check_gtp"}
 
 # Units whose static excluded bitmask holds more than the helper's id.
 EXTRA_EXCLUSIONS = {
@@ -27,8 +42,41 @@ EXTRA_EXCLUSIONS = {
 
 HELPER = re.compile(r"mmt_init_classify_bitmasks(?:_multi)?\s*\(([^;]*)\);", re.S)
 EXTRA = re.compile(r"MMT_ADD_PROTOCOL_TO_BITMASK\s*\(\s*excluded_protocol_bitmask\s*,\s*(\w+)\s*\)")
+LOCAL = re.compile(r"mmt_checker_keeps_local_guard\s*\(\s*(\w+)\s*\)\s*;")
+SELECTION_GUARD = re.compile(r"&\s*packet->mmt_selection_packet\s*\)")
 ROW = re.compile(r"\bMMT_INTER_PROTO(?:_LEGACY)?\s*\(\s*(PROTO_\w+)\s*,\s*(\w+)\s*,"
                  r"\s*\d+\s*,\s*(\w+)\s*\)")
+
+
+def function_body(text, fn):
+    """The body of checker `fn` (braces matched outside comments, strings)."""
+    m = re.search(r"^(?:int|mmt_classify_verdict_t)\s+" + fn + r"\s*\(\s*ipacket_t[^)]*\)\s*\{",
+                  text, re.M)
+    if m is None:
+        return None
+    depth, j = 0, m.end() - 1
+    while j < len(text):
+        if text.startswith("/*", j):
+            j = text.index("*/", j + 2) + 2
+            continue
+        if text.startswith("//", j):
+            j = text.index("\n", j)
+            continue
+        c = text[j]
+        if c in "\"'":
+            k = j + 1
+            while text[k] != c:
+                k += 2 if text[k] == "\\" else 1
+            j = k + 1
+            continue
+        if c == "{":
+            depth += 1
+        elif c == "}":
+            depth -= 1
+            if depth == 0:
+                return text[m.end():j]
+        j += 1
+    return None
 
 
 def main():
@@ -70,10 +118,37 @@ def main():
             print("✗ %s: further static exclusions %s, EXTRA_EXCLUSIONS lists %s"
                   % (os.path.basename(defining[0]), sorted(set(extra)), listed))
             failures += 1
+        if excluded == "PROTO_UNKNOWN":
+            continue
+        body = function_body(text, fn)
+        if body is None:
+            print("✗ %s: body not found in %s" % (fn, os.path.basename(defining[0])))
+            failures += 1
+            continue
+        code = re.sub(r"//[^\n]*", "", re.sub(r"/\*.*?\*/", "", body, flags=re.S))
+        local = excluded in LOCAL.findall(text)
+        if fn in UNGUARDED:
+            if not local or SELECTION_GUARD.search(code):
+                print("✗ %s: listed in UNGUARDED but its unit does not opt out of the walk's "
+                      "guard, or it tests a selection word" % fn)
+                failures += 1
+            continue
+        if local and not SELECTION_GUARD.search(code):
+            print("✗ %s: its unit keeps a local guard but the checker tests no selection word" % fn)
+            failures += 1
+        if not local and (SELECTION_GUARD.search(code) or "packet->detection_bitmask" in code):
+            print("✗ %s: opens with the guard the classifier walk evaluates (issue #561)" % fn)
+            failures += 1
+        for extra_id in listed:
+            if not local and not re.search(r"MMT_FLOW_EXCLUDES\s*\(\s*packet->flow\s*,\s*"
+                                           + extra_id + r"\s*\)", code):
+                print("✗ %s: does not test its further exclusion %s itself" % (fn, extra_id))
+                failures += 1
     if failures:
         print("✗ inter_proto_classif_list.def excluded_proto column: %d failure(s)" % failures)
         return 1
-    print("✓ excluded_proto column matches the checkers' sources (%d rows)" % len(rows))
+    print("✓ excluded_proto column and guard placement match the checkers' sources (%d rows)"
+          % len(rows))
     return 0
 
 

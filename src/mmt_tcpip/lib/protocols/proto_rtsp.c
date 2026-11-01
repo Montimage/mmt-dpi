@@ -77,24 +77,21 @@ int mmt_classify_rtsp(ipacket_t * ipacket, unsigned index) {
 		}
 	}
 	if (packet->udp != NULL && packet->detected_protocol_stack[0] == PROTO_UNKNOWN
-		&& ((MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_RTP) == 0)
+		&& ((MMT_FLOW_EXCLUDES(flow, PROTO_RTP) == 0)
 #ifdef PROTOCOL_RTCP
-			|| (MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTOCOL_RTCP) == 0)
+			|| (MMT_FLOW_EXCLUDES(flow, PROTOCOL_RTCP) == 0)
 #endif
 		)) {
 		return 4;
 	}
 
 
-	MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_RTSP);
+	MMT_EXCLUDE_PROTOCOL(flow, PROTO_RTSP);
 	return 0;
 }
 
 int mmt_check_rtsp(ipacket_t * ipacket, unsigned index) {
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+    { /* guard evaluated by the classifier walk (issue #561) */
         	return mmt_classify_rtsp(ipacket, index);
     }
     return 4;
