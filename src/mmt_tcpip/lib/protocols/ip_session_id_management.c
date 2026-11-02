@@ -329,6 +329,14 @@ void free_session_data(void * key, void * value, void * args) {
     /* Issue #255: release the lazily-allocated tunnel-parent extension (NULL
      * for leaf sessions; mmt_free(NULL) is a no-op). */
     mmt_free(session->children_stats);
+    /* Issue #568 (F-BUG-302): a ClientHello still being collected when the
+     * flow ends (a truncated hello) is released with it — one mmt_malloc()
+     * block (tls_hello_reasm_begin()), so mmt_free() is its whole release. */
+    struct mmt_internal_tcpip_session_struct * flow = session->internal_data;
+    if (flow != NULL) {
+        mmt_free(flow->tls_hello);
+        flow->tls_hello = NULL;
+    }
     free(session);
 }
 

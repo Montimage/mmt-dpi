@@ -73,10 +73,10 @@ cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_udp.c:165	retval.p
 cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_tcp.c:1226	retval.proto_id = get_proto_id_from_address(ipacket);	-
 cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_udp.c:160	retval.proto_id = get_proto_id_from_address(ipacket);	-
 cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/http.c:942	mmt_int_http_add_connection_by(ipacket, proto, MMT_CLASSIFICATION_METHOD_IP);	-
-cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_ssl.c:842	mmt_int_ssl_add_connection_by(ipacket, proto, MMT_CLASSIFICATION_METHOD_IP);	-
+cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_ssl.c:850	mmt_int_ssl_add_connection_by(ipacket, proto, MMT_CLASSIFICATION_METHOD_IP);	-
 cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/http.c:933	mmt_int_http_add_connection_by(ipacket, proto, MMT_CLASSIFICATION_METHOD_HOSTNAME);	-
-cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_ssl.c:602	mmt_int_ssl_add_connection_by(ipacket, proto, MMT_CLASSIFICATION_METHOD_HOSTNAME);	-
-cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_ssl.c:644	mmt_int_ssl_add_connection_by(ipacket, proto, MMT_CLASSIFICATION_METHOD_HOSTNAME);	-
+cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_ssl.c:512	mmt_int_ssl_add_connection_by(ipacket, proto, MMT_CLASSIFICATION_METHOD_HOSTNAME);	-
+cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_ssl.c:572	mmt_int_ssl_add_connection_by(ipacket, proto, MMT_CLASSIFICATION_METHOD_HOSTNAME);	-
 cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:653	ipacket->session->classification_method = MMT_CLASSIFICATION_METHOD_DPI;	-
 cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c:217	void mmt_change_internal_flow_protocol_by(ipacket_t * ipacket, uint16_t detected_protocol,	-
 cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:893	static inline void attr_dispatch_leave(mmt_handler_t * mmt_handler) {	-

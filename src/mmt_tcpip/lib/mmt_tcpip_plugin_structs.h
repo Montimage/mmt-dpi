@@ -385,6 +385,9 @@ struct mmt_internal_tcp_session_struct {
 #endif
 #ifdef PROTO_SSL
     uint32_t ssl_stage : 2; //0 - 3
+    /* Issue #568: a ClientHello reassembly was started on this flow (one
+     * per flow, whatever its outcome). */
+    uint32_t ssl_hello_started : 1;
 #endif
 #ifdef PROTO_WHATSAPP
     uint32_t whatsapp_conn_stage : 3; //0 - 16
@@ -612,11 +615,17 @@ typedef struct mmt_internal_tcpip_session_struct {
      * as the IP header holds them): 0 = not computed yet, else proto id + 1.
      * The verdict depends only on the two addresses, which a flow keeps. */
     uint16_t ip_range_verdict[2];
+    /* Issue #568 (F-BUG-302): the client's first handshake record while it is
+     * collected over several segments (protocols/tls_client_hello.h): NULL
+     * unless one is in flight, at most TLS_HELLO_MAX_MESSAGE bytes of data,
+     * released when it completes or is dropped and by free_session_data(). */
+    struct tls_hello_reasm *tls_hello;
 } mmt_internal_tcpip_session_t;
 
 /* Issue #561 (F-PERF-105): the dense exclusion set took the session record
  * from 232 B to at most 136 B on LP64 targets (the default protocol set);
- * a field added later must not give the 96 B back unnoticed. */
+ * a field added later must not give the 96 B back unnoticed. Issue #568's
+ * ClientHello reassembly pointer took the record from 128 B to 136 B. */
 _Static_assert(sizeof(void *) != 8
         || sizeof(struct mmt_internal_tcpip_session_struct) <= 232 - 96,
     "mmt_internal_tcpip_session_struct grew back past the issue #561 budget "

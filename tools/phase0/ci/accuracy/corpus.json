@@ -554,6 +554,111 @@
       }
     },
     {
+      "pcap": "acc_tls_split_clienthello.pcap",
+      "family": "tls",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_ssl"
+      ],
+      "description": "TCP/443 three-way handshake, a 1,800-byte TLS ClientHello (SNI www.google.com, after a padding extension) split 1,460 + 340 bytes across two segments, and the ServerHello: the SNI is read once the record is complete (issue #568).",
+      "sha256": "e6fa7870fd90dceef4bb77160d4fd53383c3dd9b06ab87ea5f37a9efddffdca8",
+      "expected": {
+        "packets": 6,
+        "wire": 3,
+        "abstain": 3,
+        "other": {},
+        "attribution": {
+          "google": 2
+        }
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_tls_split_clienthello"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #568",
+        "date": "2026-11-02",
+        "checks": [
+          "RFC 5246 \u00a77.4.1.2 TLS 1.2 ClientHello in one 1,800-byte record (handshake length = record length - 4); RFC 7685 padding extension (1,719 zero bytes) before the RFC 6066 server_name extension, so the SNI (record offset 1,786) lies entirely in the second segment",
+          "the two client segments are consecutive in TCP sequence space (1,460 + 340 bytes) and together hold exactly the record; the ServerHello is the acc_tls_positive one",
+          "the first segment is TLS (record and handshake headers) with nothing to attribute yet; the second completes the record and yields ssl.google, which the ServerHello keeps: attribution reported separately, never counted as wire-protocol accuracy"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_tls_split_reordered.pcap",
+      "family": "tls",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_ssl"
+      ],
+      "description": "Same 1,800-byte ClientHello with SNI teams.microsoft.com in three 600-byte segments sent first, third, first again (a retransmission) and second, then the ServerHello: reordered and duplicate bytes are placed by TCP sequence number (issue #568).",
+      "sha256": "4e7212a47498918af314eb4111e979b03fd76c2023b73e8ffc08a0d9ad191a0f",
+      "expected": {
+        "packets": 8,
+        "wire": 5,
+        "abstain": 3,
+        "other": {},
+        "attribution": {
+          "ms_teams": 2
+        }
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_tls_split_reordered"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, locally administered MACs; the SNI is a public service host name, no tenant data); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #568",
+        "date": "2026-11-02",
+        "checks": [
+          "segment sequence numbers are the record offsets 0, 1,200, 0 and 600 from the client ISN + 1: the third segment arrives before the second and the first is sent twice",
+          "the record completes on the second segment, the fourth client packet; the SNI (after a 1,714-byte padding extension, record offset 1,781) lies in the third segment, which arrived out of order",
+          "attribution (ssl.ms_teams) comes from the .teams.microsoft.com entry of data/hostnames.txt and is reported separately, never counted as wire-protocol accuracy"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_tls_split_truncated.pcap",
+      "family": "tls",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_ssl"
+      ],
+      "description": "Only the first 1,460-byte segment of the 1,800-byte ClientHello (SNI www.google.com) is ever sent; the server answers with plaintext. The record start is TLS, but no SNI can be read and none is attributed (issue #568).",
+      "sha256": "8fa23f0aaa7a33137c59d147239c6e6bc41cec2ceef7620d1ee150f7bfba4471",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_tls_split_truncated"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #568",
+        "date": "2026-11-02",
+        "checks": [
+          "the first segment is byte-identical to acc_tls_split_clienthello's; the remaining 340 bytes of the record never arrive, so the reassembly stays incomplete and is freed with the flow",
+          "no SNI is guessed from a partial record: the flow stays plain ssl, the plaintext reply included"
+        ]
+      }
+    },
+    {
       "pcap": "acc_tls_negative.pcap",
       "family": "tls",
       "case": "negative",

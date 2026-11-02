@@ -215,11 +215,27 @@
 #                               the id its checker's source passes to
 #                               mmt_init_classify_bitmasks*().
 #
+# Issue #568 (F-BUG-302) adds the "tls-hello" fixture: a TLS ClientHello split
+# over several TCP segments is collected per flow — at most 2^14 bytes, placed
+# by sequence number — and its SNI read once the record is complete.
+#
+#   test_tls_client_hello_unit.c — helper reproducer: tls_client_hello.c is
+#                               included directly (counting mmt_malloc /
+#                               mmt_free) and the shared parser and the
+#                               reassembly buffer are driven over exact-size
+#                               buffers: truncated, malformed, oversize,
+#                               reordered, duplicated, stalled.
+#   test_tls_split_hello_api.c — packet/API path: crafted Ethernet/IPv4/TCP
+#                               ClientHellos (single, split, reordered,
+#                               truncated, oversize, stalled) through
+#                               mmt_init_handler + packet_process, reading
+#                               ssl.server_name and the path per segment.
+#
 # Usage: tests/parser_boundaries/run_tests.sh [fixture ...]
 #   no arguments runs every fixture; "udp"/"dtls"/"dns-soa"/"dns-txt"/"dns-names"/"nfs"/"int"/
 #   "tcp-options"/"radius-dns"/"quic"/"gre"/"classifier-audit"/"tcp-events"/"s1ap-integer"/
-#   "classify"/"registration"/"ftp-sessions"/"classification-method"/"chain"
-#   select a fixture family.
+#   "classify"/"registration"/"ftp-sessions"/"classification-method"/"chain"/
+#   "tls-hello" select a fixture family.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -227,7 +243,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # --- fixture selection -----------------------------------------------------
 FIXTURES=( "$@" )
-[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain)
+[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain tls-hello)
 UNIT_TESTS=()
 API_TESTS=()
 MOBILE_TESTS=()
@@ -293,8 +309,12 @@ for f in "${FIXTURES[@]}"; do
             # The .def column against the checkers' sources (no SDK needed).
             python3 -I "${SCRIPT_DIR}/check_inter_proto_excluded.py" "${REPO_ROOT}" || exit 1
             ;;
+        tls-hello)
+            UNIT_TESTS+=(tls_client_hello_unit)
+            API_TESTS+=(tls_split_hello_api)
+            ;;
         *)
-            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain)" >&2
+            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain tls-hello)" >&2
             exit 2
             ;;
     esac
@@ -435,4 +455,4 @@ if [ "${rc}" -ne 0 ]; then
     echo "✗ parser boundary tests failed" >&2
     exit 1
 fi
-echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455, #505, #513, #531, #542, #544, #560, #567)"
+echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455, #505, #513, #531, #542, #544, #560, #567, #568)"

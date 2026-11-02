@@ -137,6 +137,32 @@
         { "id": "checks", "metric": "checks.failed", "op": "eq", "limit": 0 }
       ]
     },
+    "tls-hello": {
+      "issue": 568,
+      "finding": "F-BUG-302",
+      "workload": "1,000 seeded flows each declaring a TLS ClientHello record length: every fourth an oversize record (2^14 + 1 .. 65,535 B); the others 1 .. 2^14 B (one exactly 2^14) fed 1 .. 1,460-B segments that complete reordered within windows of four with duplicates, stop at half the record, leave single-byte holes every 64 B, or repeat duplicates and out-of-window segments; every in-flight reassembly released at teardown.",
+      "checks": [
+        { "id": "scale", "metric": "flows", "op": "eq", "limit": 1000 },
+        { "id": "flows-accounted", "metric": "flows", "op": "sum", "parts": ["refused_oversize", "buffered"] },
+        { "id": "oversize-refused", "metric": "refused_oversize", "op": "eq", "limit": 250 },
+        { "id": "oversize-no-allocation", "metric": "refused_allocs", "op": "eq", "limit": 0 },
+        { "id": "buffered-accounted", "metric": "buffered", "op": "sum", "parts": ["completed", "truncated", "dropped_holes", "dropped_stalls"] },
+        { "id": "completed", "metric": "completed", "op": "eq", "limit": 189 },
+        { "id": "holes-dropped", "metric": "dropped_holes", "op": "eq", "limit": 186 },
+        { "id": "stalls-dropped", "metric": "dropped_stalls", "op": "eq", "limit": 186 },
+        { "id": "byte-exact", "metric": "corrupt", "op": "eq", "limit": 0 },
+        { "id": "feeds-never-allocate", "metric": "feed_allocs", "op": "eq", "limit": 0 },
+        { "id": "data-within-2-14", "metric": "max_data_bytes", "op": "le", "limit": 16384 },
+        { "id": "header-small", "metric": "header_bytes", "op": "le", "limit": 64 },
+        { "id": "flow-within-16k-plus-header", "metric": "max_flow_bytes", "op": "le", "limit": 16448 },
+        { "id": "sized-once", "metric": "resized", "op": "eq", "limit": 0 },
+        { "id": "one-header-size", "metric": "header_varies", "op": "eq", "limit": 0 },
+        { "id": "in-flight-at-teardown", "metric": "in_flight_at_teardown", "op": "sum", "parts": ["completed", "truncated"] },
+        { "id": "live-bounded", "metric": "live_peak_bytes", "op": "le", "factor": 16448, "limit_metric": "buffered" },
+        { "id": "no-leak", "metric": "leaked_allocations", "op": "eq", "limit": 0 },
+        { "id": "checks", "metric": "checks.failed", "op": "eq", "limit": 0 }
+      ]
+    },
     "ftp-control": {
       "issue": 563,
       "finding": "F-PERF-106",

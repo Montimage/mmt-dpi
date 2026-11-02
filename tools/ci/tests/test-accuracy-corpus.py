@@ -75,6 +75,15 @@ GOOD_FP = {
                               "3\tmeta.ethernet.ip.tcp.unknown\n",
     "acc_tls_sni_sharepoint.pcap": "2\tmeta.ethernet.ip.tcp.ssl.sharepoint\n"
                                    "3\tmeta.ethernet.ip.tcp.unknown\n",
+    # issue #568: ClientHellos split across TCP segments
+    "acc_tls_split_clienthello.pcap": "1\tmeta.ethernet.ip.tcp.ssl\n"
+                                      "2\tmeta.ethernet.ip.tcp.ssl.google\n"
+                                      "3\tmeta.ethernet.ip.tcp.unknown\n",
+    "acc_tls_split_reordered.pcap": "3\tmeta.ethernet.ip.tcp.ssl\n"
+                                    "2\tmeta.ethernet.ip.tcp.ssl.ms_teams\n"
+                                    "3\tmeta.ethernet.ip.tcp.unknown\n",
+    "acc_tls_split_truncated.pcap": "2\tmeta.ethernet.ip.tcp.ssl\n"
+                                    "3\tmeta.ethernet.ip.tcp.unknown\n",
     "acc_tls_negative.pcap": "2\tmeta.ethernet.ip.tcp.http\n"
                              "3\tmeta.ethernet.ip.tcp.unknown\n",
     "acc_quic_positive.pcap": "3\tmeta.ethernet.ip.udp.quic_ietf\n",
@@ -231,13 +240,15 @@ with Scratch() as s:
     check("per-family report is printed", "# per family" in out, out)
     attr = [ln for ln in out.splitlines()
             if ln.startswith("tls ") and "google" in ln]
-    check("SNI attribution reported separately", len(attr) == 1, out)
+    # acc_tls_sni_attribution and acc_tls_split_clienthello (issue #568)
+    check("SNI attribution reported separately", len(attr) == 2, out)
     tls_row = [ln.split() for ln in out.splitlines()
                if ln.startswith("tls ") and "|" in ln]
     check("attribution counted as wire, not other",
           # four positive TLS cases (plain, google, teams and sharepoint
-          # SNI) of two wire packets each (issue #566)
-          tls_row and tls_row[0][3] == "8" and tls_row[0][5] == "0", out)
+          # SNI) of two wire packets each (issue #566), plus the split
+          # hellos' 3 + 5 + 2 (issue #568)
+          tls_row and tls_row[0][3] == "18" and tls_row[0][5] == "0", out)
     attr_rows = [ln for ln in out.split("# heuristic", 1)[-1].splitlines()
                  if ln.startswith(("ngap ", "nas "))]
     check("nas_5g beneath ngap is not heuristic attribution",

@@ -73,6 +73,17 @@
 #                        beside it with the counted allocator and the lookup
 #                        visit counter armed (-DMMT_FTP_LIST_STATS).
 #
+# Issue #568 (F-BUG-302) adds the "tls-hello" fixture: the per-flow buffer
+# that collects a TLS ClientHello split over several TCP segments is refused
+# without allocating for an oversize record (> 2^14 bytes), sized once at
+# the record's declared length (at most the header plus 2^14 bytes), never
+# grows on a feed, is dropped on too many holes or stalls, and nothing is
+# left allocated after teardown — 1,000 seeded flows.
+#
+#   test_tls_hello.c — drives tls_hello_reasm_begin/feed/release over the
+#                      seeded flows; tls_client_hello.c and memory.c are
+#                      compiled beside it with the counted allocator.
+#
 # Issue #394 (F-PERF-001..004) consolidates the four fixtures into
 # reproducible adversarial resource budgets: every fixture reports its
 # workload scales, fixed seeds, accepted/refused work and counters as
@@ -103,8 +114,8 @@
 #
 # Usage: tests/resource_bounds/run_tests.sh [all | fixture ...]
 #   no arguments (or "all") runs every fixture; "ipv6-hash" / "tcp-memory" /
-#   "tcp-order" / "fragment-eviction" / "timeout-sweep" / "ftp-control"
-#   select one.
+#   "tcp-order" / "fragment-eviction" / "timeout-sweep" / "ftp-control" /
+#   "tls-hello" select one.
 set -euo pipefail
 # Issue #551: the budgets are fixed-seed counts, and the ipv6-hash fixture
 # reports its table seeds — keep the legacy fixed seed sequence (hash_utils.c).
@@ -113,7 +124,7 @@ export MMT_DETERMINISTIC_SEED=1
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-ALL_FIXTURES=(ipv6-hash tcp-memory tcp-order fragment-eviction timeout-sweep ftp-control)
+ALL_FIXTURES=(ipv6-hash tcp-memory tcp-order fragment-eviction timeout-sweep ftp-control tls-hello)
 FIXTURES=()
 for f in "$@"; do
     if [ "$f" = "all" ]; then FIXTURES+=("${ALL_FIXTURES[@]}"); else FIXTURES+=("$f"); fi
@@ -131,7 +142,8 @@ for f in "${FIXTURES[@]}"; do
         fragment-eviction) TESTS+=(frag_eviction) ;;
         timeout-sweep) TESTS+=(timeout_sweep) ;;
         ftp-control) TESTS+=(ftp_control) ;;
-        *) echo "✗ unknown resource_bounds fixture '$f' (known: all, ipv6-hash, tcp-memory, tcp-order, fragment-eviction, timeout-sweep, ftp-control)" >&2
+        tls-hello) TESTS+=(tls_hello) ;;
+        *) echo "✗ unknown resource_bounds fixture '$f' (known: all, ipv6-hash, tcp-memory, tcp-order, fragment-eviction, timeout-sweep, ftp-control, tls-hello)" >&2
            exit 2 ;;
     esac
     FIXTURE_IDS+=("$f")
@@ -294,6 +306,24 @@ build_ftp_control() {
         "${SCRIPT_DIR}/tcp_alloc_count_ftp.o" -lm
 }
 
+build_tls_hello() {
+    # The reassembly and mmt_malloc (memory.c) with the counted allocator of
+    # tcp-memory.
+    local count=(-Dmalloc=tcm_malloc -Dcalloc=tcm_calloc
+                 -Drealloc=tcm_realloc -Dfree=tcm_free)
+    "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${count[@]}" "${INCS[@]}" \
+        -c "${REPO_ROOT}/src/mmt_tcpip/lib/protocols/tls_client_hello.c" -o "${SCRIPT_DIR}/th_tls_client_hello.o"
+    "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${count[@]}" "${INCS[@]}" \
+        -c "${REPO_ROOT}/src/mmt_core/src/memory.c" -o "${SCRIPT_DIR}/memory_counted_tls.o"
+    "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${INCS[@]}" \
+        -c "${SCRIPT_DIR}/test_tls_hello.c" -o "${SCRIPT_DIR}/test_tls_hello.o"
+    "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 \
+        -c "${SCRIPT_DIR}/tcp_alloc_count.c" -o "${SCRIPT_DIR}/tcp_alloc_count_tls.o"
+    "${CC}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_tls_hello" \
+        "${SCRIPT_DIR}/test_tls_hello.o" "${SCRIPT_DIR}/th_tls_client_hello.o" \
+        "${SCRIPT_DIR}/memory_counted_tls.o" "${SCRIPT_DIR}/tcp_alloc_count_tls.o"
+}
+
 echo "  [1/3] compiling ..."
 for name in "${TESTS[@]}"; do
     "build_${name}"
@@ -434,4 +464,4 @@ python3 "${CHECKER}" --self-test > "${WORK}/selftest.log" 2>&1 || { cat "${WORK}
 tail -n 1 "${WORK}/selftest.log"
 
 [ "${rc}" -eq 0 ] || { echo "✗ resource bounds tests failed" >&2; exit 1; }
-echo "✓ resource bounds tests passed (issues #379, #380, #382, #383, #500, #563; budgets #394, gate #395)"
+echo "✓ resource bounds tests passed (issues #379, #380, #382, #383, #500, #563, #568; budgets #394, gate #395)"

@@ -576,6 +576,15 @@ class _AccFlow:
         self.ts_us += 1000
         self.ident += 1
 
+    def send_at(self, side, offset, payload, flags=0x18):
+        """Send `payload` at sequence number seq[side] + offset without
+        advancing seq[side] (reordered and retransmitted TCP segments); the
+        caller advances it once the whole stream is sent."""
+        base = self.seq[side]
+        self.seq[side] = base + offset
+        self.send(side, payload, flags)
+        self.seq[side] = base
+
     def handshake(self):
         self.send("cli", flags=0x02)   # SYN
         self.send("srv", flags=0x12)   # SYN|ACK
@@ -613,12 +622,17 @@ def gen_acc_dns_negative_pcap(path):
     print("wrote %s (accuracy: non-DNS text on UDP/53)" % path)
 
 
-def _tls_client_hello(sni):
+def _tls_client_hello(sni, pad=0):
+    """TLS 1.2 ClientHello record; `pad` > 0 puts a padding extension
+    (RFC 7685, type 21) of that many zero bytes BEFORE server_name, so a
+    split hello carries its SNI in a later segment (issue #568)."""
     body = (b"\x03\x03" + bytes(range(32))            # version, random
             + b"\x00"                                  # session id len 0
             + b"\x00\x04\x00\x2f\x00\x35"              # 2 TLS 1.2 suites
             + b"\x01\x00")                             # null compression
     ext = b""
+    if pad:
+        ext += struct.pack("!HH", 21, pad) + b"\x00" * pad
     if sni is not None:
         host = sni.encode()
         sni_list = b"\x00" + struct.pack("!H", len(host)) + host
@@ -670,6 +684,67 @@ def gen_acc_tls_sni_sharepoint_pcap(path):
     SharePoint Online tenant, which the hostname table labelled livemail
     until then."""
     _acc_tls_pcap(path, "contoso.sharepoint.com", "TLS with SharePoint SNI")
+
+
+# Issue #568 (F-BUG-302): a ClientHello past one MSS spans two or more TCP
+# segments. TLS_SPLIT_PAD makes the record 1,800 bytes, cut at the
+# Ethernet MSS of 1,460 like a browser hello carrying a post-quantum key
+# share; the SNI sits after the padding, in the last segment.
+TLS_SPLIT_PAD = 1700
+TLS_SPLIT_MSS = 1460
+
+
+def _tls_split_hello(sni):
+    hello = _tls_client_hello(sni, pad=TLS_SPLIT_PAD)
+    hello = _tls_client_hello(sni, pad=TLS_SPLIT_PAD + 1800 - len(hello))
+    assert len(hello) == 1800
+    return hello
+
+
+def gen_acc_tls_split_clienthello_pcap(path):
+    """TCP/443 handshake, a 1,800-byte ClientHello (SNI www.google.com)
+    split 1,460 + 340 across two segments, then the ServerHello."""
+    hello = _tls_split_hello("www.google.com")
+    f = pcap_open(path)
+    flow = _AccFlow(f, 6, 49323, 443)
+    flow.handshake()
+    flow.send("cli", hello[:TLS_SPLIT_MSS])
+    flow.send("cli", hello[TLS_SPLIT_MSS:])
+    flow.send("srv", _tls_server_hello())
+    f.close()
+    print("wrote %s (accuracy: TLS ClientHello split over two segments)" % path)
+
+
+def gen_acc_tls_split_reordered_pcap(path):
+    """Same 1,800-byte ClientHello (SNI teams.microsoft.com) in three
+    segments sent first, third, first again (a retransmission), second:
+    reordered and duplicated bytes are placed by sequence number."""
+    hello = _tls_split_hello("teams.microsoft.com")
+    cuts = (0, 600, 1200, len(hello))
+    seg = [hello[cuts[i]:cuts[i + 1]] for i in range(3)]
+    f = pcap_open(path)
+    flow = _AccFlow(f, 6, 49324, 443)
+    flow.handshake()
+    for i in (0, 2, 0, 1):
+        flow.send_at("cli", cuts[i], seg[i])
+    flow.seq["cli"] += len(hello)
+    flow.send("srv", _tls_server_hello())
+    f.close()
+    print("wrote %s (accuracy: TLS ClientHello reordered + retransmitted)" % path)
+
+
+def gen_acc_tls_split_truncated_pcap(path):
+    """Only the first 1,460 bytes of the 1,800-byte ClientHello (SNI
+    www.google.com) are ever sent; the server answers with plaintext. The
+    record start is TLS, but there is no SNI to read."""
+    hello = _tls_split_hello("www.google.com")
+    f = pcap_open(path)
+    flow = _AccFlow(f, 6, 49325, 443)
+    flow.handshake()
+    flow.send("cli", hello[:TLS_SPLIT_MSS])
+    flow.send("srv", b"HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n")
+    f.close()
+    print("wrote %s (accuracy: TLS ClientHello never completed)" % path)
 
 
 def gen_acc_tls_negative_pcap(path):
@@ -2010,6 +2085,9 @@ ACC_GENS = {
     "acc_tls_sni_attribution": gen_acc_tls_sni_attribution_pcap,
     "acc_tls_sni_teams": gen_acc_tls_sni_teams_pcap,
     "acc_tls_sni_sharepoint": gen_acc_tls_sni_sharepoint_pcap,
+    "acc_tls_split_clienthello": gen_acc_tls_split_clienthello_pcap,
+    "acc_tls_split_reordered": gen_acc_tls_split_reordered_pcap,
+    "acc_tls_split_truncated": gen_acc_tls_split_truncated_pcap,
     "acc_tls_negative": gen_acc_tls_negative_pcap,
     "acc_quic_positive": gen_acc_quic_positive_pcap,
     "acc_quic_v2_positive": gen_acc_quic_v2_positive_pcap,

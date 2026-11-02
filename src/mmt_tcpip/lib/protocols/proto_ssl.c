@@ -5,6 +5,7 @@
 
 #include "plugin_defs.h"
 #include "mmt_core.h"
+#include "tls_client_hello.h"
 
 #include <ctype.h>
 
@@ -43,19 +44,13 @@ static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
 static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 
-struct ssl_extension_struct {
-    uint16_t type;
-    uint16_t len;
-    uint8_t val;
-};
-
 /*
- * Issue #59: this header overlays the byte-aligned packet->payload; reading
- * type/len through a strict cast is a misaligned access (UB, aborts under
- * BUILD=asan -fsanitize=alignment). This view lowers the alignment requirement
- * to 1 for alignment-safe single-load reads. Mirrors PR #58 (#57).
+ * The ClientHello SNI the detectors hand to the hostname table and point
+ * packet->https_server_name at (packet-scoped: reset on every packet by
+ * mmt_classify_ssl()). One per thread; both the single-segment and the
+ * reassembled ClientHello paths write it (issue #568).
  */
-typedef struct ssl_extension_struct __attribute__((aligned(1))) mmt_una_ssl_extension_struct_t;
+static __thread char ssl_client_hello_sni[MMT_SSL_CERTIFICATE_BUF_LEN];
 
 /*
  * Read a big-endian (network-order) 16-bit value at byte offset `off`.
@@ -449,175 +444,108 @@ int getServerNameFromServerHello(ipacket_t * ipacket, char *buffer, int buffer_l
 }
 
 /*
- * Parse the RFC 6066 server_name (SNI) extension body per its wire structure:
- *   uint16 server_name_list length
- *   uint8  name_type    (0 = host_name)
- *   uint16 name_length
- *   byte[] name (name_length bytes)
- * `server_name` points at the extension body; `extension_len` is its exact
- * length, already verified by the caller to lie within the captured packet
- * buffer. Copies up to buffer_len-1 hostname bytes into `buffer` (NUL
- * terminated) and returns the copied length, or -1 if the body is too short for
- * the TLV header, the declared name_length overruns extension_len, or name_type
- * is not host_name (issue #103).
- *
- * This replaces the previous heuristic that scanned forward skipping bytes that
- * looked non-printable/punctuation/whitespace: for hostname lengths where the
- * server_name_list length or name_length field rendered as printable ASCII, the
- * scan stopped on that framing byte and extracted a corrupted hostname.
- * server_name is not guaranteed 2-byte aligned, so the u16 fields are read with
- * ssl_read_u16_be rather than a raw uint16_t* cast (cf. issue #59).
+ * Copy the host_name of a parsed ClientHello (tls_client_hello.c reads the RFC
+ * 6066 server_name entry per its wire structure: name_type host_name, a
+ * name_length that fits the extension — issue #103) into `buffer`: up to
+ * buffer_len-1 bytes, NUL terminated, cut at the first byte that cannot be in
+ * a host name, and point the packet's https_server_name at it. Returns 2
+ * (hostname found) or 0 (no SNI, or a malformed / non-host_name first entry).
  */
-static int ssl_parse_sni_hostname(const char *server_name, uint16_t extension_len,
-                                  char *buffer, int buffer_len) {
-    if (extension_len < 5) {
-        /* not enough room for server_name_list length (2B) + name_type (1B) +
-         * name_length (2B) */
-        return -1;
-    }
-    uint8_t name_type = (uint8_t) server_name[2];
-    uint16_t name_length = ssl_read_u16_be((const uint8_t *) server_name, 3);
-
-    if (name_type != 0 /* host_name, RFC 6066 s3 */) {
-        return -1;
-    }
-    if ((uint32_t) 5 + (uint32_t) name_length > (uint32_t) extension_len) {
-        return -1;
-    }
-
-    int len = mmt_ssl_min(name_length, buffer_len - 1);
-    strncpy(buffer, &server_name[5], len);
-    buffer[len] = '\0';
-    return len;
-}
-
-int getServerNameFromClientHello(ipacket_t * ipacket, char *buffer, int buffer_len) {
+static int ssl_sni_from_client_hello(ipacket_t * ipacket, const tls_client_hello_t * ch,
+                                     char *buffer, int buffer_len) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
-    uint16_t cap_total_len = packet->payload_packet_len;
+    if (ch->sni_status != TLS_SNI_OK) {
+        return 0;
+    }
+    int len = mmt_ssl_min(ch->sni_len, buffer_len - 1);
+    memcpy(buffer, ch->sni, len);
+    buffer[len] = '\0';
+    stripCertificateTrailer(buffer, buffer_len);
+    packet->https_server_name.ptr = (const uint8_t*)buffer;
+    packet->https_server_name.len = len;
+    packet->packet_id = ipacket->packet_id;
+    return (2 /* Client Certificate */);
+}
+
+/*
+ * SNI of a ClientHello whose record starts this packet's payload. The body is
+ * bounded by the record length and by the captured payload (F-BUG-064): the
+ * extension walk stops at the first extension that does not fit, and a
+ * declared extension block longer than the bytes present is walked as far
+ * as they go (tls_client_hello_parse_body()).
+ */
+int getServerNameFromClientHello(ipacket_t * ipacket, char *buffer, int buffer_len) {
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    /* record header (5) + handshake header (4) precede the ClientHello body */
+    const uint32_t body_offset = 9;
+
+    memset(buffer, 0, buffer_len);
+    if (packet->payload_packet_len <= body_offset) {
+        return 0;
+    }
     /* payload is byte-aligned: ssl_read_u16_be, not an ntohs(*(uint16_t*))
      * dereference — the latter is a misaligned load and trips UBSan
      * (issue #216). */
-    uint16_t total_len = ssl_read_u16_be(packet->payload, 3) + 5 /* SSL Header */;
-
-    memset(buffer, 0, buffer_len);
-
-    uint16_t offset, base_offset = 43;
-    if(base_offset >= cap_total_len) {
+    uint32_t end = (uint32_t) ssl_read_u16_be(packet->payload, 3) + 5 /* SSL Header */;
+    if (end > packet->payload_packet_len) {
+        end = packet->payload_packet_len;
+    }
+    if (end <= body_offset) {
         return 0;
     }
+    tls_client_hello_t ch;
+    tls_client_hello_parse_body(packet->payload + body_offset, end - body_offset, &ch);
+    return ssl_sni_from_client_hello(ipacket, &ch, buffer, buffer_len);
+}
 
-    uint8_t session_id_len = packet->payload[base_offset];
-
-    if((session_id_len + base_offset + 3) >= cap_total_len) {
-        return 0;
+/* The service a ClientHello SNI names: the hostname table, else the mail
+ * prefixes of the SSL-wrapped mail protocols. */
+static uint32_t ssl_detect_protocol_from_sni(ipacket_t * ipacket, char *certificate) {
+    /* Check the protocol by hostname */
+    uint32_t proto = PROTO_UNKNOWN;
+    if (ipacket->mmt_handler->hostname_classify == 1)
+    {
+        proto = get_proto_id_by_hostname(ipacket, certificate, strlen(certificate));
     }
-    uint16_t cypher_len = ssl_read_u16_be(packet->payload, session_id_len + base_offset + 1);
-
-    offset = base_offset + session_id_len + 1 + cypher_len + 2;
-
-    if (offset < total_len && offset < cap_total_len) {
-        uint8_t compression_len;
-        uint16_t extensions_len;
-
-        compression_len = packet->payload[offset];
-        offset += compression_len + 1;
-        if (offset + 2 /* 2 for the extensions len */ < total_len && offset + 2 < cap_total_len) {
-            extensions_len = ssl_read_u16_be(packet->payload, offset);
-            if ((extensions_len + offset) <= total_len && (extensions_len + offset) <= cap_total_len) {
-                /* 32-bit cursor: a declared extension_len must not be able to
-                 * wrap it back onto an already-visited header (F-BUG-064). */
-                uint32_t extension_offset = 2; /* Move to the first extension */
-
-                while (extension_offset + 4 < extensions_len) {
-                    if(offset + extension_offset > cap_total_len) {
-                        return 0;
-                    }
-
-                    mmt_una_ssl_extension_struct_t * ext = (mmt_una_ssl_extension_struct_t *) &packet->payload[offset + extension_offset];
-                    uint16_t extension_id, extension_len;
-
-                    extension_id = ntohs(ext->type);
-                    extension_len = ntohs(ext->len);
-                    extension_offset += 4;
-                    /* extension_offset counts from `offset`, i.e. it includes
-                     * the 2 bytes of the extensions_len field itself; the
-                     * extension body must end inside
-                     * [offset+2, offset+2+extensions_len). A declared length
-                     * that does not fit is malformed — stop the walk rather
-                     * than trusting it (F-BUG-064). The loop guard already
-                     * ensures extension_offset + 4 < extensions_len, so the
-                     * subtraction below cannot underflow. */
-                    if (extension_len > extensions_len + 2 - extension_offset) {
-                        break;
-                    }
-                    if (extension_id == 0) {
-                        if(offset + extension_offset + extension_len > cap_total_len) {
-                            return 0;
-                        }
-                        if(offset + extension_offset > cap_total_len) {
-                            return 0;
-                        }
-
-                        char *server_name = (char*) &packet->payload[offset + extension_offset];
-                        int len = ssl_parse_sni_hostname(server_name, extension_len, buffer, buffer_len);
-                        if (len < 0) {
-                            return 0; /* malformed / non-host_name SNI entry */
-                        }
-                        stripCertificateTrailer(buffer, buffer_len);
-                        packet->https_server_name.ptr = (const uint8_t*)buffer;
-                        packet->https_server_name.len = len;
-                        //printf("FROM INSIDE SERVER NAME is %s\n", buffer);
-                        packet->packet_id = ipacket->packet_id;
-                        return (2 /* Client Certificate */);
-                    }
-
-                    extension_offset += extension_len;
-                }
-            }
-        }
+    if (proto != PROTO_UNKNOWN) {
+        mmt_int_ssl_add_connection_by(ipacket, proto, MMT_CLASSIFICATION_METHOD_HOSTNAME);
+        return proto;
     }
-    return (0); /* Not found */
+    if(mmt_memcmp((void *) certificate, (void *) "pop.", 4) == 0) {
+        mmt_int_ssl_add_connection(ipacket, PROTO_POPS);
+        return PROTO_POPS;
+    } else if(mmt_memcmp((void *) certificate, (void *) "imap.", 5) == 0) {
+        mmt_int_ssl_add_connection(ipacket, PROTO_IMAPS);
+        return PROTO_IMAPS;
+    } else if(mmt_memcmp((void *) certificate, (void *) "pop3.", 5) == 0) {
+        mmt_int_ssl_add_connection(ipacket, PROTO_POPS);
+        return PROTO_POPS;
+    } else if(mmt_memcmp((void *) certificate, (void *) "smtp.", 5) == 0) {
+        mmt_int_ssl_add_connection(ipacket, PROTO_SMTPS);
+        return PROTO_SMTPS;
+    }
+    return PROTO_UNKNOWN;
 }
 
 uint32_t sslDetectProtocolFromClientHello(ipacket_t * ipacket) {
-    /* unused
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    */
-
-    static __thread char certificate[MMT_SSL_CERTIFICATE_BUF_LEN];
-    certificate[0] = '\0';
-    int rc = getServerNameFromClientHello(ipacket, certificate, sizeof (certificate));
-    //int rc = 0;
-
-    if (rc > 0) {
-        /* Check the protocol by hostname */
-        uint32_t proto = PROTO_UNKNOWN;
-        if (ipacket->mmt_handler->hostname_classify == 1)
-        {
-            proto = get_proto_id_by_hostname(ipacket, certificate, strlen(certificate));
-        }
-        //printf("From detect proto from certificate = %s ---- len = %i\n", certificate, strlen(certificate));
-        if (proto != PROTO_UNKNOWN) {
-            mmt_int_ssl_add_connection_by(ipacket, proto, MMT_CLASSIFICATION_METHOD_HOSTNAME);
-            return proto;
-        }else {
-            if(mmt_memcmp((void *) certificate, (void *) "pop.", 4) == 0) {
-                mmt_int_ssl_add_connection(ipacket, PROTO_POPS);
-                return PROTO_POPS;
-            } else if(mmt_memcmp((void *) certificate, (void *) "imap.", 5) == 0) {
-                mmt_int_ssl_add_connection(ipacket, PROTO_IMAPS);
-                return PROTO_IMAPS;
-            } else if(mmt_memcmp((void *) certificate, (void *) "pop3.", 5) == 0) {
-                mmt_int_ssl_add_connection(ipacket, PROTO_POPS);
-                return PROTO_POPS;
-            } else if(mmt_memcmp((void *) certificate, (void *) "smtp.", 5) == 0) {
-                mmt_int_ssl_add_connection(ipacket, PROTO_SMTPS);
-                return PROTO_SMTPS;
-            }
-        }
+    ssl_client_hello_sni[0] = '\0';
+    if (getServerNameFromClientHello(ipacket, ssl_client_hello_sni, sizeof (ssl_client_hello_sni)) > 0) {
+        return ssl_detect_protocol_from_sni(ipacket, ssl_client_hello_sni);
     }
+    return PROTO_UNKNOWN;
+}
 
+/* Same, for a ClientHello handshake message collected over several segments
+ * (issue #568): `msg` is the record body, the 4-byte handshake header first. */
+static uint32_t ssl_detect_protocol_from_client_hello_message(ipacket_t * ipacket,
+                                                              const uint8_t *msg, uint32_t len) {
+    tls_client_hello_t ch;
+    memset(ssl_client_hello_sni, 0, sizeof (ssl_client_hello_sni));
+    tls_client_hello_parse(msg, len, &ch);
+    if (ssl_sni_from_client_hello(ipacket, &ch, ssl_client_hello_sni, sizeof (ssl_client_hello_sni)) > 0) {
+        return ssl_detect_protocol_from_sni(ipacket, ssl_client_hello_sni);
+    }
     return PROTO_UNKNOWN;
 }
 
@@ -812,12 +740,92 @@ int check_gameforge_tcp(ipacket_t * ipacket) {
     return 0;
 }
 
+/*
+ * Issue #568 (F-BUG-302): a ClientHello split over several TCP segments — the
+ * norm since post-quantum key shares pushed browser hellos past one MSS.
+ *
+ * The record header and handshake header of a ClientHello: handshake type 1,
+ * client version 3.0-3.3, and a handshake length 4 bytes below the record
+ * length (one handshake message filling its record). The caller has checked
+ * the record type and version and that more than 12 bytes are present.
+ */
+static int ssl_is_client_hello_start(const struct mmt_tcpip_internal_packet_struct *packet) {
+    const uint8_t *p = packet->payload;
+    return p[5] == 1 /* Client Hello */ && p[9] == 0x03 && p[10] <= 0x03
+            && ssl_read_u16_be(p, 3) - ssl_read_u16_be(p, 7) == 4;
+}
+
+/*
+ * Start collecting a ClientHello record this segment holds only the start of:
+ * once per flow, only for a record within the 2^14-byte TLS plaintext limit
+ * (RFC 8446 §5.1) — a larger one is no valid record and is never buffered.
+ * The record body (the handshake message) is collected by TCP sequence
+ * number from the client direction. Returns 1 when collection started.
+ */
+static int ssl_begin_client_hello(ipacket_t * ipacket, struct mmt_internal_tcpip_session_struct *flow) {
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    uint16_t record_len = ssl_read_u16_be(packet->payload, 3);
+
+    if (flow->l4.tcp.ssl_hello_started || ipacket->session == NULL || packet->tcp == NULL
+            || record_len > TLS_HELLO_MAX_MESSAGE) {
+        return 0;
+    }
+    flow->l4.tcp.ssl_hello_started = 1;
+    uint32_t body_seq = ntohl(packet->tcp->seq) + 5 /* record header */;
+    if (tls_hello_reasm_begin(&flow->tls_hello, record_len, body_seq,
+                              ipacket->session->last_packet_direction) != TLS_REASM_PENDING) {
+        return 0;
+    }
+    tls_hello_reasm_feed(&flow->tls_hello, body_seq, packet->payload + 5,
+                         (size_t) packet->payload_packet_len - 5);
+    return 1;
+}
+
+/*
+ * A client segment of a ClientHello being collected: once the record is
+ * complete, its SNI is read like a single-segment one and the buffer is
+ * freed. Returns the classifier verdict, or -1 when the packet is not part of
+ * the collection (server direction) or the collection was dropped — gap past
+ * TLS_HELLO_MAX_RANGES, TLS_HELLO_MAX_STALLS segments without a new byte —
+ * and the packet takes the usual path.
+ */
+static int ssl_continue_client_hello(ipacket_t * ipacket, struct mmt_internal_tcpip_session_struct *flow) {
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+
+    if (ipacket->session == NULL || packet->tcp == NULL
+            || ipacket->session->last_packet_direction != tls_hello_reasm_tag(flow->tls_hello)) {
+        return -1;
+    }
+    tls_hello_reasm_status_t status = tls_hello_reasm_feed(&flow->tls_hello,
+            ntohl(packet->tcp->seq), packet->payload, packet->payload_packet_len);
+    if (status == TLS_REASM_DROPPED) {
+        return -1;
+    }
+    if (status == TLS_REASM_COMPLETE) {
+        uint32_t len = 0;
+        const uint8_t *msg = tls_hello_reasm_data(flow->tls_hello, &len);
+        mmt_int_ssl_add_connection(ipacket, PROTO_SSL);
+        ssl_detect_protocol_from_client_hello_message(ipacket, msg, len);
+        tls_hello_reasm_release(&flow->tls_hello);
+    }
+    return 1;
+}
+
 int mmt_classify_ssl(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
     packet->https_server_name.ptr = NULL;
     packet->https_server_name.len = 0;
+
+    /* Issue #568: the rest of a ClientHello whose record started earlier —
+     * before the heuristics below read its middle bytes as record headers. */
+    if (flow->tls_hello != NULL) {
+        int verdict = ssl_continue_client_hello(ipacket, flow);
+        if (verdict >= 0) {
+            return verdict;
+        }
+    }
 
 	if (check_whatsapp(ipacket) || check_viber_tcp(ipacket) || check_gameforge_tcp(ipacket)) {
 		return 0;
@@ -846,10 +854,8 @@ int mmt_classify_ssl(ipacket_t * ipacket, unsigned index) {
 
     if (packet->payload[0] == 0x16 && packet->payload[1] == 0x03
             && (packet->payload[2] == 0x00 || packet->payload[2] == 0x01 || packet->payload[2] == 0x02 || packet->payload[2] == 0x03)) {
-        if ((packet->payload_packet_len - ssl_read_u16_be(packet->payload, 3) == 5) /* Client Hello contains no other part in the message */
-                && (packet->payload[5] == 1 /* Client Hello */) && packet->payload[9] == 0x03
-                && (packet->payload[10] == 0x00 || packet->payload[10] == 0x01 || packet->payload[10] == 0x02 || packet->payload[10] == 0x03)
-                && (packet->payload_packet_len - ssl_read_u16_be(packet->payload, 7) == 9)) {
+        if (ssl_is_client_hello_start(packet)
+                && packet->payload_packet_len >= ssl_read_u16_be(packet->payload, 3) + 5) { /* the whole record is here (issue #568: what follows it is not parsed) */
             //This is a client hello! process it as so
             mmt_int_ssl_add_connection(ipacket, PROTO_SSL);
             //Now try to get the server from this packet
@@ -857,6 +863,11 @@ int mmt_classify_ssl(ipacket_t * ipacket, unsigned index) {
             if (emb_proto != PROTO_UNKNOWN) {
                 //mmt_int_ssl_add_connection(ipacket, emb_proto);
             }
+            return 1;
+        } else if (ssl_is_client_hello_start(packet) && ssl_begin_client_hello(ipacket, flow)) {
+            /* Issue #568: the record continues in later segments; its SNI is
+             * read once they complete it (ssl_continue_client_hello()). */
+            mmt_int_ssl_add_connection(ipacket, PROTO_SSL);
             return 1;
         } else if ((ssl_read_u16_be(packet->payload, 3) - ssl_read_u16_be(packet->payload, 7) == 4) /* Server Hello may contain different
 																									TLS records. compare the record length

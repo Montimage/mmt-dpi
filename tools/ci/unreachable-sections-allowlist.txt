@@ -112,3 +112,4 @@ src/mmt_tcpip/lib/protocols/tcp_segment.c tcp_seg_free test
 src/mmt_tcpip/lib/protocols/tcp_segment.c tcp_seg_free_list test
 src/mmt_tcpip/lib/protocols/tcp_segment.c tcp_seg_new_in_arena test
 src/mmt_tcpip/lib/protocols/tcp_segment.c tcp_seg_reassembly test
+src/mmt_tcpip/lib/protocols/tls_client_hello.c tls_hello_reasm_footprint test
