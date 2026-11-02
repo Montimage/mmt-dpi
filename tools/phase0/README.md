@@ -25,7 +25,7 @@ Phase 0 changes **no production code** — it adds tooling and captured baseline
 | `baseline/perf/throughput.txt` | Same-machine throughput + RSS reference for the `throughput_pcaps.txt` benchmark set (issue #251), per attribute mode with `ns_per_pkt` (issue #555). Written by `capture_perf.sh`. |
 | `ci/check_instructions.sh` | The `instruction-gate` CI gate (issue #555): callgrind instruction counts of the replay per attribute mode against `ci/baseline/instructions.txt`. `--self-test` checks its comparator on fixtures. |
 | `ci/baseline/instructions.txt` | Committed instruction-count baseline (aarch64 / Ubuntu 24.04 / GCC 13): per pcap and per mode, plus the per-mode instructions per packet the gate compares. |
-| `ci/accuracy/` | Reviewed accuracy corpus (F-TEST-003): DNS/TLS/QUIC/HTTP-2 (issue #389), S1AP/NGAP/NAS and unknown/malformed traffic (issue #390), and a positive and a negative case per classifier of the default TCP/UDP chains (issue #527). Synthetic captures plus `corpus.json`, which records per capture the family, the case (positive / negative / ambiguous, or `unknown` in the abstention family), the default-chain classifiers it exercises (`classifiers`), the expected per-packet handling, the sha256 of the reviewed bytes, redistribution provenance and review notes. `coverage-pending.txt` lists, each with its reason, the chain classifiers still owed a case pair; the list only shrinks (enforced against the base commit by `--base`). Checked by `tools/ci/tests/check-accuracy-corpus.py`; deliberately **not** in `ci/golden_pcaps.txt`, so the golden fingerprint's input set is unchanged. Regenerate with `gen_tcpip_pcap.py --out-dir ci/accuracy --accuracy` and `gen_mobile_pcap.py --out-dir ci/accuracy --accuracy`. |
+| `ci/accuracy/` | Reviewed accuracy corpus (F-TEST-003): DNS/TLS/QUIC/HTTP-2 (issue #389), S1AP/NGAP/NAS and unknown/malformed traffic (issue #390), a positive and a negative case per classifier of the default TCP/UDP chains (issue #527), and corroboration cases for the DICOM, gQUIC, STUN and S1AP/NGAP signatures (issue #564). Synthetic captures plus `corpus.json`, which records per capture the family, the case (positive / negative / ambiguous, or `unknown` in the abstention family), the default-chain classifiers it exercises (`classifiers`), the expected per-packet handling, the sha256 of the reviewed bytes, redistribution provenance and review notes. `coverage-pending.txt` lists, each with its reason, the chain classifiers still owed a case pair; the list only shrinks (enforced against the base commit by `--base`). Checked by `tools/ci/tests/check-accuracy-corpus.py`; deliberately **not** in `ci/golden_pcaps.txt`, so the golden fingerprint's input set is unchanged. Regenerate with `gen_tcpip_pcap.py --out-dir ci/accuracy --accuracy` and `gen_mobile_pcap.py --out-dir ci/accuracy --accuracy`. |
 | `ci/baseline/memory.txt` | The M4 library-RSS ceiling (KiB), enforced by `tests/run_memory_ceiling_test.sh` in the CI `harness-default` leg (issue #251). |
 | `baseline/valgrind.txt` | Valgrind leak baseline, or a SKIPPED note + exact command when valgrind is absent. |
 
@@ -180,12 +180,14 @@ What each gate asserts:
   reviewed expectation. The `unknown` family is the abstention family: its
   cases (opaque TCP/UDP, malformed S1AP/NGAP) state explicitly how many packets
   get no application verdict and which are still attributed —
-  `acc_malformed_s1ap` and `acc_malformed_ngap_ppid60` record known false
-  accepts (S1AP and NGAP are trusted on SCTP PPID 18 / 60 alone), so fixing
-  them means updating those expectations, as do `acc_unknown_mqtt_port`
-  (MQTT is accepted on TCP/1883 for any plain-text payload) and the
+  `acc_unknown_mqtt_port` records a known false accept (MQTT is accepted on
+  TCP/1883 for any plain-text payload), so fixing it means updating that
+  expectation, as did `acc_malformed_s1ap` and `acc_malformed_ngap_ppid60`
+  once S1AP and NGAP stopped being trusted on SCTP PPID 18 / 60 alone
+  (issue #564), and as do the
   `ambiguous` cases recording known false negatives
-  (`acc_bittorrent_dht_ambiguous`, `acc_mysql8_ambiguous`). Its report
+  (`acc_bittorrent_dht_ambiguous`, `acc_mysql8_ambiguous`,
+  `acc_dicom_midstream_ambiguous`). Its report
   gives per-family support, wire-protocol hits, abstentions and false accepts,
   an unknown/malformed abstention table, and lists heuristic application
   attribution (e.g. `ssl.google` derived from a TLS SNI) **separately** —

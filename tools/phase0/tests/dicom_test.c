@@ -245,6 +245,7 @@ static int build_assoc_edge(uint8_t *b, int variant) {
 }
 
 static unsigned g_sport = 40000;    /* unique sport per packet => fresh flow */
+static uint32_t g_seq;              /* TCP sequence number of the next frame */
 
 /* Eth/IPv4/TCP frame carrying a DICOM PDU. Returns the frame length.
  * dport is deliberately NOT DICOM's well-known port (104): port-based
@@ -264,6 +265,7 @@ static int build_frame(uint8_t *pkt, const uint8_t *pdu, int pdu_len) {
     off += 20;                                                     /* ipv4 */
     put_u16be(pkt + off, g_sport); put_u16be(pkt + off + 2, 22222);  /* unregistered */
     memset(pkt + off + 4, 0, 8);
+    put_u32be(pkt + off + 4, g_seq);
     pkt[off + 12] = 0x50; pkt[off + 13] = 0x18;
     put_u16be(pkt + off + 14, 0xffff);
     off += 20;                                                     /* tcp */
@@ -400,6 +402,32 @@ static int feed_pdu(const uint8_t *pdu, int pdu_len, int cut,
         const int *attr_plan, int plan_len) {
     uint8_t pkt[14 + 20 + 20 + 512];
     g_sport++;
+    g_seq = 0;
+    int flen = build_frame(pkt, pdu, pdu_len);
+    struct pkthdr hdr; memset(&hdr, 0, sizeof hdr);
+    hdr.len = flen;
+    hdr.caplen = (cut > 0 && cut < flen) ? cut : flen;
+    g_last_proto = -1; g_dicom_index = -1;
+    g_attr_plan = attr_plan; g_attr_plan_len = plan_len;
+    memset(g_extract_seen, 0, sizeof(g_extract_seen));
+    packet_process(g_handler, &hdr, pkt);
+    g_attr_plan = NULL; g_attr_plan_len = 0;
+    return g_last_proto;
+}
+
+/* Issue #564 (F-BUG-301): only an A-ASSOCIATE-RQ/AC opens a DICOM flow,
+ * so a P-DATA-TF, A-ASSOCIATE-RJ, A-RELEASE or A-ABORT is fed on a flow an
+ * A-ASSOCIATE-RQ opened first: the PDU then rides that session, as in a
+ * real association. Returns the PDU frame's classified tail proto (-1 when
+ * the A-ASSOCIATE-RQ itself did not classify). */
+static int feed_pdu_in_association(const uint8_t *pdu, int pdu_len, int cut,
+        const int *attr_plan, int plan_len) {
+    uint8_t assoc[512], pkt[14 + 20 + 20 + 512];
+    int alen = build_assoc(assoc, A_ASSOCIATE_RQ);
+    if (feed_pdu(assoc, alen, 0, NULL, 0) != PROTO_DICOM)
+        return -1;
+    /* same flow (g_sport kept), next sequence number */
+    g_seq = (uint32_t) alen;
     int flen = build_frame(pkt, pdu, pdu_len);
     struct pkthdr hdr; memset(&hdr, 0, sizeof hdr);
     hdr.len = flen;
@@ -478,8 +506,11 @@ static void test_full_path(void) {
     const uint8_t fixed_types[] = { A_ASSOCIATE_RJ, A_RELEASE_RQ, A_RELEASE_RP, A_ABORT };
     for (unsigned i = 0; i < sizeof(fixed_types); i++) {
         plen = build_fixed(pdu, fixed_types[i]);
-        tail = feed_pdu(pdu, plen, 0, ASSOC_ATTRS, (int)(sizeof(ASSOC_ATTRS)/sizeof(int)));
-        char d[64]; snprintf(d, sizeof(d), "type %u classified as DICOM", fixed_types[i]);
+        tail = feed_pdu(pdu, plen, 0, NULL, 0);
+        char d[64]; snprintf(d, sizeof(d), "type %u alone does not open a DICOM flow", fixed_types[i]);
+        CHECK(tail != PROTO_DICOM, d);
+        tail = feed_pdu_in_association(pdu, plen, 0, ASSOC_ATTRS, (int)(sizeof(ASSOC_ATTRS)/sizeof(int)));
+        snprintf(d, sizeof(d), "type %u classified as DICOM in an association", fixed_types[i]);
         CHECK(tail == PROTO_DICOM, d);
         snprintf(d, sizeof(d), "type %u pdu_type extracted = %u", fixed_types[i], fixed_types[i]);
         CHECK(g_extract_seen[1] && g_extract_u32[1] == fixed_types[i], d);
@@ -489,8 +520,10 @@ static void test_full_path(void) {
     uint8_t dimse[256];
     int dlen = build_dimse_command(dimse);
     plen = build_pdata(pdu, 0x03, dimse, dlen);   /* command + last fragment */
-    tail = feed_pdu(pdu, plen, 0, PDATA_ATTRS, (int)(sizeof(PDATA_ATTRS)/sizeof(int)));
-    CHECK(tail == PROTO_DICOM, "P-DATA-TF classified as DICOM");
+    tail = feed_pdu(pdu, plen, 0, NULL, 0);
+    CHECK(tail != PROTO_DICOM, "P-DATA-TF alone does not open a DICOM flow");
+    tail = feed_pdu_in_association(pdu, plen, 0, PDATA_ATTRS, (int)(sizeof(PDATA_ATTRS)/sizeof(int)));
+    CHECK(tail == PROTO_DICOM, "P-DATA-TF classified as DICOM in an association");
     CHECK(g_extract_seen[10] && g_extract_u32[10] == (uint32_t)(dlen + 2),
             "pdv_length extracted (aligned u32 read)");
     CHECK(g_extract_seen[11] && g_extract_u32[11] == 1, "pdv context id = 1");
@@ -507,7 +540,7 @@ static void test_full_path(void) {
     /* --- P-DATA-TF dataset PDV (flags bit0 clear -> patient name) ---- */
     dlen = build_dimse_dataset(dimse);
     plen = build_pdata(pdu, 0x02, dimse, dlen);
-    tail = feed_pdu(pdu, plen, 0, DS_ATTRS, 1);
+    tail = feed_pdu_in_association(pdu, plen, 0, DS_ATTRS, 1);
     CHECK(tail == PROTO_DICOM, "dataset P-DATA classified as DICOM");
     CHECK(g_extract_seen[15] && g_extract_str[15].len == 8
             && memcmp(g_extract_str[15].data, "DOE^JOHN", 8) == 0,
@@ -582,6 +615,12 @@ static void test_full_path(void) {
     pdu[0] = 0x09;                                    /* invalid type */
     tail = feed_pdu(pdu, plen, 0, NULL, 0);
     CHECK(tail != PROTO_DICOM, "pdu_type 9 not classified as DICOM");
+
+    /* issue #564: an A-ASSOCIATE-RQ whose protocol version is not 1 */
+    plen = build_assoc(pdu, A_ASSOCIATE_RQ);
+    pdu[7] = 0x02;
+    tail = feed_pdu(pdu, plen, 0, NULL, 0);
+    CHECK(tail != PROTO_DICOM, "A-ASSOCIATE-RQ with protocol version 2 not classified");
 
     mmt_close_handler(g_handler);
     g_handler = NULL;
@@ -838,6 +877,10 @@ static void stamp_assoc_rq(fixture_t *f, int off) {
     f->buf[off + 3] = 0x00;
     f->buf[off + 4] = 0x00;
     f->buf[off + 5] = 0x44;            /* pdu_len = 68 (BE) */
+    f->buf[off + 6] = 0x00;            /* protocol version 1 (BE): issue */
+    f->buf[off + 7] = 0x01;            /* #564 classifies only on it */
+    f->buf[off + 8] = 0x00;            /* reserved */
+    f->buf[off + 9] = 0x00;
 }
 
 static void test_210_offset_guards(void) {

@@ -1151,6 +1151,63 @@ static inline const asn_codec_ctx_t * _aper_codec_ctx( void ){
 #endif
 }
 
+/* true when the APER decode returned RC_OK and consumed exactly `length`
+ * bytes (aper_decode() reports bits) */
+static inline bool _aper_filled( asn_dec_rval_t rval, size_t length ){
+	return rval.code == RC_OK && (rval.consumed + 7) / 8 == length;
+}
+
+/*
+ * Issue #564 (F-BUG-314): classification-time proof that a buffer is an
+ * S1AP-PDU. Decodes and frees, logs nothing and learns nothing (unlike
+ * s1ap_decode(), which feeds the NAS ciphering table); mirrors
+ * try_decode_ngap() (ngap/ngap.c).
+ *
+ * The S1AP-PDU decode reads only the message header -- CHOICE, procedure
+ * code, criticality -- and keeps the value as an open type (ANY), so the
+ * value is decoded too: every S1AP message of the simplified schema is the
+ * same extensible SEQUENCE of one IE list (S1ap-IE: id, criticality, open
+ * value), which the InitialUEMessage descriptor decodes for any procedure
+ * code. Both decodes must fill their buffer exactly, so a random prefix
+ * that happens to parse cannot pass on its first bits.
+ */
+bool try_decode_s1ap( const uint8_t * payload, const uint32_t length ){
+	S1AP_PDU_t *pdu_p = NULL;
+	S1ap_InitialUEMessage_t *msg_p = NULL;
+	const ANY_t *value = NULL;
+	bool ok = false;
+
+	if( payload == NULL || length == 0 )
+		return false;
+	if( !_aper_filled( aper_decode( _aper_codec_ctx(), &asn_DEF_S1AP_PDU,
+			(void **)&pdu_p, payload, length, 0, 0 ), length ))
+		goto out;
+	switch( pdu_p->present ){
+	case S1AP_PDU_PR_initiatingMessage:
+		if( pdu_p->choice.initiatingMessage )
+			value = &pdu_p->choice.initiatingMessage->value;
+		break;
+	case S1AP_PDU_PR_successfulOutcome:
+		if( pdu_p->choice.successfulOutcome )
+			value = &pdu_p->choice.successfulOutcome->value;
+		break;
+	case S1AP_PDU_PR_unsuccessfulOutcome:
+		if( pdu_p->choice.unsuccessfulOutcome )
+			value = &pdu_p->choice.unsuccessfulOutcome->value;
+		break;
+	default:
+		break;
+	}
+	if( value == NULL || value->buf == NULL || value->size <= 0 )
+		goto out;
+	ok = _aper_filled( aper_decode( _aper_codec_ctx(), &asn_DEF_S1ap_InitialUEMessage,
+			(void **)&msg_p, value->buf, (size_t)value->size, 0, 0 ), (size_t)value->size );
+out:
+	ASN_STRUCT_FREE( asn_DEF_S1ap_InitialUEMessage, msg_p );
+	ASN_STRUCT_FREE( asn_DEF_S1AP_PDU, pdu_p );
+	return ok;
+}
+
 int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
 		const uint32_t length)
 {

@@ -19,6 +19,9 @@
  *    F-BUG-080: PPID 46 classifies Diameter only when the whole 20-byte
  *      Diameter header is captured; the port-based fallback must prove the
  *      header too.
+ *    F-BUG-314 (issue #564): PPID 18 / 60 classify S1AP / NGAP only when
+ *      the PDU decodes and fills the chunk's user data; PPID 0 falls back
+ *      to port 36412 / 38412, decode-confirmed too.
  *
  * Issue #507 (F-BUG-201): S1AP attribute extraction caches the parsed packet
  * per thread. The cache used to be keyed by packet_id alone — a per-handler
@@ -567,10 +570,29 @@ int main(int argc, char **argv) {
 			f, flen, ".ngap", NULL);
 	free(f);
 
-	/* control: PPID 60 classifies unconditionally */
+	/* issue #564 (F-BUG-314): PPID 60 is NGAP only when the decode
+	 * confirms it -- 4 stray bytes are not, a valid PDU still is */
+	memset(pl, 0, 4);
 	f = build_sctp_data_frame(&flen, 50000, 38412, 60, 16 + 4, pl, 4);
-	expect_path(h, "NGAP ppid=60 (control)", f, flen, ".ngap", NULL);
+	expect_path(h, "NGAP ppid=60 4 zero bytes", f, flen, ".sctp_data", ".ngap");
 	free(f);
+
+	f = build_sctp_data_frame(&flen, 50000, 38412, 60,
+			16 + sizeof(NGAP_WIRE), NGAP_WIRE, sizeof(NGAP_WIRE));
+	expect_path(h, "NGAP ppid=60 valid wire (control)", f, flen, ".ngap", NULL);
+	free(f);
+
+	/* the PDU must fill the chunk: one trailing byte is not NGAP */
+	{
+		uint8_t wire_tail[sizeof(NGAP_WIRE) + 1];
+		memcpy(wire_tail, NGAP_WIRE, sizeof(NGAP_WIRE));
+		wire_tail[sizeof(NGAP_WIRE)] = 0x00;
+		f = build_sctp_data_frame(&flen, 50000, 38412, 60,
+				16 + sizeof(wire_tail), wire_tail, sizeof(wire_tail));
+		expect_path(h, "NGAP ppid=60 valid wire + trailing byte",
+				f, flen, ".sctp_data", ".ngap");
+		free(f);
+	}
 
 	/* ---------------- F-BUG-080: Diameter header proof -------------- */
 
@@ -610,9 +632,69 @@ int main(int argc, char **argv) {
 
 	/* ---------------- controls and truncated chunk ------------------ */
 
-	/* control: PPID 18 classifies S1AP */
+	/* issue #564 (F-BUG-314): PPID 18 is S1AP only when an S1AP-PDU
+	 * decodes from the chunk's user data and fills it */
+	memset(pl, 0, 4);
 	f = build_sctp_data_frame(&flen, 36412, 36412, 18, 16 + 4, pl, 4);
-	expect_path(h, "S1AP ppid=18 (control)", f, flen, ".s1ap", NULL);
+	expect_path(h, "S1AP ppid=18 4 zero bytes", f, flen, ".sctp_data", ".s1ap");
+	free(f);
+
+	f = build_sctp_data_frame(&flen, 36412, 36412, 18,
+			16 + sizeof(S1SETUP_REQUEST), S1SETUP_REQUEST, sizeof(S1SETUP_REQUEST));
+	expect_path(h, "S1AP ppid=18 S1SetupRequest (control)", f, flen, ".s1ap", NULL);
+	free(f);
+
+	f = build_sctp_data_frame(&flen, 36412, 36412, 18,
+			16 + 3, S1SETUP_REQUEST, 3);
+	expect_path(h, "S1AP ppid=18 truncated to 3 bytes",
+			f, flen, ".sctp_data", ".s1ap");
+	free(f);
+
+	{
+		uint8_t s1_tail[sizeof(S1SETUP_REQUEST) + 1];
+		memcpy(s1_tail, S1SETUP_REQUEST, sizeof(S1SETUP_REQUEST));
+		s1_tail[sizeof(S1SETUP_REQUEST)] = 0x00;
+		f = build_sctp_data_frame(&flen, 36412, 36412, 18,
+				16 + sizeof(s1_tail), s1_tail, sizeof(s1_tail));
+		expect_path(h, "S1AP ppid=18 S1SetupRequest + trailing byte",
+				f, flen, ".sctp_data", ".s1ap");
+		free(f);
+	}
+
+	/* declared chunk length below the DATA header (F-BUG-079 shape) */
+	f = build_sctp_data_frame(&flen, 36412, 36412, 18,
+			8, S1SETUP_REQUEST, sizeof(S1SETUP_REQUEST));
+	expect_path(h, "S1AP ppid=18 declared_len=8 < header",
+			f, flen, ".sctp_data", ".s1ap");
+	free(f);
+
+	/* declared length beyond the capture: clamped, then the cut PDU fails */
+	f = build_sctp_data_frame(&flen, 36412, 36412, 18,
+			4000, S1SETUP_REQUEST, 8);
+	expect_path(h, "S1AP ppid=18 declared_len=4000 captured=8",
+			f, flen, ".sctp_data", ".s1ap");
+	free(f);
+
+	/* PPID 0: the port-36412 fallback, decode-confirmed, either direction */
+	f = build_sctp_data_frame(&flen, 50001, 36412, 0,
+			16 + sizeof(S1SETUP_REQUEST), S1SETUP_REQUEST, sizeof(S1SETUP_REQUEST));
+	expect_path(h, "S1AP ppid=0 dport=36412 S1SetupRequest", f, flen, ".s1ap", NULL);
+	free(f);
+
+	f = build_sctp_data_frame(&flen, 36412, 50001, 0,
+			16 + sizeof(S1SETUP_REQUEST), S1SETUP_REQUEST, sizeof(S1SETUP_REQUEST));
+	expect_path(h, "S1AP ppid=0 sport=36412 S1SetupRequest", f, flen, ".s1ap", NULL);
+	free(f);
+
+	f = build_sctp_data_frame(&flen, 50001, 36412, 0, 16 + 4, pl, 4);
+	expect_path(h, "S1AP ppid=0 dport=36412 4 zero bytes",
+			f, flen, ".sctp_data", ".s1ap");
+	free(f);
+
+	f = build_sctp_data_frame(&flen, 50001, 50002, 0,
+			16 + sizeof(S1SETUP_REQUEST), S1SETUP_REQUEST, sizeof(S1SETUP_REQUEST));
+	expect_path(h, "S1AP ppid=0 off port 36412 is not S1AP",
+			f, flen, ".sctp_data", ".s1ap");
 	free(f);
 
 	/* capture ends inside the DATA chunk header — no mobile classifier

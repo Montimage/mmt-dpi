@@ -292,53 +292,6 @@ uint32_t check_apple_facetime_signaling_udp(ipacket_t * ipacket) {
     return 0;
 }
 
-uint32_t check_stun_internal(ipacket_t * ipacket) {
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
-    struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
-    uint32_t proto = PROTO_UNKNOWN;
-
-    if (packet->iph /* IPv4 only */) {
-        /*
-         * 103.2.28.0/22
-         */
-        if (((ntohl(packet->iph->daddr) & 0xFFFFFC00 /* 255.255.252.0 */) == 0x67021C00 /* 103.2.28.0/22 */)) {
-            mmt_internal_add_connection_by(ipacket, PROTO_LINE, MMT_REAL_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP); /* #567: address-range match */
-            //In addition, report the port number of the source address
-            insert_to_local_protos(packet->udp->dest, PROTO_LINE, 17 /*UDP*/, dst);
-            insert_to_local_protos(packet->udp->source, PROTO_LINE, 17 /*UDP*/, src);
-            return PROTO_LINE;
-        }
-    }
-
-    /* Check the protocol by the IP addresses!!! (issue #567: the "ip" method) */
-    if (ipacket->mmt_handler->ip_address_classify == 1)
-    {
-        proto = get_proto_id_from_address(ipacket);
-    }
-    if (proto != PROTO_UNKNOWN) {
-        switch (proto) {
-            case PROTO_YAHOO:
-                mmt_internal_add_connection_by(ipacket, PROTO_YAHOOMSG, MMT_CORRELATED_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP);
-                insert_to_local_protos(packet->udp->dest, PROTO_YAHOOMSG, 17 /*UDP*/, dst);
-                insert_to_local_protos(packet->udp->source, PROTO_YAHOOMSG, 17 /*UDP*/, src);
-                return PROTO_YAHOOMSG;
-            case PROTO_GOOGLE:
-                mmt_internal_add_connection_by(ipacket, PROTO_GTALK, MMT_CORRELATED_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP);
-                insert_to_local_protos(packet->udp->dest, PROTO_GTALK, 17 /*UDP*/, dst);
-                insert_to_local_protos(packet->udp->source, PROTO_GTALK, 17 /*UDP*/, src);
-                return PROTO_GTALK;
-            default:
-                mmt_internal_add_connection_by(ipacket, proto, MMT_CORRELATED_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP);
-                insert_to_local_protos(packet->udp->dest, proto, 17 /*UDP*/, dst);
-                insert_to_local_protos(packet->udp->source, proto, 17 /*UDP*/, src);
-                return proto;
-        }
-    }
-
-    return PROTO_UNKNOWN;
-}
-
 int mmt_check_stun_udp(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     { /* guard evaluated by the classifier walk (issue #561) */
@@ -347,8 +300,12 @@ int mmt_check_stun_udp(ipacket_t * ipacket, unsigned index) {
 
 
         if (mmt_int_check_stun(ipacket, packet->payload, packet->payload_packet_len) == MMT_IS_STUN) {
+            /* Issue #564 (F-BUG-304): the flow stays STUN. No application
+             * is derived from the endpoint address any more -- neither the
+             * hard-coded LINE 103.2.28.0/22 nor the IP-range table's
+             * GOOGLE->GTALK / YAHOO->YAHOOMSG relabels -- because nothing
+             * in the STUN message names one. */
             mmt_int_stun_add_connection(ipacket);
-            check_stun_internal(ipacket);
             return 4;
         } else {
             if (check_viber_udp(ipacket) || check_tango_udp(ipacket) || check_apple_facetime_signaling_udp(ipacket)) {

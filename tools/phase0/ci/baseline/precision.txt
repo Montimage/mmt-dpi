@@ -47,7 +47,7 @@ abstain_tcp_0001.pcap        40       40       0        1.0000       -
 abstain_tcp_0002.pcap        40       40       0        1.0000       -
 abstain_tcp_0004.pcap        40       40       0        1.0000       -
 abstain_tcp_0008.pcap        40       40       0        1.0000       -
-abstain_tcp_0016.pcap        40       38       2        0.9500       dicom:2
+abstain_tcp_0016.pcap        40       40       0        1.0000       -
 abstain_tcp_0032.pcap        40       40       0        1.0000       -
 abstain_tcp_0064.pcap        40       40       0        1.0000       -
 abstain_tcp_0128.pcap        40       40       0        1.0000       -
@@ -67,5 +67,5 @@ abstain_udp_0256.pcap        16       16       0        1.0000       -
 abstain_udp_0512.pcap        16       16       0        1.0000       -
 abstain_udp_1024.pcap        16       16       0        1.0000       -
 abstain_udp_1400.pcap        16       16       0        1.0000       -
-abstention total=672    abstain=670    accepted=2      unknown_rate=0.9970
-abstention accepted_by_method=dpi:2
+abstention total=672    abstain=672    accepted=0      unknown_rate=1.0000
+abstention accepted_by_method=-

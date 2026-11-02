@@ -468,11 +468,78 @@ int main(void) {
 				"mmt_check_dicom_tcp classifies valid assoc");
 		free_pkt(t);
 	}
+	/* Issue #564 (F-BUG-301): only an A-ASSOCIATE-RQ/AC opens a DICOM
+	 * flow. A P-DATA-TF, A-ASSOCIATE-RJ, A-RELEASE or A-ABORT on a fresh
+	 * flow is refused (their sessions start at the A-ASSOCIATE), and so is
+	 * an A-ASSOCIATE whose reserved byte, protocol version or reserved
+	 * field after the version is off. */
 	{
 		struct test_pkt *t = pkt_with_pdu(pdata_pdu, pdata_pdu_len,
 				DICOM_OFF + pdata_pdu_len);
+		CHECK(mmt_check_dicom_tcp(&t->ipacket, 3) == 0,
+				"mmt_check_dicom_tcp refuses P-DATA without A-ASSOCIATE");
+		free_pkt(t);
+	}
+	{
+		const unsigned char fixed_types[] = { A_ASSOCIATE_RJ, A_RELEASE_RQ,
+				A_RELEASE_RP, A_ABORT };
+		for (unsigned i = 0; i < sizeof(fixed_types); i++) {
+			unsigned char fx[10] = { fixed_types[i], 0x00, 0x00, 0x00, 0x00,
+					0x04, 0, 0, 0, 0 };
+			struct test_pkt *t = pkt_with_pdu(fx, sizeof(fx),
+					DICOM_OFF + sizeof(fx));
+			CHECK(mmt_check_dicom((struct dicomhdr *) fx, sizeof(fx)) == 1
+					&& mmt_check_dicom_tcp(&t->ipacket, 3) == 0,
+					"well-formed fixed PDU does not open a DICOM flow");
+			free_pkt(t);
+		}
+	}
+	{
+		unsigned char ac[224];
+		build_assoc(ac, A_ASSOCIATE_AC);
+		struct test_pkt *t = pkt_with_pdu(ac, assoc_pdu_len,
+				DICOM_OFF + assoc_pdu_len);
 		CHECK(mmt_check_dicom_tcp(&t->ipacket, 3) == 1,
-				"mmt_check_dicom_tcp classifies P-DATA");
+				"mmt_check_dicom_tcp classifies A-ASSOCIATE-AC");
+		free_pkt(t);
+		build_assoc(ac, A_ASSOCIATE_RQ);
+		/* byte offset to corrupt, value, label */
+		const struct { unsigned off; unsigned char val; const char *what; } bad[] = {
+			{ 1, 0x01, "nonzero reserved byte after the PDU type" },
+			{ 6, 0x01, "protocol version high byte" },
+			{ 7, 0x02, "protocol version 2" },
+			{ 7, 0x00, "protocol version 0" },
+			{ 8, 0x80, "nonzero reserved field after the version" },
+			{ 9, 0x01, "nonzero reserved field after the version (low)" },
+		};
+		for (unsigned i = 0; i < sizeof(bad) / sizeof(bad[0]); i++) {
+			unsigned char rq[224];
+			char msg[96];
+			memcpy(rq, ac, sizeof(rq));
+			rq[bad[i].off] = bad[i].val;
+			t = pkt_with_pdu(rq, assoc_pdu_len, DICOM_OFF + assoc_pdu_len);
+			snprintf(msg, sizeof(msg), "A-ASSOCIATE-RQ refused: %s", bad[i].what);
+			CHECK(mmt_check_dicom_tcp(&t->ipacket, 3) == 0, msg);
+			free_pkt(t);
+		}
+		/* pdu_len outside [68, 65535] */
+		{
+			unsigned char rq[224];
+			memcpy(rq, ac, sizeof(rq));
+			rq[2] = 0; rq[3] = 0; rq[4] = 0; rq[5] = 67;
+			t = pkt_with_pdu(rq, assoc_pdu_len, DICOM_OFF + assoc_pdu_len);
+			CHECK(mmt_check_dicom_tcp(&t->ipacket, 3) == 0,
+					"A-ASSOCIATE-RQ refused: pdu_len 67");
+			free_pkt(t);
+		}
+		/* fewer than 10 captured PDU bytes: the version is not captured */
+		t = pkt_with_pdu(ac, assoc_pdu_len, DICOM_OFF + 9);
+		CHECK(mmt_check_dicom_tcp(&t->ipacket, 3) == 0,
+				"A-ASSOCIATE-RQ refused: 9 captured bytes");
+		free_pkt(t);
+		t = pkt_with_pdu(ac, assoc_pdu_len, DICOM_OFF + 10);
+		CHECK(mmt_check_dicom_tcp(&t->ipacket, 3) == 1,
+				"A-ASSOCIATE-RQ classified: 10 captured bytes");
 		free_pkt(t);
 	}
 	{

@@ -21,6 +21,7 @@ Usage:
     tools/phase0/gen_mobile_pcap.py --out-dir tools/phase0/ci/accuracy --accuracy
 """
 import argparse
+import hashlib
 import os
 import struct
 
@@ -341,9 +342,8 @@ def gen_ngap_pcap(path):
     f = pcap_open(path)
     src_ip = struct.pack("!I", 0x0A000001)
     dst_ip = struct.pack("!I", 0x0A000002)
-    # For PPID 60 the classifier accepts any payload without decoding.
-    # Use a small dummy that would also be rejected by try_decode_ngap if
-    # we went via the PPID-0 path.
+    # A small dummy try_decode_ngap rejects: since issue #564 PPID 60 is
+    # decode-confirmed like the PPID-0 path, so it is not classified NGAP.
     dummy = b"\x00\x01\x02\x03\x04\x05\x06\x07"
     chunk, _ = sctp_data_chunk(dummy, ppid=60, tsn=3000)
     sctp_common = sctp_common_header(38412, 38412)
@@ -351,8 +351,8 @@ def gen_ngap_pcap(path):
            + ip_header(src_ip, dst_ip, 132, len(sctp_common + chunk))
            + sctp_common + chunk)
     pcap_write(f, pkt, ts_us=0)
-    # PPID 60 with the S1AP vector as payload variant: still classified as NGAP
-    # via PPID, but payload is at least non-empty for the guard.
+    # PPID 60 with the S1AP vector as payload: an S1AP-PDU shares NGAP's
+    # header layout and also decodes as an NGAP-PDU, so it stays NGAP.
     chunk2, _ = sctp_data_chunk(S1AP_VECTOR, ppid=60, tsn=3001)
     pkt2 = (eth_header()
             + ip_header(src_ip, dst_ip, 132, len(sctp_common_header(38412, 38412, vtag=0x12345679) + chunk2))
@@ -628,12 +628,41 @@ def gen_acc_s1ap_positive_pcap(path):
                40412, PORT_S1AP)
 
 
-def gen_acc_s1ap_ambiguous_pcap(path):
-    """The same S1AP PDU with PPID 0 (unspecified) on port 36412: real S1AP,
-    but the SDK only trusts PPID 18."""
+def gen_acc_s1ap_ppid0_positive_pcap(path):
+    """The same S1AP PDU with PPID 0 (unspecified) on port 36412: the port
+    fallback, confirmed by the S1AP decode (issue #564; the bytes of the
+    former acc_s1ap_ambiguous case)."""
     _acc_write(path, "S1AP with unspecified PPID",
                [("ran", ACC_S1AP_INITIAL_UE_MESSAGE, PPID_UNSPECIFIED)],
                40413, PORT_S1AP)
+
+
+def _acc_opaque(label, n):
+    """n deterministic high-entropy bytes (SHA-256 counter stream), as in
+    gen_tcpip_pcap.py: payload that matches no grammar."""
+    out = b""
+    i = 0
+    while len(out) < n:
+        out += hashlib.sha256(b"mmt-accuracy-unknown:%s:%d"
+                              % (label.encode(), i)).digest()
+        i += 1
+    return out[:n]
+
+
+def gen_acc_s1ap_negative_pcap(path):
+    """Opaque bytes on PPID 18 / port 36412: the PPID alone used to claim
+    any payload as S1AP (F-BUG-314, issue #564)."""
+    _acc_write(path, "garbage on S1AP PPID 18",
+               [("ran", _acc_opaque("s1ap-ppid18", 64), PPID_S1AP)],
+               40424, PORT_S1AP)
+
+
+def gen_acc_ngap_ppid60_negative_pcap(path):
+    """Opaque bytes on PPID 60 / port 38412: the PPID alone used to claim
+    any payload as NGAP (F-BUG-314, issue #564)."""
+    _acc_write(path, "garbage on NGAP PPID 60",
+               [("ran", _acc_opaque("ngap-ppid60", 64), PPID_NGAP)],
+               40425, PORT_NGAP)
 
 
 def gen_acc_ngap_positive_pcap(path):
@@ -725,7 +754,9 @@ def gen_acc_malformed_ngap_ppid60_pcap(path):
 
 ACC_GENS = {
     "acc_s1ap_positive": gen_acc_s1ap_positive_pcap,
-    "acc_s1ap_ambiguous": gen_acc_s1ap_ambiguous_pcap,
+    "acc_s1ap_ppid0_positive": gen_acc_s1ap_ppid0_positive_pcap,
+    "acc_s1ap_negative": gen_acc_s1ap_negative_pcap,
+    "acc_ngap_ppid60_negative": gen_acc_ngap_ppid60_negative_pcap,
     "acc_ngap_positive": gen_acc_ngap_positive_pcap,
     "acc_ngap_negative": gen_acc_ngap_negative_pcap,
     "acc_s1ap_rel16_positive": gen_acc_s1ap_rel16_positive_pcap,

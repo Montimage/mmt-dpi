@@ -94,15 +94,16 @@ GOOD_FP = {
     "acc_http2_negative.pcap": "2\tmeta.ethernet.ip.tcp.http\n"
                                "3\tmeta.ethernet.ip.tcp.unknown\n",
     "acc_s1ap_positive.pcap": "1\tmeta.ethernet.ip.sctp.sctp_data.s1ap\n",
-    "acc_s1ap_ambiguous.pcap": "1\tmeta.ethernet.ip.sctp.sctp_data\n",
+    # issue #564: PPID 0 on port 36412 is S1AP once the decode confirms it
+    "acc_s1ap_ppid0_positive.pcap": "1\tmeta.ethernet.ip.sctp.sctp_data.s1ap\n",
     "acc_ngap_positive.pcap": "2\tmeta.ethernet.ip.sctp.sctp_data.ngap.nas_5g\n",
     "acc_ngap_negative.pcap": "1\tmeta.ethernet.ip.sctp.sctp_data\n",
     "acc_nas_positive.pcap": "2\tmeta.ethernet.ip.sctp.sctp_data.ngap.nas_5g\n",
     "acc_nas_negative.pcap": "1\tmeta.ethernet.ip.sctp.sctp_data.ngap\n",
     "acc_nas_eps_ambiguous.pcap": "1\tmeta.ethernet.ip.sctp.sctp_data.s1ap\n",
     "acc_malformed_ngap.pcap": "2\tmeta.ethernet.ip.sctp.sctp_data\n",
-    "acc_malformed_s1ap.pcap": "1\tmeta.ethernet.ip.sctp.sctp_data.s1ap\n",
-    "acc_malformed_ngap_ppid60.pcap": "1\tmeta.ethernet.ip.sctp.sctp_data.ngap\n",
+    "acc_malformed_s1ap.pcap": "1\tmeta.ethernet.ip.sctp.sctp_data\n",
+    "acc_malformed_ngap_ppid60.pcap": "1\tmeta.ethernet.ip.sctp.sctp_data\n",
     "acc_unknown_udp.pcap": "2\tmeta.ethernet.ip.udp.unknown\n",
     "acc_unknown_tcp.pcap": "5\tmeta.ethernet.ip.tcp.unknown\n",
 }
@@ -255,7 +256,7 @@ with Scratch() as s:
     check("nas_5g beneath ngap is not heuristic attribution",
           "# heuristic" in out and not attr_rows, out)
     unk = [ln.split() for ln in out.splitlines()
-           if ln.startswith("acc_malformed_s1ap.pcap") and "s1ap:1" in ln]
+           if ln.startswith("acc_unknown_mqtt_port.pcap") and "mqtt:2" in ln]
     check("unknown/malformed abstention table is printed",
           "# unknown / malformed" in out and len(unk) == 2, out)
 
@@ -269,8 +270,8 @@ with Scratch() as s:
         fams = {}
     check("--json reports the abstention family with its own keys",
           rc == 0 and fams.get("unknown") == {"unknown_cases": 6,
-                                              "packets": 16, "abstain": 12,
-                                              "accepted": 4}
+                                              "packets": 16, "abstain": 14,
+                                              "accepted": 2}
           and not any("unknown_cases" in v for k, v in fams.items()
                       if k != "unknown"), out)
 
@@ -382,10 +383,10 @@ with Scratch() as s:
           out)
 
 with Scratch() as s:
-    s.write_fp("acc_malformed_s1ap.pcap", "1\tmeta.ethernet.ip.sctp.sctp_data\n")
+    s.write_fp("acc_unknown_mqtt_port.pcap", "5\tmeta.ethernet.ip.tcp.unknown\n")
     rc, out = s.run()
     check("fixing a recorded false accept needs a reviewed expectation update",
-          rc == 1 and "acc_malformed_s1ap.pcap" in out, out)
+          rc == 1 and "acc_unknown_mqtt_port.pcap" in out, out)
 
 with Scratch() as s:
     s.write_fp("acc_nas_negative.pcap",

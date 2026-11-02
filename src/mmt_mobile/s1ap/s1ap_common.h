@@ -9,6 +9,8 @@
 #ifndef S1AP_COMMON_H_
 #define S1AP_COMMON_H_
 
+#include <stdbool.h>
+#include <stdint.h>
 #include "S1ap-Criticality.h"
 #include "S1ap-Presence.h"
 #include "S1ap-PrivateIE-ID.h"
@@ -450,6 +452,10 @@ typedef struct s1ap_message{
 	uint64_t timestamp;
 
 }s1ap_message_t;
+
+/* true when [payload, payload + length) decodes as an S1AP-PDU (APER);
+ * no side effect -- the classification-time check (issue #564) */
+bool try_decode_s1ap( const uint8_t * payload, const uint32_t length );
 
 int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
 		const uint32_t length);

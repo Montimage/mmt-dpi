@@ -1002,6 +1002,166 @@ def gen_acc_unknown_tcp_pcap(path):
     print("wrote %s (accuracy: opaque TCP on unassigned ports)" % path)
 
 
+# --- accuracy corpus: corroborated weak signatures (issue #564) -------------
+# DICOM, gQUIC and STUN used to claim a flow on evidence random bytes or an
+# address can supply. Each positive below is what the corroborated classifier
+# still claims; each negative is what it claimed before and must not now.
+
+DICOM_PORT = 11112   # IANA "dicom" (PS3.8 §9.1.2); 104 is the legacy one
+
+
+def _dicom_item(itype, value):
+    """PS3.8 §9.3.2.2 variable item: type, reserved, 16-bit length."""
+    return struct.pack("!BBH", itype, 0, len(value)) + value
+
+
+def _dicom_associate(pdu_type, called=b"ACC-SCP", calling=b"ACC-SCU"):
+    """A-ASSOCIATE-RQ (1) or -AC (2), PS3.8 §9.3.2/§9.3.3: protocol version
+    1, the AE titles, the Verification SOP class (1.2.840.10008.1.1) in
+    implicit VR little endian (1.2.840.10008.1.2), max PDU length 16384."""
+    # presentation context ID 1, then reserved bytes (RQ) or reserved,
+    # result 0 = acceptance, reserved (AC)
+    pctx = b"\x01\x00\x00\x00"
+    if pdu_type == 1:   # RQ proposes the abstract syntax
+        pctx += _dicom_item(0x30, b"1.2.840.10008.1.1")
+    pctx_item = _dicom_item(0x20 if pdu_type == 1 else 0x21,
+                            pctx + _dicom_item(0x40, b"1.2.840.10008.1.2"))
+    body = (struct.pack("!HH", 1, 0) + called.ljust(16) + calling.ljust(16)
+            + b"\x00" * 32
+            + _dicom_item(0x10, b"1.2.840.10008.3.1.1.1")
+            + pctx_item
+            + _dicom_item(0x50, _dicom_item(0x51, struct.pack("!I", 16384))
+                          + _dicom_item(0x52, b"1.2.826.0.1.3680043.2.1143")))
+    return struct.pack("!BBI", pdu_type, 0, len(body)) + body
+
+
+def _dicom_element(group, elem, value):
+    """PS3.5 §7.1.3 implicit VR little endian data element."""
+    return struct.pack("<HHI", group, elem, len(value)) + value
+
+
+def _dicom_echo(response):
+    """C-ECHO-RQ / -RSP command set (PS3.7 §9.3.5) in one command PDV of a
+    P-DATA-TF (PS3.8 §9.3.5): context 1, flags 0x03 (command, last)."""
+    elems = _dicom_element(0x0000, 0x0002, b"1.2.840.10008.1.1\x00")
+    if response:
+        elems += (_dicom_element(0x0000, 0x0100, struct.pack("<H", 0x8030))
+                  + _dicom_element(0x0000, 0x0120, struct.pack("<H", 1))
+                  + _dicom_element(0x0000, 0x0800, struct.pack("<H", 0x0101))
+                  + _dicom_element(0x0000, 0x0900, struct.pack("<H", 0)))
+    else:
+        elems += (_dicom_element(0x0000, 0x0100, struct.pack("<H", 0x0030))
+                  + _dicom_element(0x0000, 0x0110, struct.pack("<H", 1))
+                  + _dicom_element(0x0000, 0x0800, struct.pack("<H", 0x0101)))
+    cmd = _dicom_element(0x0000, 0x0000, struct.pack("<I", len(elems))) + elems
+    pdv = struct.pack("!I", len(cmd) + 2) + b"\x01\x03" + cmd
+    return struct.pack("!BBI", 0x04, 0, len(pdv)) + pdv
+
+
+def _dicom_release(pdu_type):
+    """A-RELEASE-RQ (5) / -RP (6): 4 reserved bytes (PS3.8 §9.3.6/§9.3.7)."""
+    return struct.pack("!BBII", pdu_type, 0, 4, 0)
+
+
+def gen_acc_dicom_positive_pcap(path):
+    """A whole DICOM association on TCP/11112: A-ASSOCIATE-RQ/AC, a C-ECHO
+    request and response in P-DATA-TF, A-RELEASE-RQ/RP. The A-ASSOCIATE-RQ
+    classifies the flow; the later PDUs ride that session."""
+    f = pcap_open(path)
+    flow = _AccFlow(f, 6, 49601, DICOM_PORT)
+    flow.handshake()
+    flow.send("cli", _dicom_associate(1))
+    flow.send("srv", _dicom_associate(2))
+    flow.send("cli", _dicom_echo(False))
+    flow.send("srv", _dicom_echo(True))
+    flow.send("cli", _dicom_release(5))
+    flow.send("srv", _dicom_release(6))
+    f.close()
+    print("wrote %s (accuracy: DICOM association with C-ECHO)" % path)
+
+
+def gen_acc_dicom_negative_pcap(path):
+    """Random bytes on unassigned TCP ports whose first six happen to read
+    as a P-DATA-TF header (type 0x04, length 64): one byte used to make an
+    unknown TCP flow DICOM (F-BUG-301)."""
+    f = pcap_open(path)
+    flow = _AccFlow(f, 6, 49602, 47805)
+    flow.handshake()
+    flow.send("cli", b"\x04\x00" + struct.pack("!I", 64)
+              + _acc_opaque("dicom-neg-cli", 64))
+    flow.send("srv", _acc_opaque("dicom-neg-srv", 48))
+    f.close()
+    print("wrote %s (accuracy: P-DATA-TF-shaped random TCP payload)" % path)
+
+
+def gen_acc_dicom_midstream_ambiguous_pcap(path):
+    """A C-ECHO exchange of an association whose A-ASSOCIATE the capture
+    missed: genuine DICOM, but without the association the SDK abstains."""
+    f = pcap_open(path)
+    flow = _AccFlow(f, 6, 49603, DICOM_PORT)
+    flow.handshake()
+    flow.send("cli", _dicom_echo(False))
+    flow.send("srv", _dicom_echo(True))
+    f.close()
+    print("wrote %s (accuracy: DICOM P-DATA without A-ASSOCIATE)" % path)
+
+
+def _gquic_public_header(version, cid, pkt_num):
+    """Google QUIC public header (gQUIC Q025 wire spec): public flags with
+    an 8-byte connection ID (0x0C) and, client side, the version (0x01);
+    then a 1-byte packet number."""
+    flags = 0x0C | (0x01 if version else 0x00)
+    return bytes([flags]) + cid + (version or b"") + bytes([pkt_num])
+
+
+def gen_acc_gquic_positive_pcap(path):
+    """gQUIC Q025 on UDP/443: the client's first packet carries the version
+    in its public header; the server's reply has none and rides the flow."""
+    f = pcap_open(path)
+    flow = _AccFlow(f, 17, 51830, 443)
+    cid = bytes(range(0xE0, 0xE8))
+    chlo = (b"CHLO" + struct.pack("<HH", 2, 0)
+            + b"SNI\x00" + struct.pack("<I", 16)
+            + b"VER\x00" + struct.pack("<I", 20)
+            + b"accuracy.example" + b"Q025")
+    stream = bytes([0xA0, 0x01]) + struct.pack("<H", len(chlo)) + chlo
+    flow.send("cli", _gquic_public_header(b"Q025", cid, 1)
+              + b"\x00" * 12 + stream)                # 12-byte message hash
+    flow.send("srv", _gquic_public_header(None, cid, 1)
+              + b"\x00" * 12 + bytes([0xA0, 0x01]) + struct.pack("<H", 4)
+              + b"REJ\x00")
+    f.close()
+    print("wrote %s (accuracy: gQUIC Q025 CHLO + reply)" % path)
+
+
+def gen_acc_quic_negative_pcap(path):
+    """Opaque datagrams on UDP/443 whose first byte has the 0xC3 bits clear:
+    the version-less gQUIC branch took about one random datagram in sixteen
+    this way (F-BUG-303)."""
+    f = pcap_open(path)
+    flow = _AccFlow(f, 17, 51831, 443)
+    flow.send("cli", b"\x08" + _acc_opaque("quic-neg-cli", 63))
+    flow.send("srv", b"\x00\x01" + _acc_opaque("quic-neg-srv", 46))
+    f.close()
+    print("wrote %s (accuracy: non-QUIC datagrams on UDP/443)" % path)
+
+
+GOOGLE_STUN = struct.pack("!I", 0x4A7DFA81)   # 74.125.250.129, stun.l.google.com
+
+
+def gen_acc_stun_google_positive_pcap(path):
+    """A STUN Binding exchange with Google's public STUN server address on
+    UDP/19302: the flow is STUN, and nothing in it names an application --
+    the address must not relabel it gtalk (F-BUG-304)."""
+    f = pcap_open(path)
+    flow = _AccFlow(f, 17, 49451, 19302, server=GOOGLE_STUN)
+    txid = bytes(range(0x40, 0x4C))
+    flow.send("cli", _stun(0x0001, txid))
+    flow.send("srv", _stun(0x0101, txid, _stun_xor_mapped()))
+    f.close()
+    print("wrote %s (accuracy: STUN Binding to a Google address)" % path)
+
+
 # --- accuracy corpus: default-chain classifiers (issue #527) ---------------
 # One positive and one negative capture per classifier family of the default
 # TCP/UDP chains (src/mmt_tcpip/lib/inter_proto_classif_list.def). Each case is
@@ -2200,6 +2360,12 @@ ACC_GENS = {
     "acc_http2_negative": gen_acc_http2_negative_pcap,
     "acc_unknown_udp": gen_acc_unknown_udp_pcap,
     "acc_unknown_tcp": gen_acc_unknown_tcp_pcap,
+    "acc_dicom_positive": gen_acc_dicom_positive_pcap,
+    "acc_dicom_negative": gen_acc_dicom_negative_pcap,
+    "acc_dicom_midstream_ambiguous": gen_acc_dicom_midstream_ambiguous_pcap,
+    "acc_gquic_positive": gen_acc_gquic_positive_pcap,
+    "acc_quic_negative": gen_acc_quic_negative_pcap,
+    "acc_stun_google_positive": gen_acc_stun_google_positive_pcap,
 }
 ACC_GENS.update((name, _acc_classifier_gen(name))
                 for name in ACC_CLASSIFIER_FLOWS)

@@ -520,6 +520,31 @@ int mmt_check_dicom(struct dicomhdr * header, unsigned int packet_len) {
 		mmt_check_dicom_payload(header, packet_len);
 }
 
+/*
+ * Issue #564 (F-BUG-301): the TCP classifier claims a flow only on the PDU
+ * that opens a DICOM association, an A-ASSOCIATE-RQ or -AC (PS3.8 §9.3.2,
+ * §9.3.3): PDU type 1 or 2, a zero reserved byte, a PDU length inside the
+ * window mmt_check_dicom_payload() allows, protocol version 0x0001 and a
+ * zero reserved field after it. mmt_check_dicom() alone accepts any of the
+ * seven PDU types, so one P-DATA-TF-shaped first byte (0x04 plus a length
+ * >= 6) made random TCP payload DICOM. The later PDUs of an association
+ * ride the session the A-ASSOCIATE classified; a capture that starts
+ * mid-association is not claimed.
+ */
+static int _is_dicom_association_open(const uint8_t *pdu, unsigned int packet_len) {
+	const struct dicomhdr *header = (const struct dicomhdr *) pdu;
+
+	if (header->pdu_type != A_ASSOCIATE_RQ && header->pdu_type != A_ASSOCIATE_AC)
+		return 0;
+	/* also proves the 10 bytes read below are captured:
+	 * type(1) reserved(1) length(4) version(2) reserved(2) */
+	if (!mmt_check_dicom_payload((struct dicomhdr *) pdu, packet_len))
+		return 0;
+	return pdu[1] == 0x00
+			&& pdu[6] == 0x00 && pdu[7] == 0x01
+			&& pdu[8] == 0x00 && pdu[9] == 0x00;
+}
+
 int mmt_check_dicom_tcp(ipacket_t * ipacket, unsigned index) {
 	int l3_offset = get_packet_offset_at_index(ipacket, index);
     int dicom_offset = get_packet_offset_at_index(ipacket, index + 1);
@@ -529,8 +554,7 @@ int mmt_check_dicom_tcp(ipacket_t * ipacket, unsigned index) {
 	if( dicom_offset < 0 || (size_t)dicom_offset + sizeof(struct dicomhdr) > ipacket->p_hdr->caplen )
 		return 0;
 	unsigned int packet_len = ipacket->p_hdr->caplen - dicom_offset;
-	struct dicomhdr * dicom_header = (struct dicomhdr *)&ipacket->data[dicom_offset];
-	if (!mmt_check_dicom(dicom_header, packet_len))
+	if (!_is_dicom_association_open(&ipacket->data[dicom_offset], packet_len))
 		return 0;
 
 	classified_proto_t dicom_proto = dicom_stack_classification(ipacket);

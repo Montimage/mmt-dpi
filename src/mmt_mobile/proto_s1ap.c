@@ -727,7 +727,34 @@ static attribute_metadata_t s1ap_attributes_metadata[] = {
 };
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 
+/* SCTP port IANA assigns to S1AP (TS 36.412 §7) */
+#define S1AP_SCTP_PORT 36412
+
+/* true when either SCTP endpoint uses the S1AP port */
+static bool _is_s1ap_sctp_port( const ipacket_t *ipacket ){
+	int sctp_index = get_protocol_index_by_id( ipacket, PROTO_SCTP );
+	if( sctp_index == -1 )
+		return false;
+	int sctp_offset = get_packet_offset_at_index( ipacket, sctp_index );
+	if( sctp_offset < 0 || (size_t)sctp_offset + sizeof(mmt_una_sctphdr_t) > ipacket->p_hdr->caplen )
+		return false;
+	const mmt_una_sctphdr_t *sctp_hdr = (const mmt_una_sctphdr_t *) &ipacket->data[ sctp_offset ];
+	/* byte-aligned capture buffer: read the ports with memcpy (issue #59) */
+	uint16_t sport, dport;
+	memcpy( &sport, &sctp_hdr->source, sizeof(sport) );
+	memcpy( &dport, &sctp_hdr->dest, sizeof(dport) );
+	return ntohs(sport) == S1AP_SCTP_PORT || ntohs(dport) == S1AP_SCTP_PORT;
+}
+
+/*
+ * Issue #564 (F-BUG-314): a DATA chunk is S1AP only when its user data
+ * decodes as an S1AP-PDU -- on PPID 18, or on PPID 0 (unspecified) when an
+ * endpoint uses port 36412. The PPID alone used to claim any payload. The
+ * decoded extent is the chunk's declared length less its 16-byte header,
+ * clamped to the captured bytes (F-BUG-079, as proto_ngap.c).
+ */
 static int _classify_s1ap_from_sctp_data( ipacket_t * ipacket, unsigned index ){
+	const int SCTP_DATA_HEADER_SIZE = sizeof( struct sctp_datahdr );
 	int offset = get_packet_offset_at_index(ipacket, index);
 	//not enough room
 	if( offset < 0 || (size_t)offset + sizeof(struct sctp_datahdr) > ipacket->p_hdr->caplen )
@@ -738,18 +765,34 @@ static int _classify_s1ap_from_sctp_data( ipacket_t * ipacket, unsigned index ){
 	const mmt_una_sctp_datahdr_t *hdr = (const mmt_una_sctp_datahdr_t *) &ipacket->data[ offset ];
 	switch( ntohl( hdr->ppid )){
 	case 18: //S1AP
-		retval.proto_id = PROTO_S1AP;
-		retval.offset = sizeof( struct sctp_datahdr );
-		retval.status = Classified;
-
-		//fix length
-		ipacket->proto_hierarchy->len =      (index + 1) + 1;
-		return set_classified_proto(ipacket, (index + 1), retval);
+		break;
+	case 0: //not specified: the S1AP port, then the decode, must vouch for it
+		if( !_is_s1ap_sctp_port( ipacket ))
+			return 0;
+		break;
 	default:
 		return 0;
 	}
 
-	return 0;
+	uint16_t hdr_len = ntohs( hdr->length );
+	if( hdr_len <= SCTP_DATA_HEADER_SIZE )
+		return 0;
+	size_t s1ap_offset = (size_t)offset + SCTP_DATA_HEADER_SIZE;
+	uint32_t s1ap_length = hdr_len - SCTP_DATA_HEADER_SIZE;
+	if( s1ap_offset >= ipacket->p_hdr->caplen )
+		return 0;
+	if( s1ap_offset + s1ap_length > ipacket->p_hdr->caplen )
+		s1ap_length = (uint32_t)(ipacket->p_hdr->caplen - s1ap_offset);
+	if( !try_decode_s1ap( &ipacket->data[ s1ap_offset ], s1ap_length ))
+		return 0;
+
+	retval.proto_id = PROTO_S1AP;
+	retval.offset = SCTP_DATA_HEADER_SIZE;
+	retval.status = Classified;
+
+	//fix length
+	ipacket->proto_hierarchy->len =      (index + 1) + 1;
+	return set_classified_proto(ipacket, (index + 1), retval);
 }
 
 

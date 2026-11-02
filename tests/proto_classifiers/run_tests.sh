@@ -13,6 +13,9 @@
 # fault-injecting allocator of ftp_alloc_fail.c (-Dmalloc=fda_malloc ...),
 # objects in this directory so their .gcda outlive the script (issue #524).
 #
+# test_stun_attribution (issue #564) pins that the STUN classifier keeps a
+# STUN flow STUN: no LINE /22 or IP-range-table relabel from the address.
+#
 # Each proto source is compiled into its own test binary (the per-protocol
 # file-scope classifier bitmasks must not alias), so every exercised line is
 # attributed to the real file in the coverage tracefile; the mmt_core helpers
@@ -65,7 +68,8 @@ build_ftp_dialogue() {
 }
 
 rc=0
-for name in dcerpc_offset ptp_classify syslog_format diameter_flags ftp_dialogue; do
+for name in dcerpc_offset ptp_classify syslog_format diameter_flags ftp_dialogue \
+        stun_attribution; do
     src="${SCRIPT_DIR}/test_${name}.c"
     bin="${SCRIPT_DIR}/test_${name}"
     echo "  compiling test_${name} ..."
@@ -89,4 +93,4 @@ if [ "${rc}" -ne 0 ]; then
     echo "✗ classifier crafted-input tests failed" >&2
     exit 1
 fi
-echo "✓ classifier crafted-input tests passed (issues #243, #563)"
+echo "✓ classifier crafted-input tests passed (issues #243, #563, #564)"

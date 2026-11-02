@@ -57,12 +57,11 @@ bool try_decode_ngap( const uint8_t * payload, const uint32_t length ){
 			length,
 			0,
 			0);
-	if( dec_ret.code != RC_OK ){
-		ASN_STRUCT_FREE( asn_DEF_NGAP_NGAP_PDU, pdu_p );
-		return false;
-	}
 	ASN_STRUCT_FREE( asn_DEF_NGAP_NGAP_PDU, pdu_p );
-	return true;
+	/* Issue #564 (F-BUG-314): the PDU must fill the buffer -- aper_decode()
+	 * reports consumed bits -- so another APER protocol (an S1AP-PDU shares
+	 * the CHOICE header layout) or a random prefix is not taken for NGAP. */
+	return dec_ret.code == RC_OK && (dec_ret.consumed + 7) / 8 == length;
 }
 
 static inline void _get_set_amf_ue_ngap_id( action_t act, ngap_message_t *msg, NGAP_AMF_UE_NGAP_ID_t * id ){

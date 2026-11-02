@@ -178,6 +178,39 @@ static void test_version_read_in_bounds(void)
     free(b);
 }
 
+/* ---- no version, no verdict (issue #564, F-BUG-303) ----
+ *
+ * The version-less branch claimed any datagram of at least 15 bytes whose
+ * first byte has the 0xC3 bits clear (or reads 0x00 followed by a non-zero
+ * byte) -- about one random UDP/80 or UDP/443 datagram in sixteen, ahead of
+ * STUN and IETF QUIC. Only a public header carrying a known gQUIC version
+ * claims the flow now. */
+static void test_version_less_rejected(void)
+{
+    printf("[#564] QUIC public header without a version is not claimed\n");
+
+    const uint8_t first[][2] = {
+        {0x00, 0x01}, {0x0C, 0x00}, {0x3C, 0x5A}, {0x08, 0xFF}, {0x30, 0x00},
+    };
+    const int lens[] = {15, 32, 64};
+
+    for (size_t f = 0; f < sizeof(first) / sizeof(first[0]); f++) {
+        for (size_t l = 0; l < sizeof(lens) / sizeof(lens[0]); l++) {
+            uint8_t *b = make_buf(NULL, (size_t)lens[l]);
+            char msg[96];
+            for (int i = 2; i < lens[l]; i++)
+                b[i] = (uint8_t)(0x5A ^ (i * 37));
+            b[0] = first[f][0];
+            b[1] = first[f][1];
+            snprintf(msg, sizeof(msg),
+                     "flags 0x%02x 0x%02x, payload_len %d: not QUIC",
+                     first[f][0], first[f][1], lens[l]);
+            CHECK(run_check_quic(b, lens[l]) == 0, msg);
+            free(b);
+        }
+    }
+}
+
 int main(void)
 {
     printf("=== QUIC minimum-length gating test (issue #6: H3) ===\n");
@@ -195,6 +228,7 @@ int main(void)
           "init_proto_quic_struct() registers PROTO_QUIC through the static copy");
     test_min_len_gate();
     test_version_read_in_bounds();
+    test_version_less_rejected();
     printf("=== %d checks, %d failure(s) ===\n", g_checks, g_failures);
     return g_failures == 0 ? 0 : 1;
 }

@@ -8,36 +8,25 @@
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
-#define QUIC_NO_V_RES_RSV 0xC3  // 1100 0011
-
 #define QUIC_CID_MASK 0x0C      // 0000 1100
 #define QUIC_VER_MASK 0x01      // 0000 0001
-#define QUIC_SEQ_MASK 0x30      // 0011 0000
 
 #define CID_LEN_8 0x0C          // 0000 1100
 #define CID_LEN_4 0x08          // 0000 1000
 #define CID_LEN_1 0x04          // 0000 0100
 #define CID_LEN_0 0x00          // 0000 0000
 
-#define SEQ_LEN_6 0x30          // 0011 0000
-#define SEQ_LEN_4 0x20          // 0010 0000
-#define SEQ_LEN_2 0x10          // 0001 0000
-#define SEQ_LEN_1 0x00          // 0000 0000
-
-#define SEQ_CONV(ARR) (ARR[0] | ARR[1] | ARR[2] | ARR[3] | ARR[4] | ARR[5] << 8)
-
 /*
  * Minimum number of payload bytes the QUIC public-header classifier may touch.
  *
  * The detection path reads, in the worst case:
- *   - payload[0] and payload[1]                 (public flags + first byte)
- *   - sequence():  connect_id() returns up to 9 (CID_LEN_8 + 1), then the SEQ
- *                  loop reads payload[cid_offs + i] for i in 0..seq_lens-1 with
- *                  seq_lens up to 6 -> highest index 9 + 5 = 14 (15 bytes).
+ *   - payload[0]                                (public flags)
  *   - version path: connect_id() up to 9, then payload[ver_offs..ver_offs+3]
  *                   -> highest index 9 + 3 = 12 (13 bytes).
  *
- * 15 bytes covers every access. The UDP-with-payload selection mask only
+ * 15 bytes covers every access (it was sized for the version-less
+ * sequence-number walk issue #564 removed, and is kept). The
+ * UDP-with-payload selection mask only
  * guarantees a single payload byte, so without this gate a 1..14 byte UDP
  * datagram on port 80/443 over-reads past the captured payload (issue #6, H3).
  */
@@ -74,46 +63,6 @@ static int connect_id(const unsigned char pflags)
         return cid_len + 1;
 }
 
-static int sequence(const unsigned char *payload, int payload_len)
-{
-    unsigned char conv[6] = {0};
-    u_int seq_value = -1;
-    int seq_lens;
-    int cid_offs;
-    int i;
-
-        // Need at least the public-flags byte to derive SEQ/CID lengths.
-        if (payload_len < 1)
-            return -1;
-
-        // Search SEQ bytes length.
-        switch (payload[0] & QUIC_SEQ_MASK)
-        {
-           case SEQ_LEN_6: seq_lens = 6; break;
-           case SEQ_LEN_4: seq_lens = 4; break;
-           case SEQ_LEN_2: seq_lens = 2; break;
-           case SEQ_LEN_1: seq_lens = 1; break;
-           default:
-               return -1;
-        }
-        // Retrieve SEQ offset.
-        cid_offs = connect_id(payload[0]);
-
-        // Re-check the remaining length before walking the SEQ bytes: the loop
-        // reads payload[cid_offs .. cid_offs + seq_lens - 1], so that highest
-        // index must stay inside the captured payload (issue #6, H3).
-        if (cid_offs >= 0 && seq_lens > 0 && cid_offs + seq_lens <= payload_len)
-        {
-            for (i = 0; i < seq_lens; i++)
-                conv[i] = payload[cid_offs + i];
-
-        seq_value = SEQ_CONV(conv);
-        }
-
-        // Return SEQ dec value;
-        return seq_value;
-}
-
 int mmt_check_quic(ipacket_t * ipacket, unsigned index)
 {
 	struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
@@ -134,22 +83,12 @@ int mmt_check_quic(ipacket_t * ipacket, unsigned index)
 			     {
 			       return 0;
 			     }
-				// Settings without version. First check if PUBLIC FLAGS & SEQ bytes are 0x0. SEQ must be 1 at least.
-			     if ((packet->payload[0] == 0x00 && packet->payload[1] != 0x00) || ((packet->payload[0] & QUIC_NO_V_RES_RSV) == 0))
-			     {
-			       if (sequence(packet->payload, packet->payload_packet_len) < 1)
-			       {
-			         
-			         MMT_EXCLUDE_PROTOCOL(flow, PROTO_QUIC);
-			       }
-
-			       // debug("QUIC: Found QUIC");
-			       mmt_int_quic_add_connection(ipacket);
-                   return 1;
-			     }
-
-				// Check if version, than the CID length.
-			     else if (packet->payload[0] & QUIC_VER_MASK)
+				// Issue #564 (F-BUG-303): only a public header that carries a
+				// known gQUIC version (Q009..Q025) claims the flow. The
+				// version-less branch accepted any datagram whose first byte
+				// has the 0xC3 bits clear -- about one random byte in sixteen --
+				// and ran ahead of STUN and IETF QUIC on UDP/80 and UDP/443.
+			     if (packet->payload[0] & QUIC_VER_MASK)
 			     {
 				  // Skip CID length.
 			       ver_offs = connect_id(packet->payload[0]);
