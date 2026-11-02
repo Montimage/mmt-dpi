@@ -196,6 +196,21 @@
         { "id": "teardown-no-leak", "metric": "teardown.leaked_allocations", "op": "eq", "limit": 0 },
         { "id": "checks", "metric": "checks.failed", "op": "eq", "limit": 0 }
       ]
+    },
+    "quic-initial": {
+      "issue": 570,
+      "finding": "F-BUG-307",
+      "workload": "1,000 datagrams decrypted as QUIC client Initials into a 1,500-byte output buffer followed by a canary: in turn the RFC 9001 A.2 / RFC 9369 A.2 client Initial unchanged, the same packet with one seeded byte flipped, cut to a seeded 0 .. 1,199 bytes inside a 1,200-byte datagram, or 1,200 .. 1,500 seeded random bytes behind a v1 Initial first byte, version and a 0 .. 40-byte DCID length; each datagram in a heap buffer of exactly its length.",
+      "checks": [
+        { "id": "scale", "metric": "datagrams", "op": "eq", "limit": 1000 },
+        { "id": "accounted", "metric": "datagrams", "op": "sum", "parts": ["ok", "refused_arg", "refused_short_datagram", "refused_not_initial", "refused_cid_length", "refused_truncated", "refused_buffer", "refused_auth", "refused_reserved_bits"] },
+        { "id": "valid-decrypted", "metric": "ok", "op": "eq", "limit": 250 },
+        { "id": "no-allocation", "metric": "decrypt_allocs", "op": "eq", "limit": 0 },
+        { "id": "within-buffer", "metric": "canary_overwrites", "op": "eq", "limit": 0 },
+        { "id": "header-plus-plaintext", "metric": "max_written_bytes", "op": "le", "limit": 1184 },
+        { "id": "no-leak", "metric": "leaked_allocations", "op": "eq", "limit": 0 },
+        { "id": "checks", "metric": "checks.failed", "op": "eq", "limit": 0 }
+      ]
     }
   }
 }

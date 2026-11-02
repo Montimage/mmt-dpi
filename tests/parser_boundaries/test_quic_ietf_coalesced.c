@@ -23,7 +23,9 @@
  *     INT dissector (type <= 1, at least 3 words, metadata header Ver 1;
  *     else the historical 56); DSCP 0x20 (CS4) traffic without a valid shim
  *     is not INT (#453), but a flow already classified as INT keeps the
- *     56-byte fallback for its later packets.
+ *     56-byte fallback for its later packets;
+ *   - a v1/v2 long header whose DCID or SCID is longer than 20 bytes
+ *     (RFC 9000 §17.2) is not QUIC (#570).
  *
  * Crafted Ethernet/IPv4/UDP frames go through mmt_init_handler +
  * packet_process; the packet handler reads the protocol path and the
@@ -411,6 +413,21 @@ int main(void) {
         CHECK(!g_int_seen && g_quic_layers == 1 && g_quic_off == l4,
               "CS4 QUIC Initial without INT: QUIC right after UDP");
         g_ip_tos = 0;
+    }
+
+    /* --- 7. connection IDs longer than 20 bytes are not v1/v2 (#570) ----- */
+    {
+        uint8_t cid21[21];
+        memset(cid21, 0xe1, sizeof cid21);
+        n = quic_long(q, 0x00000001, 0, 1, cid21, 21, CID_A, 8, 1100);
+        run_udp(h, 0, 50130, q, n, t++);
+        CHECK(g_quic_layers == 0, "v1 Initial with a 21-byte DCID: not classified as quic_ietf");
+        n = quic_long(q, 0x6b3343cf, 1, 1, CID_B, 8, cid21, 21, 1100);
+        run_udp(h, 0, 50131, q, n, t++);
+        CHECK(g_quic_layers == 0, "v2 Initial with a 21-byte SCID: not classified as quic_ietf");
+        n = quic_long(q, 0x00000001, 0, 1, CID_A, 20, CID_B, 20, 1100);
+        run_udp(h, 0, 50132, q, n, t++);
+        CHECK(g_quic_layers == 1, "v1 Initial with 20-byte DCID and SCID: classified as quic_ietf");
     }
 
     mmt_close_handler(h);

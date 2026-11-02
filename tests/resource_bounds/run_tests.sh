@@ -84,6 +84,17 @@
 #                      seeded flows; tls_client_hello.c and memory.c are
 #                      compiled beside it with the counted allocator.
 #
+# Issue #570 (F-BUG-307) adds the "quic-initial" fixture: decrypting a QUIC
+# client Initial allocates nothing and writes at most the packet's header
+# and plaintext into the caller's 1,500-byte output buffer (a canary after
+# it stays intact), over 1,000 seeded valid, flipped, truncated and random
+# datagrams — every one decrypted or refused with a reason.
+#
+#   test_quic_initial.c — drives quic_ietf_initial_decrypt() over the
+#                         datagrams; quic_ietf_initial.c, mmt_crypto.c and
+#                         mmt_sha256.c are compiled beside it with the
+#                         counted allocator.
+#
 # Issue #394 (F-PERF-001..004) consolidates the four fixtures into
 # reproducible adversarial resource budgets: every fixture reports its
 # workload scales, fixed seeds, accepted/refused work and counters as
@@ -115,7 +126,7 @@
 # Usage: tests/resource_bounds/run_tests.sh [all | fixture ...]
 #   no arguments (or "all") runs every fixture; "ipv6-hash" / "tcp-memory" /
 #   "tcp-order" / "fragment-eviction" / "timeout-sweep" / "ftp-control" /
-#   "tls-hello" select one.
+#   "tls-hello" / "quic-initial" select one.
 set -euo pipefail
 # Issue #551: the budgets are fixed-seed counts, and the ipv6-hash fixture
 # reports its table seeds — keep the legacy fixed seed sequence (hash_utils.c).
@@ -124,7 +135,7 @@ export MMT_DETERMINISTIC_SEED=1
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-ALL_FIXTURES=(ipv6-hash tcp-memory tcp-order fragment-eviction timeout-sweep ftp-control tls-hello)
+ALL_FIXTURES=(ipv6-hash tcp-memory tcp-order fragment-eviction timeout-sweep ftp-control tls-hello quic-initial)
 FIXTURES=()
 for f in "$@"; do
     if [ "$f" = "all" ]; then FIXTURES+=("${ALL_FIXTURES[@]}"); else FIXTURES+=("$f"); fi
@@ -143,7 +154,8 @@ for f in "${FIXTURES[@]}"; do
         timeout-sweep) TESTS+=(timeout_sweep) ;;
         ftp-control) TESTS+=(ftp_control) ;;
         tls-hello) TESTS+=(tls_hello) ;;
-        *) echo "✗ unknown resource_bounds fixture '$f' (known: all, ipv6-hash, tcp-memory, tcp-order, fragment-eviction, timeout-sweep, ftp-control, tls-hello)" >&2
+        quic-initial) TESTS+=(quic_initial) ;;
+        *) echo "✗ unknown resource_bounds fixture '$f' (known: all, ipv6-hash, tcp-memory, tcp-order, fragment-eviction, timeout-sweep, ftp-control, tls-hello, quic-initial)" >&2
            exit 2 ;;
     esac
     FIXTURE_IDS+=("$f")
@@ -325,6 +337,25 @@ build_tls_hello() {
     "${CC}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_tls_hello" \
         "${SCRIPT_DIR}/test_tls_hello.o" "${SCRIPT_DIR}/th_tls_client_hello.o" "${SCRIPT_DIR}/th_mmt_sha256.o" \
         "${SCRIPT_DIR}/memory_counted_tls.o" "${SCRIPT_DIR}/tcp_alloc_count_tls.o"
+}
+
+build_quic_initial() {
+    # The decrypt path with the counted allocator of tcp-memory: it must
+    # allocate nothing.
+    local count=(-Dmalloc=tcm_malloc -Dcalloc=tcm_calloc
+                 -Drealloc=tcm_realloc -Dfree=tcm_free)
+    local src
+    for src in protocols/quic_ietf_initial mmt_crypto mmt_sha256; do
+        "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${count[@]}" "${INCS[@]}" \
+            -c "${REPO_ROOT}/src/mmt_tcpip/lib/${src}.c" -o "${SCRIPT_DIR}/qi_${src##*/}.o"
+    done
+    "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${INCS[@]}" \
+        -c "${SCRIPT_DIR}/test_quic_initial.c" -o "${SCRIPT_DIR}/test_quic_initial.o"
+    "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 \
+        -c "${SCRIPT_DIR}/tcp_alloc_count.c" -o "${SCRIPT_DIR}/tcp_alloc_count_qi.o"
+    "${CC}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_quic_initial" \
+        "${SCRIPT_DIR}/test_quic_initial.o" "${SCRIPT_DIR}/qi_quic_ietf_initial.o" \
+        "${SCRIPT_DIR}/qi_mmt_crypto.o" "${SCRIPT_DIR}/qi_mmt_sha256.o" "${SCRIPT_DIR}/tcp_alloc_count_qi.o"
 }
 
 echo "  [1/3] compiling ..."

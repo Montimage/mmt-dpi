@@ -316,6 +316,16 @@ static int _classify_quic_ietf_from_data_offset(ipacket_t *ipacket, unsigned ses
 			if( ! _quic_ietf_is_supported_version( ntohl(version) ) )
 				goto _not_found_quic_ietf;
 		}
+		//a v1/v2 connection ID is at most 20 bytes (RFC 9000 §17.2, issue
+		//#570); with DCID length <= 20 the SCID length byte at 6 + DCID
+		//length lies inside the QUIC_IETF_LONG_HEADER_WIRE_MIN bytes checked
+		//above
+		{
+			uint8_t dcid_len = ipacket->data[offset + 5];
+			if( dcid_len > QUIC_IETF_MAX_CID_LENGTH
+					|| ipacket->data[offset + 6 + dcid_len] > QUIC_IETF_MAX_CID_LENGTH )
+				goto _not_found_quic_ietf;
+		}
 
 	} else {
 		//Short Header
