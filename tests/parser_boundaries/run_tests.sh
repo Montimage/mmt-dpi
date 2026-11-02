@@ -274,11 +274,24 @@
 #                               ssl.tls_version, tls_alpn, tls_sni_hidden and
 #                               tls_ja4 per packet.
 #
+# Issue #572 adds the "encap" fixture: MPLS label stacks (behind Ethernet,
+# 802.1Q and PPP), VXLAN, GENEVE and PPPoE sessions are walked down to the
+# inner flow, which classifies; a stack without a bottom entry within the
+# walker's bound, non-user payloads (G-ACh, GENEVE control, PPPoE discovery,
+# PPP control protocols) and every header cut short of caplen end the path
+# at the encapsulation, nested tunnels stop at PROTO_PATH_SIZE layers, a flow
+# whose stack depth or GENEVE option length differs by direction is read at
+# each packet's own offsets, and PPTP (GRE version 1) steps over its ack.
+#
+#   test_encap_walk_api.c — packet/API path: crafted encapsulated
+#                               Ethernet frames (exactly-sized heap copies)
+#                               through mmt_init_handler + packet_process.
+#
 # Usage: tests/parser_boundaries/run_tests.sh [fixture ...]
 #   no arguments runs every fixture; "udp"/"dtls"/"dns-soa"/"dns-txt"/"dns-names"/"nfs"/"int"/
 #   "tcp-options"/"radius-dns"/"quic"/"gre"/"classifier-audit"/"tcp-events"/"s1ap-integer"/
 #   "classify"/"registration"/"ftp-sessions"/"classification-method"/"chain"/
-#   "tls-hello" select a fixture family.
+#   "tls-hello"/"encap" select a fixture family.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -286,7 +299,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # --- fixture selection -----------------------------------------------------
 FIXTURES=( "$@" )
-[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain tls-hello)
+[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain tls-hello encap)
 UNIT_TESTS=()
 API_TESTS=()
 MOBILE_TESTS=()
@@ -357,8 +370,11 @@ for f in "${FIXTURES[@]}"; do
             UNIT_TESTS+=(tls_client_hello_unit tls_fingerprint_unit)
             API_TESTS+=(tls_split_hello_api tls_hello_attrs_api)
             ;;
+        encap)
+            API_TESTS+=(encap_walk_api)
+            ;;
         *)
-            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain tls-hello)" >&2
+            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain tls-hello encap)" >&2
             exit 2
             ;;
     esac
@@ -499,4 +515,4 @@ if [ "${rc}" -ne 0 ]; then
     echo "✗ parser boundary tests failed" >&2
     exit 1
 fi
-echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455, #505, #513, #531, #542, #544, #560, #567, #568, #569, #570, #571)"
+echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455, #505, #513, #531, #542, #544, #560, #567, #568, #569, #570, #571, #572)"

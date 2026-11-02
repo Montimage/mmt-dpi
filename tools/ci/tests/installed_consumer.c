@@ -60,7 +60,7 @@
 static const char *g_builtin_ignore[] = {
     "meta", "ethernet", "ip", "ipv4", "ipv6", "arp", "rarp",
     "tcp", "udp", "sctp", "sctp_data", "icmp", "icmpv6", "igmp", "gre",
-    "ppp", "pppoe", "vlan", "mpls", "sll", "ipsec", "esp", "ah",
+    "ppp", "pppoe", "vlan", "mpls", "vxlan", "geneve", "sll", "ipsec", "esp", "ah",
     "unknown", "?",
 };
 #define N_BUILTIN_IGNORE ((int)(sizeof(g_builtin_ignore) / sizeof(g_builtin_ignore[0])))

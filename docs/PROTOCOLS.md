@@ -14,7 +14,7 @@ landing page's headline count is larger: it is the run-time total of every
 installed plugin, which CI measures from the built SDK with
 `tools/ci/check-runtime-protocol-count.sh`.
 
-**653 registered protocol initializers**
+**656 registered protocol initializers**
 
 | | | |
 |---|---|---|
@@ -24,12 +24,13 @@ installed plugin, which CI measures from the built SDK with
 | `PROTO_CDISCOUNT` | `PROTO_CDP` | `PROTO_CLOUDFLARE` |
 | `PROTO_CTP` | `PROTO_DTLS` | `PROTO_DTP` |
 | `PROTO_ECLIPSE_TCF` | `PROTO_FNAC` | `PROTO_FORBES` |
-| `PROTO_FRANCETVINFO` | `PROTO_GOOGLE_CLOUD` | `PROTO_HTTP2` |
-| `PROTO_INT` | `PROTO_INT_REPORT` | `PROTO_JEUXVIDEO` |
-| `PROTO_LEFIGARO` | `PROTO_LEMONDE` | `PROTO_LLC` |
-| `PROTO_LOOPBACK` | `PROTO_MS_TEAMS` | `PROTO_OFFICE365` |
-| `PROTO_QUIC_IETF` | `PROTO_REUTERS` | `PROTO_SHAREPOINT` |
-| `PROTO_SLL` | `PROTO_STACKPATH` | `PROTO_TWITCH` |
+| `PROTO_FRANCETVINFO` | `PROTO_GENEVE` | `PROTO_GOOGLE_CLOUD` |
+| `PROTO_HTTP2` | `PROTO_INT` | `PROTO_INT_REPORT` |
+| `PROTO_JEUXVIDEO` | `PROTO_LEFIGARO` | `PROTO_LEMONDE` |
+| `PROTO_LLC` | `PROTO_LOOPBACK` | `PROTO_MPLS` |
+| `PROTO_MS_TEAMS` | `PROTO_OFFICE365` | `PROTO_QUIC_IETF` |
+| `PROTO_REUTERS` | `PROTO_SHAREPOINT` | `PROTO_SLL` |
+| `PROTO_STACKPATH` | `PROTO_TWITCH` | `PROTO_VXLAN` |
 | `PROTO_XID` | `PROTO_ZONE_TELECHARGEMENT` | `PROTO_afreeca` |
 | `PROTO_akamai` | `PROTO_any_0hop` | `PROTO_any_dfs` |
 | `PROTO_any_hip` | `PROTO_any_local` | `PROTO_any_pes` |

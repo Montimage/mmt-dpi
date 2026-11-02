@@ -111,6 +111,15 @@ int main(void) {
 	EXPECT(get_application_class_by_protocol_id(PROTO_GOOGLE_CLOUD)
 	           == get_application_class_by_protocol_id(PROTO_AWS),
 	       "Google Cloud has the AWS class");
+	/* Issue #572: the encapsulations walked to the inner flow are tunnels. */
+	EXPECT(PROTO_MPLS == 668 && strcmp(PROTO_MPLS_ALIAS, "mpls") == 0
+	       && PROTO_VXLAN == 669 && strcmp(PROTO_VXLAN_ALIAS, "vxlan") == 0
+	       && PROTO_GENEVE == 670 && strcmp(PROTO_GENEVE_ALIAS, "geneve") == 0,
+	       "PROTO_MPLS/VXLAN/GENEVE are ids 668-670, aliases mpls/vxlan/geneve");
+	EXPECT(get_application_class_by_protocol_id(PROTO_MPLS) == PROTO_CLASS_TUNNEL
+	       && get_application_class_by_protocol_id(PROTO_VXLAN) == PROTO_CLASS_TUNNEL
+	       && get_application_class_by_protocol_id(PROTO_GENEVE) == PROTO_CLASS_TUNNEL,
+	       "MPLS, VXLAN and GENEVE are tunnels");
 	EXPECT(get_application_class_by_protocol_id(PROTO_UNKNOWN) == PROTO_CLASS_UNKOWN,
 	       "the unknown protocol has the unknown class");
 	EXPECT(strcmp(get_application_class_name_by_protocol_id(PROTO_STACKPATH),

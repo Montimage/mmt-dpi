@@ -64,6 +64,13 @@ int vlan_classify_next_proto(ipacket_t * ipacket, unsigned index) {
             retval.offset = sizeof (struct mmt_vlan_struct);
             retval.status = Classified;
             break;
+            /* Issue #572: MPLS label stack, walked by proto_mpls.c */
+        case ETH_P_MPLS_UC:
+        case ETH_P_MPLS_MC:
+            retval.proto_id = PROTO_MPLS;
+            retval.offset = sizeof (struct mmt_vlan_struct);
+            retval.status = Classified;
+            break;
         default:
             retval.proto_id = PROTO_UNKNOWN;
             retval.offset = sizeof (struct mmt_vlan_struct);

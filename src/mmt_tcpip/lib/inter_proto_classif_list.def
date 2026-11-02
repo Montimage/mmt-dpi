@@ -146,6 +146,8 @@
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_mdns, 30, PROTO_MDNS)                           // Must be before mmt_check_dns
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_dns, 30, PROTO_DNS)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_dhcp, 30, PROTO_DHCP)
+    MMT_INTER_PROTO(PROTO_UDP, mmt_check_vxlan, 30, PROTO_VXLAN)                         // issue #572: port 4789 + I flag
+    MMT_INTER_PROTO(PROTO_UDP, mmt_check_geneve, 30, PROTO_GENEVE)                       // issue #572: port 6081 + version 0
 
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_dropbox_udp, 40, PROTO_DROPBOX)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_bittorrent_udp, 40, PROTO_BITTORRENT)

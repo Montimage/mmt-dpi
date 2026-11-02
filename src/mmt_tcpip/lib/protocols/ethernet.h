@@ -48,6 +48,14 @@ extern "C" {
 #define ETH_P_PPPoES      0x8864          /* PPPoE Session protocol      */
 #endif
 
+#ifndef ETH_P_MPLS_UC
+#define ETH_P_MPLS_UC     0x8847          /* MPLS unicast (issue #572)    */
+#endif
+
+#ifndef ETH_P_MPLS_MC
+#define ETH_P_MPLS_MC     0x8848          /* MPLS multicast (issue #572)  */
+#endif
+
 #ifndef ETH_P_PTP
 #define ETH_P_PTP		0x88F7	/* PTP protocol - IEEE1588*/
 #endif

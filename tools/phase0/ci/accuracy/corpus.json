@@ -1,6 +1,6 @@
 {
   "_comment": [
-    "Issues #389 and #390 (F-TEST-003): reviewed DNS, TLS, QUIC, HTTP/2, S1AP, NGAP and NAS accuracy cases plus unknown/malformed traffic; issue #527: a positive and a negative case per default-chain classifier (see coverage-pending.txt for the ones still owed); issue #564: corroboration cases for DICOM, gQUIC, STUN and S1AP/NGAP; issue #565: IP-range attribution of a CloudFront and a Google Cloud tenant address.",
+    "Issues #389 and #390 (F-TEST-003): reviewed DNS, TLS, QUIC, HTTP/2, S1AP, NGAP and NAS accuracy cases plus unknown/malformed traffic; issue #527: a positive and a negative case per default-chain classifier (see coverage-pending.txt for the ones still owed); issue #564: corroboration cases for DICOM, gQUIC, STUN and S1AP/NGAP; issue #565: IP-range attribution of a CloudFront and a Google Cloud tenant address; issue #572: inner HTTP/TLS flows through MPLS, PPPoE, VXLAN and GENEVE.",
     "Checked by tools/ci/tests/check-accuracy-corpus.py; NOT part of ci/golden_pcaps.txt,",
     "so the golden classification fingerprint's input set is unchanged.",
     "expected counts are per packet: wire = carries the family's wire-protocol label,",
@@ -6258,6 +6258,266 @@
         "checks": [
           "plain text both ways on the classifier's well-known port; no protocol grammar (payload[0] is not 0 and no length rule matches)",
           "expected handling: no xbox verdict (abstention)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_mpls_http_positive.pcap",
+      "family": "http",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_http"
+      ],
+      "description": "HTTP/1.1 GET and 200 OK on TCP/80 beneath a two-label MPLS stack (EtherType 0x8847): the walker steps over both entries to the bottom of stack and hands the payload to IPv4 by its first nibble.",
+      "sha256": "e171e6e0e9e1837b80c62387512afe42860be69bf50386c08dde735d7bdbf592",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_mpls_http_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #572",
+        "date": "2026-11-02",
+        "checks": [
+          "RFC 3032 \u00a72.1 label stack entries: 20-bit label, TC 0, S bit on the second entry only, TTL 64",
+          "inner exchange byte-identical to acc_http_positive; the handshake packets carry no payload and abstain"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_mpls_negative.pcap",
+      "family": "http",
+      "case": "negative",
+      "description": "The same exchange beneath 17 MPLS label entries, none with the bottom-of-stack bit: past the walker's 16-entry bound, so no inner flow is walked.",
+      "sha256": "882a112fa4d9a3b3b6c004f7f3a6b532afde5e2ed82bc947c354e046ac15cb0c",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_mpls_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #572",
+        "date": "2026-11-02",
+        "checks": [
+          "RFC 3032 \u00a72.1: no entry sets S; proto_mpls.c MPLS_MAX_LABEL_ENTRIES bounds the walk",
+          "expected handling: every packet ends at the mpls layer (abstention)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_pppoe_http_positive.pcap",
+      "family": "http",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_http"
+      ],
+      "description": "HTTP/1.1 GET and 200 OK in a PPPoE session (EtherType 0x8864, VER 1, TYPE 1, CODE 0x00, session 0x2a01) carrying PPP protocol 0x0021 (IPv4).",
+      "sha256": "59230e6bfcb53da02857398a9c3e924053e0be86e8d4b2ba387f36bf127c62da",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_pppoe_http_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #572",
+        "date": "2026-11-02",
+        "checks": [
+          "RFC 2516 \u00a74 session-stage header, LENGTH counts the PPP protocol field and payload",
+          "RFC 1661 \u00a72 protocol field 0x0021 without Address/Control (RFC 2516 \u00a77)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_pppoe_negative.pcap",
+      "family": "http",
+      "case": "negative",
+      "description": "PPPoE discovery (PADI with a Service-Name tag, PADO with an AC-Name tag on EtherType 0x8863) then an LCP Configure-Request/Configure-Ack (MRU 1492) in session 0x2a02: tags and a PPP control protocol, no user flow.",
+      "sha256": "c3424609d2fe8419c6a65aae9a04fc35880a30755769fb2813ade15153394f08",
+      "expected": {
+        "packets": 4,
+        "wire": 0,
+        "abstain": 4,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_pppoe_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #572",
+        "date": "2026-11-02",
+        "checks": [
+          "RFC 2516 \u00a75.1-5.2 PADI/PADO codes 0x09/0x07, session id 0, TLV tags",
+          "RFC 1661 \u00a75.1-5.2 LCP Configure-Request/Ack with the MRU option; protocol 0xc021 is a control protocol, so the path ends at ppp"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_vxlan_tls_positive.pcap",
+      "family": "tls",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_vxlan",
+        "mmt_check_ssl"
+      ],
+      "description": "TLS 1.2 ClientHello (SNI accuracy.example) and ServerHello on TCP/443 inside VXLAN (VNI 0x1001); each tunnel endpoint sends to UDP/4789 from its own entropy port.",
+      "sha256": "8c6e13ac21bb5544cf77718e4cf60ebe7c277a546ba9b2961d8bd0830081df32",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_vxlan_tls_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #572",
+        "date": "2026-11-02",
+        "checks": [
+          "RFC 7348 \u00a75 header: I flag set, reserved bits zero, 24-bit VNI; inner frame is a full Ethernet frame",
+          "inner TLS records identical to acc_tls_positive"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_vxlan_negative.pcap",
+      "family": "tls",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_vxlan"
+      ],
+      "description": "The same frames on UDP/4789 with the VXLAN flags byte zero (I flag clear, so no valid VNI): not VXLAN, the inner TLS flow is not walked.",
+      "sha256": "8a424a8d4b4dda50203c2e8a8d5cb9d4ec0abe544a93619d4dea62434f112bfe",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_vxlan_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #572",
+        "date": "2026-11-02",
+        "checks": [
+          "RFC 7348 \u00a75: the I flag MUST be set for a valid VNI",
+          "expected handling: no ssl verdict, the outer UDP datagrams abstain"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_geneve_http_positive.pcap",
+      "family": "http",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_geneve",
+        "mmt_check_http"
+      ],
+      "description": "HTTP/1.1 GET and 200 OK inside GENEVE on UDP/6081 (version 0, VNI 0x2001, Protocol Type 0x6558) behind one 8-byte option that the walker steps over.",
+      "sha256": "611ae7e72eed5c8fdb10117e69f47353fdd9d05aa742fa10a72042b13d88e1ca",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_geneve_http_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #572",
+        "date": "2026-11-02",
+        "checks": [
+          "RFC 8926 \u00a73.4-3.5 header: Opt Len 2 (4-byte units), option class 0x0104 type 0x80 length 1",
+          "inner exchange byte-identical to acc_http_positive"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_geneve_negative.pcap",
+      "family": "http",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_geneve"
+      ],
+      "description": "The same frames on UDP/6081 under a version-1 header, which RFC 8926 does not define: not GENEVE, the inner HTTP flow is not walked.",
+      "sha256": "f1b96d21fba45050ce17d82fb09d7dc69ddef5668c2d228c560a4871a7e5966d",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_geneve_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #572",
+        "date": "2026-11-02",
+        "checks": [
+          "RFC 8926 \u00a73.4: Ver is 0; a receiver MUST drop another version",
+          "expected handling: no http verdict, the outer UDP datagrams abstain"
         ]
       }
     }

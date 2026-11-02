@@ -107,7 +107,7 @@ REQUIRED_FAMILIES = ("dns", "tls", "quic", "http2", "s1ap", "ngap", "nas",
 NON_APP = {
     "meta", "ethernet", "ip", "ipv4", "ipv6", "arp", "rarp",
     "tcp", "udp", "sctp", "icmp", "icmpv6", "igmp", "gre",
-    "ppp", "pppoe", "vlan", "mpls", "sll", "ipsec", "esp", "ah",
+    "ppp", "pppoe", "vlan", "mpls", "vxlan", "geneve", "sll", "ipsec", "esp", "ah",
     "unknown", "?", "<none>",
     # SCTP chunk layers (mmt_tcpip_protocols.h PROTO_SCTP_*_ALIAS): transport
     "sctp_data", "sctp_sack", "sctp_init", "sctp_heartbeat", "sctp_shutdown",

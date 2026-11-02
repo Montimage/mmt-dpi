@@ -2743,6 +2743,176 @@ def _acc_classifier_gen(name):
     return gen
 
 
+# --- accuracy corpus: encapsulated inner flows (issue #572) ------------------
+# The same HTTP / TLS exchanges carried by an MPLS label stack, a PPPoE
+# session, VXLAN and GENEVE: the walk must reach the inner flow and classify
+# it (positive), and must not for a stack without a bottom entry, a PPP control
+# protocol, VXLAN without its I flag or GENEVE version 1 (negative). Tunnel
+# endpoints are RFC 5737 TEST-NET-3 addresses.
+
+ACC_TUNNEL_CLIENT = struct.pack("!I", 0xCB007101)   # 203.0.113.1 (TEST-NET-3)
+ACC_TUNNEL_SERVER = struct.pack("!I", 0xCB007102)   # 203.0.113.2
+ACC_TUNNEL_CLIENT_MAC = b"\x02\x00\x00\x00\x71\x01"
+ACC_TUNNEL_SERVER_MAC = b"\x02\x00\x00\x00\x71\x02"
+
+
+class _EncapFlow(_AccFlow):
+    """An _AccFlow whose frames ride an encapsulation: `wrap(side, frame)`
+    returns the frame put on the wire for the inner Ethernet frame."""
+
+    def __init__(self, f, proto, cport, sport, wrap, **kw):
+        super().__init__(f, proto, cport, sport, **kw)
+        self.wrap = wrap
+
+    def send(self, side, payload=b"", flags=0x18):
+        pcap_write(self.f, self.wrap(side, self._l3l4(side, payload, flags)),
+                   ts_us=self.ts_us)
+        self.ts_us += 1000
+        self.ident += 1
+
+
+def _eth(side, ethertype, tunnel=False):
+    cli, srv = ((ACC_TUNNEL_CLIENT_MAC, ACC_TUNNEL_SERVER_MAC) if tunnel
+                else (ACC_CLIENT_MAC, ACC_SERVER_MAC))
+    src, dst = (cli, srv) if side == "cli" else (srv, cli)
+    return dst + src + struct.pack("!H", ethertype)
+
+
+def _mpls_entry(label, bottom, ttl=64):
+    """RFC 3032 label stack entry (traffic class 0)."""
+    return struct.pack("!I", (label << 12) | ((1 if bottom else 0) << 8) | ttl)
+
+
+def _wrap_mpls(labels, bottom=True):
+    stack = b"".join(_mpls_entry(lab, bottom and i == len(labels) - 1)
+                     for i, lab in enumerate(labels))
+    return lambda side, frame: _eth(side, 0x8847) + stack + frame[ETH_HLEN:]
+
+
+def _pppoe_session(session_id, ppp_proto, data):
+    """RFC 2516 session-stage packet: VER 1, TYPE 1, CODE 0x00."""
+    ppp = struct.pack("!H", ppp_proto) + data
+    return struct.pack("!BBHH", 0x11, 0x00, session_id, len(ppp)) + ppp
+
+
+def _wrap_pppoe(session_id):
+    return lambda side, frame: (_eth(side, 0x8864)
+                                + _pppoe_session(session_id, 0x0021,
+                                                 frame[ETH_HLEN:]))
+
+
+def _udp_tunnel(side, sport, dport, header, frame):
+    """Outer Ethernet/IPv4/UDP between the tunnel endpoints."""
+    src, dst = ((ACC_TUNNEL_CLIENT, ACC_TUNNEL_SERVER) if side == "cli"
+                else (ACC_TUNNEL_SERVER, ACC_TUNNEL_CLIENT))
+    payload = header + frame
+    return (_eth(side, 0x0800, tunnel=True)
+            + ip_header(src, dst, 17, UDP_HLEN + len(payload))
+            + udp_header(sport, dport, len(payload)) + payload)
+
+
+def _wrap_vxlan(vni, flags=0x08):
+    """RFC 7348 §5: every VTEP sends to UDP/4789 from an entropy port."""
+    header = struct.pack("!B3xI", flags, vni << 8)
+    return lambda side, frame: _udp_tunnel(
+        side, 49871 if side == "cli" else 51307, 4789, header, frame)
+
+
+def _wrap_geneve(vni, version=0):
+    """RFC 8926 §3: one 8-byte option (class 0x0104, type 0x80), Protocol
+    Type 0x6558 (transparent Ethernet bridging)."""
+    option = struct.pack("!HBB", 0x0104, 0x80, 1) + b"\x00\x00\x00\x2a"
+    header = (struct.pack("!BBHI", (version << 6) | (len(option) // 4), 0,
+                          0x6558, vni << 8) + option)
+    return lambda side, frame: _udp_tunnel(
+        side, 50113 if side == "cli" else 52741, 6081, header, frame)
+
+
+ACC_HTTP_EXCHANGE = [
+    ("cli", _text([b"GET /index.html HTTP/1.1", b"Host: accuracy.example",
+                   b"User-Agent: accuracy/1.0", b"Accept: */*", b""])),
+    ("srv", _text([b"HTTP/1.1 200 OK", b"Content-Type: text/plain",
+                   b"Content-Length: 2", b""]) + b"ok")]
+
+
+def _acc_encap_pcap(path, wrap, cport, sport, exchange, note):
+    f = pcap_open(path)
+    flow = _EncapFlow(f, 6, cport, sport, wrap)
+    flow.handshake()
+    for side, payload in exchange:
+        flow.send(side, payload)
+    f.close()
+    print("wrote %s (accuracy: %s)" % (path, note))
+
+
+def gen_acc_mpls_http_positive_pcap(path):
+    """HTTP/1.1 over a two-label MPLS stack (transport + service label)."""
+    _acc_encap_pcap(path, _wrap_mpls([16004, 24001]), 49501, 80,
+                    ACC_HTTP_EXCHANGE, "HTTP over a two-label MPLS stack")
+
+
+def gen_acc_mpls_negative_pcap(path):
+    """The same exchange beneath 17 label entries, none at the bottom of the
+    stack: past the walker's bound, so no inner flow is walked."""
+    _acc_encap_pcap(path, _wrap_mpls(list(range(16100, 16117)), bottom=False),
+                    49502, 80, ACC_HTTP_EXCHANGE,
+                    "MPLS stack without a bottom-of-stack entry")
+
+
+def gen_acc_pppoe_http_positive_pcap(path):
+    """HTTP/1.1 in a PPPoE session (PPP protocol 0x0021)."""
+    _acc_encap_pcap(path, _wrap_pppoe(0x2a01), 49503, 80, ACC_HTTP_EXCHANGE,
+                    "HTTP in a PPPoE session")
+
+
+def gen_acc_pppoe_negative_pcap(path):
+    """PPPoE discovery (PADI, PADO) then an LCP Configure-Request/Ack in the
+    session: tags and a PPP control protocol, no user flow."""
+    f = pcap_open(path)
+    tags = struct.pack("!HH", 0x0101, 0)                    # Service-Name
+    ac = b"accuracy-ac"
+    pado = tags + struct.pack("!HH", 0x0102, len(ac)) + ac   # AC-Name
+    lcp = struct.pack("!BBH", 1, 1, 8) + struct.pack("!BBH", 1, 4, 1492)
+    frames = [
+        _eth("cli", 0x8863) + struct.pack("!BBHH", 0x11, 0x09, 0, len(tags)) + tags,
+        _eth("srv", 0x8863) + struct.pack("!BBHH", 0x11, 0x07, 0, len(pado)) + pado,
+        _eth("cli", 0x8864) + _pppoe_session(0x2a02, 0xc021, lcp),
+        _eth("srv", 0x8864) + _pppoe_session(0x2a02, 0xc021, b"\x02" + lcp[1:]),
+    ]
+    for i, frame in enumerate(frames):
+        pcap_write(f, frame, ts_us=i * 1000)
+    f.close()
+    print("wrote %s (accuracy: PPPoE discovery + LCP)" % path)
+
+
+def gen_acc_vxlan_tls_positive_pcap(path):
+    """TLS ClientHello/ServerHello on TCP/443 inside VXLAN (VNI 0x1001)."""
+    _acc_encap_pcap(path, _wrap_vxlan(0x1001), 49504, 443,
+                    [("cli", _tls_client_hello("accuracy.example")),
+                     ("srv", _tls_server_hello())], "TLS inside VXLAN")
+
+
+def gen_acc_vxlan_negative_pcap(path):
+    """The same frames on UDP/4789 with the VXLAN I flag clear: the VNI is
+    not valid, so the datagrams are not VXLAN."""
+    _acc_encap_pcap(path, _wrap_vxlan(0x1002, flags=0x00), 49505, 443,
+                    [("cli", _tls_client_hello("accuracy.example")),
+                     ("srv", _tls_server_hello())], "UDP/4789 without the I flag")
+
+
+def gen_acc_geneve_http_positive_pcap(path):
+    """HTTP/1.1 inside GENEVE (one option, transparent Ethernet bridging)."""
+    _acc_encap_pcap(path, _wrap_geneve(0x2001), 49506, 80, ACC_HTTP_EXCHANGE,
+                    "HTTP inside GENEVE")
+
+
+def gen_acc_geneve_negative_pcap(path):
+    """The same frames on UDP/6081 under a version-1 header, which RFC 8926
+    does not define: not GENEVE."""
+    _acc_encap_pcap(path, _wrap_geneve(0x2002, version=1), 49507, 80,
+                    ACC_HTTP_EXCHANGE, "UDP/6081 with GENEVE version 1")
+
+
 ACC_GENS = {
     "acc_dns_positive": gen_acc_dns_positive_pcap,
     "acc_dns_negative": gen_acc_dns_negative_pcap,
@@ -2778,6 +2948,14 @@ ACC_GENS = {
     "acc_stun_google_positive": gen_acc_stun_google_positive_pcap,
     "acc_ip_cloudfront_tenant": gen_acc_ip_cloudfront_tenant_pcap,
     "acc_ip_gcp_tenant": gen_acc_ip_gcp_tenant_pcap,
+    "acc_mpls_http_positive": gen_acc_mpls_http_positive_pcap,
+    "acc_mpls_negative": gen_acc_mpls_negative_pcap,
+    "acc_pppoe_http_positive": gen_acc_pppoe_http_positive_pcap,
+    "acc_pppoe_negative": gen_acc_pppoe_negative_pcap,
+    "acc_vxlan_tls_positive": gen_acc_vxlan_tls_positive_pcap,
+    "acc_vxlan_negative": gen_acc_vxlan_negative_pcap,
+    "acc_geneve_http_positive": gen_acc_geneve_http_positive_pcap,
+    "acc_geneve_negative": gen_acc_geneve_negative_pcap,
 }
 ACC_GENS.update((name, _acc_classifier_gen(name))
                 for name in ACC_CLASSIFIER_FLOWS)

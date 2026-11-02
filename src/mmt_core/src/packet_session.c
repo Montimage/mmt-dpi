@@ -385,6 +385,29 @@ static void init_new_session_fields(mmt_handler_t * mmt_handler, mmt_session_t *
     mmt_handler->active_sessions_count += 1;
 }
 
+/* Issue #572: the layers beneath a session's own protocol can change length
+ * from packet to packet of one flow — an MPLS stack one direction pops,
+ * GENEVE options, GTP's optional fields — while the protocols stay the same.
+ * The packet is about to read its offsets from the session's copy, which
+ * still holds the creating packet's, so refresh the entries up to `index`
+ * from the packet while both name the same protocol at that layer; a layer
+ * whose protocol differs stops the refresh (the IP sessionizers splice a
+ * path whose IP layer moved). At most PROTO_PATH_SIZE stores, no allocation. */
+static inline void refresh_session_lower_offsets(ipacket_t * ipacket, mmt_session_t * session, unsigned index) {
+    const proto_hierarchy_t * path = ipacket->proto_hierarchy;
+    const proto_hierarchy_t * offsets = ipacket->proto_headers_offset;
+    if (path == &session->proto_path || offsets == &session->proto_headers_offset) {
+        return;
+    }
+    for (unsigned i = 0; i <= index && i < PROTO_PATH_SIZE; i++) {
+        if ((int) i >= path->len || (int) i >= offsets->len || (int) i >= session->proto_path.len
+                || path->proto_path[i] != session->proto_path.proto_path[i]) {
+            return;
+        }
+        session->proto_headers_offset.proto_path[i] = offsets->proto_path[i];
+    }
+}
+
 /**
  * Session-constructor half of proto_session_management() (issue #240,
  * F-CLEAN-008): wires up a freshly sessionized session — field init,
@@ -549,6 +572,10 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
                         hold_ancestors_milestone(mmt_handler, session);
                     }
                 }
+            }
+
+            if (is_new_session == 0) {
+                refresh_session_lower_offsets(ipacket, session, index);
             }
 
             //Now update the packet structure to point to the flow and the protocol hierarchy info

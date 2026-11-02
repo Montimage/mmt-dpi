@@ -185,6 +185,12 @@ int gre_classify_next_proto(ipacket_t * ipacket, unsigned index) {
     if (grehdr->key) {
         nb_lignes++;
     }
+    /* Issue #572: enhanced GRE (version 1, PPTP — RFC 2637 §4.1) carries an
+     * Acknowledgment Number after the sequence number when the A bit is set;
+     * the PPP frame starts past it. */
+    if (grehdr->version == 1 && grehdr->ack) {
+        nb_lignes++;
+    }
 
     /* Issue #201 (F-BUG-035): all optional fields must be captured before the
      * encapsulated protocol is classified at 4 + nb_lignes*4. */

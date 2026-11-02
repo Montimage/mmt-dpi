@@ -80,6 +80,8 @@ extern "C" {
     int mmt_check_smtp(ipacket_t * ipacket, unsigned index);
     int mmt_check_ftp(ipacket_t * ipacket, unsigned index);
     int mmt_check_gtp(ipacket_t * ipacket, unsigned index);
+    int mmt_check_vxlan(ipacket_t * ipacket, unsigned index);
+    int mmt_check_geneve(ipacket_t * ipacket, unsigned index);
     int mmt_check_ndn_http(ipacket_t * ipacket, unsigned index);
     int mmt_check_usenet(ipacket_t * ipacket, unsigned index);
     int mmt_check_dns(ipacket_t * ipacket, unsigned index);
