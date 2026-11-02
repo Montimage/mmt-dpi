@@ -504,12 +504,15 @@ enum ssl_attributes {
     SSL_SERVER_NAME = 1,
     TLS_NUMBER_RECORD,
     TLS_CONTENT_TYPE,
-    TLS_VERSION,
+    TLS_VERSION,       /**< record-layer version; on a ClientHello the highest advertised (supported_versions), on a ServerHello the negotiated one (issue #569) */
     TLS_LENGTH,
     // SSL_HS_TYPE,
     // SSL_HS_LENGTH,
     // SSL_HS_VERSION,
-    SSL_ATTRIBUTES_NB = TLS_LENGTH,
+    TLS_ALPN,          /**< ALPN protocol names of a ClientHello (comma separated) or the one a ServerHello selected (issue #569) */
+    TLS_SNI_HIDDEN,    /**< 1 when a ClientHello carries an outer encrypted_client_hello (ECH): its server_name is the public name, else 0 (issue #569) */
+    TLS_JA4,           /**< JA4 fingerprint of a ClientHello (issue #569) */
+    SSL_ATTRIBUTES_NB = TLS_JA4,
 };
 
 #define SSL_SERVER_NAME_ALIAS "server_name"
@@ -517,6 +520,9 @@ enum ssl_attributes {
 #define TLS_CONTENT_TYPE_ALIAS "tls_content_type"
 #define TLS_VERSION_ALIAS "tls_version"
 #define TLS_LENGTH_ALIAS "tls_length"
+#define TLS_ALPN_ALIAS "tls_alpn"
+#define TLS_SNI_HIDDEN_ALIAS "tls_sni_hidden"
+#define TLS_JA4_ALIAS "tls_ja4"
 // #define SSL_HS_TYPE_ALIAS "hs_type"
 // #define SSL_HS_VERSION_ALIAS "hs_version"
 // #define SSL_HS_LENGTH_ALIAS "hs_length"

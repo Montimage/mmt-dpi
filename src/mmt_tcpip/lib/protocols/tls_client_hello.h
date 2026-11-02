@@ -1,7 +1,9 @@
 /*
  * tls_client_hello.h — transport-independent TLS ClientHello parser and the
  * bounded buffer that collects a ClientHello spread over several segments
- * (issue #568, F-BUG-302).
+ * (issue #568, F-BUG-302), plus the readers of the ALPN, supported_versions
+ * and encrypted_client_hello extensions, the JA4 fingerprint and a ServerHello
+ * parser (issue #569).
  *
  * The parser reads a ClientHello from a byte buffer the caller owns: a
  * handshake message (TLS over TCP: the body of the first handshake record;
@@ -29,10 +31,54 @@
 extern "C" {
 #endif
 
-/** Handshake type of a ClientHello (RFC 8446 §4). */
+/* ---- wire constants (issue #569, F-CLEAN-005) -------------------------- */
+
+/** Record header (RFC 8446 §5.1): content type, legacy version, length. */
+#define TLS_RECORD_HEADER_LEN 5u
+#define TLS_RECORD_TYPE_OFFSET 0
+#define TLS_RECORD_VERSION_OFFSET 1
+#define TLS_RECORD_VERSION_MINOR_OFFSET 2
+#define TLS_RECORD_LENGTH_OFFSET 3
+/** Content types (RFC 8446 §5.1, RFC 6520). */
+#define TLS_CONTENT_CHANGE_CIPHER_SPEC 20
+#define TLS_CONTENT_ALERT 21
+#define TLS_CONTENT_HANDSHAKE 22
+#define TLS_CONTENT_APPLICATION_DATA 23
+#define TLS_CONTENT_HEARTBEAT 24
+/** Major version byte of SSL 3.0 through TLS 1.3 (0x0300-0x0304). */
+#define TLS_VERSION_MAJOR 0x03
+/** Highest minor version a legacy_version field carries: 3 (TLS 1.2). */
+#define TLS_LEGACY_MINOR_MAX 0x03
+/** Handshake header: msg_type (1) and a 24-bit length (RFC 8446 §4). */
+#define TLS_HANDSHAKE_HEADER_LEN 4u
+/** Offsets in a record that starts with a handshake message. */
+#define TLS_HANDSHAKE_TYPE_OFFSET 5
+#define TLS_HANDSHAKE_LENGTH_OFFSET 6
+/** Low 16 bits of the 24-bit handshake length. */
+#define TLS_HANDSHAKE_LENGTH_LOW_OFFSET 7
+/** legacy_version of a ClientHello / ServerHello: major, minor. */
+#define TLS_HELLO_VERSION_OFFSET 9
+#define TLS_HELLO_VERSION_MINOR_OFFSET 10
+/** Handshake message types (RFC 8446 §4). */
 #define TLS_HANDSHAKE_CLIENT_HELLO 1
-/** Extension type of server_name (RFC 6066 §3). */
-#define TLS_EXT_SERVER_NAME 0
+#define TLS_HANDSHAKE_SERVER_HELLO 2
+#define TLS_HANDSHAKE_CERTIFICATE 11
+/** Protocol versions (RFC 8446 §4.2.1). */
+#define TLS_VERSION_1_3 0x0304
+/** Extension types (IANA TLS ExtensionType Values). */
+#define TLS_EXT_SERVER_NAME 0               /**< RFC 6066 §3 */
+#define TLS_EXT_SIGNATURE_ALGORITHMS 13     /**< RFC 8446 §4.2.3 */
+#define TLS_EXT_ALPN 16                     /**< RFC 7301 §3.1 */
+#define TLS_EXT_SUPPORTED_VERSIONS 43       /**< RFC 8446 §4.2.1 */
+#define TLS_EXT_ENCRYPTED_CLIENT_HELLO 0xfe0d /**< RFC 9849 §5 */
+/** ECHClientHelloType of an outer ClientHello (RFC 9849 §5). */
+#define TLS_ECH_OUTER 0
+/** RFC 8701 GREASE value: 0x?a?a with both bytes equal. */
+#define TLS_IS_GREASE(v) ((((v) & 0x0f0fu) == 0x0a0au) && (((v) >> 8) == ((v) & 0xffu)))
+/** Characters of a JA4 fingerprint: "t13d1516h2_8daaf6152771_e5627efa2ab1". */
+#define TLS_JA4_LEN 36u
+/** Cipher suites or extensions a JA4 sorts; a hello with more has none. */
+#define TLS_JA4_MAX_ITEMS 256u
 /** Largest handshake message the reassembly buffer holds: 2^14 bytes. */
 #define TLS_HELLO_MAX_MESSAGE 16384u
 /** Disjoint byte ranges a reassembly may track before it is dropped. */
@@ -75,7 +121,26 @@ typedef struct tls_client_hello {
     const uint8_t *sni;            /**< host_name bytes, not NUL terminated */
     tls_sni_status_t sni_status;
     uint16_t extension_count;      /**< extensions that fit and were walked */
+    /* Issue #569: the first extension of each type, as it is on the wire
+     * (NULL when absent); every one fits the buffer. */
+    const uint8_t *alpn;           /**< ALPN body: ProtocolNameList */
+    uint16_t alpn_len;
+    const uint8_t *supported_versions; /**< supported_versions body */
+    uint16_t supported_versions_len;
+    const uint8_t *signature_algorithms; /**< signature_algorithms body */
+    uint16_t signature_algorithms_len;
+    uint8_t has_sni_extension;     /**< a server_name extension was walked */
+    uint8_t ech_outer;             /**< an outer encrypted_client_hello was walked */
 } tls_client_hello_t;
+
+/** A parsed ServerHello (or HelloRetryRequest). Pointers into the buffer. */
+typedef struct tls_server_hello {
+    uint16_t legacy_version;       /**< legacy_version (0x0303 for TLS 1.3) */
+    uint16_t cipher_suite;
+    uint16_t selected_version;     /**< supported_versions; 0 when absent */
+    const uint8_t *alpn;           /**< ALPN body (one ProtocolName); NULL if none */
+    uint16_t alpn_len;
+} tls_server_hello_t;
 
 /**
  * Parses a ClientHello body: the bytes after the 4-byte handshake header,
@@ -104,6 +169,41 @@ typedef int (*tls_client_hello_ext_fn)(uint16_t type, const uint8_t *data,
  */
 unsigned tls_client_hello_foreach_extension(const tls_client_hello_t *ch,
         tls_client_hello_ext_fn fn, void *ctx);
+
+/**
+ * The version a ClientHello advertises: the highest non-GREASE entry of its
+ * supported_versions extension (RFC 8446 §4.2.1), else legacy_version.
+ */
+uint16_t tls_client_hello_version(const tls_client_hello_t *ch);
+
+/**
+ * Parses a ServerHello handshake message (msg_type 2, 24-bit length, body),
+ * bounded like tls_client_hello_parse(). The extensions read are
+ * supported_versions (selected_version) and ALPN.
+ * @return TLS_CH_OK, TLS_CH_TRUNCATED or TLS_CH_MALFORMED (`out` zeroed).
+ */
+tls_client_hello_status_t tls_server_hello_parse(const uint8_t *msg, size_t len,
+        tls_server_hello_t *out);
+
+/**
+ * Writes the protocol names of an ALPN ProtocolNameList (RFC 7301 §3.1),
+ * comma separated and NUL terminated, to `out` (`cap` bytes, cap > 0): the
+ * well-formed names that fit whole, in wire order, up to the first that
+ * does not; bytes are copied as they are.
+ * @return the characters written (0: no list, or no well-formed name).
+ */
+size_t tls_alpn_text(const uint8_t *list, uint16_t len, char *out, size_t cap);
+
+/**
+ * Computes the JA4 fingerprint of a parsed ClientHello (FoxIO JA4
+ * specification, technical_details/JA4.md): `transport` is 't' (TCP),
+ * 'q' (QUIC) or 'd' (DTLS). Writes TLS_JA4_LEN characters and a NUL to
+ * `out`. GREASE values are skipped everywhere.
+ * @return 1, or 0 when the hello has more than TLS_JA4_MAX_ITEMS cipher
+ *         suites or extensions (`out` is then the empty string).
+ */
+int tls_client_hello_ja4(const tls_client_hello_t *ch, char transport,
+        char out[TLS_JA4_LEN + 1]);
 
 /** Outcome of feeding a segment to a reassembly. */
 typedef enum tls_hello_reasm_status {

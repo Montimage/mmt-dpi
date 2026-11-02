@@ -313,6 +313,9 @@ build_tls_hello() {
                  -Drealloc=tcm_realloc -Dfree=tcm_free)
     "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${count[@]}" "${INCS[@]}" \
         -c "${REPO_ROOT}/src/mmt_tcpip/lib/protocols/tls_client_hello.c" -o "${SCRIPT_DIR}/th_tls_client_hello.o"
+    # the JA4 digest (issue #569)
+    "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${INCS[@]}" \
+        -c "${REPO_ROOT}/src/mmt_tcpip/lib/mmt_sha256.c" -o "${SCRIPT_DIR}/th_mmt_sha256.o"
     "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${count[@]}" "${INCS[@]}" \
         -c "${REPO_ROOT}/src/mmt_core/src/memory.c" -o "${SCRIPT_DIR}/memory_counted_tls.o"
     "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${INCS[@]}" \
@@ -320,7 +323,7 @@ build_tls_hello() {
     "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 \
         -c "${SCRIPT_DIR}/tcp_alloc_count.c" -o "${SCRIPT_DIR}/tcp_alloc_count_tls.o"
     "${CC}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_tls_hello" \
-        "${SCRIPT_DIR}/test_tls_hello.o" "${SCRIPT_DIR}/th_tls_client_hello.o" \
+        "${SCRIPT_DIR}/test_tls_hello.o" "${SCRIPT_DIR}/th_tls_client_hello.o" "${SCRIPT_DIR}/th_mmt_sha256.o" \
         "${SCRIPT_DIR}/memory_counted_tls.o" "${SCRIPT_DIR}/tcp_alloc_count_tls.o"
 }
 

@@ -58,6 +58,7 @@ void mmt_free(mmt_opaque_t x) {
     free(p);
 }
 
+#include "mmt_sha256.c"
 #include "protocols/tls_client_hello.c"
 
 static int g_failures = 0;

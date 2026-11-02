@@ -64,24 +64,93 @@ static inline uint16_t ssl_read_u16_be(const uint8_t * payload, int off){
     return (uint16_t)(((uint16_t)payload[off] << 8) | (uint16_t)payload[off + 1]);
 }
 
+/* ---- record and handshake shapes (issue #569, F-CLEAN-005) --------------
+ * Named reads for the classifier gates; offsets and constants are in
+ * tls_client_hello.h. Each reader states how many bytes it needs. */
+
+/* In a Certificate handshake message (RFC 5246 §7.4.2): the type, the low
+ * 16 bits of the handshake length and of the certificate_list length. */
+#define SSL_HS_TYPE_IN_MESSAGE 0
+#define SSL_HS_LENGTH_LOW_IN_MESSAGE 2
+#define SSL_CERT_LIST_LENGTH_LOW_IN_MESSAGE 5
+/* First certificate: handshake header (4) + list length (3) + its length (3) */
+#define SSL_CERT_MESSAGE_FIRST_CERT 10
+/* The same from the start of a record holding the message. */
+#define SSL_CERT_RECORD_FIRST_CERT (TLS_RECORD_HEADER_LEN + SSL_CERT_MESSAGE_FIRST_CERT)
+/* Kept as it was: 0x11 (17) is no handshake type — a Certificate is 11 —
+ * so this path only fires on a message of type 17. Correcting it moves
+ * classification verdicts, which issue #569 leaves unchanged. */
+#define SSL_CERT_MESSAGE_LEGACY_TYPE 0x11
+
+/* SSLv2 record (draft-hickman-netscape-ssl-00 §B): a 2-byte header whose
+ * second byte is the low length byte, then the message type and version. */
+#define SSL2_LENGTH_LOW_OFFSET 1
+#define SSL2_MSG_TYPE_OFFSET 2
+#define SSL2_VERSION_MAJOR_OFFSET 3
+#define SSL2_VERSION_MINOR_OFFSET 4
+#define SSL2_CLIENT_HELLO 1
+/* Header bytes before the length an SSLv2 record header counts. */
+#define SSL2_HEADER_LEN 2
+/* Highest version minor an SSLv2-framed hello carries: 3.2 (TLS 1.1). */
+#define SSL2_MINOR_MAX 0x02
+
+/* Version 3.0-3.3 in a major/minor pair. */
+static inline int ssl_is_legacy_version(uint8_t major, uint8_t minor) {
+    return major == TLS_VERSION_MAJOR && minor <= TLS_LEGACY_MINOR_MAX;
+}
+
+/* A record header of content type `type`, version 3.0-3.3 (3 bytes). */
+static inline int ssl_is_record_of(const uint8_t *rec, uint8_t type) {
+    return rec[TLS_RECORD_TYPE_OFFSET] == type
+            && ssl_is_legacy_version(rec[TLS_RECORD_VERSION_OFFSET], rec[TLS_RECORD_VERSION_MINOR_OFFSET]);
+}
+
+/* One handshake message fills the record: its length is 4 below the
+ * record's (9 bytes). */
+static inline int ssl_handshake_fills_record(const uint8_t *rec) {
+    return ssl_read_u16_be(rec, TLS_RECORD_LENGTH_OFFSET)
+            - ssl_read_u16_be(rec, TLS_HANDSHAKE_LENGTH_LOW_OFFSET) == (int) TLS_HANDSHAKE_HEADER_LEN;
+}
+
+/* The hello in the record has legacy_version 3.0-3.3 (11 bytes). */
+static inline int ssl_hello_version_ok(const uint8_t *rec) {
+    return ssl_is_legacy_version(rec[TLS_HELLO_VERSION_OFFSET], rec[TLS_HELLO_VERSION_MINOR_OFFSET]);
+}
+
+/* The certificate_list fills the Certificate message `hs`: its length is 3
+ * below the message's (7 bytes). */
+static inline int ssl_certificate_fills_message(const uint8_t *hs) {
+    return ssl_read_u16_be(hs, SSL_HS_LENGTH_LOW_IN_MESSAGE)
+            - ssl_read_u16_be(hs, SSL_CERT_LIST_LENGTH_LOW_IN_MESSAGE) == 3;
+}
+
+/* A record whose handshake message has type `hs_type` (6 bytes). */
+static inline int ssl_handshake_type_is(const uint8_t *rec, uint8_t hs_type) {
+    return rec[TLS_HANDSHAKE_TYPE_OFFSET] == hs_type;
+}
+
+/* SSL 3.0 (0x0300) through TLS 1.2 (0x0303): the legacy record versions. */
+#define SSL_RECORD_VERSION_MIN 0x0300
+#define SSL_RECORD_VERSION_MAX 0x0303
+
 int ssl_is_tls_record_header(const uint8_t * payload, int payload_len){
     /* A TLS/SSL record header is 5 bytes: 1 content-type + 2 version +
      * 2 length. Reject anything shorter before reading any of those fields,
      * otherwise the content-type/version/length reads below run off the end
      * of the captured payload (issue #5, H2). */
-    if(payload_len < 5) return 0;
-    uint8_t content_type = payload[0];
-    if(content_type <20 || content_type > 24){
+    if(payload_len < (int) TLS_RECORD_HEADER_LEN) return 0;
+    uint8_t content_type = payload[TLS_RECORD_TYPE_OFFSET];
+    if(content_type < TLS_CONTENT_CHANGE_CIPHER_SPEC || content_type > TLS_CONTENT_HEARTBEAT){
         // Incorrect content type
         return 0;
     }
-    uint16_t version = ssl_read_u16_be(payload, 1);
-    if(version < 768 || version > 771){
+    uint16_t version = ssl_read_u16_be(payload, TLS_RECORD_VERSION_OFFSET);
+    if(version < SSL_RECORD_VERSION_MIN || version > SSL_RECORD_VERSION_MAX){
         // Incorrect version: 3.0 (768), 1.0 (769), 1.1 (770), 1.2 (771)
         return 0;
     }
 
-    uint16_t length = ssl_read_u16_be(payload, 3);
+    uint16_t length = ssl_read_u16_be(payload, TLS_RECORD_LENGTH_OFFSET);
     if(payload_len < length){
         // Invalid payload length
         return 0;
@@ -102,9 +171,10 @@ int tls_get_number_records(const ipacket_t * ipacket){
          * (issue #5, H2). The header re-check at the bottom enforces the same
          * bound for each subsequent record; this guard makes the top-of-loop
          * read self-evidently safe regardless of that invariant. */
-        while(payload_len >= 5){
+        while(payload_len >= (int) TLS_RECORD_HEADER_LEN){
             nb_record++;
-            int tls_total_length = ssl_read_u16_be(packet->payload + offset, 3) + 5;
+            int tls_total_length = ssl_read_u16_be(packet->payload + offset, TLS_RECORD_LENGTH_OFFSET)
+                    + (int) TLS_RECORD_HEADER_LEN;
             offset += tls_total_length;
             payload_len -= tls_total_length;
             if(ssl_is_tls_record_header(packet->payload + offset,payload_len)!=1){
@@ -129,7 +199,13 @@ int ssl_server_name_extraction(const ipacket_t * ipacket, unsigned proto_index, 
     return 0;
 }
 
-int tls_content_type_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+/*
+ * The TLS record the SSL layer of this packet starts with: `*rec` points at
+ * its header. The span is bounded by the TCP payload and by the captured
+ * bytes. Returns the readable length, or 0 when no valid record header is
+ * there.
+ */
+static int ssl_record_span(const ipacket_t * ipacket, unsigned proto_index, const uint8_t **rec) {
     int tcp_index = get_protocol_index_by_id(ipacket,PROTO_TCP);
     /* get_packet_offset_at_index() returns -1 for an invalid index and may
      * return an offset beyond the capture — reject both before touching data
@@ -140,7 +216,7 @@ int tls_content_type_extraction(const ipacket_t * ipacket, unsigned proto_index,
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     int ssl_offset = get_packet_offset_at_index(ipacket, proto_index);
     if( tcp_offset < 0 || ssl_offset < 0
-            || (size_t)ssl_offset + 5 > ipacket->p_hdr->caplen )
+            || (size_t)ssl_offset + TLS_RECORD_HEADER_LEN > ipacket->p_hdr->caplen )
         return 0;
     int ssl_payload_len = tcp_offset + packet->payload_packet_len - ssl_offset;
     /* never claim more than the captured bytes past ssl_offset */
@@ -149,23 +225,112 @@ int tls_content_type_extraction(const ipacket_t * ipacket, unsigned proto_index,
     if(ssl_is_tls_record_header(&ipacket->data[ssl_offset],ssl_payload_len)!=1){
         return 0;
     }
+    *rec = &ipacket->data[ssl_offset];
+    return ssl_payload_len;
+}
+
+/* ---- hello facts (issue #569) -------------------------------------------
+ * The ALPN, version, ECH and JA4 a ClientHello or ServerHello carries are
+ * reported on the packet that carries the hello, like ssl.server_name: they
+ * live in the handler's packet (packet->tls_hello), keyed by packet id, never
+ * in the flow. A hello one record holds is read on first use by an
+ * extractor; one collected over several segments (issue #568) is read by the
+ * classifier when it completes, before the collection is freed.
+ */
+
+static void ssl_facts_alpn(struct mmt_tls_hello_facts *f, const uint8_t *list, uint16_t len) {
+    f->alpn.len = (uint16_t) tls_alpn_text(list, len, f->alpn_text, sizeof f->alpn_text);
+    f->alpn.ptr = (const uint8_t *) f->alpn_text;
+}
+
+static void ssl_facts_from_client_hello(struct mmt_tls_hello_facts *f, const uint8_t *msg, uint32_t len) {
+    tls_client_hello_t ch;
+    if (tls_client_hello_parse(msg, len, &ch) != TLS_CH_OK) {
+        return;
+    }
+    f->handshake_type = TLS_HANDSHAKE_CLIENT_HELLO;
+    f->version = tls_client_hello_version(&ch);
+    f->sni_hidden = ch.ech_outer;
+    ssl_facts_alpn(f, ch.alpn, ch.alpn_len);
+    if (tls_client_hello_ja4(&ch, 't', f->ja4_text)) {
+        f->has_ja4 = 1;
+        f->ja4.ptr = (const uint8_t *) f->ja4_text;
+        f->ja4.len = TLS_JA4_LEN;
+    }
+}
+
+static void ssl_facts_from_server_hello(struct mmt_tls_hello_facts *f, const uint8_t *msg, uint32_t len) {
+    tls_server_hello_t sh;
+    if (tls_server_hello_parse(msg, len, &sh) != TLS_CH_OK) {
+        return;
+    }
+    f->handshake_type = TLS_HANDSHAKE_SERVER_HELLO;
+    /* RFC 8446 §4.2.1: a TLS 1.3 server names its version in
+     * supported_versions; legacy_version stays 0x0303 */
+    f->version = sh.selected_version != 0 ? sh.selected_version : sh.legacy_version;
+    ssl_facts_alpn(f, sh.alpn, sh.alpn_len);
+}
+
+/* Records the facts of the handshake message `msg` (header first) for the
+ * current packet, replacing whatever an earlier packet left. */
+static struct mmt_tls_hello_facts *ssl_note_hello(const ipacket_t * ipacket,
+                                                  const uint8_t *msg, uint32_t len) {
+    struct mmt_tls_hello_facts *f = &ipacket->internal_packet->tls_hello;
+    memset(f, 0, sizeof *f);
+    f->packet_id = ipacket->packet_id;
+    f->filled = 1;
+    if (msg != NULL && len >= TLS_HANDSHAKE_HEADER_LEN) {
+        if (msg[0] == TLS_HANDSHAKE_CLIENT_HELLO) {
+            ssl_facts_from_client_hello(f, msg, len);
+        } else if (msg[0] == TLS_HANDSHAKE_SERVER_HELLO) {
+            ssl_facts_from_server_hello(f, msg, len);
+        }
+    }
+    return f;
+}
+
+/* The hello facts of this packet, or NULL when it carries no whole hello:
+ * a handshake record that the packet holds entirely. */
+static const struct mmt_tls_hello_facts *ssl_packet_facts(const ipacket_t * ipacket, unsigned proto_index) {
+    if (ipacket->internal_packet == NULL) {
+        return NULL;
+    }
+    struct mmt_tls_hello_facts *f = &ipacket->internal_packet->tls_hello;
+    if (!f->filled || f->packet_id != ipacket->packet_id) {
+        const uint8_t *rec = NULL;
+        int avail = ssl_record_span(ipacket, proto_index, &rec);
+        uint32_t rec_len = avail > 0 ? ssl_read_u16_be(rec, TLS_RECORD_LENGTH_OFFSET) : 0;
+        if (avail > 0 && rec[TLS_RECORD_TYPE_OFFSET] == TLS_CONTENT_HANDSHAKE
+                && rec_len + TLS_RECORD_HEADER_LEN <= (uint32_t) avail) {
+            f = ssl_note_hello(ipacket, rec + TLS_RECORD_HEADER_LEN, rec_len);
+        } else {
+            f = ssl_note_hello(ipacket, NULL, 0);
+        }
+    }
+    return f->handshake_type != 0 ? f : NULL;
+}
+
+int tls_content_type_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    const uint8_t *rec = NULL;
+    if (ssl_record_span(ipacket, proto_index, &rec) == 0) {
+        return 0;
+    }
     return general_char_extraction(ipacket,proto_index,extracted_data);
 }
 
+/* The record-layer version; on a packet carrying a whole ClientHello the
+ * highest version it advertises, on a ServerHello the negotiated one
+ * (supported_versions, RFC 8446 §4.2.1 — issue #569, F-BUG-309). */
 int tls_version_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
-    int tcp_index = get_protocol_index_by_id(ipacket,PROTO_TCP);
-    if( tcp_index < 0 )
-        return 0;
-    int tcp_offset = get_packet_offset_at_index(ipacket,tcp_index + 1);
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    int ssl_offset = get_packet_offset_at_index(ipacket, proto_index);
-    if( tcp_offset < 0 || ssl_offset < 0
-            || (size_t)ssl_offset + 5 > ipacket->p_hdr->caplen )
-        return 0;
-    int ssl_payload_len = tcp_offset + packet->payload_packet_len - ssl_offset;
-    if( ssl_payload_len > (int)(ipacket->p_hdr->caplen - (size_t)ssl_offset) )
-        ssl_payload_len = (int)(ipacket->p_hdr->caplen - (size_t)ssl_offset);
-    if(ssl_is_tls_record_header(&ipacket->data[ssl_offset],ssl_payload_len)!=1){
+    const struct mmt_tls_hello_facts *f = ssl_packet_facts(ipacket, proto_index);
+    if (f != NULL) {
+        if (extracted_data->data == NULL)
+            return 0;
+        memcpy(extracted_data->data, &f->version, sizeof f->version);
+        return 1;
+    }
+    const uint8_t *rec = NULL;
+    if (ssl_record_span(ipacket, proto_index, &rec) == 0) {
         return 0;
     }
     return general_short_extraction_with_ordering_change(ipacket,proto_index,extracted_data);
@@ -173,22 +338,44 @@ int tls_version_extraction(const ipacket_t * ipacket, unsigned proto_index, attr
 
 
 int tls_length_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
-    int tcp_index = get_protocol_index_by_id(ipacket,PROTO_TCP);
-    if( tcp_index < 0 )
-        return 0;
-    int tcp_offset = get_packet_offset_at_index(ipacket,tcp_index + 1);
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    int ssl_offset = get_packet_offset_at_index(ipacket, proto_index);
-    if( tcp_offset < 0 || ssl_offset < 0
-            || (size_t)ssl_offset + 5 > ipacket->p_hdr->caplen )
-        return 0;
-    int ssl_payload_len = tcp_offset + packet->payload_packet_len - ssl_offset;
-    if( ssl_payload_len > (int)(ipacket->p_hdr->caplen - (size_t)ssl_offset) )
-        ssl_payload_len = (int)(ipacket->p_hdr->caplen - (size_t)ssl_offset);
-    if(ssl_is_tls_record_header(&ipacket->data[ssl_offset],ssl_payload_len)!=1){
+    const uint8_t *rec = NULL;
+    if (ssl_record_span(ipacket, proto_index, &rec) == 0) {
         return 0;
     }
     return general_short_extraction_with_ordering_change(ipacket,proto_index,extracted_data);
+}
+
+/* ALPN protocol names of a ClientHello (comma separated, wire order) or the
+ * one a ServerHello selected (issue #569). */
+int tls_alpn_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    const struct mmt_tls_hello_facts *f = ssl_packet_facts(ipacket, proto_index);
+    if (f == NULL || f->alpn.len == 0) {
+        return 0;
+    }
+    extracted_data->data = (void *) &f->alpn;
+    return 1;
+}
+
+/* 1 when a ClientHello carries an outer encrypted_client_hello (RFC 9849):
+ * its server_name is the ECH public name, the real one is encrypted. A
+ * GREASE ECH extension (RFC 9849 §6.2) looks the same on the wire. */
+int tls_sni_hidden_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    const struct mmt_tls_hello_facts *f = ssl_packet_facts(ipacket, proto_index);
+    if (f == NULL || f->handshake_type != TLS_HANDSHAKE_CLIENT_HELLO || extracted_data->data == NULL) {
+        return 0;
+    }
+    memcpy(extracted_data->data, &f->sni_hidden, sizeof f->sni_hidden);
+    return 1;
+}
+
+/* JA4 fingerprint of a ClientHello (FoxIO JA4 specification). */
+int tls_ja4_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    const struct mmt_tls_hello_facts *f = ssl_packet_facts(ipacket, proto_index);
+    if (f == NULL || !f->has_ja4) {
+        return 0;
+    }
+    extracted_data->data = (void *) &f->ja4;
+    return 1;
 }
 
 int tls_number_record_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
@@ -269,21 +456,27 @@ int getServerNameFromServerHello(ipacket_t * ipacket, char *buffer, int buffer_l
     /* payload is byte-aligned: ssl_read_u16_be, not ntohs(get_u16()) — the
      * macro dereferences a uint16_t* on a possibly-odd offset, which is UB
      * and trips UBSan (issue #216). */
-    uint16_t offset = 0, total_len = ssl_read_u16_be(packet->payload, 7) + 9 /* SSL Header */;
+    /* the end of the ServerHello message: its record and handshake headers
+     * plus the (low 16 bits of the) handshake length */
+    uint16_t offset = 0, total_len = ssl_read_u16_be(packet->payload, TLS_HANDSHAKE_LENGTH_LOW_OFFSET)
+            + TLS_RECORD_HEADER_LEN + TLS_HANDSHAKE_HEADER_LEN;
+    /* what follows it, when enough of the payload is left to hold the start
+     * of a certificate */
+    const uint8_t *next = (total_len + SSL_CERT_RECORD_FIRST_CERT) < packet->payload_packet_len
+            ? packet->payload + total_len : NULL;
 
-    if (((total_len + 15) < packet->payload_packet_len) && (packet->payload[total_len] == 0x16) && (packet->payload[total_len + 1] == 0x03)
-            && (packet->payload[total_len + 2] == 0x00 || packet->payload[total_len + 2] == 0x01 || packet->payload[total_len + 2] == 0x02 || packet->payload[total_len + 2] == 0x03)
-            && (ssl_read_u16_be(packet->payload, total_len + 3) - ssl_read_u16_be(packet->payload, total_len + 7) == 4)
-            && (ssl_read_u16_be(packet->payload, total_len + 7) - ssl_read_u16_be(packet->payload, total_len + 10) == 3) /* Record len is 3 bytes longer than the certificates len */
-            && (packet->payload[total_len + 5] == 11 /* Server Certificate */)
+    if (next != NULL
+            && ssl_is_record_of(next, TLS_CONTENT_HANDSHAKE)
+            && ssl_handshake_fills_record(next)
+            && ssl_certificate_fills_message(next + TLS_RECORD_HEADER_LEN)
+            && (next[TLS_HANDSHAKE_TYPE_OFFSET] == TLS_HANDSHAKE_CERTIFICATE)
             ) {
-        //printf("Test from Get Server Name From Server Hello tolen = %i\n", total_len);
-        offset = total_len + 15; //This is the offset of the beginning of the certificate.
-	}else if(((total_len + 15) < packet->payload_packet_len) && (packet->payload[total_len] == 0x11 /* Server certificate */)
-            && (ssl_read_u16_be(packet->payload, total_len + 2) - ssl_read_u16_be(packet->payload, total_len + 5) == 3) /* Record len is 3 bytes longer than the certificates len */
+        offset = total_len + SSL_CERT_RECORD_FIRST_CERT; //This is the offset of the beginning of the certificate.
+	}else if(next != NULL
+            && (next[SSL_HS_TYPE_IN_MESSAGE] == SSL_CERT_MESSAGE_LEGACY_TYPE)
+            && ssl_certificate_fills_message(next)
             ) {
-        //printf("Test from Get Server Name From Server Hello tolen = %i\n", total_len);
-        offset = total_len + 10; //This is the offset of the beginning of the certificate.
+        offset = total_len + SSL_CERT_MESSAGE_FIRST_CERT; //This is the offset of the beginning of the certificate.
 	}
 
 	if(offset) {
@@ -478,7 +671,7 @@ static int ssl_sni_from_client_hello(ipacket_t * ipacket, const tls_client_hello
 int getServerNameFromClientHello(ipacket_t * ipacket, char *buffer, int buffer_len) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     /* record header (5) + handshake header (4) precede the ClientHello body */
-    const uint32_t body_offset = 9;
+    const uint32_t body_offset = TLS_RECORD_HEADER_LEN + TLS_HANDSHAKE_HEADER_LEN;
 
     memset(buffer, 0, buffer_len);
     if (packet->payload_packet_len <= body_offset) {
@@ -487,7 +680,7 @@ int getServerNameFromClientHello(ipacket_t * ipacket, char *buffer, int buffer_l
     /* payload is byte-aligned: ssl_read_u16_be, not an ntohs(*(uint16_t*))
      * dereference — the latter is a misaligned load and trips UBSan
      * (issue #216). */
-    uint32_t end = (uint32_t) ssl_read_u16_be(packet->payload, 3) + 5 /* SSL Header */;
+    uint32_t end = (uint32_t) ssl_read_u16_be(packet->payload, TLS_RECORD_LENGTH_OFFSET) + TLS_RECORD_HEADER_LEN;
     if (end > packet->payload_packet_len) {
         end = packet->payload_packet_len;
     }
@@ -582,6 +775,9 @@ uint32_t sslDetectProtocolFromServerCertificate(ipacket_t * ipacket) {
     return PROTO_UNKNOWN;
 }
 
+/* Offset of the type byte that starts a WhatsApp frame. */
+#define WHATSAPP_LEAD_OFFSET 0
+
 int check_whatsapp(ipacket_t * ipacket) {
     //Whatsapp signatures are all orthogonal with SSL signature! If we detect any valid Whatsapp signature return a positive value
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
@@ -603,12 +799,15 @@ int check_whatsapp(ipacket_t * ipacket) {
         }
 
         char whatsapp_pattern[] = {0x57, 0x41, 0x01, 0x02, 0x00};
+        /* the first byte of a WhatsApp frame: its type (0x57 'W' opens the
+         * connection header) */
+        const uint8_t lead = packet->payload_packet_len >= 1 ? packet->payload[WHATSAPP_LEAD_OFFSET] : 0;
 
         if ((flow->l4.tcp.whatsapp_conn_stage == 2 && flow->l4.tcp.whatsapp_stage >= 2) || (flow->l4.tcp.whatsapp_stage >= 6)) {
             mmt_internal_add_connection(ipacket, PROTO_WHATSAPP, MMT_REAL_PROTOCOL);
             return 1;
         }
-        if (flow->l4.tcp.whatsapp_conn_stage == 0 && packet->payload_packet_len >= 1 && packet->payload[0] == 0x57) {
+        if (flow->l4.tcp.whatsapp_conn_stage == 0 && packet->payload_packet_len >= 1 && lead == 0x57) {
             if (packet->payload_packet_len > 5 && (mmt_memcmp(packet->payload, whatsapp_pattern, sizeof (whatsapp_pattern)) == 0)) {
                 flow->l4.tcp.whatsapp_conn_stage = 2;
                 return 1;
@@ -621,13 +820,13 @@ int check_whatsapp(ipacket_t * ipacket) {
             flow->l4.tcp.whatsapp_conn_stage = 2;
             return 1;
         }
-        if ((packet->payload[0] == 0x10) && (packet->payload_packet_len == 1)) {
+        if ((lead == 0x10) && (packet->payload_packet_len == 1)) {
             flow->l4.tcp.whatsapp_stage += 1;
             return 1;
         }
-        if (((packet->payload[0] == 0x10 || packet->payload[0] == 0x80) && (packet->payload_packet_len > 3) &&
-                (ssl_read_u16_be(packet->payload, 1) == packet->payload_packet_len)) ||
-                (packet->payload[0] == 0x00 && (packet->payload_packet_len > 3) && (ssl_read_u16_be(packet->payload, 0) == packet->payload_packet_len))) {
+        if (((lead == 0x10 || lead == 0x80) && (packet->payload_packet_len > 3) &&
+                (ssl_read_u16_be(packet->payload, WHATSAPP_LEAD_OFFSET + 1) == packet->payload_packet_len)) ||
+                (lead == 0x00 && (packet->payload_packet_len > 3) && (ssl_read_u16_be(packet->payload, WHATSAPP_LEAD_OFFSET) == packet->payload_packet_len))) {
             flow->l4.tcp.whatsapp_stage += 1;
             return 1;
         }
@@ -751,8 +950,8 @@ int check_gameforge_tcp(ipacket_t * ipacket) {
  */
 static int ssl_is_client_hello_start(const struct mmt_tcpip_internal_packet_struct *packet) {
     const uint8_t *p = packet->payload;
-    return p[5] == 1 /* Client Hello */ && p[9] == 0x03 && p[10] <= 0x03
-            && ssl_read_u16_be(p, 3) - ssl_read_u16_be(p, 7) == 4;
+    return ssl_handshake_type_is(p, TLS_HANDSHAKE_CLIENT_HELLO) && ssl_hello_version_ok(p)
+            && ssl_handshake_fills_record(p);
 }
 
 /*
@@ -764,20 +963,20 @@ static int ssl_is_client_hello_start(const struct mmt_tcpip_internal_packet_stru
  */
 static int ssl_begin_client_hello(ipacket_t * ipacket, struct mmt_internal_tcpip_session_struct *flow) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    uint16_t record_len = ssl_read_u16_be(packet->payload, 3);
+    uint16_t record_len = ssl_read_u16_be(packet->payload, TLS_RECORD_LENGTH_OFFSET);
 
     if (flow->l4.tcp.ssl_hello_started || ipacket->session == NULL || packet->tcp == NULL
             || record_len > TLS_HELLO_MAX_MESSAGE) {
         return 0;
     }
     flow->l4.tcp.ssl_hello_started = 1;
-    uint32_t body_seq = ntohl(packet->tcp->seq) + 5 /* record header */;
+    uint32_t body_seq = ntohl(packet->tcp->seq) + TLS_RECORD_HEADER_LEN;
     if (tls_hello_reasm_begin(&flow->tls_hello, record_len, body_seq,
                               ipacket->session->last_packet_direction) != TLS_REASM_PENDING) {
         return 0;
     }
-    tls_hello_reasm_feed(&flow->tls_hello, body_seq, packet->payload + 5,
-                         (size_t) packet->payload_packet_len - 5);
+    tls_hello_reasm_feed(&flow->tls_hello, body_seq, packet->payload + TLS_RECORD_HEADER_LEN,
+                         (size_t) packet->payload_packet_len - TLS_RECORD_HEADER_LEN);
     return 1;
 }
 
@@ -806,9 +1005,108 @@ static int ssl_continue_client_hello(ipacket_t * ipacket, struct mmt_internal_tc
         const uint8_t *msg = tls_hello_reasm_data(flow->tls_hello, &len);
         mmt_int_ssl_add_connection(ipacket, PROTO_SSL);
         ssl_detect_protocol_from_client_hello_message(ipacket, msg, len);
+        /* issue #569: its ALPN, version, ECH and JA4, before it is freed */
+        ssl_note_hello(ipacket, msg, len);
         tls_hello_reasm_release(&flow->tls_hello);
     }
     return 1;
+}
+
+/*
+ * A handshake record (content type 22, version 3.0-3.3) starting the payload
+ * of a packet of more than 12 bytes: a ClientHello (whole, or the start of
+ * one collected over later segments — issue #568), a ServerHello or a
+ * Certificate. Returns the verdict, or -1 when it is none of them.
+ */
+static int ssl_classify_handshake_record(ipacket_t * ipacket, struct mmt_internal_tcpip_session_struct *flow) {
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    const uint8_t *p = packet->payload;
+
+    if (ssl_is_client_hello_start(packet)
+            && packet->payload_packet_len >= ssl_read_u16_be(p, TLS_RECORD_LENGTH_OFFSET) + TLS_RECORD_HEADER_LEN) { /* the whole record is here (issue #568: what follows it is not parsed) */
+        //This is a client hello! process it as so
+        mmt_int_ssl_add_connection(ipacket, PROTO_SSL);
+        //Now try to get the server from this packet
+        sslDetectProtocolFromClientHello(ipacket);
+        return 1;
+    }
+    if (ssl_is_client_hello_start(packet) && ssl_begin_client_hello(ipacket, flow)) {
+        /* Issue #568: the record continues in later segments; its SNI is
+         * read once they complete it (ssl_continue_client_hello()). */
+        mmt_int_ssl_add_connection(ipacket, PROTO_SSL);
+        return 1;
+    }
+    /* A Server Hello may share its record with other handshake messages:
+     * either its length fills the record, or the flow is already TLS (we
+     * have seen the Client Hello, the server sends several messages). */
+    if ((ssl_handshake_fills_record(p) || packet->detected_protocol_stack[0] == PROTO_SSL)
+            && ssl_handshake_type_is(p, TLS_HANDSHAKE_SERVER_HELLO) && ssl_hello_version_ok(p)) {
+        //This is a server hello! process it as so
+        mmt_int_ssl_add_connection(ipacket, PROTO_SSL);
+        //Now try to parse this message to check if it contains a certificate record
+        sslDetectProtocolFromServerHello(ipacket);
+        return 1;
+    }
+    if (ssl_handshake_fills_record(p)
+            && ssl_certificate_fills_message(p + TLS_RECORD_HEADER_LEN)
+            && ssl_handshake_type_is(p, TLS_HANDSHAKE_CERTIFICATE)) {
+        //This is a server certificate! process it as so
+        mmt_int_ssl_add_connection(ipacket, PROTO_SSL);
+        //Now try to parse this certificate to get the subject and try to get the corresonding protocol
+        sslDetectProtocolFromServerCertificate(ipacket);
+        return 1;
+    }
+    return -1;
+}
+
+/*
+ * The records other than a handshake one the classifier recognises in a
+ * payload of more than 12 bytes: an SSLv2 ClientHello, TLS application data
+ * and an encrypted alert (versions 3.0-3.3). Each raises the flow's SSL
+ * stage and asks for more packets (4). Returns -1 when none matches.
+ */
+static int ssl_classify_other_record(const struct mmt_tcpip_internal_packet_struct *packet,
+                                     struct mmt_internal_tcpip_session_struct *flow) {
+    const uint8_t *p = packet->payload;
+    int sslv2_hello = p[SSL2_MSG_TYPE_OFFSET] == SSL2_CLIENT_HELLO
+            && p[SSL2_VERSION_MAJOR_OFFSET] == TLS_VERSION_MAJOR
+            && p[SSL2_VERSION_MINOR_OFFSET] <= SSL2_MINOR_MAX;
+
+	// SSLv2 Record
+	/* BW: Who the hell is still using SSL2.0 !!!!! */
+	if (sslv2_hello && (packet->payload_packet_len - p[SSL2_LENGTH_LOW_OFFSET] == SSL2_HEADER_LEN)) {
+	  flow->l4.tcp.ssl_stage += 1;
+	  return 4;
+	}
+
+	/* BW: Who the hell is still using SSL2.0 !!!!! */
+	if (sslv2_hello && (packet->payload_packet_len - SSL2_HEADER_LEN) >= p[SSL2_LENGTH_LOW_OFFSET]
+		&& (flow->l4.tcp.ssl_stage > 0)) {
+   	    flow->l4.tcp.ssl_stage += 1;
+	  return 4;
+	}
+
+	/* BW: I saw TLS packets less than 40 bytes!
+	 * TLS application: 0x17 followed by version (3.0 or 3.1 or 3.2) followed by len */
+	if (ssl_is_record_of(p, TLS_CONTENT_APPLICATION_DATA)
+			&& (packet->payload_packet_len <= (ssl_read_u16_be(p, TLS_RECORD_LENGTH_OFFSET) + TLS_RECORD_HEADER_LEN))) {
+		// SSLv3 Record
+		flow->l4.tcp.ssl_stage += 1;
+		return 4;
+	}
+
+	/* BW:
+	 * TLS application: 0x15 (encrypted alert) followed by version (3.0 or 3.1 or 3.2) followed by len
+	 * TLS encrypted alert! This is SSL. The encrypted alert cannot be
+	 * detected in stage 0 — the record only becomes readable here.
+	 */
+	if (ssl_is_record_of(p, TLS_CONTENT_ALERT)
+			&& (packet->payload_packet_len - ssl_read_u16_be(p, TLS_RECORD_LENGTH_OFFSET) == (int) TLS_RECORD_HEADER_LEN)) {
+		// SSLv3 Record
+		flow->l4.tcp.ssl_stage += 1;
+		return 4;
+	}
+    return -1;
 }
 
 int mmt_classify_ssl(ipacket_t * ipacket, unsigned index) {
@@ -852,109 +1150,19 @@ int mmt_classify_ssl(ipacket_t * ipacket, unsigned index) {
 		return 1;
 	}
 
-    if (packet->payload[0] == 0x16 && packet->payload[1] == 0x03
-            && (packet->payload[2] == 0x00 || packet->payload[2] == 0x01 || packet->payload[2] == 0x02 || packet->payload[2] == 0x03)) {
-        if (ssl_is_client_hello_start(packet)
-                && packet->payload_packet_len >= ssl_read_u16_be(packet->payload, 3) + 5) { /* the whole record is here (issue #568: what follows it is not parsed) */
-            //This is a client hello! process it as so
-            mmt_int_ssl_add_connection(ipacket, PROTO_SSL);
-            //Now try to get the server from this packet
-            uint32_t emb_proto = sslDetectProtocolFromClientHello(ipacket);
-            if (emb_proto != PROTO_UNKNOWN) {
-                //mmt_int_ssl_add_connection(ipacket, emb_proto);
-            }
-            return 1;
-        } else if (ssl_is_client_hello_start(packet) && ssl_begin_client_hello(ipacket, flow)) {
-            /* Issue #568: the record continues in later segments; its SNI is
-             * read once they complete it (ssl_continue_client_hello()). */
-            mmt_int_ssl_add_connection(ipacket, PROTO_SSL);
-            return 1;
-        } else if ((ssl_read_u16_be(packet->payload, 3) - ssl_read_u16_be(packet->payload, 7) == 4) /* Server Hello may contain different
-																									TLS records. compare the record length
-																									with the handshake protocol message len */
-                && (packet->payload[5] == 2 /* Server Hello */) && (packet->payload[9] == 0x03)
-                && (packet->payload[10] == 0x00 || packet->payload[10] == 0x01 || packet->payload[10] == 0x02 || packet->payload[10] == 0x03)) {
-            //This is a server hello! process it as so
-            mmt_int_ssl_add_connection(ipacket, PROTO_SSL);
-            //Now try to parse this message to check if it contains a certificate record
-            uint32_t emb_proto = sslDetectProtocolFromServerHello(ipacket);
-            if (emb_proto != PROTO_UNKNOWN) {
-                //mmt_int_ssl_add_connection(ipacket, emb_proto);
-            }
-            return 1;
-        } else if ( /* Multiple handshake messages. We have seen the Client Hello the Server sends multiple handshake messages */
-				(packet->detected_protocol_stack[0] == PROTO_SSL)
-                && (packet->payload[5] == 2 /* Server Hello */) && (packet->payload[9] == 0x03)
-                && (packet->payload[10] == 0x00 || packet->payload[10] == 0x01 || packet->payload[10] == 0x02 || packet->payload[10] == 0x03)) {
-            //This is a server hello! process it as so
-            mmt_int_ssl_add_connection(ipacket, PROTO_SSL);
-            //Now try to parse this message to check if it contains a certificate record
-            uint32_t emb_proto = sslDetectProtocolFromServerHello(ipacket);
-            if (emb_proto != PROTO_UNKNOWN) {
-                //mmt_int_ssl_add_connection(ipacket, emb_proto);
-            }
-            return 1;
-        } else if ((ssl_read_u16_be(packet->payload, 3) - ssl_read_u16_be(packet->payload, 7) == 4) /* Certificate may contain different
-																									TLS records. compare the record length
-																									with the handshake protocol message len */
-                && (ssl_read_u16_be(packet->payload, 7) - ssl_read_u16_be(packet->payload, 10) == 3) /* Record len is 3 bytes longer than the certificates len */
-                && (packet->payload[5] == 11 /* Server Certificate */)
-                ) {
-            //This is a server certificate! process it as so
-            mmt_int_ssl_add_connection(ipacket, PROTO_SSL);
-            //Now try to parse this certificate to get the subject and try to get the corresonding protocol
-            uint32_t emb_proto = sslDetectProtocolFromServerCertificate(ipacket);
-            if (emb_proto != PROTO_UNKNOWN) {
-                //mmt_int_ssl_add_connection(ipacket, emb_proto);
-            }
-            return 1;
-        } else {
-            // SSLv3 Record
-            flow->l4.tcp.ssl_stage += 1;
+    if (ssl_is_record_of(packet->payload, TLS_CONTENT_HANDSHAKE)) {
+        int verdict = ssl_classify_handshake_record(ipacket, flow);
+        if (verdict >= 0) {
+            return verdict;
         }
+        // SSLv3 Record
+        flow->l4.tcp.ssl_stage += 1;
     }
 
-	// SSLv2 Record
-	/* BW: Who the hell is still using SSL2.0 !!!!! */
-	if (packet->payload[2] == 0x01 && packet->payload[3] == 0x03
-		&& (packet->payload[4] == 0x00 || packet->payload[4] == 0x01 || packet->payload[4] == 0x02)
-		&& (packet->payload_packet_len - packet->payload[1] == 2)) {
-	  flow->l4.tcp.ssl_stage += 1;
-	  return 4;
-	}
-
-	/* BW: Who the hell is still using SSL2.0 !!!!! */
-	if (packet->payload[2] == 0x01 && packet->payload[3] == 0x03
-		&& (packet->payload[4] == 0x00 || packet->payload[4] == 0x01 || packet->payload[4] == 0x02)
-		&& (packet->payload_packet_len - 2) >= packet->payload[1]
-		&& (flow->l4.tcp.ssl_stage > 0)) {
-
-   	    flow->l4.tcp.ssl_stage += 1;
-	  return 4;
-	}
-
-	/* BW: I saw TLS packets less than 40 bytes!
-	 * TLS application: 0x17 followed by version (3.0 or 3.1 or 3.2) followed by len */
-	if (packet->payload[0] == 0x17 && packet->payload[1] == 0x03
-			&& (packet->payload[2] == 0x00 || packet->payload[2] == 0x01 || packet->payload[2] == 0x02 || packet->payload[2] == 0x03)
-			&& (packet->payload_packet_len <= (ssl_read_u16_be(packet->payload, 3) + 5))) {
-		// SSLv3 Record
-		flow->l4.tcp.ssl_stage += 1;
-		return 4;
-	}
-
-	/* BW:
-	 * TLS application: 0x15 (encrypted alert) followed by version (3.0 or 3.1 or 3.2) followed by len
-	 * TLS encrypted alert! This is SSL. The encrypted alert cannot be
-	 * detected in stage 0 — the record only becomes readable here.
-	 */
-	if (packet->payload[0] == 0x15 && packet->payload[1] == 0x03
-			&& (packet->payload[2] == 0x00 || packet->payload[2] == 0x01 || packet->payload[2] == 0x02 || packet->payload[2] == 0x03)
-			&& (packet->payload_packet_len - ssl_read_u16_be(packet->payload, 3) == 5)) {
-		// SSLv3 Record
-		flow->l4.tcp.ssl_stage += 1;
-		return 4;
-	}
+    int verdict = ssl_classify_other_record(packet, flow);
+    if (verdict >= 0) {
+        return verdict;
+    }
 
     if (ipacket->session->data_packet_count_direction[ipacket->session->last_packet_direction] < 8) {
 		//Wait for more packets before deciding this is not SSL
@@ -979,6 +1187,9 @@ static attribute_metadata_t ssl_attributes_metadata[SSL_ATTRIBUTES_NB] = {
     {TLS_CONTENT_TYPE, TLS_CONTENT_TYPE_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, tls_content_type_extraction},
     {TLS_VERSION, TLS_VERSION_ALIAS, MMT_U16_DATA, sizeof (short), 1, SCOPE_PACKET, tls_version_extraction},
     {TLS_LENGTH, TLS_LENGTH_ALIAS, MMT_U16_DATA, sizeof (short), 3, SCOPE_PACKET, tls_length_extraction},
+    {TLS_ALPN, TLS_ALPN_ALIAS, MMT_HEADER_LINE, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_PACKET, tls_alpn_extraction},
+    {TLS_SNI_HIDDEN, TLS_SNI_HIDDEN_ALIAS, MMT_U8_DATA, sizeof (char), POSITION_NOT_KNOWN, SCOPE_PACKET, tls_sni_hidden_extraction},
+    {TLS_JA4, TLS_JA4_ALIAS, MMT_HEADER_LINE, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_PACKET, tls_ja4_extraction},
 };
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////

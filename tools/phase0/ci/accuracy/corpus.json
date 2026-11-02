@@ -659,6 +659,75 @@
       }
     },
     {
+      "pcap": "acc_tls13_alpn_h2.pcap",
+      "family": "tls",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_ssl"
+      ],
+      "description": "TCP/443 three-way handshake, a TLS 1.3 ClientHello (SNI accuracy.example, ALPN h2 then http/1.1, supported_versions TLS 1.3 then 1.2, the cipher suites, extensions and signature algorithms of the FoxIO JA4 specification example with GREASE values interleaved) and a TLS 1.3 ServerHello (supported_versions 0x0304): ssl.tls_alpn h2,http/1.1, ssl.tls_version 0x0304 and the published JA4 t13d1516h2_8daaf6152771_e5627efa2ab1 (issue #569).",
+      "sha256": "1cd717a909291214b0777b633621d37501462f91a781a0b13e665d28cd22677e",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_tls13_alpn_h2"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); the cipher suites, extensions and signature algorithms are the published FoxIO JA4 specification example's; no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #569",
+        "date": "2026-11-02",
+        "checks": [
+          "RFC 8446 \u00a74.1.2 ClientHello: legacy_version 0x0303 in a record of version 0x0301, a 32-byte legacy_session_id, 16 cipher suites (GREASE 0x0a0a and the 15 of the JA4 example), 18 extensions of which two are GREASE (RFC 8701); handshake length = record length - 4",
+          "RFC 7301 \u00a73.1 ALPN ProtocolNameList h2, http/1.1; RFC 8446 \u00a74.2.1 supported_versions GREASE, 0x0304, 0x0303; RFC 8446 \u00a74.2.3 signature_algorithms in the JA4 example's order",
+          "RFC 8446 \u00a74.1.3 ServerHello: legacy_version 0x0303, the session id echoed, TLS_AES_128_GCM_SHA256, supported_versions 0x0304 and an x25519 key_share",
+          "the JA4 the SDK reports is checked against the specification's published value by tests/parser_boundaries/test_tls_hello_attrs_api.c, never against the SDK's own output; the wire verdicts are those of acc_tls_positive"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_tls_ech.pcap",
+      "family": "tls",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_ssl"
+      ],
+      "description": "Same TLS 1.3 exchange whose ClientHello also carries an outer encrypted_client_hello (RFC 9849) and names the ECH public name public.example: ssl.tls_sni_hidden is 1, the server_name is the public name, not the hidden one (issue #569).",
+      "sha256": "73987c726e9647ec3dfd4f143129f86d7b4562ddc61c96b129b547082f9b6447",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_tls_ech"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); the cipher suites, extensions and signature algorithms are the published FoxIO JA4 specification example's; no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #569",
+        "date": "2026-11-02",
+        "checks": [
+          "bytes identical to acc_tls13_alpn_h2 except the client port, the SNI host name and the encrypted_client_hello extension appended last, with the lengths that depend on them",
+          "RFC 9849 \u00a75 ECHClientHello: type outer (0), HPKE cipher suite HKDF-SHA256 / AES-128-GCM, config id 0x2a, a 32-byte enc and a 144-byte payload",
+          "public.example is an RFC 2606 reserved name the hostname table does not map: the flow is plain ssl with no attribution; a GREASE ECH extension (RFC 9849 \u00a76.2) would look the same, which the sni_hidden flag documents"
+        ]
+      }
+    },
+    {
       "pcap": "acc_tls_negative.pcap",
       "family": "tls",
       "case": "negative",

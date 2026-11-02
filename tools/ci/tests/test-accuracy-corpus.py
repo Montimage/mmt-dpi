@@ -247,8 +247,9 @@ with Scratch() as s:
     check("attribution counted as wire, not other",
           # four positive TLS cases (plain, google, teams and sharepoint
           # SNI) of two wire packets each (issue #566), plus the split
-          # hellos' 3 + 5 + 2 (issue #568)
-          tls_row and tls_row[0][3] == "18" and tls_row[0][5] == "0", out)
+          # hellos' 3 + 5 + 2 (issue #568), plus the TLS 1.3 and ECH
+          # cases' 2 + 2 (issue #569)
+          tls_row and tls_row[0][3] == "22" and tls_row[0][5] == "0", out)
     attr_rows = [ln for ln in out.split("# heuristic", 1)[-1].splitlines()
                  if ln.startswith(("ngap ", "nas "))]
     check("nas_5g beneath ngap is not heuristic attribution",

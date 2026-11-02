@@ -747,6 +747,108 @@ def gen_acc_tls_split_truncated_pcap(path):
     print("wrote %s (accuracy: TLS ClientHello never completed)" % path)
 
 
+# Issue #569 (F-BUG-309): a TLS 1.3 ClientHello whose cipher suites,
+# extensions and signature algorithms are those of the example in the FoxIO
+# JA4 specification (technical_details/JA4.md), so its JA4 must be the
+# published t13d1516h2_8daaf6152771_e5627efa2ab1; GREASE values (RFC 8701)
+# are interleaved, and the specification ignores them. ALPN offers h2 then
+# http/1.1, supported_versions TLS 1.3 then 1.2.
+JA4_SPEC_SUITES = (0x1301, 0x1302, 0x1303, 0xc02b, 0xc02f, 0xc02c, 0xc030,
+                   0xcca9, 0xcca8, 0xc013, 0xc014, 0x009c, 0x009d, 0x002f,
+                   0x0035)
+JA4_SPEC_SIGALGS = (0x0403, 0x0804, 0x0401, 0x0503, 0x0805, 0x0501, 0x0806,
+                    0x0601)
+TLS_GREASE_A, TLS_GREASE_B = 0x0a0a, 0x2a2a
+TLS_EXT_ECH = 0xfe0d
+
+
+def _tls_ext(etype, body):
+    return struct.pack("!HH", etype, len(body)) + body
+
+
+def _tls13_client_hello(sni, ech=False):
+    """TLS 1.3 ClientHello record with the JA4 specification's suites,
+    extensions and signature algorithms. With `ech`, an outer
+    encrypted_client_hello (RFC 9849 §5: type 0, HPKE suite HKDF-SHA256 /
+    AES-128-GCM, config id, 32-byte enc, 144-byte payload) is added and
+    `sni` is the ECH public name."""
+    host = sni.encode()
+    sni_list = b"\x00" + struct.pack("!H", len(host)) + host
+    alpn = b"\x02h2\x08http/1.1"
+    versions = struct.pack("!HHH", TLS_GREASE_A, 0x0304, 0x0303)
+    sigalgs = b"".join(struct.pack("!H", a) for a in JA4_SPEC_SIGALGS)
+    exts = [
+        _tls_ext(TLS_GREASE_A, b""),
+        _tls_ext(0x0000, struct.pack("!H", len(sni_list)) + sni_list),
+        _tls_ext(0x0017, b""),                                 # extended_master_secret
+        _tls_ext(0xff01, b"\x00"),                             # renegotiation_info
+        _tls_ext(0x000a, struct.pack("!HHHHH", 8, TLS_GREASE_B, 0x001d, 0x0017, 0x0018)),
+        _tls_ext(0x000b, b"\x01\x00"),                         # ec_point_formats
+        _tls_ext(0x0023, b""),                                 # session_ticket
+        _tls_ext(0x0010, struct.pack("!H", len(alpn)) + alpn),
+        _tls_ext(0x0005, b"\x01\x00\x00\x00\x00"),             # status_request
+        _tls_ext(0x000d, struct.pack("!H", len(sigalgs)) + sigalgs),
+        _tls_ext(0x0012, b""),                                 # signed_certificate_timestamp
+        _tls_ext(0x0033, struct.pack("!HHH", 38, 0x001d, 32) + bytes(range(32))),
+        _tls_ext(0x002d, b"\x01\x01"),                         # psk_key_exchange_modes
+        _tls_ext(0x002b, bytes([len(versions)]) + versions),
+        _tls_ext(0x001b, b"\x02\x00\x02"),                     # compress_certificate
+        _tls_ext(0x4469, b"\x00\x03\x02h2"),                   # application_settings
+        _tls_ext(TLS_GREASE_B, b"\x00"),
+        _tls_ext(0x0015, b"\x00" * 16),                         # padding
+    ]
+    if ech:
+        enc, payload = bytes(range(64, 96)), bytes((7 * i) & 0xff for i in range(144))
+        exts.append(_tls_ext(TLS_EXT_ECH, b"\x00" + struct.pack("!HH", 1, 1) + b"\x2a"
+                             + struct.pack("!H", len(enc)) + enc
+                             + struct.pack("!H", len(payload)) + payload))
+    suites = (TLS_GREASE_A,) + JA4_SPEC_SUITES
+    ext = b"".join(exts)
+    body = (b"\x03\x03" + bytes(range(32)) + b"\x20" + bytes(range(32, 64))
+            + struct.pack("!H", 2 * len(suites))
+            + b"".join(struct.pack("!H", c) for c in suites)
+            + b"\x01\x00" + struct.pack("!H", len(ext)) + ext)
+    hs = b"\x01" + struct.pack("!I", len(body))[1:] + body
+    return struct.pack("!BHH", 22, 0x0301, len(hs)) + hs
+
+
+def _tls13_server_hello():
+    """TLS 1.3 ServerHello (RFC 8446 §4.1.3): legacy_version 0x0303, the
+    client's session id echoed, TLS_AES_128_GCM_SHA256, supported_versions
+    selecting 0x0304 and an x25519 key_share."""
+    ext = (_tls_ext(0x002b, b"\x03\x04")
+           + _tls_ext(0x0033, struct.pack("!HH", 0x001d, 32) + bytes(range(96, 128))))
+    body = (b"\x03\x03" + bytes(range(128, 160)) + b"\x20" + bytes(range(32, 64))
+            + b"\x13\x01" + b"\x00" + struct.pack("!H", len(ext)) + ext)
+    hs = b"\x02" + struct.pack("!I", len(body))[1:] + body
+    return struct.pack("!BHH", 22, 0x0303, len(hs)) + hs
+
+
+def _acc_tls13_pcap(path, cport, sni, ech, note):
+    f = pcap_open(path)
+    flow = _AccFlow(f, 6, cport, 443)
+    flow.handshake()
+    flow.send("cli", _tls13_client_hello(sni, ech=ech))
+    flow.send("srv", _tls13_server_hello())
+    f.close()
+    print("wrote %s (accuracy: %s)" % (path, note))
+
+
+def gen_acc_tls13_alpn_h2_pcap(path):
+    """TCP/443 handshake, a TLS 1.3 ClientHello (SNI accuracy.example, ALPN
+    h2 + http/1.1, the JA4 specification's suites and extensions) and a
+    TLS 1.3 ServerHello: ALPN h2, version 0x0304 from supported_versions and
+    the published JA4 (issue #569)."""
+    _acc_tls13_pcap(path, 49326, "accuracy.example", False, "TLS 1.3 with ALPN h2")
+
+
+def gen_acc_tls_ech_pcap(path):
+    """Same exchange with an outer encrypted_client_hello: the server_name
+    is the ECH public name public.example, the real one is encrypted, so the
+    hello is reported sni-hidden (issue #569)."""
+    _acc_tls13_pcap(path, 49327, "public.example", True, "TLS 1.3 with ECH")
+
+
 def gen_acc_tls_negative_pcap(path):
     """Plaintext HTTP/1.1 on TCP/443 — port 443 alone must not yield a TLS
     verdict."""
@@ -2088,6 +2190,8 @@ ACC_GENS = {
     "acc_tls_split_clienthello": gen_acc_tls_split_clienthello_pcap,
     "acc_tls_split_reordered": gen_acc_tls_split_reordered_pcap,
     "acc_tls_split_truncated": gen_acc_tls_split_truncated_pcap,
+    "acc_tls13_alpn_h2": gen_acc_tls13_alpn_h2_pcap,
+    "acc_tls_ech": gen_acc_tls_ech_pcap,
     "acc_tls_negative": gen_acc_tls_negative_pcap,
     "acc_quic_positive": gen_acc_quic_positive_pcap,
     "acc_quic_v2_positive": gen_acc_quic_v2_positive_pcap,
