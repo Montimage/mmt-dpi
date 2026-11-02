@@ -25,6 +25,22 @@
 /* INT shim + metadata header offset probed when the INT shim Length is
  * unusable (the historical fixed INT header size). */
 #define QUIC_IETF_INT_DEFAULT_LENGTH 56
+#define QUIC_IETF_UDP_HEADER_LEN 8
+/* Issue #571: a capture that starts mid-connection shows only 1-RTT
+ * packets. The flow is QUIC once QUIC_IETF_SH_MIN_PACKETS client packets to
+ * UDP/QUIC_IETF_SH_PORT in a row carried the same first
+ * QUIC_IETF_SH_DCID_PREFIX bytes of DCID; QUIC_IETF_SH_REJECTED marks a flow
+ * shown not to be QUIC. */
+#define QUIC_IETF_SH_PORT 443
+#define QUIC_IETF_SH_MIN_PACKETS 4
+#define QUIC_IETF_SH_DCID_PREFIX 8
+#define QUIC_IETF_SH_REJECTED 0xff
+/* TURN ChannelData (RFC 8656 §12.4) on UDP: channel numbers 0x4000-0x4fff,
+ * a 16-bit length after them, the data padded to 4 bytes at most. */
+#define QUIC_IETF_TURN_CHANNEL_MASK 0xf0
+#define QUIC_IETF_TURN_CHANNEL_HIGH 0x40
+#define QUIC_IETF_TURN_HEADER_LEN 4
+#define QUIC_IETF_TURN_MAX_PADDING 3
 
 static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
@@ -159,6 +175,38 @@ static uint8_t _quic_ietf_short_header_dcid_length(const ipacket_t *ipacket,
 	return QUIC_IETF_DEFAULT_SHORT_HEADER_DCID_LENGTH;
 }
 
+static inline int _quic_ietf_is_chained(const ipacket_t *ipacket, unsigned index);
+
+/* Issue #571: the SNI, ALPN and JA4 of the client's ClientHello, reported on
+ * the packet whose Initial completed it, for the flow's first QUIC layer. */
+static int _quic_ietf_hello_attribute(const ipacket_t *ipacket, unsigned index,
+		const quic_ietf_session_t *session, attribute_t *extracted_data) {
+	static __thread mmt_int_one_line_struct_t lines[QUIC_IETF_TLS_JA4 - QUIC_IETF_SERVER_NAME + 1];
+	const quic_hello_facts_t *hello = session->crypto.hello;
+	if( hello == NULL || session->hello_packet_id != ipacket->packet_id
+			|| _quic_ietf_is_chained( ipacket, index ) )
+		return ATTRIBUTE_UNSET;
+	mmt_int_one_line_struct_t *line = &lines[extracted_data->field_id - QUIC_IETF_SERVER_NAME];
+	switch( extracted_data->field_id ){
+	case QUIC_IETF_SERVER_NAME:
+		line->ptr = (const uint8_t *) hello->sni;
+		line->len = hello->sni_len;
+		break;
+	case QUIC_IETF_TLS_ALPN:
+		line->ptr = (const uint8_t *) hello->alpn;
+		line->len = hello->alpn_len;
+		break;
+	default:
+		line->ptr = (const uint8_t *) hello->ja4;
+		line->len = hello->has_ja4 ? TLS_JA4_LEN : 0;
+		break;
+	}
+	if( line->len == 0 )
+		return ATTRIBUTE_UNSET;
+	extracted_data->data = line;
+	return ATTRIBUTE_SET;
+}
+
 /* non-static: driven directly by tools/phase0/tests/quic_dtls_extractor_test.c
    (declared in internal_decls.h — internal seam, not a public API) */
 int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
@@ -185,6 +233,10 @@ int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
 				return ATTRIBUTE_SET;
 			} else
 				return ATTRIBUTE_UNSET;
+		case QUIC_IETF_SERVER_NAME:
+		case QUIC_IETF_TLS_ALPN:
+		case QUIC_IETF_TLS_JA4:
+			return _quic_ietf_hello_attribute( ipacket, index, session_data, extracted_data );
 		}
 	}
 
@@ -290,6 +342,112 @@ static int _quic_ietf_session_data_analysis(ipacket_t * ipacket, unsigned index)
 static void _quic_ietf_learn_cid_length(ipacket_t * ipacket, unsigned index,
 		quic_ietf_session_t * session);
 
+/* Bytes the IP header declares from the UDP header at data offset udp_off
+ * on: the IPv4 total length (proto_ip.c keeps the captured length when it
+ * is 0) or the IPv6 payload length, less what precedes the UDP header. The
+ * captured length only for an IPv6 jumbogram, whose length the header does
+ * not carry. Unlike packet->l4_packet_len, a snap length does not cut it. */
+static size_t _quic_ietf_ip_declared_len(const ipacket_t *ipacket, size_t udp_off) {
+	const struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+	if( packet->iph != NULL ){
+		size_t ip_off = (size_t) ((uintptr_t) packet->iph - (uintptr_t) ipacket->data);
+		if( ip_off > udp_off || udp_off - ip_off > packet->l3_packet_len )
+			return 0;
+		return packet->l3_packet_len - (udp_off - ip_off);
+	}
+	if( packet->iphv6 != NULL ){
+		const uint8_t *ip6 = (const uint8_t *) packet->iphv6;
+		size_t ip_off = (size_t) ((uintptr_t) ip6 - (uintptr_t) ipacket->data);
+		size_t plen = ((size_t) ip6[4] << 8) | ip6[5];
+		if( plen == 0 )
+			return ipacket->p_hdr->caplen - udp_off;
+		if( udp_off < ip_off + sizeof(struct mmt_ipv6hdr)
+				|| udp_off - ip_off - sizeof(struct mmt_ipv6hdr) > plen )
+			return 0;
+		return plen - (udp_off - ip_off - sizeof(struct mmt_ipv6hdr));
+	}
+	return ipacket->p_hdr->caplen - udp_off;
+}
+
+/* Bytes of the UDP datagram from data offset `offset` on, as the UDP header
+ * bounds the datagram inside the IP payload — the derivation of
+ * udp_pre_classification_function before its caplen clamp: udp->len, at
+ * most what the IP header declares, 0 meaning all of it (issue #571). Never
+ * the captured length, which an FCS trailer or a snap length changes. 0
+ * without a UDP header or when `offset` is not inside the datagram. */
+static size_t _quic_ietf_udp_datagram_len(const ipacket_t *ipacket, size_t offset) {
+	const struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+	if( packet == NULL || packet->udp == NULL )
+		return 0;
+	uintptr_t udp_off = (uintptr_t) packet->udp - (uintptr_t) ipacket->data;
+	if( udp_off >= ipacket->p_hdr->caplen
+			|| ipacket->p_hdr->caplen - udp_off < QUIC_IETF_UDP_HEADER_LEN )
+		return 0;
+	size_t bound = _quic_ietf_ip_declared_len( ipacket, (size_t) udp_off );
+	size_t udp_len = ntohs( packet->udp->len );
+	if( udp_len != 0 && udp_len < bound )
+		bound = udp_len;
+	size_t start = (size_t) udp_off + QUIC_IETF_UDP_HEADER_LEN;
+	if( bound <= QUIC_IETF_UDP_HEADER_LEN || offset < start
+			|| offset - start >= bound - QUIC_IETF_UDP_HEADER_LEN )
+		return 0;
+	return bound - QUIC_IETF_UDP_HEADER_LEN - (offset - start);
+}
+
+/* TURN ChannelData framing (RFC 8656 §12.4): a channel number 0x4000-0x4fff
+ * whose length field + 4 is the datagram length, up to 3 bytes of padding
+ * aside. It looks like a QUIC 1-RTT first byte, and with constant-size data
+ * its next 8 bytes repeat like a DCID (issue #571). */
+static int _quic_ietf_is_turn_channel_data(const uint8_t *data, size_t avail, size_t datagram_len) {
+	if( avail < QUIC_IETF_TURN_HEADER_LEN
+			|| (data[0] & QUIC_IETF_TURN_CHANNEL_MASK) != QUIC_IETF_TURN_CHANNEL_HIGH )
+		return 0;
+	size_t framed = QUIC_IETF_TURN_HEADER_LEN + (((size_t) data[2] << 8) | data[3]);
+	return datagram_len >= framed && datagram_len - framed <= QUIC_IETF_TURN_MAX_PADDING;
+}
+
+/* Issue #571: a short header on a flow with no QUIC session (the capture
+ * started mid-connection). Client packets to UDP/443 count when they repeat
+ * the first 8 bytes after the first one — the DCID of a 1-RTT packet, which
+ * a connection keeps; other bytes restart the count. Packets from port 443
+ * neither count nor reset (the client's DCID is often empty). A packet with
+ * the fixed bit clear, or TURN ChannelData framing, in either direction shows
+ * the flow is not QUIC: it is never counted again. The state lives in the
+ * UDP flow's l4 bytes, so the flow record does not grow. Returns 1 when this
+ * packet makes the verdict. */
+static int _quic_ietf_short_header_candidate(ipacket_t *ipacket, size_t offset) {
+	struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+	if( packet == NULL || packet->flow == NULL || packet->udp == NULL
+			|| offset >= ipacket->p_hdr->caplen )
+		return 0;
+	//right after the UDP header only (not behind INT)
+	if( offset != (size_t) ((uintptr_t) packet->udp - (uintptr_t) ipacket->data) + QUIC_IETF_UDP_HEADER_LEN )
+		return 0;
+	struct mmt_internal_udp_session_struct *udp = &packet->flow->l4.udp;
+	uint16_t dport = ntohs( packet->udp->dest );
+	if( udp->quic_sh_count == QUIC_IETF_SH_REJECTED
+			|| (dport != QUIC_IETF_SH_PORT && ntohs( packet->udp->source ) != QUIC_IETF_SH_PORT) )
+		return 0;
+	const uint8_t *data = ipacket->data + offset;
+	size_t avail = ipacket->p_hdr->caplen - offset;
+	if( !(data[0] & 0x40)
+			|| _quic_ietf_is_turn_channel_data( data, avail, _quic_ietf_udp_datagram_len( ipacket, offset ) ) ){
+		udp->quic_sh_count = QUIC_IETF_SH_REJECTED;
+		return 0;
+	}
+	if( dport != QUIC_IETF_SH_PORT || avail < QUIC_IETF_SHORT_HEADER_WIRE_MIN )
+		return 0;
+	if( udp->quic_sh_count == 0
+			|| memcmp( udp->quic_sh_dcid, data + 1, QUIC_IETF_SH_DCID_PREFIX ) != 0 ){
+		memcpy( udp->quic_sh_dcid, data + 1, QUIC_IETF_SH_DCID_PREFIX );
+		udp->quic_sh_count = 1;
+		return 0;
+	}
+	if( udp->quic_sh_count < QUIC_IETF_SH_MIN_PACKETS )
+		udp->quic_sh_count++;
+	return udp->quic_sh_count >= QUIC_IETF_SH_MIN_PACKETS;
+}
+
 /* session_index: protocol index whose QUIC session proves this flow already
  * showed a long header — the new QUIC layer's own index for a datagram
  * payload, the enclosing QUIC layer's index for a coalesced packet. */
@@ -334,8 +492,10 @@ static int _classify_quic_ietf_from_data_offset(ipacket_t *ipacket, unsigned ses
 		if( session_index >= PROTO_PATH_SIZE || ipacket->session == NULL )
 			goto _not_found_quic_ietf;
 
-		//QUIC session must be initialized (must be seen long header first)
-		if( ipacket->session->session_data[session_index] == NULL )
+		//QUIC session must be initialized (must be seen long header first),
+		//or the flow must look like QUIC from mid-connection (issue #571)
+		if( ipacket->session->session_data[session_index] == NULL
+				&& ! _quic_ietf_short_header_candidate( ipacket, offset ) )
 			goto _not_found_quic_ietf;
 
 		// must have enough room
@@ -366,22 +526,36 @@ static int _classify_quic_ietf_from_data_offset(ipacket_t *ipacket, unsigned ses
 	return NOT_FOUND;
 }
 
+/* Issue #571: `proto`, last in the path, is the application layer the flow's
+ * QUIC session appended (_quic_ietf_append_app_layer). */
+static int _quic_ietf_is_app_layer(const ipacket_t *ipacket, unsigned index, uint32_t proto) {
+	const quic_ietf_session_t *session = _quic_ietf_session_lookup( ipacket, index );
+	return session != NULL && proto != PROTO_UNKNOWN && proto != PROTO_QUIC_IETF
+			&& (proto == session->app_layer || proto == session->app_proto);
+}
+
 /* The protocol path is session-backed, so a QUIC-after-QUIC layer detected
  * on one datagram would stick to every later datagram of the flow. When the
  * current datagram carries no further coalesced packet, drop the trailing
  * chained QUIC layers (and any session data the core attached to them, which
  * the timeout cleanup — walking the path — would no longer reach). Only a
- * tail made purely of QUIC layers is ever touched. */
+ * tail made purely of QUIC layers, possibly followed by the flow's
+ * application layer (issue #571), is ever touched. */
 static void _quic_ietf_drop_chained_layers(ipacket_t *ipacket, unsigned index) {
 	proto_hierarchy_t *path = ipacket->proto_hierarchy;
 	if( path == NULL || path->len <= (int)index + 1 )
 		return;
 	int len = path->len > PROTO_PATH_SIZE ? PROTO_PATH_SIZE : path->len;
-	for( int i = (int)index + 1; i < len; i++ )
+	//the flow's application layer after the chained tail goes with it: it is
+	//appended again after the datagram's last QUIC layer (issue #571)
+	int quic_end = len;
+	if( _quic_ietf_is_app_layer( ipacket, index, path->proto_path[len - 1] ) )
+		quic_end = len - 1;
+	for( int i = (int)index + 1; i < quic_end; i++ )
 		if( path->proto_path[i] != PROTO_QUIC_IETF )
 			return;
 	if( ipacket->session != NULL ){
-		for( int i = (int)index + 1; i < len; i++ ){
+		for( int i = (int)index + 1; i < quic_end; i++ ){
 			mmt_free( ipacket->session->session_data[i] );
 			ipacket->session->session_data[i] = NULL;
 		}
@@ -394,6 +568,32 @@ static void _quic_ietf_drop_chained_layers(ipacket_t *ipacket, unsigned index) {
 	ipacket_internal(ipacket)->internal_cumulative_offset_valid = 0;
 }
 
+/* Issue #571: the application the flow's SNI names — or the IP-range guess
+ * a mid-flow QUIC verdict took the place of — follows the datagram's last
+ * QUIC layer `last`, with its own classification method (set_classified_proto
+ * records DPI for a checker's write). */
+static void _quic_ietf_append_app_layer(ipacket_t *ipacket, unsigned last) {
+	quic_ietf_session_t *session = _quic_ietf_session_lookup( ipacket, last );
+	if( session == NULL || session->app_proto == PROTO_UNKNOWN || last + 1 >= PROTO_PATH_SIZE )
+		return;
+	classified_proto_t retval;
+	retval.offset = 0; //the application shares the QUIC payload
+	retval.proto_id = session->app_proto;
+	retval.status = Classified;
+	if( set_classified_proto(ipacket, last + 1, retval) ){
+		session->app_layer = session->app_proto;
+		if( ipacket->session != NULL )
+			ipacket->session->classification_method = session->app_method;
+	}
+}
+
+/* The datagram's last QUIC layer is `last`: drop what an earlier datagram
+ * chained after it, then append the flow's application layer. */
+static void _quic_ietf_settle_tail(ipacket_t *ipacket, unsigned last) {
+	_quic_ietf_drop_chained_layers( ipacket, last );
+	_quic_ietf_append_app_layer( ipacket, last );
+}
+
 /* A QUIC checker that found no QUIC on a flow already classified as QUIC
  * (path[quic_index] is QUIC): this datagram carries no coalesced packet, so
  * the chained tail left by an earlier datagram must not stick to it. */
@@ -401,7 +601,7 @@ static void _quic_ietf_drop_stale_chain(ipacket_t *ipacket, unsigned quic_index)
 	const proto_hierarchy_t *path = ipacket->proto_hierarchy;
 	if( path != NULL && quic_index < PROTO_PATH_SIZE && (int)quic_index < path->len
 			&& path->proto_path[quic_index] == PROTO_QUIC_IETF )
-		_quic_ietf_drop_chained_layers( ipacket, quic_index );
+		_quic_ietf_settle_tail( ipacket, quic_index );
 }
 
 /* RFC 9000 §12.2: senders never coalesce packets with different connection
@@ -471,7 +671,19 @@ static void _quic_ietf_classify_coalesced(ipacket_t *ipacket, unsigned quic_inde
 		if( session != NULL )
 			_quic_ietf_learn_cid_length( ipacket, index, session );
 	}
-	_quic_ietf_drop_chained_layers( ipacket, index );
+	_quic_ietf_settle_tail( ipacket, index );
+}
+
+/* Issue #571: the IP-range application guess the UDP fallback left at the
+ * QUIC layer's place (a flow first seen from mid-connection), else
+ * PROTO_UNKNOWN. */
+static uint32_t _quic_ietf_ip_range_guess(const ipacket_t *ipacket, unsigned index) {
+	const proto_hierarchy_t *path = ipacket->proto_hierarchy;
+	if( path == NULL || ipacket->session == NULL || index >= PROTO_PATH_SIZE || (int)index >= path->len
+			|| ipacket->session->classification_method != MMT_CLASSIFICATION_METHOD_IP
+			|| path->proto_path[index] == PROTO_QUIC_IETF )
+		return PROTO_UNKNOWN;
+	return path->proto_path[index];
 }
 
 /* Session init and analysis run from here, the classification entry point:
@@ -490,10 +702,17 @@ static int _classified_quic_ietf(ipacket_t *ipacket, unsigned index, size_t offs
 	retval.proto_id = PROTO_QUIC_IETF;
 	retval.status = Classified;
 
+	uint32_t guess = _quic_ietf_ip_range_guess( ipacket, index+1 );
 	int ret = set_classified_proto(ipacket, index+1, retval);
 	if( ! ret )
 		return ret;
 	_quic_ietf_session_data_init( ipacket, index+1 );
+	//keep the guess as the application after QUIC (issue #571)
+	quic_ietf_session_t *session = ipacket->session->session_data[index+1];
+	if( guess != PROTO_UNKNOWN && session != NULL && session->app_proto == PROTO_UNKNOWN ){
+		session->app_proto  = guess;
+		session->app_method = MMT_CLASSIFICATION_METHOD_IP;
+	}
 	_quic_ietf_session_data_analysis( ipacket, index+1 );
 	return ret;
 }
@@ -596,8 +815,42 @@ static void _quic_ietf_learn_cid_length(ipacket_t * ipacket, unsigned index,
 
 static void _quic_ietf_session_data_cleanup(mmt_session_t * session, unsigned index) {
 	debug("QUIC session clean");
-	if (session->session_data[index] != NULL) {
-		mmt_free(session->session_data[index]);
+	quic_ietf_session_t *session_data = session->session_data[index];
+	if (session_data != NULL) {
+		//the CRYPTO reassembly and the ClientHello facts (issue #571)
+		quic_crypto_release( &session_data->crypto );
+		mmt_free(session_data);
+	}
+}
+
+/* Issue #571: the client's Initials carry its TLS ClientHello in CRYPTO
+ * frames, under keys every observer derives (quic_ietf_crypto.h). Once it is
+ * whole, its SNI, ALPN and JA4 are reported on this packet and the SNI names
+ * the flow's application through the hostname table (hostname_classify),
+ * like a TLS SNI (proto_ssl.c). */
+static void _quic_ietf_read_crypto(ipacket_t * ipacket, unsigned index, quic_ietf_session_t * session){
+	if( session->crypto.state != QUIC_CRYPTO_ACTIVE || session->crypto_packet_id == ipacket->packet_id
+			|| ipacket->internal_packet == NULL )
+		return;
+	session->crypto_packet_id = ipacket->packet_id; //once per packet
+	int ioff = get_packet_offset_at_index(ipacket, index);
+	if( ioff < 0 || (size_t)ioff >= ipacket->p_hdr->caplen )
+		return;
+	size_t datagram_len = _quic_ietf_udp_datagram_len( ipacket, (size_t)ioff );
+	size_t avail = ipacket->p_hdr->caplen - (size_t)ioff;
+	if( avail > datagram_len )
+		avail = datagram_len;
+	if( quic_crypto_consume( &session->crypto, ipacket->internal_packet->src,
+			ipacket->data + ioff, avail, datagram_len ) != QUIC_CRYPTO_HELLO )
+		return;
+	session->hello_packet_id = ipacket->packet_id;
+	quic_hello_facts_t *hello = session->crypto.hello;
+	if( hello->sni_len == 0 || ipacket->mmt_handler == NULL || ipacket->mmt_handler->hostname_classify != 1 )
+		return;
+	uint32_t app = get_proto_id_by_hostname( ipacket, hello->sni, hello->sni_len );
+	if( app != PROTO_UNKNOWN ){
+		session->app_proto  = app;
+		session->app_method = MMT_CLASSIFICATION_METHOD_HOSTNAME;
 	}
 }
 
@@ -675,6 +928,7 @@ static int _quic_ietf_session_data_analysis(ipacket_t * ipacket, unsigned index)
 	if( session_data != NULL ){
 		_quic_ietf_learn_cid_length( ipacket, index, session_data );
 		_quic_ietf_calculate_rtts( ipacket, index, session_data );
+		_quic_ietf_read_crypto( ipacket, index, session_data );
 	}
 	_quic_ietf_classify_coalesced( ipacket, index, session_data );
 	return MMT_CONTINUE;
@@ -696,7 +950,10 @@ static attribute_metadata_t _attributes_metadata[] = {
 	def_att( QUIC_IETF_PACKET_NUMBER,        MMT_U32_DATA, sizeof(uint32_t) ),
 	def_att( QUIC_IETF_TOKEN_LENGTH,         MMT_U16_DATA, sizeof(uint16_t) ),
 	def_att( QUIC_IETF_TOKEN,                MMT_STRING_LONG_DATA, sizeof(mmt_string_data_t) ),
-	def_att( QUIC_IETF_RTT,                  MMT_U64_DATA, sizeof(uint64_t) )
+	def_att( QUIC_IETF_RTT,                  MMT_U64_DATA, sizeof(uint64_t) ),
+	def_att( QUIC_IETF_SERVER_NAME,          MMT_HEADER_LINE, sizeof(void *) ),
+	def_att( QUIC_IETF_TLS_ALPN,             MMT_HEADER_LINE, sizeof(void *) ),
+	def_att( QUIC_IETF_TLS_JA4,              MMT_HEADER_LINE, sizeof(void *) )
 };
 
 

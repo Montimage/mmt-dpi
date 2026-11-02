@@ -14,6 +14,7 @@
 
 #include "plugin_defs.h"
 #include "mmt_core.h"
+#include "quic_ietf_crypto.h"
 
 
 /**
@@ -120,6 +121,15 @@ typedef struct quic_ietf_session {
 	const void *quic_client; //the client that init QUIC connection
 
 	spinbit_edge_t spinbit_edge[2];
+
+	//issue #571: the ClientHello of the client's Initial CRYPTO frames and
+	//the application its SNI names
+	quic_crypto_t crypto;
+	uint64_t crypto_packet_id; //last packet whose Initials were read
+	uint64_t hello_packet_id;  //packet that completed the ClientHello
+	uint32_t app_proto;        //application of the flow, 0 = none
+	uint32_t app_layer;        //application layer last appended to the path
+	uint8_t app_method;        //MMT_CLASSIFICATION_METHOD_* of app_proto
 } quic_ietf_session_t;
 
 
@@ -138,7 +148,12 @@ enum quic_ietf_attributes {
 	QUIC_IETF_PACKET_NUMBER,
 	QUIC_IETF_TOKEN_LENGTH,
 	QUIC_IETF_TOKEN,
-	QUIC_IETF_RTT
+	QUIC_IETF_RTT,
+	//issue #571: read from the client Initial's ClientHello, on the packet
+	//that completes it
+	QUIC_IETF_SERVER_NAME,
+	QUIC_IETF_TLS_ALPN,
+	QUIC_IETF_TLS_JA4
 };
 
 enum quic_ietf_long_packet_types {
@@ -162,5 +177,8 @@ enum quic_ietf_long_packet_types {
 #define QUIC_IETF_TOKEN_LENGTH_ALIAS                     "token_len"
 #define QUIC_IETF_TOKEN_ALIAS                            "token"
 #define QUIC_IETF_RTT_ALIAS                              "rtt"
+#define QUIC_IETF_SERVER_NAME_ALIAS                      "server_name"
+#define QUIC_IETF_TLS_ALPN_ALIAS                         "tls_alpn"
+#define QUIC_IETF_TLS_JA4_ALIAS                          "tls_ja4"
 
 #endif /* SRC_MMT_TCPIP_LIB_PROTOCOLS_PROTO_QUIC_IETF_H_ */

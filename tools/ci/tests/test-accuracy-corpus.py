@@ -89,6 +89,13 @@ GOOD_FP = {
     "acc_quic_positive.pcap": "3\tmeta.ethernet.ip.udp.quic_ietf\n",
     "acc_quic_v2_positive.pcap": "2\tmeta.ethernet.ip.udp.quic_ietf\n",
     "acc_quic_draft29_ambiguous.pcap": "2\tmeta.ethernet.ip.udp.unknown\n",
+    # issue #571: the SNI of a QUIC client Initial attributes the application
+    "acc_quic_initial_sni_h3.pcap": "3\tmeta.ethernet.ip.udp.quic_ietf.google\n"
+                                    "1\tmeta.ethernet.ip.udp.quic_ietf.quic_ietf.google\n",
+    "acc_quic_initial_split_reordered.pcap": "1\tmeta.ethernet.ip.udp.quic_ietf\n"
+                                             "2\tmeta.ethernet.ip.udp.quic_ietf.google\n"
+                                             "1\tmeta.ethernet.ip.udp.quic_ietf.quic_ietf\n",
+    "acc_quic_v2_initial_sni.pcap": "2\tmeta.ethernet.ip.udp.quic_ietf.google\n",
     "acc_http2_positive.pcap": "2\tmeta.ethernet.ip.tcp.http2\n"
                                "3\tmeta.ethernet.ip.tcp.unknown\n",
     "acc_http2_negative.pcap": "2\tmeta.ethernet.ip.tcp.http\n"

@@ -17,6 +17,12 @@
  *   none       acc_unknown_tcp           no application verdict at all
  *   dpi        acc_quic_positive         quic_ietf, a dissector claiming the
  *                                        layer itself (set_classified_proto)
+ *   hostname   acc_quic_initial_sni_h3   google, from the SNI of a QUIC client
+ *                                        Initial (issue #571)
+ *   dpi        acc_quic_short_header_midflow  quic_ietf from 1-RTT packets
+ *                                        only (issue #571)
+ *   none       acc_quic_neg_turn_channeldata_443  TURN ChannelData on UDP/443:
+ *                                        no verdict (issue #571)
  *   port->dpi  acc_http_positive         port_classify on: the handshake is
  *                                        port-guessed, the request replaces
  *                                        the guess with a DPI match
@@ -281,6 +287,9 @@ int main(void) {
     run_pcap(dir, "acc_http_negative.pcap", 1, "http", MMT_CLASSIFICATION_METHOD_PORT);
     run_pcap(dir, "acc_unknown_tcp.pcap", 0, NULL, MMT_CLASSIFICATION_METHOD_NONE);
     run_pcap(dir, "acc_quic_positive.pcap", 0, "quic_ietf", MMT_CLASSIFICATION_METHOD_DPI);
+    run_pcap(dir, "acc_quic_initial_sni_h3.pcap", 0, "google", MMT_CLASSIFICATION_METHOD_HOSTNAME);
+    run_pcap(dir, "acc_quic_short_header_midflow.pcap", 0, "quic_ietf", MMT_CLASSIFICATION_METHOD_DPI);
+    run_pcap(dir, "acc_quic_neg_turn_channeldata_443.pcap", 0, NULL, MMT_CLASSIFICATION_METHOD_NONE);
     run_pcap(dir, "acc_http_positive.pcap", 1, "http", MMT_CLASSIFICATION_METHOD_DPI);
     CHECK(g_seen_methods & (1u << MMT_CLASSIFICATION_METHOD_PORT),
           "acc_http_positive.pcap (port_classify on): an earlier packet was port-guessed "

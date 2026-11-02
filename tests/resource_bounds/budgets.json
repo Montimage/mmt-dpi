@@ -211,6 +211,27 @@
         { "id": "no-leak", "metric": "leaked_allocations", "op": "eq", "limit": 0 },
         { "id": "checks", "metric": "checks.failed", "op": "eq", "limit": 0 }
       ]
+    },
+    "quic-crypto": {
+      "issue": 571,
+      "finding": "F-BUG-307",
+      "workload": "1,000 seeded QUIC flows, all alive until teardown, in turn: the RFC 9001 A.2 ClientHello as 1 .. 6 shuffled CRYPTO frames per packet over 1 .. 3 packets; 1 .. 3 bytes of its handshake header only; the header and part of the hello with a hole left (every tenth declaring a 2^14-byte hello); CRYPTO frames at offset 2^62-1, 16380 + 10 and 2^32 + 0 .. 4095, a length 2^62-1 or past the plaintext; 20 RFC 9001 A.2 Initials with one seeded ciphertext byte flipped. Every flow released at teardown (the QUIC session cleanup).",
+      "checks": [
+        { "id": "scale", "metric": "flows", "op": "eq", "limit": 1000 },
+        { "id": "flows-accounted", "metric": "flows", "op": "sum", "parts": ["complete", "header_only", "in_flight", "hostile", "forged"] },
+        { "id": "completed", "metric": "completed", "op": "eq", "limit": 200 },
+        { "id": "facts-per-completed-flow", "metric": "facts_at_teardown", "op": "eq", "limit": 200 },
+        { "id": "buffers-in-flight", "metric": "buffers_at_teardown", "op": "eq", "limit": 200 },
+        { "id": "header-only-no-allocation", "metric": "header_only_allocs", "op": "eq", "limit": 0 },
+        { "id": "out-of-window-no-allocation", "metric": "hostile_allocs", "op": "eq", "limit": 0 },
+        { "id": "forged-no-allocation", "metric": "forged_allocs", "op": "eq", "limit": 0 },
+        { "id": "buffer-within-16k-plus-header", "metric": "max_reasm_bytes", "op": "le", "limit": 16448 },
+        { "id": "facts-small", "metric": "facts_bytes", "op": "le", "limit": 512 },
+        { "id": "decrypt-cap", "metric": "max_attempts", "op": "le", "limit": 8 },
+        { "id": "decrypt-cap-total", "metric": "decrypt_attempts", "op": "eq", "limit": 1600 },
+        { "id": "no-leak", "metric": "leaked_allocations", "op": "eq", "limit": 0 },
+        { "id": "checks", "metric": "checks.failed", "op": "eq", "limit": 0 }
+      ]
     }
   }
 }

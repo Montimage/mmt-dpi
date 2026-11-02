@@ -120,6 +120,25 @@
 #                               Appendix A keys and A.2 client Initials, and
 #                               every prefix and malformation of them over
 #                               exact-size buffers (quic_initial_vectors.h).
+# Issue #571 reads the client Initial's ClientHello (SNI, ALPN, JA4) from its
+# CRYPTO frames, names the application from the SNI, and classifies a flow
+# seen from mid-connection from its short headers.
+#
+#   test_quic_crypto_unit.c — helper reproducer: quic_ietf_crypto.c and its
+#                               dependencies included directly, the decrypt,
+#                               begin and feed calls counted: the RFC A.2
+#                               Initials, frame walks, out-of-bound CRYPTO
+#                               offsets and lengths, the decryption cap, the
+#                               client latch and the release.
+#   test_quic_hello_attrs_api.c — packet/API path: the QUIC accuracy-corpus
+#                               captures and the A.2 Initial behind assorted
+#                               UDP lengths, reading quic_ietf.server_name,
+#                               tls_alpn, tls_ja4, the application layer and
+#                               the classification method per packet.
+#   test_quic_short_header_api.c — packet/API path: crafted 1-RTT flows to
+#                               UDP/443 (stable / changing DCID, server
+#                               packets, port 8443, fixed bit clear, TURN
+#                               ChannelData, an IP-range server).
 #
 # Issue #455 adds the "gre" fixture: gre.seq_out, gre.seq_in, gre.seq_gap and
 # gre.loss are deprecated — their ids stay reserved and registrable but are
@@ -302,8 +321,8 @@ for f in "${FIXTURES[@]}"; do
             API_TESTS+=(radius_dns_ipv6_api)
             ;;
         quic)
-            UNIT_TESTS+=(quic_initial_decrypt_unit)
-            API_TESTS+=(quic_ietf_coalesced)
+            UNIT_TESTS+=(quic_initial_decrypt_unit quic_crypto_unit)
+            API_TESTS+=(quic_ietf_coalesced quic_hello_attrs_api quic_short_header_api)
             ;;
         gre)
             API_TESTS+=(gre_deprecated_attrs_api)
@@ -480,4 +499,4 @@ if [ "${rc}" -ne 0 ]; then
     echo "✗ parser boundary tests failed" >&2
     exit 1
 fi
-echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455, #505, #513, #531, #542, #544, #560, #567, #568, #569, #570)"
+echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455, #505, #513, #531, #542, #544, #560, #567, #568, #569, #570, #571)"

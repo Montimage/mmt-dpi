@@ -12,7 +12,7 @@
     "timing_asserted": { "const": false },
     "fixtures": {
       "type": "object",
-      "description": "One entry per fixture that ran, keyed by fixture id (ipv6-hash, tcp-memory, tcp-order, fragment-eviction, timeout-sweep, ftp-control, tls-hello, quic-initial).",
+      "description": "One entry per fixture that ran, keyed by fixture id (ipv6-hash, tcp-memory, tcp-order, fragment-eviction, timeout-sweep, ftp-control, tls-hello, quic-initial, quic-crypto).",
       "additionalProperties": {
         "type": "object",
         "required": ["issue", "finding", "workload", "exit_status", "seeds", "metrics"],

@@ -95,6 +95,18 @@
 #                         mmt_sha256.c are compiled beside it with the
 #                         counted allocator.
 #
+# Issue #571 adds the "quic-crypto" fixture: collecting the ClientHello of
+# QUIC client Initials keeps at most one buffer of the hello's declared
+# length (2^14 bytes at most) and one facts block per flow, allocates
+# nothing for out-of-window CRYPTO frames or a header it never completes,
+# decrypts at most 8 Initials per flow, and leaves nothing allocated once
+# every flow is released (the QUIC session cleanup) — 1,000 seeded flows.
+#
+#   test_quic_crypto.c — drives quic_crypto_walk_frames/consume/release;
+#                        quic_ietf_crypto.c, tls_client_hello.c, the decrypt
+#                        path and memory.c are compiled beside it with the
+#                        counted allocator.
+#
 # Issue #394 (F-PERF-001..004) consolidates the four fixtures into
 # reproducible adversarial resource budgets: every fixture reports its
 # workload scales, fixed seeds, accepted/refused work and counters as
@@ -126,7 +138,7 @@
 # Usage: tests/resource_bounds/run_tests.sh [all | fixture ...]
 #   no arguments (or "all") runs every fixture; "ipv6-hash" / "tcp-memory" /
 #   "tcp-order" / "fragment-eviction" / "timeout-sweep" / "ftp-control" /
-#   "tls-hello" / "quic-initial" select one.
+#   "tls-hello" / "quic-initial" / "quic-crypto" select one.
 set -euo pipefail
 # Issue #551: the budgets are fixed-seed counts, and the ipv6-hash fixture
 # reports its table seeds — keep the legacy fixed seed sequence (hash_utils.c).
@@ -135,7 +147,7 @@ export MMT_DETERMINISTIC_SEED=1
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-ALL_FIXTURES=(ipv6-hash tcp-memory tcp-order fragment-eviction timeout-sweep ftp-control tls-hello quic-initial)
+ALL_FIXTURES=(ipv6-hash tcp-memory tcp-order fragment-eviction timeout-sweep ftp-control tls-hello quic-initial quic-crypto)
 FIXTURES=()
 for f in "$@"; do
     if [ "$f" = "all" ]; then FIXTURES+=("${ALL_FIXTURES[@]}"); else FIXTURES+=("$f"); fi
@@ -155,7 +167,8 @@ for f in "${FIXTURES[@]}"; do
         ftp-control) TESTS+=(ftp_control) ;;
         tls-hello) TESTS+=(tls_hello) ;;
         quic-initial) TESTS+=(quic_initial) ;;
-        *) echo "✗ unknown resource_bounds fixture '$f' (known: all, ipv6-hash, tcp-memory, tcp-order, fragment-eviction, timeout-sweep, ftp-control, tls-hello, quic-initial)" >&2
+        quic-crypto) TESTS+=(quic_crypto) ;;
+        *) echo "✗ unknown resource_bounds fixture '$f' (known: all, ipv6-hash, tcp-memory, tcp-order, fragment-eviction, timeout-sweep, ftp-control, tls-hello, quic-initial, quic-crypto)" >&2
            exit 2 ;;
     esac
     FIXTURE_IDS+=("$f")
@@ -356,6 +369,28 @@ build_quic_initial() {
     "${CC}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_quic_initial" \
         "${SCRIPT_DIR}/test_quic_initial.o" "${SCRIPT_DIR}/qi_quic_ietf_initial.o" \
         "${SCRIPT_DIR}/qi_mmt_crypto.o" "${SCRIPT_DIR}/qi_mmt_sha256.o" "${SCRIPT_DIR}/tcp_alloc_count_qi.o"
+}
+
+build_quic_crypto() {
+    # The CRYPTO collection, the reassembly, the decrypt path and mmt_malloc
+    # (memory.c) with the counted allocator of tcp-memory.
+    local count=(-Dmalloc=tcm_malloc -Dcalloc=tcm_calloc
+                 -Drealloc=tcm_realloc -Dfree=tcm_free)
+    local objs=() src
+    for src in protocols/quic_ietf_crypto protocols/tls_client_hello protocols/quic_ietf_initial mmt_crypto mmt_sha256; do
+        "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${count[@]}" "${INCS[@]}" \
+            -c "${REPO_ROOT}/src/mmt_tcpip/lib/${src}.c" -o "${SCRIPT_DIR}/qc_${src##*/}.o"
+        objs+=("${SCRIPT_DIR}/qc_${src##*/}.o")
+    done
+    "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${count[@]}" "${INCS[@]}" \
+        -c "${REPO_ROOT}/src/mmt_core/src/memory.c" -o "${SCRIPT_DIR}/memory_counted_qc.o"
+    "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${INCS[@]}" \
+        -c "${SCRIPT_DIR}/test_quic_crypto.c" -o "${SCRIPT_DIR}/test_quic_crypto.o"
+    "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 \
+        -c "${SCRIPT_DIR}/tcp_alloc_count.c" -o "${SCRIPT_DIR}/tcp_alloc_count_qc.o"
+    "${CC}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_quic_crypto" \
+        "${SCRIPT_DIR}/test_quic_crypto.o" "${objs[@]}" "${SCRIPT_DIR}/memory_counted_qc.o" \
+        "${SCRIPT_DIR}/tcp_alloc_count_qc.o"
 }
 
 echo "  [1/3] compiling ..."

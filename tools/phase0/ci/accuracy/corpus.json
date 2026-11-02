@@ -936,6 +936,242 @@
       }
     },
     {
+      "pcap": "acc_quic_initial_sni_h3.pcap",
+      "family": "quic",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_quic"
+      ],
+      "description": "QUIC v1 on UDP/443: a protected 1,200-byte client Initial whose CRYPTO frame carries a TLS 1.3 ClientHello (SNI www.google.com, ALPN h3, quic_transport_parameters), the server Initial coalesced with a Handshake packet, and a 1-RTT packet each way. The SDK decrypts the Initial, reads quic_ietf.server_name www.google.com and quic_ietf.tls_alpn h3, and attributes the application from the SNI (issue #571).",
+      "sha256": "7783a08c18af16693b37098a496115684a0e8731fe22e72a1e407bc316d0ea3d",
+      "expected": {
+        "packets": 4,
+        "wire": 4,
+        "abstain": 0,
+        "other": {},
+        "attribution": {
+          "google": 4
+        }
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_quic_initial_sni_h3"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); the client Initials are protected with the public RFC 9001 / RFC 9369 Initial keys by the generator's own stdlib-only AES-128-GCM, checked against the RFC Appendix A.2 packets before any capture is written; no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #571",
+        "date": "2026-11-02",
+        "checks": [
+          "RFC 9001 \u00a75.2 Initial secrets from the client DCID 3031..37, \u00a75.3 AES-128-GCM payload protection and \u00a75.4 header protection; the generator's implementation reproduces the RFC 9001 Appendix A.1 keys and the A.2 protected packet byte for byte, and the SDK's own decryption (quic_ietf_initial.c) opens the capture's Initial",
+          "RFC 9000 \u00a719.6 CRYPTO frame at offset 0 holding the whole RFC 8446 \u00a74.1.2 ClientHello, PADDING to a 1,200-byte UDP payload (RFC 9000 \u00a714.1); RFC 9114 \u00a73.1 ALPN h3",
+          "attribution (quic_ietf.google) comes from the SNI through the hostname table, reported separately from the wire label; it follows the last QUIC layer of each datagram (quic_ietf.quic_ietf.google on the coalesced server datagram, RFC 9000 \u00a712.2); the server packets are filler, not ciphertext, and are not decrypted"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_quic_initial_split_reordered.pcap",
+      "family": "quic",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_quic"
+      ],
+      "description": "The same ClientHello over two protected client Initials: the first carries bytes 0-200 as three CRYPTO frames in reverse offset order, the one at offset 0 only 2 bytes long, so the 4-byte handshake header spans two frames; a server Initial coalesced with a Handshake packet, padded to 1,200 bytes, comes between them; the second client Initial carries the rest. The SNI is published on the second client Initial (issue #571).",
+      "sha256": "97b0ad89f95c6e864fe2700b1d6418b70c40d426a2cfb51f63e18d9200cfe384",
+      "expected": {
+        "packets": 4,
+        "wire": 4,
+        "abstain": 0,
+        "other": {},
+        "attribution": {
+          "google": 2
+        }
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_quic_initial_split_reordered"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); the client Initials are protected with the public RFC 9001 / RFC 9369 Initial keys by the generator's own stdlib-only AES-128-GCM, checked against the RFC Appendix A.2 packets before any capture is written; no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #571",
+        "date": "2026-11-02",
+        "checks": [
+          "CRYPTO frames (offset 120 len 80, offset 2 len 118, offset 0 len 2) then (offset 200 len 127): the stream is collected by offset, RFC 9000 \u00a719.6",
+          "the server datagram (Initial + Handshake, RFC 9000 \u00a712.2) changes the session's notion of the client endpoint (RTT tracking); the CRYPTO step keeps the endpoint of the first client Initial that decrypted",
+          "packet 2 carries quic_ietf.quic_ietf (coalesced); attribution starts with the packet that completes the ClientHello"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_quic_v2_initial_sni.pcap",
+      "family": "quic",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_quic"
+      ],
+      "description": "QUIC version 2 (RFC 9369): the client Initial of acc_quic_initial_sni_h3 protected under the v2 salt and labels, then the server Initial; the SNI attributes the application (issue #571).",
+      "sha256": "408fd5fdb68f7e11b322023dea89e85fb6b197722a6763ca966074df3fad0a47",
+      "expected": {
+        "packets": 2,
+        "wire": 2,
+        "abstain": 0,
+        "other": {},
+        "attribution": {
+          "google": 2
+        }
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_quic_v2_initial_sni"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); the client Initials are protected with the public RFC 9001 / RFC 9369 Initial keys by the generator's own stdlib-only AES-128-GCM, checked against the RFC Appendix A.2 packets before any capture is written; no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #571",
+        "date": "2026-11-02",
+        "checks": [
+          "RFC 9369 \u00a73.2 long packet type 0b01 = Initial, \u00a73.3.1 Initial salt 0dede3de..., \u00a73.3.2 labels quicv2 key/iv/hp; the generator reproduces the RFC 9369 Appendix A.2 protected packet byte for byte"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_quic_short_header_midflow.pcap",
+      "family": "quic",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_quic"
+      ],
+      "description": "A capture that starts mid-connection: QUIC 1-RTT packets only, the client's six to UDP/443 carrying one stable 8-byte DCID, the server's three with a zero-length one. The flow becomes quic_ietf on the fourth client packet; the five packets before it abstain (issue #571).",
+      "sha256": "c2203b905e6fb8286ea214d7684fc5a867a94ff168ad54f1f88327335e9a31bf",
+      "expected": {
+        "packets": 9,
+        "wire": 4,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_quic_short_header_midflow"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #571",
+        "date": "2026-11-02",
+        "checks": [
+          "RFC 9000 \u00a717.3.1 1-RTT packet: header form 0, fixed bit 1, DCID then a protected packet number and payload; sizes 33-1,200 bytes",
+          "the verdict needs four client packets to UDP/443 with the same first 8 DCID bytes; server packets (zero-length DCID, RFC 9000 \u00a75.1) neither count nor reset"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_quic_neg_short_header_unstable_dcid.pcap",
+      "family": "quic",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_quic"
+      ],
+      "description": "Fixed-bit-set datagrams to UDP/443 (and a few replies) whose 8 bytes after the first one never repeat: no stable connection ID, so no QUIC verdict (issue #571).",
+      "sha256": "d9cc8ce02437b3c8d158af57c9f951a316f9f59a82c4aff397eb56e64645b1e0",
+      "expected": {
+        "packets": 10,
+        "wire": 0,
+        "abstain": 10,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_quic_neg_short_header_unstable_dcid"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #571",
+        "date": "2026-11-02",
+        "checks": [
+          "first byte 0x40-0x7f (header form 0, fixed bit 1) on every datagram, bytes 1-8 from a SHA-256 counter stream, all distinct"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_quic_neg_turn_channeldata_443.pcap",
+      "family": "quic",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_quic"
+      ],
+      "description": "TURN ChannelData (RFC 8656 \u00a712.4, channel 0x4001) relaying DTLS 1.2 application-data records of one constant size on UDP/443: the first byte 0x40 and the next 8 bytes (channel, length, DTLS type/version/epoch) repeat on every datagram as a QUIC DCID would, but the ChannelData length + 4 is the datagram length (2 bytes of padding), so it is not QUIC (issue #571).",
+      "sha256": "a30f4ce11199ecf9c3a8b04fb8592da09529bde42b67c87f1f1dfb9c44b7b608",
+      "expected": {
+        "packets": 12,
+        "wire": 0,
+        "abstain": 12,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_quic_neg_turn_channeldata_443"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #571",
+        "date": "2026-11-02",
+        "checks": [
+          "ChannelData: channel 0x4001, length 110, a 13-byte RFC 6347 \u00a74.1 DTLS record header (type 23, version 0xfefd, epoch 1, 48-bit sequence, length 97) and 97 opaque bytes, padded to 116 bytes",
+          "8 client datagrams to UDP/443 and 4 replies, all the same size"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_quic_neg_turn_channeldata_trailer.pcap",
+      "family": "quic",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_quic"
+      ],
+      "description": "The same constant-size ChannelData on two UDP/443 flows whose capture length differs from the UDP length: every frame of the first carries a 4-byte Ethernet FCS trailer after the IP packet, the second is cut by a snap length 60 bytes into the UDP payload. The UDP header length, not the captured length, tells the ChannelData framing (issue #571).",
+      "sha256": "0001a5d6f0c7d963392e382adfea1e3765ce649aa93f0e2775cee0b2b13a2de3",
+      "expected": {
+        "packets": 16,
+        "wire": 0,
+        "abstain": 16,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_quic_neg_turn_channeldata_trailer"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #571",
+        "date": "2026-11-02",
+        "checks": [
+          "flow 1: IP total length and UDP length 124 / 116-byte payload, 4 trailer bytes beyond the IP packet; flow 2: same headers, incl_len cut to 102 bytes (60 bytes of UDP payload), orig_len 158"
+        ]
+      }
+    },
+    {
       "pcap": "acc_http2_positive.pcap",
       "family": "http2",
       "case": "positive",
