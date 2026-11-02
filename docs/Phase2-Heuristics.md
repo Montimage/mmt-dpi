@@ -75,7 +75,9 @@ statuses were last re-verified against the sources for issue #559.
 - **Status:** external `MMT_DPI_IP_RANGES_FILE` (extend/override, IPv4+IPv6,
   read at [`mmt_tcpip_classif_utils.c:570`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c#L570)) plus the refreshable
   [`data/ip_ranges.cdn.txt`](https://github.com/montimage-projects/mmt-dpi/blob/main/data/ip_ranges.cdn.txt) and
-  [`tools/refresh_cdn_ranges.sh`](https://github.com/montimage-projects/mmt-dpi/blob/main/tools/refresh_cdn_ranges.sh) (issue #75).
+  [`tools/refresh_cdn_ranges.sh`](https://github.com/montimage-projects/mmt-dpi/blob/main/tools/refresh_cdn_ranges.sh) (issue #75), which since issue #565 also regenerates
+  the compiled-in cloud/CDN ranges from the providers' published feeds with
+  cloud-tenancy labels (`aws`, `google_cloud`, `azure`) apart from first-party ones.
 
 ### H4 — Magic-number classification window
 - **Where:** UDP stops classifying past `CFG_CLASSIFICATION_THRESHOLD * 2`

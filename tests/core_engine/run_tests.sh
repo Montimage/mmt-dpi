@@ -43,6 +43,9 @@
 # from data/ip_ranges.txt) against the former per-prefix AVL forest over every
 # table prefix, random pairs and external rules, plus the per-flow verdict
 # memo; check_ip_range_table.sh is the generator's drift and rejection gate.
+# Issue #565: check_ip_range_feeds.sh runs tools/gen-ip-range-data.py (the
+# feed part of data/ip_ranges.txt) on fixture feeds and checks the committed
+# data files record every feed's URL, fetch date and sha256.
 #
 # Issue #525: the same library objects (plus mmt_attr_sprintf_compat.c and,
 # since #533, mmt_utils.c) also
@@ -214,6 +217,14 @@ if bash "$SCRIPT_DIR/check_ip_range_table.sh"; then
     echo "IP-range table tests: PASSED"
 else
     echo "IP-range table tests: FAILED"
+    exit 1
+fi
+
+echo "Running IP-range feed builder checks (issue #565)..."
+if bash "$SCRIPT_DIR/check_ip_range_feeds.sh"; then
+    echo "IP-range feed tests: PASSED"
+else
+    echo "IP-range feed tests: FAILED"
     exit 1
 fi
 

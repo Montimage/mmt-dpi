@@ -104,6 +104,13 @@ int main(void) {
 	       "SharePoint is cloud storage");
 	EXPECT(get_application_class_by_protocol_id(PROTO_OFFICE365) == PROTO_CLASS_WEB,
 	       "Office 365 is web");
+	/* Issue #565: the Google Cloud tenancy id the IP-range table labels,
+	 * classed like its AWS peer. */
+	EXPECT(PROTO_GOOGLE_CLOUD == 667 && strcmp(PROTO_GOOGLE_CLOUD_ALIAS, "google_cloud") == 0,
+	       "PROTO_GOOGLE_CLOUD is id 667, alias google_cloud");
+	EXPECT(get_application_class_by_protocol_id(PROTO_GOOGLE_CLOUD)
+	           == get_application_class_by_protocol_id(PROTO_AWS),
+	       "Google Cloud has the AWS class");
 	EXPECT(get_application_class_by_protocol_id(PROTO_UNKNOWN) == PROTO_CLASS_UNKOWN,
 	       "the unknown protocol has the unknown class");
 	EXPECT(strcmp(get_application_class_name_by_protocol_id(PROTO_STACKPATH),

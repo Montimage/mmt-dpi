@@ -1534,6 +1534,37 @@ def gen_acc_stun_google_positive_pcap(path):
     print("wrote %s (accuracy: STUN Binding to a Google address)" % path)
 
 
+# --- accuracy corpus: cloud-tenancy IP attribution (issue #565) -------------
+# An unknown flow to an address of a provider's published cloud or CDN range
+# is attributed, by the IP-range table, to the cloud or CDN label -- never to
+# the first-party application the 2017 table named (amazon, google).
+
+CLOUDFRONT_TENANT = struct.pack("!I", 0x0D200A0A)  # 13.32.10.10, AWS CLOUDFRONT 13.32.0.0/15
+GCP_TENANT = struct.pack("!I", 0x23C00A0A)         # 35.192.10.10, Google Cloud 35.192.0.0/14
+
+
+def _acc_tenant_pcap(path, server, cport, label):
+    f = pcap_open(path)
+    flow = _AccFlow(f, 6, cport, cport + 1, server=server)
+    flow.handshake()
+    flow.send("cli", _acc_opaque(label + "-cli", 120))
+    flow.send("srv", _acc_opaque(label + "-srv", 80))
+    f.close()
+    print("wrote %s (accuracy: opaque TCP to a %s tenant address)" % (path, label))
+
+
+def gen_acc_ip_cloudfront_tenant_pcap(path):
+    """Opaque TCP between unassigned ports to a CloudFront edge address: the
+    IP-range table may say cloudfront, never amazon."""
+    _acc_tenant_pcap(path, CLOUDFRONT_TENANT, 47811, "cloudfront")
+
+
+def gen_acc_ip_gcp_tenant_pcap(path):
+    """Opaque TCP between unassigned ports to a Google Cloud customer address:
+    the IP-range table may say google_cloud, never google."""
+    _acc_tenant_pcap(path, GCP_TENANT, 47813, "gcp")
+
+
 # --- accuracy corpus: default-chain classifiers (issue #527) ---------------
 # One positive and one negative capture per classifier family of the default
 # TCP/UDP chains (src/mmt_tcpip/lib/inter_proto_classif_list.def). Each case is
@@ -2745,6 +2776,8 @@ ACC_GENS = {
     "acc_gquic_positive": gen_acc_gquic_positive_pcap,
     "acc_quic_negative": gen_acc_quic_negative_pcap,
     "acc_stun_google_positive": gen_acc_stun_google_positive_pcap,
+    "acc_ip_cloudfront_tenant": gen_acc_ip_cloudfront_tenant_pcap,
+    "acc_ip_gcp_tenant": gen_acc_ip_gcp_tenant_pcap,
 }
 ACC_GENS.update((name, _acc_classifier_gen(name))
                 for name in ACC_CLASSIFIER_FLOWS)

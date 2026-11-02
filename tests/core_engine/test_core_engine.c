@@ -1891,6 +1891,17 @@ static void test_ip_attribution(void) {
     CHECK(_find_proto_id_by_address(0xC0000201u, 0xC0000202u) == -1,
           "builtin CIDR: no match returns -1 (192.0.2.0/24 is not in the table)");
 
+    /* Issue #565: the feed entries give cloud tenancy and CDN edges their own
+     * label, never a first-party application's. */
+    CHECK(_find_proto_id_by_address(0x0D200A0Au, 0xC0000201u) == PROTO_CLOUDFRONT,
+          "feed CIDR: 13.32.10.10 (AWS CLOUDFRONT 13.32.0.0/15) is cloudfront, not amazon");
+    CHECK(_find_proto_id_by_address(0xC0000201u, 0x23C00A0Au) == PROTO_GOOGLE_CLOUD,
+          "feed CIDR: 35.192.10.10 (Google Cloud 35.192.0.0/14) is google_cloud, not google");
+    CHECK(_find_proto_id_by_address(0x08080808u, 0xC0000201u) == PROTO_GOOGLE,
+          "feed CIDR: 8.8.8.8 (goog.json minus cloud.json) stays google");
+    CHECK(_find_proto_id_by_address(0x03058C0Au, 0xC0000201u) == PROTO_AWS,
+          "feed CIDR: 3.5.140.10 (AWS S3/EC2 3.5.140.0/22) is aws, not amazon");
+
     /* get_proto_id_from_address reads the network-order headers. */
     CHECK(get_proto_id_from_address(&pkt.pub) == PROTO_UNKNOWN,
           "no iph/iphv6 -> UNKNOWN");

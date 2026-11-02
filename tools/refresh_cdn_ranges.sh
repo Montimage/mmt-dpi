@@ -1,96 +1,87 @@
 #!/usr/bin/env bash
 #
-# refresh_cdn_ranges.sh — regenerate data/ip_ranges.cdn.txt from each provider's
-# own authoritative, machine-readable IP-range endpoint (M9, issue #75).
+# refresh_cdn_ranges.sh — regenerate the IP-range data from each provider's
+# published, machine-readable IP-range feed (issues #75, #83, #565).
 #
-# The output is in the MMT_DPI_IP_RANGES_FILE format documented in
-# docs/External-Attribution.md ("<addr>/<prefixlen>  <PROTOCOL>"), one CIDR per
-# line, attributed to the registered MMT protocol for that provider. It is a
-# pure data refresh: nothing is loaded unless an operator points
-# MMT_DPI_IP_RANGES_FILE at the result, so it never changes the compiled-in
-# classification fingerprint.
+# 1. Downloads every feed tools/gen-ip-range-data.py --list-feeds names into
+#    a new empty directory and records, in its MANIFEST, one line per feed:
+#    "<name> <sha256> <fetch date, UTC> <url>".
+# 2. Runs tools/gen-ip-range-data.py on that directory (offline): it rewrites
+#    the feed part of data/ip_ranges.txt (the compiled-in IPv4 table's
+#    source; its hand-maintained part is kept) and data/ip_ranges.cdn.txt
+#    (the IPv6 prefixes, for MMT_DPI_IP_RANGES_FILE), recording each feed's
+#    URL, fetch date and sha256 next to its entries.
+# 3. Regenerates the C table with tools/gen-ip-range-table.py.
+#
+# Only this script touches the network; the build and the tests read the
+# committed data files. The download directory is kept: pass it back with
+# --feeds DIR to rebuild the same files byte-for-byte without a download
+# (each file's sha256 is checked against the MANIFEST first).
 #
 # Usage:
-#     tools/refresh_cdn_ranges.sh > data/ip_ranges.cdn.txt
-#     git diff data/ip_ranges.cdn.txt      # review before committing
+#     tools/refresh_cdn_ranges.sh               # download, then rebuild
+#     tools/refresh_cdn_ranges.sh --feeds DIR   # rebuild from a kept download
+#     git diff data/                            # review, then rerun both
+#                                               # phase0 gates (tools/phase0/README.md)
 #
-# Requirements: curl and jq. Review each provider's terms of use (linked below)
+# Requirements: curl, python3, sha256sum. Review each provider's terms of use
 # before redistributing the generated ranges.
 #
-# Providers refreshed (only those with a registered MMT protocol):
-#   Fastly     -> FASTLY      https://api.fastly.com/public-ip-list
-#   AWS (CDN)  -> CLOUDFRONT  https://ip-ranges.amazonaws.com/ip-ranges.json
-#   Google     -> GOOGLE      https://www.gstatic.com/ipranges/goog.json
-#   Cloudflare -> CLOUDFLARE  https://api.cloudflare.com/client/v4/ips
-#   Azure      -> AZURE       https://download.microsoft.com/download/.../ServiceTags_Public.json
-#
-# Note: goog.json is Google's *own* service ranges (narrower and more accurate
-# for PROTO_GOOGLE than cloud.json, which is the broad GCP customer range list).
+# Feeds and labels (cloud tenancy and CDN edges never get a first-party app
+# label; the rules are in tools/gen-ip-range-data.py):
+#   AWS ip-ranges.json          -> CLOUDFRONT (CDN), AWS (everything else)
+#   Google goog.json/cloud.json -> GOOGLE_CLOUD (cloud.json), GOOGLE (goog minus cloud)
+#   Azure ServiceTags_Public    -> AZURE (service tag AzureCloud); the weekly file's
+#                                  URL is read from Microsoft's download page
+#   Cloudflare ips-v4/ips-v6    -> CLOUDFLARE
+#   Fastly public-ip-list       -> FASTLY
+# The downloaded files are untrusted data: they are parsed, never executed.
 set -euo pipefail
 
-for tool in curl jq; do
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+GEN_DATA="$REPO_ROOT/tools/gen-ip-range-data.py"
+GEN_TABLE="$REPO_ROOT/tools/gen-ip-range-table.py"
+
+feeds=""
+case "${1:-}" in
+    "") ;;
+    --feeds)
+        [ $# -eq 2 ] || { echo "usage: $0 [--feeds DIR]" >&2; exit 2; }
+        feeds="$2" ;;
+    *) echo "usage: $0 [--feeds DIR]" >&2; exit 2 ;;
+esac
+
+need="python3"
+[ -n "$feeds" ] || need="curl python3 sha256sum"
+for tool in $need; do
     if ! command -v "$tool" >/dev/null 2>&1; then
         echo "error: '$tool' is required but not found in PATH" >&2
         exit 1
     fi
 done
 
-FASTLY_URL="https://api.fastly.com/public-ip-list"
-AWS_URL="https://ip-ranges.amazonaws.com/ip-ranges.json"
-GCP_URL="https://www.gstatic.com/ipranges/goog.json"
-CLOUDFLARE_URL="https://api.cloudflare.com/client/v4/ips"
-AZURE_URL="https://download.microsoft.com/download/7/1/d/71d86715-5596-4529-9b13-da13a5de5b63/ServiceTags_Public_20260601.json"
-
-# Keep only CIDRs the loader accepts: IPv4 prefixlen in [1,30], IPv6 in [1,128].
-# (mmt_tcpip_load_ip_ranges_file silently skips anything outside that range.)
-filter_valid() {
-    awk -F/ 'NF==2 {
-        plen = $2 + 0
-        if (index($1, ":") > 0) { if (plen >= 1 && plen <= 128) print }
-        else                    { if (plen >= 1 && plen <= 30)  print }
-    }'
+fetch() { # <url> <file>
+    curl -fsSL --proto '=https' --tlsv1.2 --max-time 300 -o "$2" "$1"
 }
 
-emit() { # <proto> ; reads CIDRs on stdin
-    local proto="$1"
-    # NB: the "%-20s " column is cosmetic; the trailing space is mandatory.
-    # CIDRs longer than the 20-char field (notably many IPv6 prefixes) get no
-    # padding, so without an explicit separator the protocol token would abut
-    # the CIDR ("2600:9000::/53GOOGLE") and the loader's "%127s %127s" sscanf
-    # would read one field and silently drop the rule. Keep the space.
-    filter_valid | awk -v p="$proto" 'NF { printf "%-20s %s\n", $0, p }'
-}
+if [ -z "$feeds" ]; then
+    feeds="$(mktemp -d "${TMPDIR:-/tmp}/mmt-ip-feeds.XXXXXX")"
+    today="$(date -u +%Y-%m-%d)"
+    manifest="$feeds/MANIFEST"
+    printf '# IP-range feeds downloaded by tools/refresh_cdn_ranges.sh\n' > "$manifest"
+    while read -r name file url; do
+        if [ "$name" = "azure" ]; then
+            # The weekly ServiceTags file has a dated URL: read it from the page.
+            fetch "$url" "$feeds/azure-download-page.html"
+            url="$(python3 -I "$GEN_DATA" --azure-url "$feeds/azure-download-page.html")"
+        fi
+        echo "fetching $name: $url" >&2
+        fetch "$url" "$feeds/$file"
+        sha="$(sha256sum "$feeds/$file" | cut -d' ' -f1)"
+        printf '%s %s %s %s\n' "$name" "$sha" "$today" "$url" >> "$manifest"
+    done < <(python3 -I "$GEN_DATA" --list-feeds)
+    echo "feeds kept in $feeds (rebuild offline: $0 --feeds $feeds)" >&2
+fi
 
-printf '# MMT-DPI — refreshable CDN/cloud IP-range attribution (M9, issue #75)\n'
-printf '# Generated by tools/refresh_cdn_ranges.sh from authoritative provider\n'
-printf '# endpoints. Inert unless MMT_DPI_IP_RANGES_FILE points at it. Review each\n'
-printf '# provider'"'"'s terms of use before redistributing.\n'
-
-printf '\n# Fastly -> FASTLY (%s)\n' "$FASTLY_URL"
-curl -fsSL "$FASTLY_URL" \
-    | jq -r '.addresses[], .ipv6_addresses[]' \
-    | emit FASTLY
-
-printf '\n# AWS CloudFront -> CLOUDFRONT (%s)\n' "$AWS_URL"
-curl -fsSL "$AWS_URL" \
-    | jq -r '(.prefixes[] | select(.service=="CLOUDFRONT") | .ip_prefix), ((.ipv6_prefixes // [])[] | select(.service=="CLOUDFRONT") | .ipv6_prefix)' \
-    | emit CLOUDFRONT
-
-printf '\n# Google (own services) -> GOOGLE (%s)\n' "$GCP_URL"
-curl -fsSL "$GCP_URL" \
-    | jq -r '.prefixes[] | (.ipv4Prefix // .ipv6Prefix) // empty' \
-    | emit GOOGLE
-
-# Cloudflare (issue #83)
-printf '\n# Cloudflare -> CLOUDFLARE (%s)\n' "$CLOUDFLARE_URL"
-curl -fsSL "$CLOUDFLARE_URL" \
-    | jq -r '.result.ipv4_cidrs[], .result.ipv6_cidrs[]' \
-    | emit CLOUDFLARE
-
-# Azure (issue #83)
-# ServiceTags_Public.json is updated weekly; the date in the URL must be refreshed.
-printf '\n# Azure -> AZURE (weekly ServiceTags JSON)\n# Source: %s\n' \
-    'https://www.microsoft.com/en-us/download/details.aspx?id=56519'
-curl -fsSL "$AZURE_URL" \
-    | jq -r '.values[].properties.addressPrefixes[]' \
-    | emit AZURE
+python3 -I "$GEN_DATA" --feeds "$feeds"
+python3 -I "$GEN_TABLE"

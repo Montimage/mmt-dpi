@@ -17,7 +17,10 @@ Since issue #557 the compiled-in IPv4 ranges come from the versioned data file
 `python3 tools/gen-ip-range-table.py` flattens its prefixes into the const,
 sorted array of disjoint intervals the `.inc` holds (one binary search per
 address, longest prefix inside nested ranges), and the `core_engine` suite
-fails when the committed `.inc` is not the generator's output.
+fails when the committed `.inc` is not the generator's output. Since issue #565
+the cloud and CDN part of that file is regenerated from the providers'
+published feeds (*Refreshing CDN/cloud ranges* below), with cloud-tenancy and
+CDN labels kept apart from first-party applications.
 
 M9 makes this attribution data **externally updatable**. The compiled-in tables
 remain the bundled **default/fallback**, and operators can additionally supply
@@ -76,41 +79,65 @@ separate set that is consulted *before* the built-in/extend tables. Use this to
 
 See [`data/ip_ranges.example.txt`](https://github.com/montimage-projects/mmt-dpi/blob/main/data/ip_ranges.example.txt) (`data/ip_ranges.example.txt`).
 
-### Refreshing high-impact CDN/cloud ranges (issue #75)
+### Refreshing CDN/cloud ranges (issues #75, #565)
 
-CDN/cloud allocations change often, so they are shipped as a **refreshable data
-file** rather than baked into the compiled-in table. A
-ready-to-use bundle lives at
-[`data/ip_ranges.cdn.txt`](https://github.com/montimage-projects/mmt-dpi/blob/main/data/ip_ranges.cdn.txt); load it the same way:
-
-```
-export MMT_DPI_IP_RANGES_FILE=/path/to/ip_ranges.cdn.txt
-```
-
-Regenerate it from each provider's own authoritative, machine-readable endpoint
-with [`tools/refresh_cdn_ranges.sh`](https://github.com/montimage-projects/mmt-dpi/blob/main/tools/refresh_cdn_ranges.sh):
+CDN/cloud allocations change often, so their ranges are regenerated from each
+provider's own published, machine-readable feed by
+[`tools/refresh_cdn_ranges.sh`](https://github.com/montimage-projects/mmt-dpi/blob/main/tools/refresh_cdn_ranges.sh):
 
 ```
-tools/refresh_cdn_ranges.sh > data/ip_ranges.cdn.txt
-git diff data/ip_ranges.cdn.txt        # review before committing
+tools/refresh_cdn_ranges.sh               # download every feed, then rebuild
+tools/refresh_cdn_ranges.sh --feeds DIR   # rebuild offline from a kept download
+git diff data/                            # review, then rerun both phase0 gates
 ```
 
-| Provider        | Protocol     | Authoritative source                          |
-| --------------- | ------------ | --------------------------------------------- |
-| Fastly          | `FASTLY`     | `https://api.fastly.com/public-ip-list`       |
-| AWS CloudFront  | `CLOUDFRONT` | `https://ip-ranges.amazonaws.com/ip-ranges.json` |
-| Google          | `GOOGLE`     | `https://www.gstatic.com/ipranges/goog.json`  |
+The script downloads the feeds into a new empty directory and records, in its
+`MANIFEST`, each feed's URL, fetch date (UTC) and sha256. It then runs
+[`tools/gen-ip-range-data.py`](https://github.com/montimage-projects/mmt-dpi/blob/main/tools/gen-ip-range-data.py)
+on that directory, which never touches the network and refuses a file whose
+sha256 differs from the `MANIFEST`. The builder rewrites:
 
-The bundled [`data/ip_ranges.cdn.txt`](https://github.com/montimage-projects/mmt-dpi/blob/main/data/ip_ranges.cdn.txt) is a curated
-**Fastly-only seed** (reviewable without network access); running the script
-regenerates the fuller multi-provider file. `goog.json` is Google's *own*
-service ranges — narrower and more accurate for `GOOGLE` than the broad GCP
-customer list (`cloud.json`). Only providers with a registered MMT protocol are
-emitted. IP allocation lists
-are factual data the providers publish for this purpose, but **confirm each
-provider's terms of use before redistributing** the generated ranges. Like
-every range file this is inert until `MMT_DPI_IP_RANGES_FILE` points at it, so
-bundling it is fingerprint-neutral.
+- the **feed entries** of
+  [`data/ip_ranges.txt`](https://github.com/montimage-projects/mmt-dpi/blob/main/data/ip_ranges.txt),
+  the IPv4 prefixes the library compiles in. Its **hand-maintained entries**,
+  for providers without a published feed, are kept verbatim. The script then
+  regenerates the `.inc` with `tools/gen-ip-range-table.py`.
+- [`data/ip_ranges.cdn.txt`](https://github.com/montimage-projects/mmt-dpi/blob/main/data/ip_ranges.cdn.txt),
+  the IPv6 prefixes of the same feeds under the same labels. The
+  compiled-in table is IPv4 only, so this file is the IPv6 half; load it with
+  `export MMT_DPI_IP_RANGES_FILE=/path/to/ip_ranges.cdn.txt`.
+
+Both files record every feed's URL, fetch date and sha256 next to its
+entries. The build and the tests read only the committed files, so they stay
+offline and reproducible: the kept download directory, passed back with
+`--feeds`, rebuilds both files byte for byte.
+
+| Feed | Label | Covers |
+| ---- | ----- | ------ |
+| AWS `https://ip-ranges.amazonaws.com/ip-ranges.json` | `CLOUDFRONT` | services `CLOUDFRONT`, `CLOUDFRONT_ORIGIN_FACING` (CDN edge) |
+| | `AWS` | every other AWS prefix, minus CloudFront (cloud tenancy) |
+| Google `https://www.gstatic.com/ipranges/cloud.json` | `GOOGLE_CLOUD` | Google Cloud customer ranges (cloud tenancy) |
+| Google `https://www.gstatic.com/ipranges/goog.json` | `GOOGLE` | Google's own services: `goog.json` minus `cloud.json` |
+| Microsoft Azure Service Tags (`ServiceTags_Public_YYYYMMDD.json`, linked from `https://www.microsoft.com/en-us/download/details.aspx?id=56519`) | `AZURE` | service tag `AzureCloud` (cloud tenancy) |
+| Cloudflare `https://www.cloudflare.com/ips-v4`, `ips-v6` | `CLOUDFLARE` | CDN edge |
+| Fastly `https://api.fastly.com/public-ip-list` | `FASTLY` | CDN edge |
+
+A cloud-tenancy or CDN address therefore gets the cloud or CDN label, never the
+first-party application that a customer's service happens to be. An unknown
+flow to a CloudFront edge is `cloudfront`, not `amazon`, and one to a GCP VM is
+`google_cloud`, not `google`. The verdict is still an IP-range guess, so its
+classification method is `ip` (issue #567). The table no longer labels any
+prefix `amazon`. Its pre-2017 Google, Amazon, AWS, Azure and Cloudflare
+entries were replaced by the feed entries. The providers with no published
+feed (Apple, Yahoo, Webex, Kakao, Facebook, Netflix, Twitter, Skype) keep their
+May 2017 entries as hand-maintained ones
+([DECISIONS.md](https://github.com/montimage-projects/mmt-dpi/blob/main/docs/DECISIONS.md),
+2026-11-02).
+
+IP allocation lists are factual data the providers publish for this purpose,
+but **confirm each provider's terms of use before redistributing** the
+generated ranges. A relabel is a classification change, so rerun both phase0
+gates after a refresh (`tools/phase0/README.md`).
 
 ## Port hints — `MMT_DPI_PORT_MAP_FILE`
 

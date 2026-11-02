@@ -1,36 +1,341 @@
 /* GENERATED FILE -- do not edit by hand (issue #557).
- * Source: data/ip_ranges.txt, version 2026-10-31; regenerate with
+ * Source: data/ip_ranges.txt, version 2026-11-02; regenerate with
  *   python3 tools/gen-ip-range-table.py
  * The compiled-in IPv4 attribution table of _find_proto_id_by_address(),
- * included by mmt_tcpip_classif_utils.c: 10303 prefixes flattened into 7786
+ * included by mmt_tcpip_classif_utils.c: 5855 prefixes flattened into 7180
  * disjoint intervals, sorted by start address. An interval runs from its
  * start to the next one's; it carries the protocol and the prefix length
  * of the longest listed prefix containing it (0 = no prefix). The first
  * interval starts at 0.0.0.0, so every address falls in exactly one. */
-#define IP_RANGE_INTERVAL_COUNT 7786
+#define IP_RANGE_INTERVAL_COUNT 7180
 static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x00000000u, PROTO_UNKNOWN, 0},
-    {0x01000000u, PROTO_GOOGLE, 24}, /* 1.0.0.0/24 */
-    {0x01000100u, PROTO_UNKNOWN, 0},
-    {0x01010100u, PROTO_GOOGLE, 24}, /* 1.1.1.0/24 */
-    {0x01010200u, PROTO_UNKNOWN, 0},
-    {0x01020300u, PROTO_GOOGLE, 24}, /* 1.2.3.0/24 */
-    {0x01020400u, PROTO_UNKNOWN, 0},
+    {0x01b20100u, PROTO_AWS, 24}, /* 1.178.1.0/24 */
+    {0x01b20200u, PROTO_UNKNOWN, 0},
+    {0x01b20400u, PROTO_AWS, 22}, /* 1.178.4.0/22 */
+    {0x01b20c00u, PROTO_UNKNOWN, 0},
+    {0x01b21000u, PROTO_AWS, 20}, /* 1.178.16.0/20 */
+    {0x01b22000u, PROTO_UNKNOWN, 0},
+    {0x01b24000u, PROTO_AWS, 23}, /* 1.178.64.0/23 */
+    {0x01b24200u, PROTO_UNKNOWN, 0},
+    {0x01b24800u, PROTO_AWS, 21}, /* 1.178.72.0/21 */
+    {0x01b25000u, PROTO_UNKNOWN, 0},
+    {0x01b25800u, PROTO_AWS, 21}, /* 1.178.88.0/21 */
+    {0x01b26000u, PROTO_UNKNOWN, 0},
+    {0x01b26400u, PROTO_AWS, 22}, /* 1.178.100.0/22 */
+    {0x01b26800u, PROTO_UNKNOWN, 0},
+    {0x01b2ac00u, PROTO_AWS, 23}, /* 1.178.172.0/23 */
+    {0x01b2ae00u, PROTO_AWS, 24}, /* 1.178.174.0/24 */
+    {0x01b2af00u, PROTO_UNKNOWN, 0},
+    {0x01b30200u, PROTO_AWS, 23}, /* 1.179.2.0/23 */
+    {0x01b30400u, PROTO_UNKNOWN, 0},
+    {0x01b30e00u, PROTO_AWS, 23}, /* 1.179.14.0/23 */
+    {0x01b31000u, PROTO_UNKNOWN, 0},
+    {0x01b33400u, PROTO_AWS, 22}, /* 1.179.52.0/22 */
+    {0x01b33c00u, PROTO_AWS, 23}, /* 1.179.60.0/23 */
+    {0x01b33e00u, PROTO_UNKNOWN, 0},
+    {0x01b36500u, PROTO_AWS, 24}, /* 1.179.101.0/24 */
+    {0x01b36600u, PROTO_AWS, 23}, /* 1.179.102.0/23 */
+    {0x01b36800u, PROTO_UNKNOWN, 0},
     {0x01c90000u, PROTO_KAKAO, 24}, /* 1.201.0.0/24 */
     {0x01c90200u, PROTO_UNKNOWN, 0},
     {0x01c90700u, PROTO_KAKAO, 24}, /* 1.201.7.0/24 */
     {0x01c90800u, PROTO_UNKNOWN, 0},
-    {0x08063000u, PROTO_GOOGLE, 21}, /* 8.6.48.0/21 */
-    {0x08063400u, PROTO_GOOGLE, 22}, /* 8.6.52.0/22 */
-    {0x08063800u, PROTO_UNKNOWN, 0},
+    {0x03000000u, PROTO_AWS, 15}, /* 3.0.0.0/15 */
+    {0x03020000u, PROTO_AWS, 22}, /* 3.2.0.0/22 */
+    {0x03020400u, PROTO_AWS, 23}, /* 3.2.4.0/23 */
+    {0x03020600u, PROTO_UNKNOWN, 0},
+    {0x03020800u, PROTO_AWS, 21}, /* 3.2.8.0/21 */
+    {0x03021000u, PROTO_UNKNOWN, 0},
+    {0x03023000u, PROTO_AWS, 21}, /* 3.2.48.0/21 */
+    {0x03023800u, PROTO_AWS, 22}, /* 3.2.56.0/22 */
+    {0x03023c00u, PROTO_AWS, 23}, /* 3.2.60.0/23 */
+    {0x03023e00u, PROTO_UNKNOWN, 0},
+    {0x03024000u, PROTO_AWS, 18}, /* 3.2.64.0/18 */
+    {0x03028000u, PROTO_UNKNOWN, 0},
+    {0x03030000u, PROTO_AWS, 23}, /* 3.3.0.0/23 */
+    {0x03030200u, PROTO_AWS, 24}, /* 3.3.2.0/24 */
+    {0x03030300u, PROTO_UNKNOWN, 0},
+    {0x03030500u, PROTO_AWS, 24}, /* 3.3.5.0/24 */
+    {0x03030600u, PROTO_AWS, 23}, /* 3.3.6.0/23 */
+    {0x03030800u, PROTO_AWS, 21}, /* 3.3.8.0/21 */
+    {0x03031000u, PROTO_AWS, 20}, /* 3.3.16.0/20 */
+    {0x03032000u, PROTO_AWS, 23}, /* 3.3.32.0/23 */
+    {0x03032200u, PROTO_UNKNOWN, 0},
+    {0x03040000u, PROTO_AWS, 22}, /* 3.4.0.0/22 */
+    {0x03040400u, PROTO_AWS, 24}, /* 3.4.4.0/24 */
+    {0x03040500u, PROTO_UNKNOWN, 0},
+    {0x03040600u, PROTO_AWS, 24}, /* 3.4.6.0/24 */
+    {0x03040700u, PROTO_UNKNOWN, 0},
+    {0x03040800u, PROTO_AWS, 23}, /* 3.4.8.0/23 */
+    {0x03040a00u, PROTO_AWS, 24}, /* 3.4.10.0/24 */
+    {0x03040b00u, PROTO_UNKNOWN, 0},
+    {0x03040c01u, PROTO_AWS, 32}, /* 3.4.12.1/32 */
+    {0x03040c02u, PROTO_AWS, 31}, /* 3.4.12.2/31 */
+    {0x03040c06u, PROTO_AWS, 32}, /* 3.4.12.6/32 */
+    {0x03040c07u, PROTO_UNKNOWN, 0},
+    {0x03040c0bu, PROTO_AWS, 32}, /* 3.4.12.11/32 */
+    {0x03040c0du, PROTO_UNKNOWN, 0},
+    {0x03040c0fu, PROTO_AWS, 32}, /* 3.4.12.15/32 */
+    {0x03040c10u, PROTO_AWS, 28}, /* 3.4.12.16/28 */
+    {0x03040c20u, PROTO_AWS, 29}, /* 3.4.12.32/29 */
+    {0x03040c28u, PROTO_AWS, 30}, /* 3.4.12.40/30 */
+    {0x03040c2cu, PROTO_AWS, 31}, /* 3.4.12.44/31 */
+    {0x03040c2eu, PROTO_AWS, 32}, /* 3.4.12.46/32 */
+    {0x03040c2fu, PROTO_UNKNOWN, 0},
+    {0x03040c31u, PROTO_AWS, 32}, /* 3.4.12.49/32 */
+    {0x03040c32u, PROTO_AWS, 31}, /* 3.4.12.50/31 */
+    {0x03040c34u, PROTO_AWS, 30}, /* 3.4.12.52/30 */
+    {0x03040c38u, PROTO_AWS, 29}, /* 3.4.12.56/29 */
+    {0x03040c40u, PROTO_AWS, 28}, /* 3.4.12.64/28 */
+    {0x03040c50u, PROTO_AWS, 30}, /* 3.4.12.80/30 */
+    {0x03040c54u, PROTO_AWS, 31}, /* 3.4.12.84/31 */
+    {0x03040c56u, PROTO_AWS, 32}, /* 3.4.12.86/32 */
+    {0x03040c57u, PROTO_UNKNOWN, 0},
+    {0x03040d00u, PROTO_AWS, 26}, /* 3.4.13.0/26 */
+    {0x03040d40u, PROTO_AWS, 27}, /* 3.4.13.64/27 */
+    {0x03040d60u, PROTO_UNKNOWN, 0},
+    {0x03040e00u, PROTO_AWS, 27}, /* 3.4.14.0/27 */
+    {0x03040e20u, PROTO_AWS, 29}, /* 3.4.14.32/29 */
+    {0x03040e28u, PROTO_UNKNOWN, 0},
+    {0x03040f00u, PROTO_AWS, 25}, /* 3.4.15.0/25 */
+    {0x03040f80u, PROTO_AWS, 28}, /* 3.4.15.128/28 */
+    {0x03040f90u, PROTO_UNKNOWN, 0},
+    {0x03040f98u, PROTO_AWS, 29}, /* 3.4.15.152/29 */
+    {0x03040fa0u, PROTO_AWS, 27}, /* 3.4.15.160/27 */
+    {0x03040fc0u, PROTO_AWS, 26}, /* 3.4.15.192/26 */
+    {0x03041000u, PROTO_AWS, 20}, /* 3.4.16.0/20 */
+    {0x03043000u, PROTO_UNKNOWN, 0},
+    {0x03050000u, PROTO_AWS, 18}, /* 3.5.0.0/18 */
+    {0x03054000u, PROTO_AWS, 19}, /* 3.5.64.0/19 */
+    {0x03056000u, PROTO_AWS, 20}, /* 3.5.96.0/20 */
+    {0x03057000u, PROTO_UNKNOWN, 0},
+    {0x03057800u, PROTO_AWS, 22}, /* 3.5.120.0/22 */
+    {0x03057c00u, PROTO_UNKNOWN, 0},
+    {0x03057e00u, PROTO_AWS, 23}, /* 3.5.126.0/23 */
+    {0x03058000u, PROTO_AWS, 19}, /* 3.5.128.0/19 */
+    {0x0305a000u, PROTO_AWS, 21}, /* 3.5.160.0/21 */
+    {0x0305a800u, PROTO_AWS, 23}, /* 3.5.168.0/23 */
+    {0x0305aa00u, PROTO_UNKNOWN, 0},
+    {0x0305ac00u, PROTO_AWS, 22}, /* 3.5.172.0/22 */
+    {0x0305b000u, PROTO_UNKNOWN, 0},
+    {0x0305b400u, PROTO_AWS, 22}, /* 3.5.180.0/22 */
+    {0x0305b800u, PROTO_AWS, 21}, /* 3.5.184.0/21 */
+    {0x0305c800u, PROTO_UNKNOWN, 0},
+    {0x0305ca00u, PROTO_AWS, 23}, /* 3.5.202.0/23 */
+    {0x0305cc00u, PROTO_AWS, 22}, /* 3.5.204.0/22 */
+    {0x0305d000u, PROTO_AWS, 20}, /* 3.5.208.0/20 */
+    {0x0305e000u, PROTO_AWS, 19}, /* 3.5.224.0/19 */
+    {0x03060000u, PROTO_AWS, 15}, /* 3.6.0.0/15 */
+    {0x030a0000u, PROTO_AWS, 20}, /* 3.10.0.0/20 */
+    {0x030a1000u, PROTO_AWS, 24}, /* 3.10.16.0/24 */
+    {0x030a1100u, PROTO_AWS, 25}, /* 3.10.17.0/25 */
+    {0x030a1180u, PROTO_CLOUDFRONT, 25}, /* 3.10.17.128/25 */
+    {0x030a1200u, PROTO_AWS, 23}, /* 3.10.18.0/23 */
+    {0x030a1400u, PROTO_AWS, 22}, /* 3.10.20.0/22 */
+    {0x030a1800u, PROTO_AWS, 21}, /* 3.10.24.0/21 */
+    {0x030a2000u, PROTO_AWS, 19}, /* 3.10.32.0/19 */
+    {0x030a4000u, PROTO_AWS, 18}, /* 3.10.64.0/18 */
+    {0x030a8000u, PROTO_AWS, 17}, /* 3.10.128.0/17 */
+    {0x030b0000u, PROTO_AWS, 19}, /* 3.11.0.0/19 */
+    {0x030b2000u, PROTO_AWS, 20}, /* 3.11.32.0/20 */
+    {0x030b3000u, PROTO_AWS, 22}, /* 3.11.48.0/22 */
+    {0x030b3400u, PROTO_AWS, 24}, /* 3.11.52.0/24 */
+    {0x030b3500u, PROTO_CLOUDFRONT, 24}, /* 3.11.53.0/24 */
+    {0x030b3600u, PROTO_AWS, 23}, /* 3.11.54.0/23 */
+    {0x030b3800u, PROTO_AWS, 21}, /* 3.11.56.0/21 */
+    {0x030b4000u, PROTO_AWS, 18}, /* 3.11.64.0/18 */
+    {0x030b8000u, PROTO_AWS, 17}, /* 3.11.128.0/17 */
+    {0x030c0000u, PROTO_AWS, 14}, /* 3.12.0.0/14 */
+    {0x03100000u, PROTO_AWS, 13}, /* 3.16.0.0/13 */
+    {0x03180000u, PROTO_AWS, 14}, /* 3.24.0.0/14 */
+    {0x031c0000u, PROTO_AWS, 16}, /* 3.28.0.0/16 */
+    {0x031d0000u, PROTO_AWS, 19}, /* 3.29.0.0/19 */
+    {0x031d2000u, PROTO_AWS, 21}, /* 3.29.32.0/21 */
+    {0x031d2800u, PROTO_AWS, 26}, /* 3.29.40.0/26 */
+    {0x031d2840u, PROTO_CLOUDFRONT, 26}, /* 3.29.40.64/26 */
+    {0x031d2880u, PROTO_CLOUDFRONT, 25}, /* 3.29.40.128/25 */
+    {0x031d2900u, PROTO_AWS, 24}, /* 3.29.41.0/24 */
+    {0x031d2a00u, PROTO_AWS, 23}, /* 3.29.42.0/23 */
+    {0x031d2c00u, PROTO_AWS, 22}, /* 3.29.44.0/22 */
+    {0x031d3000u, PROTO_AWS, 21}, /* 3.29.48.0/21 */
+    {0x031d3800u, PROTO_AWS, 24}, /* 3.29.56.0/24 */
+    {0x031d3900u, PROTO_CLOUDFRONT, 26}, /* 3.29.57.0/26 */
+    {0x031d3940u, PROTO_AWS, 26}, /* 3.29.57.64/26 */
+    {0x031d3980u, PROTO_AWS, 25}, /* 3.29.57.128/25 */
+    {0x031d3a00u, PROTO_AWS, 23}, /* 3.29.58.0/23 */
+    {0x031d3c00u, PROTO_AWS, 22}, /* 3.29.60.0/22 */
+    {0x031d4000u, PROTO_AWS, 18}, /* 3.29.64.0/18 */
+    {0x031d8000u, PROTO_AWS, 17}, /* 3.29.128.0/17 */
+    {0x031e0000u, PROTO_AWS, 15}, /* 3.30.0.0/15 */
+    {0x03200000u, PROTO_AWS, 16}, /* 3.32.0.0/16 */
+    {0x03210000u, PROTO_AWS, 23}, /* 3.33.0.0/23 */
+    {0x03210200u, PROTO_UNKNOWN, 0},
+    {0x03212c00u, PROTO_AWS, 22}, /* 3.33.44.0/22 */
+    {0x03213000u, PROTO_UNKNOWN, 0},
+    {0x03218000u, PROTO_AWS, 17}, /* 3.33.128.0/17 */
+    {0x03220000u, PROTO_AWS, 16}, /* 3.34.0.0/16 */
+    {0x03230000u, PROTO_AWS, 17}, /* 3.35.0.0/17 */
+    {0x03238000u, PROTO_AWS, 23}, /* 3.35.128.0/23 */
+    {0x03238200u, PROTO_AWS, 25}, /* 3.35.130.0/25 */
+    {0x03238280u, PROTO_CLOUDFRONT, 25}, /* 3.35.130.128/25 */
+    {0x03238300u, PROTO_AWS, 24}, /* 3.35.131.0/24 */
+    {0x03238400u, PROTO_AWS, 22}, /* 3.35.132.0/22 */
+    {0x03238800u, PROTO_AWS, 21}, /* 3.35.136.0/21 */
+    {0x03239000u, PROTO_AWS, 20}, /* 3.35.144.0/20 */
+    {0x0323a000u, PROTO_AWS, 19}, /* 3.35.160.0/19 */
+    {0x0323c000u, PROTO_AWS, 18}, /* 3.35.192.0/18 */
+    {0x03240000u, PROTO_AWS, 14}, /* 3.36.0.0/14 */
+    {0x032c0000u, PROTO_AWS, 16}, /* 3.44.0.0/16 */
+    {0x032d0000u, PROTO_AWS, 17}, /* 3.45.0.0/17 */
+    {0x032d8000u, PROTO_UNKNOWN, 0},
+    {0x03400000u, PROTO_AWS, 11}, /* 3.64.0.0/11 */
+    {0x03600000u, PROTO_AWS, 14}, /* 3.96.0.0/14 */
+    {0x03640000u, PROTO_UNKNOWN, 0},
+    {0x03650000u, PROTO_AWS, 17}, /* 3.101.0.0/17 */
+    {0x03658000u, PROTO_AWS, 20}, /* 3.101.128.0/20 */
+    {0x03659000u, PROTO_AWS, 21}, /* 3.101.144.0/21 */
+    {0x03659800u, PROTO_AWS, 22}, /* 3.101.152.0/22 */
+    {0x03659c00u, PROTO_AWS, 23}, /* 3.101.156.0/23 */
+    {0x03659e00u, PROTO_CLOUDFRONT, 23}, /* 3.101.158.0/23 */
+    {0x0365a000u, PROTO_AWS, 19}, /* 3.101.160.0/19 */
+    {0x0365c000u, PROTO_AWS, 18}, /* 3.101.192.0/18 */
+    {0x03660000u, PROTO_AWS, 15}, /* 3.102.0.0/15 */
+    {0x036a0000u, PROTO_AWS, 16}, /* 3.106.0.0/16 */
+    {0x036b0000u, PROTO_AWS, 19}, /* 3.107.0.0/19 */
+    {0x036b2000u, PROTO_AWS, 21}, /* 3.107.32.0/21 */
+    {0x036b2800u, PROTO_AWS, 23}, /* 3.107.40.0/23 */
+    {0x036b2a00u, PROTO_AWS, 24}, /* 3.107.42.0/24 */
+    {0x036b2b00u, PROTO_AWS, 25}, /* 3.107.43.0/25 */
+    {0x036b2b80u, PROTO_CLOUDFRONT, 25}, /* 3.107.43.128/25 */
+    {0x036b2c00u, PROTO_CLOUDFRONT, 24}, /* 3.107.44.0/24 */
+    {0x036b2d00u, PROTO_AWS, 24}, /* 3.107.45.0/24 */
+    {0x036b2e00u, PROTO_AWS, 23}, /* 3.107.46.0/23 */
+    {0x036b3000u, PROTO_AWS, 20}, /* 3.107.48.0/20 */
+    {0x036b4000u, PROTO_AWS, 18}, /* 3.107.64.0/18 */
+    {0x036b8000u, PROTO_AWS, 17}, /* 3.107.128.0/17 */
+    {0x036c0000u, PROTO_AWS, 14}, /* 3.108.0.0/14 */
+    {0x03740000u, PROTO_UNKNOWN, 0},
+    {0x03780000u, PROTO_AWS, 13}, /* 3.120.0.0/13 */
+    {0x03800000u, PROTO_AWS, 18}, /* 3.128.0.0/18 */
+    {0x03804000u, PROTO_AWS, 20}, /* 3.128.64.0/20 */
+    {0x03805000u, PROTO_AWS, 21}, /* 3.128.80.0/21 */
+    {0x03805800u, PROTO_AWS, 22}, /* 3.128.88.0/22 */
+    {0x03805c00u, PROTO_AWS, 24}, /* 3.128.92.0/24 */
+    {0x03805d00u, PROTO_CLOUDFRONT, 24}, /* 3.128.93.0/24 */
+    {0x03805e00u, PROTO_AWS, 23}, /* 3.128.94.0/23 */
+    {0x03806000u, PROTO_AWS, 19}, /* 3.128.96.0/19 */
+    {0x03808000u, PROTO_AWS, 17}, /* 3.128.128.0/17 */
+    {0x03810000u, PROTO_AWS, 16}, /* 3.129.0.0/16 */
+    {0x03820000u, PROTO_AWS, 15}, /* 3.130.0.0/15 */
+    {0x03860000u, PROTO_AWS, 17}, /* 3.134.0.0/17 */
+    {0x03868000u, PROTO_AWS, 18}, /* 3.134.128.0/18 */
+    {0x0386c000u, PROTO_AWS, 20}, /* 3.134.192.0/20 */
+    {0x0386d000u, PROTO_AWS, 22}, /* 3.134.208.0/22 */
+    {0x0386d400u, PROTO_AWS, 23}, /* 3.134.212.0/23 */
+    {0x0386d600u, PROTO_AWS, 24}, /* 3.134.214.0/24 */
+    {0x0386d700u, PROTO_CLOUDFRONT, 24}, /* 3.134.215.0/24 */
+    {0x0386d800u, PROTO_AWS, 21}, /* 3.134.216.0/21 */
+    {0x0386e000u, PROTO_AWS, 19}, /* 3.134.224.0/19 */
+    {0x03870000u, PROTO_AWS, 16}, /* 3.135.0.0/16 */
+    {0x03880000u, PROTO_AWS, 13}, /* 3.136.0.0/13 */
+    {0x03900000u, PROTO_AWS, 15}, /* 3.144.0.0/15 */
+    {0x03920000u, PROTO_AWS, 17}, /* 3.146.0.0/17 */
+    {0x03928000u, PROTO_AWS, 18}, /* 3.146.128.0/18 */
+    {0x0392c000u, PROTO_AWS, 19}, /* 3.146.192.0/19 */
+    {0x0392e000u, PROTO_AWS, 21}, /* 3.146.224.0/21 */
+    {0x0392e800u, PROTO_CLOUDFRONT, 22}, /* 3.146.232.0/22 */
+    {0x0392ec00u, PROTO_AWS, 22}, /* 3.146.236.0/22 */
+    {0x0392f000u, PROTO_AWS, 20}, /* 3.146.240.0/20 */
+    {0x03930000u, PROTO_AWS, 17}, /* 3.147.0.0/17 */
+    {0x03938000u, PROTO_AWS, 19}, /* 3.147.128.0/19 */
+    {0x0393a000u, PROTO_AWS, 22}, /* 3.147.160.0/22 */
+    {0x0393a400u, PROTO_CLOUDFRONT, 22}, /* 3.147.164.0/22 */
+    {0x0393a800u, PROTO_AWS, 21}, /* 3.147.168.0/21 */
+    {0x0393b000u, PROTO_AWS, 20}, /* 3.147.176.0/20 */
+    {0x0393c000u, PROTO_AWS, 19}, /* 3.147.192.0/19 */
+    {0x0393e000u, PROTO_AWS, 20}, /* 3.147.224.0/20 */
+    {0x0393f000u, PROTO_AWS, 22}, /* 3.147.240.0/22 */
+    {0x0393f400u, PROTO_CLOUDFRONT, 22}, /* 3.147.244.0/22 */
+    {0x0393f800u, PROTO_AWS, 21}, /* 3.147.248.0/21 */
+    {0x03940000u, PROTO_AWS, 14}, /* 3.148.0.0/14 */
+    {0x03980000u, PROTO_UNKNOWN, 0},
+    {0x03a00000u, PROTO_CLOUDFRONT, 13}, /* 3.160.0.0/13 */
+    {0x03a80000u, PROTO_CLOUDFRONT, 14}, /* 3.168.0.0/14 */
+    {0x03ac0000u, PROTO_CLOUDFRONT, 17}, /* 3.172.0.0/17 */
+    {0x03ac8000u, PROTO_UNKNOWN, 0},
+    {0x03ad0000u, PROTO_CLOUDFRONT, 16}, /* 3.173.0.0/16 */
+    {0x03ae0000u, PROTO_CLOUDFRONT, 15}, /* 3.174.0.0/15 */
+    {0x03b00000u, PROTO_UNKNOWN, 0},
+    {0x03d00000u, PROTO_AWS, 12}, /* 3.208.0.0/12 */
+    {0x03e00000u, PROTO_AWS, 14}, /* 3.224.0.0/14 */
+    {0x03e40000u, PROTO_AWS, 15}, /* 3.228.0.0/15 */
+    {0x03e60000u, PROTO_AWS, 16}, /* 3.230.0.0/16 */
+    {0x03e70000u, PROTO_AWS, 23}, /* 3.231.0.0/23 */
+    {0x03e70200u, PROTO_CLOUDFRONT, 25}, /* 3.231.2.0/25 */
+    {0x03e70280u, PROTO_AWS, 25}, /* 3.231.2.128/25 */
+    {0x03e70300u, PROTO_AWS, 24}, /* 3.231.3.0/24 */
+    {0x03e70400u, PROTO_AWS, 22}, /* 3.231.4.0/22 */
+    {0x03e70800u, PROTO_AWS, 21}, /* 3.231.8.0/21 */
+    {0x03e71000u, PROTO_AWS, 20}, /* 3.231.16.0/20 */
+    {0x03e72000u, PROTO_AWS, 19}, /* 3.231.32.0/19 */
+    {0x03e74000u, PROTO_AWS, 18}, /* 3.231.64.0/18 */
+    {0x03e78000u, PROTO_AWS, 17}, /* 3.231.128.0/17 */
+    {0x03e80000u, PROTO_AWS, 15}, /* 3.232.0.0/15 */
+    {0x03ea0000u, PROTO_AWS, 17}, /* 3.234.0.0/17 */
+    {0x03ea8000u, PROTO_AWS, 18}, /* 3.234.128.0/18 */
+    {0x03eac000u, PROTO_AWS, 19}, /* 3.234.192.0/19 */
+    {0x03eae000u, PROTO_AWS, 21}, /* 3.234.224.0/21 */
+    {0x03eae800u, PROTO_AWS, 25}, /* 3.234.232.0/25 */
+    {0x03eae880u, PROTO_AWS, 26}, /* 3.234.232.128/26 */
+    {0x03eae8c0u, PROTO_AWS, 27}, /* 3.234.232.192/27 */
+    {0x03eae8e0u, PROTO_CLOUDFRONT, 27}, /* 3.234.232.224/27 */
+    {0x03eae900u, PROTO_AWS, 24}, /* 3.234.233.0/24 */
+    {0x03eaea00u, PROTO_AWS, 23}, /* 3.234.234.0/23 */
+    {0x03eaec00u, PROTO_AWS, 22}, /* 3.234.236.0/22 */
+    {0x03eaf000u, PROTO_AWS, 20}, /* 3.234.240.0/20 */
+    {0x03eb0000u, PROTO_AWS, 16}, /* 3.235.0.0/16 */
+    {0x03ec0000u, PROTO_AWS, 19}, /* 3.236.0.0/19 */
+    {0x03ec2000u, PROTO_AWS, 20}, /* 3.236.32.0/20 */
+    {0x03ec3000u, PROTO_CLOUDFRONT, 23}, /* 3.236.48.0/23 */
+    {0x03ec3200u, PROTO_AWS, 23}, /* 3.236.50.0/23 */
+    {0x03ec3400u, PROTO_AWS, 22}, /* 3.236.52.0/22 */
+    {0x03ec3800u, PROTO_AWS, 21}, /* 3.236.56.0/21 */
+    {0x03ec4000u, PROTO_AWS, 18}, /* 3.236.64.0/18 */
+    {0x03ec8000u, PROTO_AWS, 19}, /* 3.236.128.0/19 */
+    {0x03eca000u, PROTO_AWS, 21}, /* 3.236.160.0/21 */
+    {0x03eca800u, PROTO_AWS, 24}, /* 3.236.168.0/24 */
+    {0x03eca900u, PROTO_AWS, 25}, /* 3.236.169.0/25 */
+    {0x03eca980u, PROTO_AWS, 26}, /* 3.236.169.128/26 */
+    {0x03eca9c0u, PROTO_CLOUDFRONT, 26}, /* 3.236.169.192/26 */
+    {0x03ecaa00u, PROTO_AWS, 23}, /* 3.236.170.0/23 */
+    {0x03ecac00u, PROTO_AWS, 22}, /* 3.236.172.0/22 */
+    {0x03ecb000u, PROTO_AWS, 20}, /* 3.236.176.0/20 */
+    {0x03ecc000u, PROTO_AWS, 18}, /* 3.236.192.0/18 */
+    {0x03ed0000u, PROTO_AWS, 16}, /* 3.237.0.0/16 */
+    {0x03ee0000u, PROTO_AWS, 15}, /* 3.238.0.0/15 */
+    {0x03f00000u, PROTO_UNKNOWN, 0},
+    {0x03f80000u, PROTO_AWS, 13}, /* 3.248.0.0/13 */
+    {0x04000000u, PROTO_UNKNOWN, 0},
+    {0x04900000u, PROTO_AZURE, 12}, /* 4.144.0.0/12 */
+    {0x04a00000u, PROTO_AZURE, 11}, /* 4.160.0.0/11 */
+    {0x04c00000u, PROTO_AZURE, 10}, /* 4.192.0.0/10 */
+    {0x05000000u, PROTO_UNKNOWN, 0},
+    {0x053c0000u, PROTO_AWS, 20}, /* 5.60.0.0/20 */
+    {0x053c1000u, PROTO_AWS, 24}, /* 5.60.16.0/24 */
+    {0x053c1100u, PROTO_UNKNOWN, 0},
+    {0x053c2000u, PROTO_AWS, 19}, /* 5.60.32.0/19 */
+    {0x053c4000u, PROTO_AWS, 18}, /* 5.60.64.0/18 */
+    {0x053c8000u, PROTO_AWS, 17}, /* 5.60.128.0/17 */
+    {0x053d0000u, PROTO_UNKNOWN, 0},
+    {0x05ae0000u, PROTO_AWS, 16}, /* 5.174.0.0/16 */
+    {0x05af0000u, PROTO_UNKNOWN, 0},
+    {0x05b36000u, PROTO_AWS, 20}, /* 5.179.96.0/20 */
+    {0x05b37000u, PROTO_UNKNOWN, 0},
     {0x08080400u, PROTO_GOOGLE, 24}, /* 8.8.4.0/24 */
     {0x08080500u, PROTO_UNKNOWN, 0},
     {0x08080800u, PROTO_GOOGLE, 24}, /* 8.8.8.0/24 */
     {0x08080900u, PROTO_UNKNOWN, 0},
-    {0x080fca00u, PROTO_GOOGLE, 24}, /* 8.15.202.0/24 */
-    {0x080fcb00u, PROTO_UNKNOWN, 0},
-    {0x08129000u, PROTO_AMAZON, 24}, /* 8.18.144.0/24 */
-    {0x08129200u, PROTO_UNKNOWN, 0},
     {0x0819c000u, PROTO_WEBEX, 24}, /* 8.25.192.0/24 */
     {0x0819c100u, PROTO_UNKNOWN, 0},
     {0x0819c200u, PROTO_TWITTER, 23}, /* 8.25.194.0/23 */
@@ -38,75 +343,767 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x0819c400u, PROTO_TWITTER, 23}, /* 8.25.196.0/23 */
     {0x0819c500u, PROTO_TWITTER, 24}, /* 8.25.197.0/24 */
     {0x0819c600u, PROTO_UNKNOWN, 0},
-    {0x0822d000u, PROTO_GOOGLE, 21}, /* 8.34.208.0/21 */
-    {0x0822d100u, PROTO_GOOGLE, 24}, /* 8.34.209.0/24 */
-    {0x0822d200u, PROTO_GOOGLE, 23}, /* 8.34.210.0/23 */
-    {0x0822d300u, PROTO_GOOGLE, 24}, /* 8.34.211.0/24 */
-    {0x0822d400u, PROTO_GOOGLE, 23}, /* 8.34.212.0/23 */
-    {0x0822d500u, PROTO_GOOGLE, 24}, /* 8.34.213.0/24 */
-    {0x0822d600u, PROTO_GOOGLE, 23}, /* 8.34.214.0/23 */
-    {0x0822d700u, PROTO_GOOGLE, 24}, /* 8.34.215.0/24 */
-    {0x0822d800u, PROTO_GOOGLE, 21}, /* 8.34.216.0/21 */
-    {0x0822d900u, PROTO_GOOGLE, 24}, /* 8.34.217.0/24 */
-    {0x0822da00u, PROTO_GOOGLE, 23}, /* 8.34.218.0/23 */
-    {0x0822db00u, PROTO_GOOGLE, 24}, /* 8.34.219.0/24 */
-    {0x0822dc00u, PROTO_GOOGLE, 23}, /* 8.34.220.0/23 */
-    {0x0822dd00u, PROTO_GOOGLE, 24}, /* 8.34.221.0/24 */
-    {0x0822de00u, PROTO_GOOGLE, 23}, /* 8.34.222.0/23 */
-    {0x0822df00u, PROTO_GOOGLE, 24}, /* 8.34.223.0/24 */
+    {0x0822d000u, PROTO_GOOGLE_CLOUD, 20}, /* 8.34.208.0/20 */
     {0x0822e000u, PROTO_UNKNOWN, 0},
-    {0x0823c000u, PROTO_GOOGLE, 21}, /* 8.35.192.0/21 */
-    {0x0823c100u, PROTO_GOOGLE, 24}, /* 8.35.193.0/24 */
-    {0x0823c200u, PROTO_GOOGLE, 23}, /* 8.35.194.0/23 */
-    {0x0823c300u, PROTO_GOOGLE, 24}, /* 8.35.195.0/24 */
-    {0x0823c400u, PROTO_GOOGLE, 23}, /* 8.35.196.0/23 */
-    {0x0823c500u, PROTO_GOOGLE, 24}, /* 8.35.197.0/24 */
-    {0x0823c600u, PROTO_GOOGLE, 23}, /* 8.35.198.0/23 */
-    {0x0823c700u, PROTO_GOOGLE, 24}, /* 8.35.199.0/24 */
+    {0x0823c000u, PROTO_GOOGLE_CLOUD, 21}, /* 8.35.192.0/21 */
     {0x0823c800u, PROTO_GOOGLE, 21}, /* 8.35.200.0/21 */
-    {0x0823c900u, PROTO_GOOGLE, 24}, /* 8.35.201.0/24 */
-    {0x0823ca00u, PROTO_GOOGLE, 23}, /* 8.35.202.0/23 */
-    {0x0823cb00u, PROTO_GOOGLE, 24}, /* 8.35.203.0/24 */
-    {0x0823cc00u, PROTO_GOOGLE, 23}, /* 8.35.204.0/23 */
-    {0x0823cd00u, PROTO_GOOGLE, 24}, /* 8.35.205.0/24 */
-    {0x0823ce00u, PROTO_GOOGLE, 23}, /* 8.35.206.0/23 */
-    {0x0823cf00u, PROTO_GOOGLE, 24}, /* 8.35.207.0/24 */
     {0x0823d000u, PROTO_UNKNOWN, 0},
-    {0x082da200u, PROTO_AMAZON, 24}, /* 8.45.162.0/24 */
-    {0x082da300u, PROTO_UNKNOWN, 0},
+    {0x08e40000u, PROTO_GOOGLE_CLOUD, 15}, /* 8.228.0.0/15 */
+    {0x08e60000u, PROTO_GOOGLE_CLOUD, 17}, /* 8.230.0.0/17 */
+    {0x08e68000u, PROTO_GOOGLE, 17}, /* 8.230.128.0/17 */
+    {0x08e70000u, PROTO_GOOGLE, 19}, /* 8.231.0.0/19 */
+    {0x08e72000u, PROTO_GOOGLE_CLOUD, 19}, /* 8.231.32.0/19 */
+    {0x08e74000u, PROTO_GOOGLE_CLOUD, 18}, /* 8.231.64.0/18 */
+    {0x08e78000u, PROTO_GOOGLE_CLOUD, 17}, /* 8.231.128.0/17 */
+    {0x08e80000u, PROTO_GOOGLE_CLOUD, 15}, /* 8.232.0.0/15 */
+    {0x08ea0000u, PROTO_GOOGLE, 23}, /* 8.234.0.0/23 */
+    {0x08ea0200u, PROTO_GOOGLE_CLOUD, 23}, /* 8.234.2.0/23 */
+    {0x08ea0400u, PROTO_GOOGLE_CLOUD, 22}, /* 8.234.4.0/22 */
+    {0x08ea0800u, PROTO_GOOGLE_CLOUD, 21}, /* 8.234.8.0/21 */
+    {0x08ea1000u, PROTO_GOOGLE_CLOUD, 23}, /* 8.234.16.0/23 */
+    {0x08ea1200u, PROTO_GOOGLE, 23}, /* 8.234.18.0/23 */
+    {0x08ea1400u, PROTO_GOOGLE_CLOUD, 22}, /* 8.234.20.0/22 */
+    {0x08ea1800u, PROTO_GOOGLE_CLOUD, 21}, /* 8.234.24.0/21 */
+    {0x08ea2000u, PROTO_GOOGLE_CLOUD, 19}, /* 8.234.32.0/19 */
+    {0x08ea4000u, PROTO_GOOGLE_CLOUD, 18}, /* 8.234.64.0/18 */
+    {0x08ea8000u, PROTO_GOOGLE_CLOUD, 17}, /* 8.234.128.0/17 */
+    {0x08eb0000u, PROTO_GOOGLE_CLOUD, 16}, /* 8.235.0.0/16 */
+    {0x08ec0000u, PROTO_GOOGLE, 17}, /* 8.236.0.0/17 */
+    {0x08ec8000u, PROTO_GOOGLE, 20}, /* 8.236.128.0/20 */
+    {0x08ec9000u, PROTO_GOOGLE_CLOUD, 20}, /* 8.236.144.0/20 */
+    {0x08eca000u, PROTO_GOOGLE, 19}, /* 8.236.160.0/19 */
+    {0x08ecc000u, PROTO_GOOGLE_CLOUD, 18}, /* 8.236.192.0/18 */
+    {0x08ed0000u, PROTO_GOOGLE_CLOUD, 17}, /* 8.237.0.0/17 */
+    {0x08ed8000u, PROTO_GOOGLE, 19}, /* 8.237.128.0/19 */
+    {0x08eda000u, PROTO_GOOGLE_CLOUD, 19}, /* 8.237.160.0/19 */
+    {0x08edc000u, PROTO_GOOGLE_CLOUD, 18}, /* 8.237.192.0/18 */
+    {0x08ee0000u, PROTO_UNKNOWN, 0},
+    {0x09810000u, PROTO_AZURE, 16}, /* 9.129.0.0/16 */
+    {0x09820000u, PROTO_UNKNOWN, 0},
+    {0x098d0000u, PROTO_AZURE, 16}, /* 9.141.0.0/16 */
+    {0x098e0000u, PROTO_UNKNOWN, 0},
+    {0x09a00000u, PROTO_AZURE, 16}, /* 9.160.0.0/16 */
+    {0x09a10000u, PROTO_UNKNOWN, 0},
+    {0x09a30000u, PROTO_AZURE, 16}, /* 9.163.0.0/16 */
+    {0x09a40000u, PROTO_UNKNOWN, 0},
+    {0x09a90000u, PROTO_AZURE, 16}, /* 9.169.0.0/16 */
+    {0x09aa0000u, PROTO_UNKNOWN, 0},
+    {0x09cd0000u, PROTO_AZURE, 16}, /* 9.205.0.0/16 */
+    {0x09ce0000u, PROTO_UNKNOWN, 0},
+    {0x09df0000u, PROTO_AZURE, 16}, /* 9.223.0.0/16 */
+    {0x09e00000u, PROTO_UNKNOWN, 0},
+    {0x09ea0000u, PROTO_AZURE, 15}, /* 9.234.0.0/15 */
+    {0x09ec0000u, PROTO_UNKNOWN, 0},
     {0x0c117b00u, PROTO_YAHOO, 24}, /* 12.17.123.0/24 */
     {0x0c117c00u, PROTO_UNKNOWN, 0},
-    {0x0cd85000u, PROTO_GOOGLE, 24}, /* 12.216.80.0/24 */
-    {0x0cd85100u, PROTO_UNKNOWN, 0},
-    {0x0d200000u, PROTO_AMAZON, 14}, /* 13.32.0.0/14 */
-    {0x0d200100u, PROTO_AMAZON, 24}, /* 13.32.1.0/24 */
-    {0x0d220000u, PROTO_AMAZON, 14}, /* 13.32.0.0/14 */
-    {0x0d240000u, PROTO_UNKNOWN, 0},
-    {0x0d340000u, PROTO_AMAZON, 14}, /* 13.52.0.0/14 */
-    {0x0d360000u, PROTO_AMAZON, 15}, /* 13.54.0.0/15 */
-    {0x0d380000u, PROTO_AMAZON, 14}, /* 13.56.0.0/14 */
-    {0x0d3a0000u, PROTO_AMAZON, 15}, /* 13.58.0.0/15 */
-    {0x0d3c0000u, PROTO_UNKNOWN, 0},
-    {0x0d400000u, PROTO_AZURE, 20}, /* 13.64.0.0/20 */
-    {0x0d401000u, PROTO_UNKNOWN, 0},
-    {0x0d440000u, PROTO_AZURE, 21}, /* 13.68.0.0/21 */
-    {0x0d440800u, PROTO_UNKNOWN, 0},
-    {0x0d700000u, PROTO_AMAZON, 14}, /* 13.112.0.0/14 */
+    {0x0d200000u, PROTO_CLOUDFRONT, 15}, /* 13.32.0.0/15 */
+    {0x0d220000u, PROTO_UNKNOWN, 0},
+    {0x0d230000u, PROTO_CLOUDFRONT, 16}, /* 13.35.0.0/16 */
+    {0x0d240000u, PROTO_AWS, 14}, /* 13.36.0.0/14 */
+    {0x0d2c0000u, PROTO_UNKNOWN, 0},
+    {0x0d300000u, PROTO_AWS, 14}, /* 13.48.0.0/14 */
+    {0x0d340000u, PROTO_AWS, 15}, /* 13.52.0.0/15 */
+    {0x0d360000u, PROTO_AWS, 19}, /* 13.54.0.0/19 */
+    {0x0d362000u, PROTO_AWS, 20}, /* 13.54.32.0/20 */
+    {0x0d363000u, PROTO_AWS, 21}, /* 13.54.48.0/21 */
+    {0x0d363800u, PROTO_AWS, 22}, /* 13.54.56.0/22 */
+    {0x0d363c00u, PROTO_AWS, 23}, /* 13.54.60.0/23 */
+    {0x0d363e00u, PROTO_AWS, 24}, /* 13.54.62.0/24 */
+    {0x0d363f00u, PROTO_AWS, 25}, /* 13.54.63.0/25 */
+    {0x0d363f80u, PROTO_CLOUDFRONT, 26}, /* 13.54.63.128/26 */
+    {0x0d363fc0u, PROTO_AWS, 26}, /* 13.54.63.192/26 */
+    {0x0d364000u, PROTO_AWS, 18}, /* 13.54.64.0/18 */
+    {0x0d368000u, PROTO_AWS, 17}, /* 13.54.128.0/17 */
+    {0x0d370000u, PROTO_AWS, 16}, /* 13.55.0.0/16 */
+    {0x0d380000u, PROTO_AWS, 15}, /* 13.56.0.0/15 */
+    {0x0d3a0000u, PROTO_AWS, 16}, /* 13.58.0.0/16 */
+    {0x0d3b0000u, PROTO_AWS, 17}, /* 13.59.0.0/17 */
+    {0x0d3b8000u, PROTO_AWS, 18}, /* 13.59.128.0/18 */
+    {0x0d3bc000u, PROTO_AWS, 19}, /* 13.59.192.0/19 */
+    {0x0d3be000u, PROTO_AWS, 20}, /* 13.59.224.0/20 */
+    {0x0d3bf000u, PROTO_AWS, 21}, /* 13.59.240.0/21 */
+    {0x0d3bf800u, PROTO_AWS, 23}, /* 13.59.248.0/23 */
+    {0x0d3bfa00u, PROTO_CLOUDFRONT, 26}, /* 13.59.250.0/26 */
+    {0x0d3bfa40u, PROTO_AWS, 26}, /* 13.59.250.64/26 */
+    {0x0d3bfa80u, PROTO_AWS, 25}, /* 13.59.250.128/25 */
+    {0x0d3bfb00u, PROTO_AWS, 24}, /* 13.59.251.0/24 */
+    {0x0d3bfc00u, PROTO_AWS, 22}, /* 13.59.252.0/22 */
+    {0x0d3c0000u, PROTO_AWS, 14}, /* 13.60.0.0/14 */
+    {0x0d400000u, PROTO_AZURE, 13}, /* 13.64.0.0/13 */
+    {0x0d480000u, PROTO_UNKNOWN, 0},
+    {0x0d484000u, PROTO_AZURE, 18}, /* 13.72.64.0/18 */
+    {0x0d488000u, PROTO_UNKNOWN, 0},
+    {0x0d48c000u, PROTO_AZURE, 18}, /* 13.72.192.0/18 */
+    {0x0d494000u, PROTO_UNKNOWN, 0},
+    {0x0d496000u, PROTO_AZURE, 19}, /* 13.73.96.0/19 */
+    {0x0d498000u, PROTO_AZURE, 18}, /* 13.73.128.0/18 */
+    {0x0d49c000u, PROTO_AZURE, 20}, /* 13.73.192.0/20 */
+    {0x0d49d000u, PROTO_UNKNOWN, 0},
+    {0x0d49e000u, PROTO_AZURE, 19}, /* 13.73.224.0/19 */
+    {0x0d4a0000u, PROTO_AZURE, 15}, /* 13.74.0.0/15 */
+    {0x0d4c0000u, PROTO_AZURE, 16}, /* 13.76.0.0/16 */
+    {0x0d4d0000u, PROTO_AZURE, 17}, /* 13.77.0.0/17 */
+    {0x0d4d8000u, PROTO_AZURE, 18}, /* 13.77.128.0/18 */
+    {0x0d4dc000u, PROTO_AZURE, 19}, /* 13.77.192.0/19 */
+    {0x0d4de000u, PROTO_UNKNOWN, 0},
+    {0x0d4e0000u, PROTO_AZURE, 15}, /* 13.78.0.0/15 */
+    {0x0d500000u, PROTO_AZURE, 12}, /* 13.80.0.0/12 */
+    {0x0d600000u, PROTO_UNKNOWN, 0},
+    {0x0d688000u, PROTO_AZURE, 23}, /* 13.104.128.0/23 */
+    {0x0d688200u, PROTO_UNKNOWN, 0},
+    {0x0d689000u, PROTO_AZURE, 20}, /* 13.104.144.0/20 */
+    {0x0d68a000u, PROTO_UNKNOWN, 0},
+    {0x0d68a300u, PROTO_AZURE, 24}, /* 13.104.163.0/24 */
+    {0x0d68a400u, PROTO_UNKNOWN, 0},
+    {0x0d68a900u, PROTO_AZURE, 24}, /* 13.104.169.0/24 */
+    {0x0d68aa00u, PROTO_UNKNOWN, 0},
+    {0x0d68ad00u, PROTO_AZURE, 24}, /* 13.104.173.0/24 */
+    {0x0d68ae00u, PROTO_UNKNOWN, 0},
+    {0x0d68c000u, PROTO_AZURE, 21}, /* 13.104.192.0/21 */
+    {0x0d68c800u, PROTO_UNKNOWN, 0},
+    {0x0d68cf00u, PROTO_AZURE, 24}, /* 13.104.207.0/24 */
+    {0x0d68d000u, PROTO_AZURE, 20}, /* 13.104.208.0/20 */
+    {0x0d68e000u, PROTO_UNKNOWN, 0},
+    {0x0d690e00u, PROTO_AZURE, 24}, /* 13.105.14.0/24 */
+    {0x0d690f00u, PROTO_UNKNOWN, 0},
+    {0x0d691000u, PROTO_AZURE, 20}, /* 13.105.16.0/20 */
+    {0x0d692000u, PROTO_UNKNOWN, 0},
+    {0x0d692400u, PROTO_AZURE, 23}, /* 13.105.36.0/23 */
+    {0x0d692600u, PROTO_UNKNOWN, 0},
+    {0x0d692e00u, PROTO_AZURE, 23}, /* 13.105.46.0/23 */
+    {0x0d693000u, PROTO_UNKNOWN, 0},
+    {0x0d693400u, PROTO_AZURE, 23}, /* 13.105.52.0/23 */
+    {0x0d693600u, PROTO_UNKNOWN, 0},
+    {0x0d693c00u, PROTO_AZURE, 23}, /* 13.105.60.0/23 */
+    {0x0d693e00u, PROTO_UNKNOWN, 0},
+    {0x0d694200u, PROTO_AZURE, 23}, /* 13.105.66.0/23 */
+    {0x0d694400u, PROTO_UNKNOWN, 0},
+    {0x0d694a00u, PROTO_AZURE, 23}, /* 13.105.74.0/23 */
+    {0x0d694c00u, PROTO_UNKNOWN, 0},
+    {0x0d696000u, PROTO_AZURE, 20}, /* 13.105.96.0/20 */
+    {0x0d697000u, PROTO_UNKNOWN, 0},
+    {0x0d697258u, PROTO_AZURE, 29}, /* 13.105.114.88/29 */
+    {0x0d697260u, PROTO_AZURE, 27}, /* 13.105.114.96/27 */
+    {0x0d697280u, PROTO_AZURE, 26}, /* 13.105.114.128/26 */
+    {0x0d6972c0u, PROTO_AZURE, 28}, /* 13.105.114.192/28 */
+    {0x0d6972d0u, PROTO_AZURE, 29}, /* 13.105.114.208/29 */
+    {0x0d6972d8u, PROTO_UNKNOWN, 0},
+    {0x0d697400u, PROTO_AZURE, 25}, /* 13.105.116.0/25 */
+    {0x0d697480u, PROTO_UNKNOWN, 0},
+    {0x0d69e900u, PROTO_AZURE, 24}, /* 13.105.233.0/24 */
+    {0x0d69ea00u, PROTO_UNKNOWN, 0},
+    {0x0d6a0200u, PROTO_AZURE, 23}, /* 13.106.2.0/23 */
+    {0x0d6a0400u, PROTO_UNKNOWN, 0},
+    {0x0d700000u, PROTO_AWS, 16}, /* 13.112.0.0/16 */
+    {0x0d710000u, PROTO_AWS, 17}, /* 13.113.0.0/17 */
+    {0x0d718000u, PROTO_AWS, 18}, /* 13.113.128.0/18 */
+    {0x0d71c000u, PROTO_AWS, 22}, /* 13.113.192.0/22 */
+    {0x0d71c400u, PROTO_AWS, 26}, /* 13.113.196.0/26 */
+    {0x0d71c440u, PROTO_CLOUDFRONT, 26}, /* 13.113.196.64/26 */
+    {0x0d71c480u, PROTO_AWS, 25}, /* 13.113.196.128/25 */
+    {0x0d71c500u, PROTO_AWS, 24}, /* 13.113.197.0/24 */
+    {0x0d71c600u, PROTO_AWS, 23}, /* 13.113.198.0/23 */
+    {0x0d71ca00u, PROTO_AWS, 24}, /* 13.113.202.0/24 */
+    {0x0d71cb00u, PROTO_CLOUDFRONT, 24}, /* 13.113.203.0/24 */
+    {0x0d71cc00u, PROTO_AWS, 22}, /* 13.113.204.0/22 */
+    {0x0d71d000u, PROTO_AWS, 20}, /* 13.113.208.0/20 */
+    {0x0d71e000u, PROTO_AWS, 19}, /* 13.113.224.0/19 */
+    {0x0d720000u, PROTO_AWS, 15}, /* 13.114.0.0/15 */
     {0x0d740000u, PROTO_UNKNOWN, 0},
-    {0x0d7c0000u, PROTO_AMAZON, 14}, /* 13.124.0.0/14 */
-    {0x0d7e0000u, PROTO_AMAZON, 15}, /* 13.126.0.0/15 */
-    {0x0d800000u, PROTO_UNKNOWN, 0},
-    {0x0dd00000u, PROTO_AMAZON, 14}, /* 13.208.0.0/14 */
-    {0x0dd20000u, PROTO_AMAZON, 15}, /* 13.210.0.0/15 */
-    {0x0dd40000u, PROTO_UNKNOWN, 0},
-    {0x0de40000u, PROTO_AMAZON, 14}, /* 13.228.0.0/14 */
-    {0x0de80000u, PROTO_AMAZON, 13}, /* 13.232.0.0/13 */
+    {0x0d7c0000u, PROTO_AWS, 17}, /* 13.124.0.0/17 */
+    {0x0d7c8000u, PROTO_AWS, 18}, /* 13.124.128.0/18 */
+    {0x0d7cc000u, PROTO_AWS, 22}, /* 13.124.192.0/22 */
+    {0x0d7cc400u, PROTO_AWS, 23}, /* 13.124.196.0/23 */
+    {0x0d7cc600u, PROTO_AWS, 24}, /* 13.124.198.0/24 */
+    {0x0d7cc700u, PROTO_CLOUDFRONT, 24}, /* 13.124.199.0/24 */
+    {0x0d7cc800u, PROTO_AWS, 21}, /* 13.124.200.0/21 */
+    {0x0d7cd000u, PROTO_AWS, 20}, /* 13.124.208.0/20 */
+    {0x0d7ce000u, PROTO_AWS, 19}, /* 13.124.224.0/19 */
+    {0x0d7d0000u, PROTO_AWS, 16}, /* 13.125.0.0/16 */
+    {0x0d7e0000u, PROTO_AWS, 15}, /* 13.126.0.0/15 */
+    {0x0d800000u, PROTO_AWS, 16}, /* 13.128.0.0/16 */
+    {0x0d810000u, PROTO_UNKNOWN, 0},
+    {0x0d820000u, PROTO_AWS, 16}, /* 13.130.0.0/16 */
+    {0x0d830000u, PROTO_UNKNOWN, 0},
+    {0x0d860000u, PROTO_AWS, 20}, /* 13.134.0.0/20 */
+    {0x0d861000u, PROTO_AWS, 21}, /* 13.134.16.0/21 */
+    {0x0d861800u, PROTO_CLOUDFRONT, 23}, /* 13.134.24.0/23 */
+    {0x0d861a00u, PROTO_AWS, 23}, /* 13.134.26.0/23 */
+    {0x0d861c00u, PROTO_AWS, 22}, /* 13.134.28.0/22 */
+    {0x0d862000u, PROTO_AWS, 19}, /* 13.134.32.0/19 */
+    {0x0d864000u, PROTO_AWS, 20}, /* 13.134.64.0/20 */
+    {0x0d865000u, PROTO_AWS, 21}, /* 13.134.80.0/21 */
+    {0x0d865800u, PROTO_AWS, 22}, /* 13.134.88.0/22 */
+    {0x0d865c00u, PROTO_AWS, 23}, /* 13.134.92.0/23 */
+    {0x0d865e00u, PROTO_CLOUDFRONT, 23}, /* 13.134.94.0/23 */
+    {0x0d866000u, PROTO_AWS, 19}, /* 13.134.96.0/19 */
+    {0x0d868000u, PROTO_AWS, 17}, /* 13.134.128.0/17 */
+    {0x0d870000u, PROTO_AWS, 16}, /* 13.135.0.0/16 */
+    {0x0d880000u, PROTO_UNKNOWN, 0},
+    {0x0d900000u, PROTO_AWS, 16}, /* 13.144.0.0/16 */
+    {0x0d910000u, PROTO_UNKNOWN, 0},
+    {0x0d920000u, PROTO_AWS, 16}, /* 13.146.0.0/16 */
+    {0x0d930000u, PROTO_UNKNOWN, 0},
+    {0x0d960000u, PROTO_AWS, 15}, /* 13.150.0.0/15 */
+    {0x0d980000u, PROTO_AWS, 16}, /* 13.152.0.0/16 */
+    {0x0d990000u, PROTO_UNKNOWN, 0},
+    {0x0d9a0000u, PROTO_AWS, 16}, /* 13.154.0.0/16 */
+    {0x0d9b0000u, PROTO_UNKNOWN, 0},
+    {0x0d9e0000u, PROTO_AWS, 15}, /* 13.158.0.0/15 */
+    {0x0da00000u, PROTO_AWS, 16}, /* 13.160.0.0/16 */
+    {0x0da10000u, PROTO_UNKNOWN, 0},
+    {0x0da20000u, PROTO_AWS, 16}, /* 13.162.0.0/16 */
+    {0x0da30000u, PROTO_UNKNOWN, 0},
+    {0x0da60000u, PROTO_AWS, 15}, /* 13.166.0.0/15 */
+    {0x0da80000u, PROTO_UNKNOWN, 0},
+    {0x0db80000u, PROTO_AWS, 13}, /* 13.184.0.0/13 */
+    {0x0dc80000u, PROTO_AWS, 15}, /* 13.200.0.0/15 */
+    {0x0dca0000u, PROTO_AWS, 16}, /* 13.202.0.0/16 */
+    {0x0dcb0000u, PROTO_AWS, 17}, /* 13.203.0.0/17 */
+    {0x0dcb8000u, PROTO_AWS, 22}, /* 13.203.128.0/22 */
+    {0x0dcb8400u, PROTO_AWS, 24}, /* 13.203.132.0/24 */
+    {0x0dcb8500u, PROTO_CLOUDFRONT, 26}, /* 13.203.133.0/26 */
+    {0x0dcb8540u, PROTO_AWS, 26}, /* 13.203.133.64/26 */
+    {0x0dcb8580u, PROTO_AWS, 25}, /* 13.203.133.128/25 */
+    {0x0dcb8600u, PROTO_AWS, 23}, /* 13.203.134.0/23 */
+    {0x0dcb8800u, PROTO_AWS, 21}, /* 13.203.136.0/21 */
+    {0x0dcb9000u, PROTO_AWS, 20}, /* 13.203.144.0/20 */
+    {0x0dcba000u, PROTO_AWS, 19}, /* 13.203.160.0/19 */
+    {0x0dcbc000u, PROTO_AWS, 18}, /* 13.203.192.0/18 */
+    {0x0dcc0000u, PROTO_AWS, 14}, /* 13.204.0.0/14 */
+    {0x0dd00000u, PROTO_AWS, 15}, /* 13.208.0.0/15 */
+    {0x0dd20000u, PROTO_AWS, 18}, /* 13.210.0.0/18 */
+    {0x0dd24000u, PROTO_AWS, 23}, /* 13.210.64.0/23 */
+    {0x0dd24200u, PROTO_AWS, 24}, /* 13.210.66.0/24 */
+    {0x0dd24300u, PROTO_AWS, 25}, /* 13.210.67.0/25 */
+    {0x0dd24380u, PROTO_CLOUDFRONT, 26}, /* 13.210.67.128/26 */
+    {0x0dd243c0u, PROTO_AWS, 26}, /* 13.210.67.192/26 */
+    {0x0dd24400u, PROTO_AWS, 22}, /* 13.210.68.0/22 */
+    {0x0dd24800u, PROTO_AWS, 21}, /* 13.210.72.0/21 */
+    {0x0dd25000u, PROTO_AWS, 20}, /* 13.210.80.0/20 */
+    {0x0dd26000u, PROTO_AWS, 19}, /* 13.210.96.0/19 */
+    {0x0dd28000u, PROTO_AWS, 17}, /* 13.210.128.0/17 */
+    {0x0dd30000u, PROTO_AWS, 16}, /* 13.211.0.0/16 */
+    {0x0dd40000u, PROTO_AWS, 14}, /* 13.212.0.0/14 */
+    {0x0dd80000u, PROTO_AWS, 13}, /* 13.216.0.0/13 */
+    {0x0de00000u, PROTO_CLOUDFRONT, 14}, /* 13.224.0.0/14 */
+    {0x0de40000u, PROTO_AWS, 18}, /* 13.228.0.0/18 */
+    {0x0de44000u, PROTO_AWS, 22}, /* 13.228.64.0/22 */
+    {0x0de44400u, PROTO_AWS, 24}, /* 13.228.68.0/24 */
+    {0x0de44500u, PROTO_CLOUDFRONT, 24}, /* 13.228.69.0/24 */
+    {0x0de44600u, PROTO_AWS, 23}, /* 13.228.70.0/23 */
+    {0x0de44800u, PROTO_AWS, 21}, /* 13.228.72.0/21 */
+    {0x0de45000u, PROTO_AWS, 20}, /* 13.228.80.0/20 */
+    {0x0de46000u, PROTO_AWS, 19}, /* 13.228.96.0/19 */
+    {0x0de48000u, PROTO_AWS, 17}, /* 13.228.128.0/17 */
+    {0x0de50000u, PROTO_AWS, 16}, /* 13.229.0.0/16 */
+    {0x0de60000u, PROTO_AWS, 15}, /* 13.230.0.0/15 */
+    {0x0de80000u, PROTO_AWS, 16}, /* 13.232.0.0/16 */
+    {0x0de90000u, PROTO_AWS, 17}, /* 13.233.0.0/17 */
+    {0x0de98000u, PROTO_AWS, 19}, /* 13.233.128.0/19 */
+    {0x0de9a000u, PROTO_AWS, 20}, /* 13.233.160.0/20 */
+    {0x0de9b000u, PROTO_AWS, 24}, /* 13.233.176.0/24 */
+    {0x0de9b100u, PROTO_AWS, 25}, /* 13.233.177.0/25 */
+    {0x0de9b180u, PROTO_AWS, 26}, /* 13.233.177.128/26 */
+    {0x0de9b1c0u, PROTO_CLOUDFRONT, 26}, /* 13.233.177.192/26 */
+    {0x0de9b200u, PROTO_AWS, 23}, /* 13.233.178.0/23 */
+    {0x0de9b400u, PROTO_AWS, 22}, /* 13.233.180.0/22 */
+    {0x0de9b800u, PROTO_AWS, 21}, /* 13.233.184.0/21 */
+    {0x0de9c000u, PROTO_AWS, 18}, /* 13.233.192.0/18 */
+    {0x0dea0000u, PROTO_AWS, 15}, /* 13.234.0.0/15 */
+    {0x0dec0000u, PROTO_AWS, 14}, /* 13.236.0.0/14 */
     {0x0df00000u, PROTO_UNKNOWN, 0},
-    {0x0df80000u, PROTO_AWS, 16}, /* 13.248.0.0/16 */
-    {0x0df90000u, PROTO_AMAZON, 14}, /* 13.248.0.0/14 */
+    {0x0df40000u, PROTO_AWS, 14}, /* 13.244.0.0/14 */
+    {0x0df80000u, PROTO_AWS, 18}, /* 13.248.0.0/18 */
+    {0x0df84000u, PROTO_AWS, 21}, /* 13.248.64.0/21 */
+    {0x0df84800u, PROTO_AWS, 23}, /* 13.248.72.0/23 */
+    {0x0df84a00u, PROTO_UNKNOWN, 0},
+    {0x0df84b00u, PROTO_AWS, 24}, /* 13.248.75.0/24 */
+    {0x0df84c00u, PROTO_AWS, 22}, /* 13.248.76.0/22 */
+    {0x0df85000u, PROTO_AWS, 23}, /* 13.248.80.0/23 */
+    {0x0df85200u, PROTO_AWS, 24}, /* 13.248.82.0/24 */
+    {0x0df85300u, PROTO_UNKNOWN, 0},
+    {0x0df86000u, PROTO_AWS, 19}, /* 13.248.96.0/19 */
+    {0x0df88000u, PROTO_AWS, 17}, /* 13.248.128.0/17 */
+    {0x0df90000u, PROTO_CLOUDFRONT, 16}, /* 13.249.0.0/16 */
+    {0x0dfa0000u, PROTO_AWS, 15}, /* 13.250.0.0/15 */
     {0x0dfc0000u, PROTO_UNKNOWN, 0},
     {0x0e89e000u, PROTO_YAHOO, 19}, /* 14.137.224.0/19 */
     {0x0e8a0000u, PROTO_UNKNOWN, 0},
+    {0x0f670000u, PROTO_AWS, 16}, /* 15.103.0.0/16 */
+    {0x0f680000u, PROTO_UNKNOWN, 0},
+    {0x0f800000u, PROTO_AWS, 16}, /* 15.128.0.0/16 */
+    {0x0f810000u, PROTO_AWS, 18}, /* 15.129.0.0/18 */
+    {0x0f814000u, PROTO_AWS, 20}, /* 15.129.64.0/20 */
+    {0x0f815000u, PROTO_AWS, 22}, /* 15.129.80.0/22 */
+    {0x0f815400u, PROTO_AWS, 23}, /* 15.129.84.0/23 */
+    {0x0f815600u, PROTO_AWS, 24}, /* 15.129.86.0/24 */
+    {0x0f815700u, PROTO_UNKNOWN, 0},
+    {0x0f816000u, PROTO_AWS, 22}, /* 15.129.96.0/22 */
+    {0x0f816400u, PROTO_UNKNOWN, 0},
+    {0x0f860000u, PROTO_AWS, 15}, /* 15.134.0.0/15 */
+    {0x0f880000u, PROTO_UNKNOWN, 0},
+    {0x0f8f0000u, PROTO_AWS, 16}, /* 15.143.0.0/16 */
+    {0x0f900000u, PROTO_UNKNOWN, 0},
+    {0x0f910000u, PROTO_AWS, 22}, /* 15.145.0.0/22 */
+    {0x0f910400u, PROTO_AWS, 23}, /* 15.145.4.0/23 */
+    {0x0f910600u, PROTO_UNKNOWN, 0},
+    {0x0f910800u, PROTO_AWS, 21}, /* 15.145.8.0/21 */
+    {0x0f911800u, PROTO_AWS, 23}, /* 15.145.24.0/23 */
+    {0x0f911a00u, PROTO_UNKNOWN, 0},
+    {0x0f940000u, PROTO_AWS, 16}, /* 15.148.0.0/16 */
+    {0x0f950000u, PROTO_UNKNOWN, 0},
+    {0x0f980000u, PROTO_AWS, 16}, /* 15.152.0.0/16 */
+    {0x0f990000u, PROTO_UNKNOWN, 0},
+    {0x0f9c0000u, PROTO_AWS, 15}, /* 15.156.0.0/15 */
+    {0x0f9e0000u, PROTO_CLOUDFRONT, 16}, /* 15.158.0.0/16 */
+    {0x0f9f0000u, PROTO_AWS, 16}, /* 15.159.0.0/16 */
+    {0x0fa00000u, PROTO_AWS, 15}, /* 15.160.0.0/15 */
+    {0x0fa20000u, PROTO_UNKNOWN, 0},
+    {0x0fa40000u, PROTO_AWS, 15}, /* 15.164.0.0/15 */
+    {0x0fa60000u, PROTO_UNKNOWN, 0},
+    {0x0fa80000u, PROTO_AWS, 16}, /* 15.168.0.0/16 */
+    {0x0fa90000u, PROTO_UNKNOWN, 0},
+    {0x0faf0000u, PROTO_AWS, 16}, /* 15.175.0.0/16 */
+    {0x0fb00000u, PROTO_UNKNOWN, 0},
+    {0x0fb10000u, PROTO_AWS, 18}, /* 15.177.0.0/18 */
+    {0x0fb14000u, PROTO_AWS, 19}, /* 15.177.64.0/19 */
+    {0x0fb16000u, PROTO_AWS, 22}, /* 15.177.96.0/22 */
+    {0x0fb16400u, PROTO_AWS, 24}, /* 15.177.100.0/24 */
+    {0x0fb16500u, PROTO_UNKNOWN, 0},
+    {0x0fb16600u, PROTO_AWS, 23}, /* 15.177.102.0/23 */
+    {0x0fb16800u, PROTO_AWS, 22}, /* 15.177.104.0/22 */
+    {0x0fb16c00u, PROTO_AWS, 24}, /* 15.177.108.0/24 */
+    {0x0fb16d00u, PROTO_UNKNOWN, 0},
+    {0x0fb20000u, PROTO_AWS, 16}, /* 15.178.0.0/16 */
+    {0x0fb30000u, PROTO_UNKNOWN, 0},
+    {0x0fb50000u, PROTO_AWS, 17}, /* 15.181.0.0/17 */
+    {0x0fb58000u, PROTO_AWS, 18}, /* 15.181.128.0/18 */
+    {0x0fb5c000u, PROTO_AWS, 19}, /* 15.181.192.0/19 */
+    {0x0fb5e000u, PROTO_AWS, 20}, /* 15.181.224.0/20 */
+    {0x0fb5f000u, PROTO_AWS, 21}, /* 15.181.240.0/21 */
+    {0x0fb5f800u, PROTO_AWS, 22}, /* 15.181.248.0/22 */
+    {0x0fb5fc00u, PROTO_AWS, 23}, /* 15.181.252.0/23 */
+    {0x0fb5fe00u, PROTO_AWS, 24}, /* 15.181.254.0/24 */
+    {0x0fb5ff00u, PROTO_UNKNOWN, 0},
+    {0x0fb80000u, PROTO_AWS, 15}, /* 15.184.0.0/15 */
+    {0x0fba0000u, PROTO_UNKNOWN, 0},
+    {0x0fbc0000u, PROTO_AWS, 17}, /* 15.188.0.0/17 */
+    {0x0fbc8000u, PROTO_AWS, 19}, /* 15.188.128.0/19 */
+    {0x0fbca000u, PROTO_AWS, 20}, /* 15.188.160.0/20 */
+    {0x0fbcb000u, PROTO_AWS, 21}, /* 15.188.176.0/21 */
+    {0x0fbcb800u, PROTO_CLOUDFRONT, 24}, /* 15.188.184.0/24 */
+    {0x0fbcb900u, PROTO_AWS, 24}, /* 15.188.185.0/24 */
+    {0x0fbcba00u, PROTO_AWS, 23}, /* 15.188.186.0/23 */
+    {0x0fbcbc00u, PROTO_AWS, 22}, /* 15.188.188.0/22 */
+    {0x0fbcc000u, PROTO_AWS, 18}, /* 15.188.192.0/18 */
+    {0x0fbd0000u, PROTO_UNKNOWN, 0},
+    {0x0fbe0000u, PROTO_AWS, 21}, /* 15.190.0.0/21 */
+    {0x0fbe0800u, PROTO_AWS, 22}, /* 15.190.8.0/22 */
+    {0x0fbe0c00u, PROTO_UNKNOWN, 0},
+    {0x0fbe1000u, PROTO_AWS, 20}, /* 15.190.16.0/20 */
+    {0x0fbe2000u, PROTO_AWS, 19}, /* 15.190.32.0/19 */
+    {0x0fbe4000u, PROTO_UNKNOWN, 0},
+    {0x0fbe5000u, PROTO_AWS, 20}, /* 15.190.80.0/20 */
+    {0x0fbe6000u, PROTO_AWS, 19}, /* 15.190.96.0/19 */
+    {0x0fbe8000u, PROTO_AWS, 18}, /* 15.190.128.0/18 */
+    {0x0fbec000u, PROTO_UNKNOWN, 0},
+    {0x0fbee000u, PROTO_AWS, 22}, /* 15.190.224.0/22 */
+    {0x0fbee400u, PROTO_UNKNOWN, 0},
+    {0x0fbee800u, PROTO_AWS, 21}, /* 15.190.232.0/21 */
+    {0x0fbef000u, PROTO_AWS, 20}, /* 15.190.240.0/20 */
+    {0x0fbf0000u, PROTO_UNKNOWN, 0},
+    {0x0fc10000u, PROTO_AWS, 18}, /* 15.193.0.0/18 */
+    {0x0fc14000u, PROTO_UNKNOWN, 0},
+    {0x0fc18000u, PROTO_AWS, 19}, /* 15.193.128.0/19 */
+    {0x0fc1a000u, PROTO_AWS, 20}, /* 15.193.160.0/20 */
+    {0x0fc1b000u, PROTO_AWS, 22}, /* 15.193.176.0/22 */
+    {0x0fc1b400u, PROTO_UNKNOWN, 0},
+    {0x0fc50000u, PROTO_AWS, 19}, /* 15.197.0.0/19 */
+    {0x0fc52000u, PROTO_AWS, 21}, /* 15.197.32.0/21 */
+    {0x0fc52800u, PROTO_UNKNOWN, 0},
+    {0x0fc54000u, PROTO_AWS, 19}, /* 15.197.64.0/19 */
+    {0x0fc56000u, PROTO_UNKNOWN, 0},
+    {0x0fc58000u, PROTO_AWS, 17}, /* 15.197.128.0/17 */
+    {0x0fc60000u, PROTO_UNKNOWN, 0},
+    {0x0fc80000u, PROTO_AWS, 16}, /* 15.200.0.0/16 */
+    {0x0fc90000u, PROTO_UNKNOWN, 0},
+    {0x0fc90100u, PROTO_AWS, 24}, /* 15.201.1.0/24 */
+    {0x0fc90200u, PROTO_UNKNOWN, 0},
+    {0x0fcd0000u, PROTO_AWS, 16}, /* 15.205.0.0/16 */
+    {0x0fcf0000u, PROTO_AWS, 21}, /* 15.207.0.0/21 */
+    {0x0fcf0800u, PROTO_AWS, 22}, /* 15.207.8.0/22 */
+    {0x0fcf0c00u, PROTO_AWS, 24}, /* 15.207.12.0/24 */
+    {0x0fcf0d00u, PROTO_AWS, 25}, /* 15.207.13.0/25 */
+    {0x0fcf0d80u, PROTO_CLOUDFRONT, 25}, /* 15.207.13.128/25 */
+    {0x0fcf0e00u, PROTO_AWS, 23}, /* 15.207.14.0/23 */
+    {0x0fcf1000u, PROTO_AWS, 20}, /* 15.207.16.0/20 */
+    {0x0fcf2000u, PROTO_AWS, 19}, /* 15.207.32.0/19 */
+    {0x0fcf4000u, PROTO_AWS, 18}, /* 15.207.64.0/18 */
+    {0x0fcfc000u, PROTO_AWS, 20}, /* 15.207.192.0/20 */
+    {0x0fcfd000u, PROTO_AWS, 22}, /* 15.207.208.0/22 */
+    {0x0fcfd400u, PROTO_AWS, 24}, /* 15.207.212.0/24 */
+    {0x0fcfd500u, PROTO_AWS, 25}, /* 15.207.213.0/25 */
+    {0x0fcfd580u, PROTO_CLOUDFRONT, 25}, /* 15.207.213.128/25 */
+    {0x0fcfd600u, PROTO_AWS, 23}, /* 15.207.214.0/23 */
+    {0x0fcfd800u, PROTO_AWS, 21}, /* 15.207.216.0/21 */
+    {0x0fcfe000u, PROTO_AWS, 19}, /* 15.207.224.0/19 */
+    {0x0fd00000u, PROTO_UNKNOWN, 0},
+    {0x0fd80000u, PROTO_AWS, 15}, /* 15.216.0.0/15 */
+    {0x0fda0000u, PROTO_UNKNOWN, 0},
+    {0x0fdc0000u, PROTO_AWS, 19}, /* 15.220.0.0/19 */
+    {0x0fdc2000u, PROTO_AWS, 21}, /* 15.220.32.0/21 */
+    {0x0fdc2800u, PROTO_AWS, 22}, /* 15.220.40.0/22 */
+    {0x0fdc2c00u, PROTO_UNKNOWN, 0},
+    {0x0fdc3000u, PROTO_AWS, 20}, /* 15.220.48.0/20 */
+    {0x0fdc4000u, PROTO_AWS, 19}, /* 15.220.64.0/19 */
+    {0x0fdc6000u, PROTO_UNKNOWN, 0},
+    {0x0fdc7000u, PROTO_AWS, 20}, /* 15.220.112.0/20 */
+    {0x0fdc8000u, PROTO_AWS, 18}, /* 15.220.128.0/18 */
+    {0x0fdcc000u, PROTO_AWS, 20}, /* 15.220.192.0/20 */
+    {0x0fdcd000u, PROTO_UNKNOWN, 0},
+    {0x0fdcd080u, PROTO_AWS, 26}, /* 15.220.208.128/26 */
+    {0x0fdcd0c0u, PROTO_UNKNOWN, 0},
+    {0x0fdcd800u, PROTO_AWS, 21}, /* 15.220.216.0/21 */
+    {0x0fdce000u, PROTO_AWS, 19}, /* 15.220.224.0/19 */
+    {0x0fdd2000u, PROTO_AWS, 20}, /* 15.221.32.0/20 */
+    {0x0fdd3000u, PROTO_AWS, 22}, /* 15.221.48.0/22 */
+    {0x0fdd3400u, PROTO_AWS, 23}, /* 15.221.52.0/23 */
+    {0x0fdd3600u, PROTO_UNKNOWN, 0},
+    {0x0fdd8000u, PROTO_AWS, 21}, /* 15.221.128.0/21 */
+    {0x0fdd8800u, PROTO_UNKNOWN, 0},
+    {0x0fdd9000u, PROTO_AWS, 21}, /* 15.221.144.0/21 */
+    {0x0fdd9800u, PROTO_AWS, 23}, /* 15.221.152.0/23 */
+    {0x0fdd9a00u, PROTO_UNKNOWN, 0},
+    {0x0fdda000u, PROTO_AWS, 21}, /* 15.221.160.0/21 */
+    {0x0fdda800u, PROTO_UNKNOWN, 0},
+    {0x0fddb000u, PROTO_AWS, 20}, /* 15.221.176.0/20 */
+    {0x0fddc000u, PROTO_UNKNOWN, 0},
+    {0x0fde0000u, PROTO_AWS, 15}, /* 15.222.0.0/15 */
+    {0x0fe20000u, PROTO_UNKNOWN, 0},
+    {0x0fe30000u, PROTO_AWS, 16}, /* 15.227.0.0/16 */
+    {0x0fe40000u, PROTO_AWS, 15}, /* 15.228.0.0/15 */
+    {0x0fe60000u, PROTO_UNKNOWN, 0},
+    {0x0fe60004u, PROTO_AWS, 30}, /* 15.230.0.4/30 */
+    {0x0fe60008u, PROTO_AWS, 31}, /* 15.230.0.8/31 */
+    {0x0fe6000au, PROTO_UNKNOWN, 0},
+    {0x0fe6000cu, PROTO_AWS, 31}, /* 15.230.0.12/31 */
+    {0x0fe6000eu, PROTO_AWS, 32}, /* 15.230.0.14/32 */
+    {0x0fe6000fu, PROTO_UNKNOWN, 0},
+    {0x0fe60100u, PROTO_AWS, 24}, /* 15.230.1.0/24 */
+    {0x0fe60200u, PROTO_UNKNOWN, 0},
+    {0x0fe60300u, PROTO_AWS, 24}, /* 15.230.3.0/24 */
+    {0x0fe60400u, PROTO_UNKNOWN, 0},
+    {0x0fe60411u, PROTO_AWS, 32}, /* 15.230.4.17/32 */
+    {0x0fe60412u, PROTO_UNKNOWN, 0},
+    {0x0fe60413u, PROTO_AWS, 32}, /* 15.230.4.19/32 */
+    {0x0fe60414u, PROTO_UNKNOWN, 0},
+    {0x0fe60480u, PROTO_AWS, 30}, /* 15.230.4.128/30 */
+    {0x0fe60484u, PROTO_UNKNOWN, 0},
+    {0x0fe60494u, PROTO_AWS, 30}, /* 15.230.4.148/30 */
+    {0x0fe60498u, PROTO_AWS, 29}, /* 15.230.4.152/29 */
+    {0x0fe604a8u, PROTO_UNKNOWN, 0},
+    {0x0fe604b0u, PROTO_AWS, 28}, /* 15.230.4.176/28 */
+    {0x0fe604c0u, PROTO_UNKNOWN, 0},
+    {0x0fe60500u, PROTO_AWS, 24}, /* 15.230.5.0/24 */
+    {0x0fe60700u, PROTO_UNKNOWN, 0},
+    {0x0fe6090au, PROTO_AWS, 31}, /* 15.230.9.10/31 */
+    {0x0fe6090cu, PROTO_AWS, 30}, /* 15.230.9.12/30 */
+    {0x0fe60910u, PROTO_UNKNOWN, 0},
+    {0x0fe6092cu, PROTO_AWS, 30}, /* 15.230.9.44/30 */
+    {0x0fe60930u, PROTO_UNKNOWN, 0},
+    {0x0fe609f8u, PROTO_AWS, 32}, /* 15.230.9.248/32 */
+    {0x0fe609f9u, PROTO_UNKNOWN, 0},
+    {0x0fe609fcu, PROTO_AWS, 31}, /* 15.230.9.252/31 */
+    {0x0fe609feu, PROTO_UNKNOWN, 0},
+    {0x0fe60a00u, PROTO_AWS, 24}, /* 15.230.10.0/24 */
+    {0x0fe60b00u, PROTO_UNKNOWN, 0},
+    {0x0fe60e00u, PROTO_AWS, 24}, /* 15.230.14.0/24 */
+    {0x0fe60f00u, PROTO_AWS, 32}, /* 15.230.15.0/32 */
+    {0x0fe60f01u, PROTO_UNKNOWN, 0},
+    {0x0fe60f03u, PROTO_AWS, 32}, /* 15.230.15.3/32 */
+    {0x0fe60f04u, PROTO_AWS, 30}, /* 15.230.15.4/30 */
+    {0x0fe60f0cu, PROTO_UNKNOWN, 0},
+    {0x0fe60f0du, PROTO_AWS, 32}, /* 15.230.15.13/32 */
+    {0x0fe60f0eu, PROTO_AWS, 31}, /* 15.230.15.14/31 */
+    {0x0fe60f10u, PROTO_AWS, 32}, /* 15.230.15.16/32 */
+    {0x0fe60f11u, PROTO_UNKNOWN, 0},
+    {0x0fe60f18u, PROTO_AWS, 29}, /* 15.230.15.24/29 */
+    {0x0fe60f20u, PROTO_AWS, 27}, /* 15.230.15.32/27 */
+    {0x0fe60f40u, PROTO_AWS, 26}, /* 15.230.15.64/26 */
+    {0x0fe60fc0u, PROTO_AWS, 30}, /* 15.230.15.192/30 */
+    {0x0fe60fc4u, PROTO_UNKNOWN, 0},
+    {0x0fe60fc8u, PROTO_AWS, 29}, /* 15.230.15.200/29 */
+    {0x0fe60fd8u, PROTO_AWS, 30}, /* 15.230.15.216/30 */
+    {0x0fe60fdcu, PROTO_UNKNOWN, 0},
+    {0x0fe60ffeu, PROTO_AWS, 31}, /* 15.230.15.254/31 */
+    {0x0fe61000u, PROTO_AWS, 24}, /* 15.230.16.0/24 */
+    {0x0fe61100u, PROTO_UNKNOWN, 0},
+    {0x0fe61200u, PROTO_AWS, 23}, /* 15.230.18.0/23 */
+    {0x0fe61400u, PROTO_UNKNOWN, 0},
+    {0x0fe61500u, PROTO_AWS, 24}, /* 15.230.21.0/24 */
+    {0x0fe61600u, PROTO_AWS, 23}, /* 15.230.22.0/23 */
+    {0x0fe61800u, PROTO_AWS, 21}, /* 15.230.24.0/21 */
+    {0x0fe62000u, PROTO_AWS, 24}, /* 15.230.32.0/24 */
+    {0x0fe62100u, PROTO_UNKNOWN, 0},
+    {0x0fe62300u, PROTO_AWS, 24}, /* 15.230.35.0/24 */
+    {0x0fe62400u, PROTO_AWS, 22}, /* 15.230.36.0/22 */
+    {0x0fe62c00u, PROTO_UNKNOWN, 0},
+    {0x0fe63000u, PROTO_AWS, 21}, /* 15.230.48.0/21 */
+    {0x0fe63800u, PROTO_AWS, 22}, /* 15.230.56.0/22 */
+    {0x0fe63c00u, PROTO_AWS, 23}, /* 15.230.60.0/23 */
+    {0x0fe63e00u, PROTO_AWS, 24}, /* 15.230.62.0/24 */
+    {0x0fe63f00u, PROTO_AWS, 30}, /* 15.230.63.0/30 */
+    {0x0fe63f04u, PROTO_AWS, 31}, /* 15.230.63.4/31 */
+    {0x0fe63f06u, PROTO_AWS, 32}, /* 15.230.63.6/32 */
+    {0x0fe63f07u, PROTO_UNKNOWN, 0},
+    {0x0fe63f08u, PROTO_AWS, 30}, /* 15.230.63.8/30 */
+    {0x0fe63f0cu, PROTO_UNKNOWN, 0},
+    {0x0fe64000u, PROTO_AWS, 21}, /* 15.230.64.0/21 */
+    {0x0fe64800u, PROTO_AWS, 22}, /* 15.230.72.0/22 */
+    {0x0fe64c00u, PROTO_AWS, 23}, /* 15.230.76.0/23 */
+    {0x0fe64e00u, PROTO_AWS, 24}, /* 15.230.78.0/24 */
+    {0x0fe64f00u, PROTO_AWS, 25}, /* 15.230.79.0/25 */
+    {0x0fe64f80u, PROTO_AWS, 26}, /* 15.230.79.128/26 */
+    {0x0fe64fc0u, PROTO_UNKNOWN, 0},
+    {0x0fe65000u, PROTO_AWS, 20}, /* 15.230.80.0/20 */
+    {0x0fe66000u, PROTO_AWS, 22}, /* 15.230.96.0/22 */
+    {0x0fe66400u, PROTO_AWS, 31}, /* 15.230.100.0/31 */
+    {0x0fe66402u, PROTO_AWS, 32}, /* 15.230.100.2/32 */
+    {0x0fe66403u, PROTO_UNKNOWN, 0},
+    {0x0fe66500u, PROTO_AWS, 24}, /* 15.230.101.0/24 */
+    {0x0fe66600u, PROTO_AWS, 23}, /* 15.230.102.0/23 */
+    {0x0fe66a00u, PROTO_AWS, 24}, /* 15.230.106.0/24 */
+    {0x0fe66b00u, PROTO_AWS, 32}, /* 15.230.107.0/32 */
+    {0x0fe66b01u, PROTO_UNKNOWN, 0},
+    {0x0fe66b02u, PROTO_AWS, 31}, /* 15.230.107.2/31 */
+    {0x0fe66b04u, PROTO_UNKNOWN, 0},
+    {0x0fe66c00u, PROTO_AWS, 22}, /* 15.230.108.0/22 */
+    {0x0fe67400u, PROTO_AWS, 24}, /* 15.230.116.0/24 */
+    {0x0fe67500u, PROTO_AWS, 31}, /* 15.230.117.0/31 */
+    {0x0fe67502u, PROTO_UNKNOWN, 0},
+    {0x0fe67600u, PROTO_AWS, 24}, /* 15.230.118.0/24 */
+    {0x0fe67700u, PROTO_AWS, 31}, /* 15.230.119.0/31 */
+    {0x0fe67702u, PROTO_UNKNOWN, 0},
+    {0x0fe67800u, PROTO_AWS, 31}, /* 15.230.120.0/31 */
+    {0x0fe67802u, PROTO_UNKNOWN, 0},
+    {0x0fe67900u, PROTO_AWS, 29}, /* 15.230.121.0/29 */
+    {0x0fe67908u, PROTO_AWS, 31}, /* 15.230.121.8/31 */
+    {0x0fe6790au, PROTO_UNKNOWN, 0},
+    {0x0fe67a00u, PROTO_AWS, 29}, /* 15.230.122.0/29 */
+    {0x0fe67a08u, PROTO_UNKNOWN, 0},
+    {0x0fe67b00u, PROTO_AWS, 24}, /* 15.230.123.0/24 */
+    {0x0fe67d00u, PROTO_UNKNOWN, 0},
+    {0x0fe68100u, PROTO_AWS, 24}, /* 15.230.129.0/24 */
+    {0x0fe68200u, PROTO_AWS, 23}, /* 15.230.130.0/23 */
+    {0x0fe68400u, PROTO_AWS, 22}, /* 15.230.132.0/22 */
+    {0x0fe68800u, PROTO_AWS, 23}, /* 15.230.136.0/23 */
+    {0x0fe68a00u, PROTO_AWS, 24}, /* 15.230.138.0/24 */
+    {0x0fe68b00u, PROTO_UNKNOWN, 0},
+    {0x0fe68c00u, PROTO_AWS, 22}, /* 15.230.140.0/22 */
+    {0x0fe69000u, PROTO_AWS, 23}, /* 15.230.144.0/23 */
+    {0x0fe69200u, PROTO_UNKNOWN, 0},
+    {0x0fe69300u, PROTO_AWS, 24}, /* 15.230.147.0/24 */
+    {0x0fe69500u, PROTO_AWS, 30}, /* 15.230.149.0/30 */
+    {0x0fe69504u, PROTO_AWS, 31}, /* 15.230.149.4/31 */
+    {0x0fe69506u, PROTO_UNKNOWN, 0},
+    {0x0fe69508u, PROTO_AWS, 30}, /* 15.230.149.8/30 */
+    {0x0fe6950cu, PROTO_UNKNOWN, 0},
+    {0x0fe69600u, PROTO_AWS, 23}, /* 15.230.150.0/23 */
+    {0x0fe69800u, PROTO_AWS, 21}, /* 15.230.152.0/21 */
+    {0x0fe6a800u, PROTO_AWS, 24}, /* 15.230.168.0/24 */
+    {0x0fe6a900u, PROTO_AWS, 29}, /* 15.230.169.0/29 */
+    {0x0fe6a908u, PROTO_UNKNOWN, 0},
+    {0x0fe6aa00u, PROTO_AWS, 23}, /* 15.230.170.0/23 */
+    {0x0fe6ac00u, PROTO_UNKNOWN, 0},
+    {0x0fe6ad00u, PROTO_AWS, 24}, /* 15.230.173.0/24 */
+    {0x0fe6af00u, PROTO_UNKNOWN, 0},
+    {0x0fe6b000u, PROTO_AWS, 23}, /* 15.230.176.0/23 */
+    {0x0fe6b200u, PROTO_AWS, 24}, /* 15.230.178.0/24 */
+    {0x0fe6b300u, PROTO_AWS, 28}, /* 15.230.179.0/28 */
+    {0x0fe6b310u, PROTO_AWS, 29}, /* 15.230.179.16/29 */
+    {0x0fe6b318u, PROTO_UNKNOWN, 0},
+    {0x0fe6b400u, PROTO_AWS, 22}, /* 15.230.180.0/22 */
+    {0x0fe6bc00u, PROTO_AWS, 23}, /* 15.230.188.0/23 */
+    {0x0fe6be00u, PROTO_AWS, 24}, /* 15.230.190.0/24 */
+    {0x0fe6bf00u, PROTO_UNKNOWN, 0},
+    {0x0fe6c000u, PROTO_AWS, 22}, /* 15.230.192.0/22 */
+    {0x0fe6c400u, PROTO_AWS, 23}, /* 15.230.196.0/23 */
+    {0x0fe6c600u, PROTO_AWS, 24}, /* 15.230.198.0/24 */
+    {0x0fe6c700u, PROTO_AWS, 28}, /* 15.230.199.0/28 */
+    {0x0fe6c710u, PROTO_UNKNOWN, 0},
+    {0x0fe6c800u, PROTO_AWS, 23}, /* 15.230.200.0/23 */
+    {0x0fe6ca00u, PROTO_AWS, 30}, /* 15.230.202.0/30 */
+    {0x0fe6ca04u, PROTO_UNKNOWN, 0},
+    {0x0fe6cb00u, PROTO_AWS, 24}, /* 15.230.203.0/24 */
+    {0x0fe6cc00u, PROTO_AWS, 25}, /* 15.230.204.0/25 */
+    {0x0fe6cc80u, PROTO_UNKNOWN, 0},
+    {0x0fe6cd00u, PROTO_AWS, 24}, /* 15.230.205.0/24 */
+    {0x0fe6ce00u, PROTO_AWS, 23}, /* 15.230.206.0/23 */
+    {0x0fe6d000u, PROTO_AWS, 21}, /* 15.230.208.0/21 */
+    {0x0fe6d800u, PROTO_AWS, 29}, /* 15.230.216.0/29 */
+    {0x0fe6d808u, PROTO_AWS, 30}, /* 15.230.216.8/30 */
+    {0x0fe6d80cu, PROTO_AWS, 31}, /* 15.230.216.12/31 */
+    {0x0fe6d80eu, PROTO_UNKNOWN, 0},
+    {0x0fe6d900u, PROTO_AWS, 24}, /* 15.230.217.0/24 */
+    {0x0fe6da00u, PROTO_AWS, 23}, /* 15.230.218.0/23 */
+    {0x0fe6de00u, PROTO_AWS, 24}, /* 15.230.222.0/24 */
+    {0x0fe6df00u, PROTO_AWS, 28}, /* 15.230.223.0/28 */
+    {0x0fe6df10u, PROTO_UNKNOWN, 0},
+    {0x0fe6f000u, PROTO_AWS, 21}, /* 15.230.240.0/21 */
+    {0x0fe6f800u, PROTO_AWS, 23}, /* 15.230.248.0/23 */
+    {0x0fe6fa00u, PROTO_AWS, 24}, /* 15.230.250.0/24 */
+    {0x0fe6fb00u, PROTO_AWS, 29}, /* 15.230.251.0/29 */
+    {0x0fe6fb08u, PROTO_UNKNOWN, 0},
+    {0x0fe6fc00u, PROTO_AWS, 23}, /* 15.230.252.0/23 */
+    {0x0fe6fe00u, PROTO_AWS, 30}, /* 15.230.254.0/30 */
+    {0x0fe6fe04u, PROTO_AWS, 32}, /* 15.230.254.4/32 */
+    {0x0fe6fe05u, PROTO_UNKNOWN, 0},
+    {0x0fe6ff00u, PROTO_AWS, 24}, /* 15.230.255.0/24 */
+    {0x0fe70000u, PROTO_UNKNOWN, 0},
+    {0x0fe80000u, PROTO_AWS, 15}, /* 15.232.0.0/15 */
+    {0x0fea0000u, PROTO_UNKNOWN, 0},
+    {0x0fec0000u, PROTO_AWS, 15}, /* 15.236.0.0/15 */
+    {0x0fee0000u, PROTO_UNKNOWN, 0},
+    {0x0ff00000u, PROTO_AWS, 15}, /* 15.240.0.0/15 */
+    {0x0ff20000u, PROTO_UNKNOWN, 0},
+    {0x0ff80800u, PROTO_AWS, 22}, /* 15.248.8.0/22 */
+    {0x0ff80c00u, PROTO_UNKNOWN, 0},
+    {0x0ff81000u, PROTO_AWS, 20}, /* 15.248.16.0/20 */
+    {0x0ff82000u, PROTO_AWS, 21}, /* 15.248.32.0/21 */
+    {0x0ff82800u, PROTO_AWS, 22}, /* 15.248.40.0/22 */
+    {0x0ff82c00u, PROTO_UNKNOWN, 0},
+    {0x0ff83000u, PROTO_AWS, 20}, /* 15.248.48.0/20 */
+    {0x0ff84000u, PROTO_AWS, 21}, /* 15.248.64.0/21 */
+    {0x0ff84800u, PROTO_UNKNOWN, 0},
+    {0x0ff85000u, PROTO_AWS, 20}, /* 15.248.80.0/20 */
+    {0x0ff86000u, PROTO_UNKNOWN, 0},
+    {0x0ff86800u, PROTO_AWS, 24}, /* 15.248.104.0/24 */
+    {0x0ff86900u, PROTO_UNKNOWN, 0},
+    {0x0ff86a00u, PROTO_AWS, 23}, /* 15.248.106.0/23 */
+    {0x0ff86c00u, PROTO_UNKNOWN, 0},
+    {0x0ff87000u, PROTO_AWS, 20}, /* 15.248.112.0/20 */
+    {0x0ff88000u, PROTO_AWS, 19}, /* 15.248.128.0/19 */
+    {0x0ff8a000u, PROTO_AWS, 23}, /* 15.248.160.0/23 */
+    {0x0ff8a200u, PROTO_AWS, 24}, /* 15.248.162.0/24 */
+    {0x0ff8a300u, PROTO_UNKNOWN, 0},
+    {0x0ff8a301u, PROTO_AWS, 32}, /* 15.248.163.1/32 */
+    {0x0ff8a302u, PROTO_UNKNOWN, 0},
+    {0x0ff8a400u, PROTO_AWS, 23}, /* 15.248.164.0/23 */
+    {0x0ff8a600u, PROTO_UNKNOWN, 0},
+    {0x0ff8a700u, PROTO_AWS, 28}, /* 15.248.167.0/28 */
+    {0x0ff8a710u, PROTO_AWS, 29}, /* 15.248.167.16/29 */
+    {0x0ff8a718u, PROTO_UNKNOWN, 0},
+    {0x0ff8a800u, PROTO_AWS, 21}, /* 15.248.168.0/21 */
+    {0x0ff8b000u, PROTO_AWS, 20}, /* 15.248.176.0/20 */
+    {0x0ff8c000u, PROTO_UNKNOWN, 0},
+    {0x0ff8c100u, PROTO_AWS, 31}, /* 15.248.193.0/31 */
+    {0x0ff8c102u, PROTO_UNKNOWN, 0},
+    {0x0ff8c200u, PROTO_AWS, 23}, /* 15.248.194.0/23 */
+    {0x0ff8c400u, PROTO_UNKNOWN, 0},
+    {0x0ff90000u, PROTO_AWS, 16}, /* 15.249.0.0/16 */
+    {0x0ffa0000u, PROTO_UNKNOWN, 0},
+    {0x0ffb0000u, PROTO_AWS, 28}, /* 15.251.0.0/28 */
+    {0x0ffb0010u, PROTO_UNKNOWN, 0},
+    {0x0ffb0014u, PROTO_AWS, 30}, /* 15.251.0.20/30 */
+    {0x0ffb001cu, PROTO_AWS, 31}, /* 15.251.0.28/31 */
+    {0x0ffb001eu, PROTO_UNKNOWN, 0},
+    {0x0ffb0021u, PROTO_AWS, 32}, /* 15.251.0.33/32 */
+    {0x0ffb0023u, PROTO_UNKNOWN, 0},
+    {0x0ffb002fu, PROTO_AWS, 32}, /* 15.251.0.47/32 */
+    {0x0ffb0031u, PROTO_UNKNOWN, 0},
+    {0x0ffc0000u, PROTO_AWS, 15}, /* 15.252.0.0/15 */
+    {0x0ffe0000u, PROTO_AWS, 16}, /* 15.254.0.0/16 */
+    {0x0fff0000u, PROTO_UNKNOWN, 0},
+    {0x10040000u, PROTO_AWS, 16}, /* 16.4.0.0/16 */
+    {0x10050000u, PROTO_UNKNOWN, 0},
+    {0x10060000u, PROTO_AWS, 16}, /* 16.6.0.0/16 */
+    {0x10070000u, PROTO_UNKNOWN, 0},
+    {0x100b0000u, PROTO_AWS, 16}, /* 16.11.0.0/16 */
+    {0x100c0000u, PROTO_AWS, 20}, /* 16.12.0.0/20 */
+    {0x100c1000u, PROTO_AWS, 22}, /* 16.12.16.0/22 */
+    {0x100c1400u, PROTO_AWS, 23}, /* 16.12.20.0/23 */
+    {0x100c1600u, PROTO_UNKNOWN, 0},
+    {0x100c1800u, PROTO_AWS, 21}, /* 16.12.24.0/21 */
+    {0x100c2800u, PROTO_AWS, 22}, /* 16.12.40.0/22 */
+    {0x100c2c00u, PROTO_AWS, 24}, /* 16.12.44.0/24 */
+    {0x100c2d00u, PROTO_UNKNOWN, 0},
+    {0x100c3000u, PROTO_AWS, 20}, /* 16.12.48.0/20 */
+    {0x100c4000u, PROTO_AWS, 22}, /* 16.12.64.0/22 */
+    {0x100c4400u, PROTO_UNKNOWN, 0},
+    {0x100c4700u, PROTO_AWS, 24}, /* 16.12.71.0/24 */
+    {0x100c4800u, PROTO_AWS, 21}, /* 16.12.72.0/21 */
+    {0x100c5000u, PROTO_AWS, 22}, /* 16.12.80.0/22 */
+    {0x100c5400u, PROTO_AWS, 23}, /* 16.12.84.0/23 */
+    {0x100c5600u, PROTO_AWS, 24}, /* 16.12.86.0/24 */
+    {0x100c5700u, PROTO_UNKNOWN, 0},
+    {0x100c5800u, PROTO_AWS, 21}, /* 16.12.88.0/21 */
+    {0x100c6000u, PROTO_AWS, 20}, /* 16.12.96.0/20 */
+    {0x100c7000u, PROTO_AWS, 21}, /* 16.12.112.0/21 */
+    {0x100c7800u, PROTO_AWS, 22}, /* 16.12.120.0/22 */
+    {0x100c7c00u, PROTO_UNKNOWN, 0},
+    {0x100f0000u, PROTO_AWS, 18}, /* 16.15.0.0/18 */
+    {0x100f4000u, PROTO_AWS, 19}, /* 16.15.64.0/19 */
+    {0x100f6000u, PROTO_AWS, 20}, /* 16.15.96.0/20 */
+    {0x100f7000u, PROTO_AWS, 21}, /* 16.15.112.0/21 */
+    {0x100f7800u, PROTO_AWS, 22}, /* 16.15.120.0/22 */
+    {0x100f7c00u, PROTO_UNKNOWN, 0},
+    {0x100f9c00u, PROTO_AWS, 22}, /* 16.15.156.0/22 */
+    {0x100fa000u, PROTO_AWS, 19}, /* 16.15.160.0/19 */
+    {0x100fc000u, PROTO_AWS, 18}, /* 16.15.192.0/18 */
+    {0x10100000u, PROTO_AWS, 16}, /* 16.16.0.0/16 */
+    {0x10110000u, PROTO_UNKNOWN, 0},
+    {0x10120000u, PROTO_AWS, 15}, /* 16.18.0.0/15 */
+    {0x10140000u, PROTO_UNKNOWN, 0},
+    {0x10160000u, PROTO_AWS, 15}, /* 16.22.0.0/15 */
+    {0x10180000u, PROTO_AWS, 13}, /* 16.24.0.0/13 */
+    {0x10200000u, PROTO_UNKNOWN, 0},
+    {0x10300000u, PROTO_AWS, 13}, /* 16.48.0.0/13 */
+    {0x10380000u, PROTO_AWS, 16}, /* 16.56.0.0/16 */
+    {0x10390000u, PROTO_AWS, 18}, /* 16.57.0.0/18 */
+    {0x10394000u, PROTO_UNKNOWN, 0},
+    {0x103a0000u, PROTO_AWS, 15}, /* 16.58.0.0/15 */
+    {0x103c0000u, PROTO_AWS, 14}, /* 16.60.0.0/14 */
+    {0x10400000u, PROTO_AWS, 17}, /* 16.64.0.0/17 */
+    {0x10408000u, PROTO_UNKNOWN, 0},
+    {0x10410000u, PROTO_AWS, 16}, /* 16.65.0.0/16 */
+    {0x10420000u, PROTO_AWS, 15}, /* 16.66.0.0/15 */
+    {0x10440000u, PROTO_UNKNOWN, 0},
+    {0x10470000u, PROTO_AWS, 17}, /* 16.71.0.0/17 */
+    {0x10478000u, PROTO_UNKNOWN, 0},
+    {0x104c0000u, PROTO_AWS, 14}, /* 16.76.0.0/14 */
+    {0x10500000u, PROTO_UNKNOWN, 0},
+    {0x106a0000u, PROTO_AWS, 15}, /* 16.106.0.0/15 */
+    {0x106c0000u, PROTO_UNKNOWN, 0},
+    {0x10700000u, PROTO_AWS, 15}, /* 16.112.0.0/15 */
+    {0x10720000u, PROTO_UNKNOWN, 0},
+    {0x108c0000u, PROTO_AWS, 15}, /* 16.140.0.0/15 */
+    {0x108e0000u, PROTO_UNKNOWN, 0},
+    {0x10900000u, PROTO_AWS, 12}, /* 16.144.0.0/12 */
+    {0x10a00000u, PROTO_UNKNOWN, 0},
+    {0x10a20000u, PROTO_AWS, 15}, /* 16.162.0.0/15 */
+    {0x10a60000u, PROTO_UNKNOWN, 0},
+    {0x10a80000u, PROTO_AWS, 14}, /* 16.168.0.0/14 */
+    {0x10ac0000u, PROTO_UNKNOWN, 0},
+    {0x10ae0000u, PROTO_AWS, 15}, /* 16.174.0.0/15 */
+    {0x10b00000u, PROTO_AWS, 14}, /* 16.176.0.0/14 */
+    {0x10b40000u, PROTO_AWS, 15}, /* 16.180.0.0/15 */
+    {0x10b60000u, PROTO_AWS, 16}, /* 16.182.0.0/16 */
+    {0x10b70000u, PROTO_UNKNOWN, 0},
+    {0x10b80000u, PROTO_AWS, 14}, /* 16.184.0.0/14 */
+    {0x10bc0000u, PROTO_AWS, 15}, /* 16.188.0.0/15 */
+    {0x10be0000u, PROTO_UNKNOWN, 0},
+    {0x10c00000u, PROTO_AWS, 13}, /* 16.192.0.0/13 */
+    {0x10c80000u, PROTO_UNKNOWN, 0},
+    {0x10ce0000u, PROTO_AWS, 15}, /* 16.206.0.0/15 */
+    {0x10d20000u, PROTO_UNKNOWN, 0},
+    {0x10d60000u, PROTO_AWS, 21}, /* 16.214.0.0/21 */
+    {0x10d60800u, PROTO_AWS, 22}, /* 16.214.8.0/22 */
+    {0x10d60c00u, PROTO_UNKNOWN, 0},
+    {0x10d61000u, PROTO_AWS, 20}, /* 16.214.16.0/20 */
+    {0x10d63000u, PROTO_AWS, 21}, /* 16.214.48.0/21 */
+    {0x10d63800u, PROTO_AWS, 22}, /* 16.214.56.0/22 */
+    {0x10d63c00u, PROTO_UNKNOWN, 0},
     {0x11000000u, PROTO_APPLE, 9}, /* 17.0.0.0/9 */
     {0x11004000u, PROTO_APPLE, 18}, /* 17.0.64.0/18 */
     {0x1100c000u, PROTO_APPLE, 9}, /* 17.0.0.0/9 */
@@ -706,32 +1703,236 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x11fffc00u, PROTO_APPLE, 24}, /* 17.255.252.0/24 */
     {0x11fffd00u, PROTO_APPLE, 16}, /* 17.255.0.0/16 */
     {0x12000000u, PROTO_UNKNOWN, 0},
-    {0x12e70000u, PROTO_AMAZON, 16}, /* 18.231.0.0/16 */
-    {0x12e80000u, PROTO_UNKNOWN, 0},
-    {0x14000000u, PROTO_AZURE, 8}, /* 20.0.0.0/8 */
+    {0x12220000u, PROTO_AWS, 19}, /* 18.34.0.0/19 */
+    {0x12222000u, PROTO_UNKNOWN, 0},
+    {0x12223000u, PROTO_AWS, 20}, /* 18.34.48.0/20 */
+    {0x12224000u, PROTO_UNKNOWN, 0},
+    {0x12224800u, PROTO_AWS, 21}, /* 18.34.72.0/21 */
+    {0x12225000u, PROTO_UNKNOWN, 0},
+    {0x1222e800u, PROTO_AWS, 21}, /* 18.34.232.0/21 */
+    {0x1222f000u, PROTO_UNKNOWN, 0},
+    {0x1222f400u, PROTO_AWS, 22}, /* 18.34.244.0/22 */
+    {0x1222f800u, PROTO_UNKNOWN, 0},
+    {0x1222fc00u, PROTO_AWS, 22}, /* 18.34.252.0/22 */
+    {0x12230000u, PROTO_UNKNOWN, 0},
+    {0x123c0000u, PROTO_AWS, 15}, /* 18.60.0.0/15 */
+    {0x123e0000u, PROTO_UNKNOWN, 0},
+    {0x12400000u, PROTO_CLOUDFRONT, 14}, /* 18.64.0.0/14 */
+    {0x12440000u, PROTO_CLOUDFRONT, 16}, /* 18.68.0.0/16 */
+    {0x12450000u, PROTO_UNKNOWN, 0},
+    {0x12580000u, PROTO_AWS, 17}, /* 18.88.0.0/17 */
+    {0x12588000u, PROTO_AWS, 18}, /* 18.88.128.0/18 */
+    {0x1258c000u, PROTO_UNKNOWN, 0},
+    {0x12590000u, PROTO_AWS, 18}, /* 18.89.0.0/18 */
+    {0x12594000u, PROTO_UNKNOWN, 0},
+    {0x12598000u, PROTO_AWS, 18}, /* 18.89.128.0/18 */
+    {0x1259c000u, PROTO_UNKNOWN, 0},
+    {0x12600000u, PROTO_AWS, 14}, /* 18.96.0.0/14 */
+    {0x12640000u, PROTO_AWS, 15}, /* 18.100.0.0/15 */
+    {0x12660000u, PROTO_AWS, 16}, /* 18.102.0.0/16 */
+    {0x12670000u, PROTO_UNKNOWN, 0},
+    {0x12740000u, PROTO_AWS, 14}, /* 18.116.0.0/14 */
+    {0x12780000u, PROTO_UNKNOWN, 0},
+    {0x12820000u, PROTO_AWS, 16}, /* 18.130.0.0/16 */
+    {0x12830000u, PROTO_UNKNOWN, 0},
+    {0x12840000u, PROTO_AWS, 14}, /* 18.132.0.0/14 */
+    {0x12880000u, PROTO_AWS, 16}, /* 18.136.0.0/16 */
+    {0x12890000u, PROTO_UNKNOWN, 0},
+    {0x128a0000u, PROTO_AWS, 15}, /* 18.138.0.0/15 */
+    {0x128c0000u, PROTO_AWS, 14}, /* 18.140.0.0/14 */
+    {0x12900000u, PROTO_AWS, 15}, /* 18.144.0.0/15 */
+    {0x12920000u, PROTO_UNKNOWN, 0},
+    {0x12990000u, PROTO_AWS, 16}, /* 18.153.0.0/16 */
+    {0x129a0000u, PROTO_CLOUDFRONT, 15}, /* 18.154.0.0/15 */
+    {0x129c0000u, PROTO_AWS, 14}, /* 18.156.0.0/14 */
+    {0x12a00000u, PROTO_CLOUDFRONT, 15}, /* 18.160.0.0/15 */
+    {0x12a20000u, PROTO_AWS, 15}, /* 18.162.0.0/15 */
+    {0x12a40000u, PROTO_CLOUDFRONT, 15}, /* 18.164.0.0/15 */
+    {0x12a60000u, PROTO_AWS, 15}, /* 18.166.0.0/15 */
+    {0x12a80000u, PROTO_AWS, 14}, /* 18.168.0.0/14 */
+    {0x12ac0000u, PROTO_CLOUDFRONT, 15}, /* 18.172.0.0/15 */
+    {0x12ae0000u, PROTO_UNKNOWN, 0},
+    {0x12af0000u, PROTO_AWS, 18}, /* 18.175.0.0/18 */
+    {0x12af4000u, PROTO_AWS, 24}, /* 18.175.64.0/24 */
+    {0x12af4100u, PROTO_CLOUDFRONT, 24}, /* 18.175.65.0/24 */
+    {0x12af4200u, PROTO_CLOUDFRONT, 23}, /* 18.175.66.0/23 */
+    {0x12af4400u, PROTO_AWS, 22}, /* 18.175.68.0/22 */
+    {0x12af4800u, PROTO_AWS, 21}, /* 18.175.72.0/21 */
+    {0x12af5000u, PROTO_AWS, 20}, /* 18.175.80.0/20 */
+    {0x12af6000u, PROTO_AWS, 19}, /* 18.175.96.0/19 */
+    {0x12af8000u, PROTO_AWS, 17}, /* 18.175.128.0/17 */
+    {0x12b00000u, PROTO_AWS, 13}, /* 18.176.0.0/13 */
+    {0x12b80000u, PROTO_AWS, 15}, /* 18.184.0.0/15 */
+    {0x12ba0000u, PROTO_UNKNOWN, 0},
+    {0x12bc0000u, PROTO_AWS, 14}, /* 18.188.0.0/14 */
+    {0x12c00000u, PROTO_AWS, 17}, /* 18.192.0.0/17 */
+    {0x12c08000u, PROTO_AWS, 21}, /* 18.192.128.0/21 */
+    {0x12c08800u, PROTO_AWS, 22}, /* 18.192.136.0/22 */
+    {0x12c08c00u, PROTO_AWS, 23}, /* 18.192.140.0/23 */
+    {0x12c08e00u, PROTO_CLOUDFRONT, 23}, /* 18.192.142.0/23 */
+    {0x12c09000u, PROTO_AWS, 20}, /* 18.192.144.0/20 */
+    {0x12c0a000u, PROTO_AWS, 19}, /* 18.192.160.0/19 */
+    {0x12c0c000u, PROTO_AWS, 18}, /* 18.192.192.0/18 */
+    {0x12c10000u, PROTO_AWS, 16}, /* 18.193.0.0/16 */
+    {0x12c20000u, PROTO_AWS, 15}, /* 18.194.0.0/15 */
+    {0x12c60000u, PROTO_AWS, 16}, /* 18.198.0.0/16 */
+    {0x12c70000u, PROTO_AWS, 18}, /* 18.199.0.0/18 */
+    {0x12c74000u, PROTO_AWS, 22}, /* 18.199.64.0/22 */
+    {0x12c74400u, PROTO_CLOUDFRONT, 22}, /* 18.199.68.0/22 */
+    {0x12c74800u, PROTO_CLOUDFRONT, 21}, /* 18.199.72.0/21 */
+    {0x12c75000u, PROTO_AWS, 20}, /* 18.199.80.0/20 */
+    {0x12c76000u, PROTO_AWS, 19}, /* 18.199.96.0/19 */
+    {0x12c78000u, PROTO_AWS, 17}, /* 18.199.128.0/17 */
+    {0x12c88000u, PROTO_AWS, 18}, /* 18.200.128.0/18 */
+    {0x12c8c000u, PROTO_AWS, 20}, /* 18.200.192.0/20 */
+    {0x12c8d000u, PROTO_AWS, 22}, /* 18.200.208.0/22 */
+    {0x12c8d400u, PROTO_CLOUDFRONT, 23}, /* 18.200.212.0/23 */
+    {0x12c8d600u, PROTO_AWS, 23}, /* 18.200.214.0/23 */
+    {0x12c8d800u, PROTO_AWS, 21}, /* 18.200.216.0/21 */
+    {0x12c8e000u, PROTO_AWS, 19}, /* 18.200.224.0/19 */
+    {0x12c90000u, PROTO_AWS, 16}, /* 18.201.0.0/16 */
+    {0x12ca0000u, PROTO_AWS, 15}, /* 18.202.0.0/15 */
+    {0x12cc0000u, PROTO_AWS, 14}, /* 18.204.0.0/14 */
+    {0x12d00000u, PROTO_AWS, 13}, /* 18.208.0.0/13 */
+    {0x12d80000u, PROTO_AWS, 17}, /* 18.216.0.0/17 */
+    {0x12d88000u, PROTO_AWS, 19}, /* 18.216.128.0/19 */
+    {0x12d8a000u, PROTO_AWS, 21}, /* 18.216.160.0/21 */
+    {0x12d8a800u, PROTO_AWS, 23}, /* 18.216.168.0/23 */
+    {0x12d8aa00u, PROTO_AWS, 25}, /* 18.216.170.0/25 */
+    {0x12d8aa80u, PROTO_CLOUDFRONT, 25}, /* 18.216.170.128/25 */
+    {0x12d8ab00u, PROTO_AWS, 24}, /* 18.216.171.0/24 */
+    {0x12d8ac00u, PROTO_AWS, 22}, /* 18.216.172.0/22 */
+    {0x12d8b000u, PROTO_AWS, 20}, /* 18.216.176.0/20 */
+    {0x12d8c000u, PROTO_AWS, 18}, /* 18.216.192.0/18 */
+    {0x12d90000u, PROTO_AWS, 16}, /* 18.217.0.0/16 */
+    {0x12da0000u, PROTO_AWS, 15}, /* 18.218.0.0/15 */
+    {0x12dc0000u, PROTO_AWS, 14}, /* 18.220.0.0/14 */
+    {0x12e40000u, PROTO_AWS, 16}, /* 18.228.0.0/16 */
+    {0x12e50000u, PROTO_AWS, 17}, /* 18.229.0.0/17 */
+    {0x12e58000u, PROTO_AWS, 18}, /* 18.229.128.0/18 */
+    {0x12e5c000u, PROTO_AWS, 20}, /* 18.229.192.0/20 */
+    {0x12e5d000u, PROTO_AWS, 21}, /* 18.229.208.0/21 */
+    {0x12e5d800u, PROTO_AWS, 22}, /* 18.229.216.0/22 */
+    {0x12e5dc00u, PROTO_AWS, 25}, /* 18.229.220.0/25 */
+    {0x12e5dc80u, PROTO_AWS, 26}, /* 18.229.220.128/26 */
+    {0x12e5dcc0u, PROTO_CLOUDFRONT, 26}, /* 18.229.220.192/26 */
+    {0x12e5dd00u, PROTO_AWS, 24}, /* 18.229.221.0/24 */
+    {0x12e5de00u, PROTO_AWS, 23}, /* 18.229.222.0/23 */
+    {0x12e5e000u, PROTO_AWS, 19}, /* 18.229.224.0/19 */
+    {0x12e60000u, PROTO_AWS, 17}, /* 18.230.0.0/17 */
+    {0x12e68000u, PROTO_AWS, 18}, /* 18.230.128.0/18 */
+    {0x12e6c000u, PROTO_AWS, 19}, /* 18.230.192.0/19 */
+    {0x12e6e000u, PROTO_AWS, 22}, /* 18.230.224.0/22 */
+    {0x12e6e400u, PROTO_AWS, 24}, /* 18.230.228.0/24 */
+    {0x12e6e500u, PROTO_CLOUDFRONT, 24}, /* 18.230.229.0/24 */
+    {0x12e6e600u, PROTO_CLOUDFRONT, 25}, /* 18.230.230.0/25 */
+    {0x12e6e680u, PROTO_AWS, 25}, /* 18.230.230.128/25 */
+    {0x12e6e700u, PROTO_AWS, 24}, /* 18.230.231.0/24 */
+    {0x12e6e800u, PROTO_AWS, 21}, /* 18.230.232.0/21 */
+    {0x12e6f000u, PROTO_AWS, 20}, /* 18.230.240.0/20 */
+    {0x12e70000u, PROTO_AWS, 16}, /* 18.231.0.0/16 */
+    {0x12e80000u, PROTO_AWS, 14}, /* 18.232.0.0/14 */
+    {0x12ec0000u, PROTO_AWS, 15}, /* 18.236.0.0/15 */
+    {0x12ee0000u, PROTO_CLOUDFRONT, 15}, /* 18.238.0.0/15 */
+    {0x12f00000u, PROTO_UNKNOWN, 0},
+    {0x12f40000u, PROTO_CLOUDFRONT, 15}, /* 18.244.0.0/15 */
+    {0x12f60000u, PROTO_AWS, 16}, /* 18.246.0.0/16 */
+    {0x12f70000u, PROTO_UNKNOWN, 0},
+    {0x12fc0000u, PROTO_AWS, 15}, /* 18.252.0.0/15 */
+    {0x12fe0000u, PROTO_AWS, 16}, /* 18.254.0.0/16 */
+    {0x12ff0000u, PROTO_UNKNOWN, 0},
+    {0x14000000u, PROTO_AZURE, 12}, /* 20.0.0.0/12 */
+    {0x14100000u, PROTO_AZURE, 14}, /* 20.16.0.0/14 */
+    {0x14140000u, PROTO_UNKNOWN, 0},
+    {0x14142000u, PROTO_AZURE, 19}, /* 20.20.32.0/19 */
+    {0x14144000u, PROTO_AZURE, 18}, /* 20.20.64.0/18 */
+    {0x14148000u, PROTO_AZURE, 17}, /* 20.20.128.0/17 */
+    {0x14150000u, PROTO_AZURE, 16}, /* 20.21.0.0/16 */
+    {0x14160000u, PROTO_AZURE, 15}, /* 20.22.0.0/15 */
+    {0x14180000u, PROTO_AZURE, 14}, /* 20.24.0.0/14 */
+    {0x141c0000u, PROTO_AZURE, 15}, /* 20.28.0.0/15 */
+    {0x141e0000u, PROTO_UNKNOWN, 0},
+    {0x141f0000u, PROTO_AZURE, 16}, /* 20.31.0.0/16 */
+    {0x14200000u, PROTO_UNKNOWN, 0},
+    {0x14210000u, PROTO_AZURE, 16}, /* 20.33.0.0/16 */
+    {0x14220000u, PROTO_UNKNOWN, 0},
+    {0x14240000u, PROTO_AZURE, 14}, /* 20.36.0.0/14 */
+    {0x14280000u, PROTO_AZURE, 13}, /* 20.40.0.0/13 */
+    {0x14300000u, PROTO_AZURE, 12}, /* 20.48.0.0/12 */
+    {0x14400000u, PROTO_AZURE, 10}, /* 20.64.0.0/10 */
+    {0x14800000u, PROTO_UNKNOWN, 0},
+    {0x14870000u, PROTO_AZURE, 16}, /* 20.135.0.0/16 */
+    {0x14880000u, PROTO_AZURE, 22}, /* 20.136.0.0/22 */
+    {0x14880400u, PROTO_AZURE, 23}, /* 20.136.4.0/23 */
+    {0x14880600u, PROTO_UNKNOWN, 0},
+    {0x14880700u, PROTO_AZURE, 25}, /* 20.136.7.0/25 */
+    {0x14880780u, PROTO_UNKNOWN, 0},
+    {0x14888000u, PROTO_AZURE, 24}, /* 20.136.128.0/24 */
+    {0x14888100u, PROTO_AZURE, 25}, /* 20.136.129.0/25 */
+    {0x14888180u, PROTO_UNKNOWN, 0},
+    {0x148f0000u, PROTO_AZURE, 16}, /* 20.143.0.0/16 */
+    {0x14900000u, PROTO_UNKNOWN, 0},
+    {0x14960000u, PROTO_AZURE, 15}, /* 20.150.0.0/15 */
+    {0x149a0000u, PROTO_UNKNOWN, 0},
+    {0x149d0000u, PROTO_AZURE, 16}, /* 20.157.0.0/16 */
+    {0x149e0000u, PROTO_UNKNOWN, 0},
+    {0x14a00000u, PROTO_AZURE, 12}, /* 20.160.0.0/12 */
+    {0x14b00000u, PROTO_UNKNOWN, 0},
+    {0x14b80000u, PROTO_AZURE, 13}, /* 20.184.0.0/13 */
+    {0x14c00000u, PROTO_AZURE, 10}, /* 20.192.0.0/10 */
     {0x15000000u, PROTO_UNKNOWN, 0},
-    {0x17140000u, PROTO_AMAZON, 14}, /* 23.20.0.0/14 */
-    {0x17160000u, PROTO_AMAZON, 15}, /* 23.22.0.0/15 */
+    {0x17140000u, PROTO_AWS, 14}, /* 23.20.0.0/14 */
     {0x17180000u, PROTO_UNKNOWN, 0},
-    {0x17e48000u, PROTO_GOOGLE, 18}, /* 23.228.128.0/18 */
-    {0x17e4c000u, PROTO_UNKNOWN, 0},
-    {0x17ec3000u, PROTO_GOOGLE, 20}, /* 23.236.48.0/20 */
-    {0x17ec3100u, PROTO_GOOGLE, 24}, /* 23.236.49.0/24 */
-    {0x17ec3200u, PROTO_GOOGLE, 23}, /* 23.236.50.0/23 */
-    {0x17ec3300u, PROTO_GOOGLE, 24}, /* 23.236.51.0/24 */
-    {0x17ec3400u, PROTO_GOOGLE, 23}, /* 23.236.52.0/23 */
-    {0x17ec3500u, PROTO_GOOGLE, 24}, /* 23.236.53.0/24 */
-    {0x17ec3600u, PROTO_GOOGLE, 23}, /* 23.236.54.0/23 */
-    {0x17ec3700u, PROTO_GOOGLE, 24}, /* 23.236.55.0/24 */
-    {0x17ec3800u, PROTO_GOOGLE, 23}, /* 23.236.56.0/23 */
-    {0x17ec3900u, PROTO_GOOGLE, 24}, /* 23.236.57.0/24 */
-    {0x17ec3a00u, PROTO_GOOGLE, 23}, /* 23.236.58.0/23 */
-    {0x17ec3b00u, PROTO_GOOGLE, 24}, /* 23.236.59.0/24 */
-    {0x17ec3c00u, PROTO_GOOGLE, 23}, /* 23.236.60.0/23 */
-    {0x17ec3d00u, PROTO_GOOGLE, 24}, /* 23.236.61.0/24 */
-    {0x17ec3e00u, PROTO_GOOGLE, 23}, /* 23.236.62.0/23 */
-    {0x17ec3f00u, PROTO_GOOGLE, 24}, /* 23.236.63.0/24 */
+    {0x175b0000u, PROTO_CLOUDFRONT, 19}, /* 23.91.0.0/19 */
+    {0x175b2000u, PROTO_UNKNOWN, 0},
+    {0x17600000u, PROTO_AZURE, 16}, /* 23.96.0.0/16 */
+    {0x17610000u, PROTO_UNKNOWN, 0},
+    {0x17613000u, PROTO_AZURE, 20}, /* 23.97.48.0/20 */
+    {0x17614000u, PROTO_AZURE, 18}, /* 23.97.64.0/18 */
+    {0x17618000u, PROTO_AZURE, 17}, /* 23.97.128.0/17 */
+    {0x17620000u, PROTO_UNKNOWN, 0},
+    {0x17622000u, PROTO_AZURE, 19}, /* 23.98.32.0/19 */
+    {0x17624000u, PROTO_AZURE, 18}, /* 23.98.64.0/18 */
+    {0x17628000u, PROTO_AZURE, 17}, /* 23.98.128.0/17 */
+    {0x17630000u, PROTO_AZURE, 16}, /* 23.99.0.0/16 */
+    {0x17650000u, PROTO_AZURE, 19}, /* 23.101.0.0/19 */
+    {0x17652000u, PROTO_AZURE, 21}, /* 23.101.32.0/21 */
+    {0x17652800u, PROTO_UNKNOWN, 0},
+    {0x17653000u, PROTO_AZURE, 20}, /* 23.101.48.0/20 */
+    {0x17655000u, PROTO_AZURE, 21}, /* 23.101.80.0/21 */
+    {0x17655800u, PROTO_UNKNOWN, 0},
+    {0x17657000u, PROTO_AZURE, 20}, /* 23.101.112.0/20 */
+    {0x17658000u, PROTO_AZURE, 17}, /* 23.101.128.0/17 */
+    {0x17660000u, PROTO_AZURE, 16}, /* 23.102.0.0/16 */
+    {0x17670000u, PROTO_UNKNOWN, 0},
+    {0x17674000u, PROTO_AZURE, 18}, /* 23.103.64.0/18 */
+    {0x17678000u, PROTO_UNKNOWN, 0},
+    {0x17a00000u, PROTO_AWS, 24}, /* 23.160.0.0/24 */
+    {0x17a00100u, PROTO_UNKNOWN, 0},
+    {0x17e4c400u, PROTO_AWS, 23}, /* 23.228.196.0/23 */
+    {0x17e4c600u, PROTO_AWS, 24}, /* 23.228.198.0/24 */
+    {0x17e4c700u, PROTO_UNKNOWN, 0},
+    {0x17e4d400u, PROTO_CLOUDFRONT, 23}, /* 23.228.212.0/23 */
+    {0x17e4d600u, PROTO_CLOUDFRONT, 24}, /* 23.228.214.0/24 */
+    {0x17e4d700u, PROTO_UNKNOWN, 0},
+    {0x17e4db00u, PROTO_AWS, 24}, /* 23.228.219.0/24 */
+    {0x17e4dc00u, PROTO_CLOUDFRONT, 22}, /* 23.228.220.0/22 */
+    {0x17e4e000u, PROTO_UNKNOWN, 0},
+    {0x17e4e400u, PROTO_AWS, 22}, /* 23.228.228.0/22 */
+    {0x17e4e800u, PROTO_UNKNOWN, 0},
+    {0x17e4f400u, PROTO_CLOUDFRONT, 24}, /* 23.228.244.0/24 */
+    {0x17e4f500u, PROTO_UNKNOWN, 0},
+    {0x17e4f600u, PROTO_CLOUDFRONT, 23}, /* 23.228.246.0/23 */
+    {0x17e4f800u, PROTO_CLOUDFRONT, 22}, /* 23.228.248.0/22 */
+    {0x17e4fc00u, PROTO_UNKNOWN, 0},
+    {0x17eac000u, PROTO_CLOUDFRONT, 18}, /* 23.234.192.0/18 */
+    {0x17eb0000u, PROTO_UNKNOWN, 0},
+    {0x17eb2000u, PROTO_FASTLY, 20}, /* 23.235.32.0/20 */
+    {0x17eb3000u, PROTO_UNKNOWN, 0},
+    {0x17ec3000u, PROTO_GOOGLE_CLOUD, 20}, /* 23.236.48.0/20 */
     {0x17ec4000u, PROTO_UNKNOWN, 0},
+    {0x17ee8000u, PROTO_AWS, 17}, /* 23.238.128.0/17 */
+    {0x17ef0000u, PROTO_UNKNOWN, 0},
     {0x17f60000u, PROTO_NETFLIX, 18}, /* 23.246.0.0/18 */
     {0x17f60f00u, PROTO_NETFLIX, 24}, /* 23.246.15.0/24 */
     {0x17f61000u, PROTO_NETFLIX, 18}, /* 23.246.0.0/18 */
@@ -740,42 +1941,23 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x17f61c00u, PROTO_NETFLIX, 24}, /* 23.246.28.0/24 */
     {0x17f62000u, PROTO_NETFLIX, 18}, /* 23.246.0.0/18 */
     {0x17f64000u, PROTO_UNKNOWN, 0},
-    {0x17fb8000u, PROTO_GOOGLE, 23}, /* 23.251.128.0/23 */
-    {0x17fb8100u, PROTO_GOOGLE, 24}, /* 23.251.129.0/24 */
-    {0x17fb8200u, PROTO_GOOGLE, 23}, /* 23.251.130.0/23 */
-    {0x17fb8300u, PROTO_GOOGLE, 24}, /* 23.251.131.0/24 */
-    {0x17fb8400u, PROTO_GOOGLE, 23}, /* 23.251.132.0/23 */
-    {0x17fb8500u, PROTO_GOOGLE, 24}, /* 23.251.133.0/24 */
-    {0x17fb8600u, PROTO_GOOGLE, 23}, /* 23.251.134.0/23 */
-    {0x17fb8700u, PROTO_GOOGLE, 24}, /* 23.251.135.0/24 */
-    {0x17fb8800u, PROTO_GOOGLE, 23}, /* 23.251.136.0/23 */
-    {0x17fb8900u, PROTO_GOOGLE, 24}, /* 23.251.137.0/24 */
-    {0x17fb8a00u, PROTO_GOOGLE, 23}, /* 23.251.138.0/23 */
-    {0x17fb8b00u, PROTO_GOOGLE, 24}, /* 23.251.139.0/24 */
-    {0x17fb8c00u, PROTO_GOOGLE, 23}, /* 23.251.140.0/23 */
-    {0x17fb8d00u, PROTO_GOOGLE, 24}, /* 23.251.141.0/24 */
-    {0x17fb8e00u, PROTO_GOOGLE, 23}, /* 23.251.142.0/23 */
-    {0x17fb8f00u, PROTO_GOOGLE, 24}, /* 23.251.143.0/24 */
-    {0x17fb9000u, PROTO_GOOGLE, 23}, /* 23.251.144.0/23 */
-    {0x17fb9100u, PROTO_GOOGLE, 24}, /* 23.251.145.0/24 */
-    {0x17fb9200u, PROTO_GOOGLE, 23}, /* 23.251.146.0/23 */
-    {0x17fb9300u, PROTO_GOOGLE, 24}, /* 23.251.147.0/24 */
-    {0x17fb9400u, PROTO_GOOGLE, 23}, /* 23.251.148.0/23 */
-    {0x17fb9500u, PROTO_GOOGLE, 24}, /* 23.251.149.0/24 */
-    {0x17fb9600u, PROTO_GOOGLE, 23}, /* 23.251.150.0/23 */
-    {0x17fb9700u, PROTO_GOOGLE, 24}, /* 23.251.151.0/24 */
-    {0x17fb9800u, PROTO_GOOGLE, 23}, /* 23.251.152.0/23 */
-    {0x17fb9900u, PROTO_GOOGLE, 24}, /* 23.251.153.0/24 */
-    {0x17fb9a00u, PROTO_GOOGLE, 23}, /* 23.251.154.0/23 */
-    {0x17fb9b00u, PROTO_GOOGLE, 24}, /* 23.251.155.0/24 */
-    {0x17fb9c00u, PROTO_GOOGLE, 23}, /* 23.251.156.0/23 */
-    {0x17fb9d00u, PROTO_GOOGLE, 24}, /* 23.251.157.0/24 */
-    {0x17fb9e00u, PROTO_GOOGLE, 23}, /* 23.251.158.0/23 */
-    {0x17fb9f00u, PROTO_GOOGLE, 24}, /* 23.251.159.0/24 */
+    {0x17fb8000u, PROTO_GOOGLE_CLOUD, 19}, /* 23.251.128.0/19 */
     {0x17fba000u, PROTO_UNKNOWN, 0},
-    {0x17ff8000u, PROTO_GOOGLE, 17}, /* 23.255.128.0/17 */
-    {0x18000000u, PROTO_UNKNOWN, 0},
-    {0x1b000000u, PROTO_AMAZON, 22}, /* 27.0.0.0/22 */
+    {0x17fe0000u, PROTO_AWS, 19}, /* 23.254.0.0/19 */
+    {0x17fe2000u, PROTO_AWS, 21}, /* 23.254.32.0/21 */
+    {0x17fe2800u, PROTO_AWS, 23}, /* 23.254.40.0/23 */
+    {0x17fe2a00u, PROTO_UNKNOWN, 0},
+    {0x17fe7800u, PROTO_AWS, 21}, /* 23.254.120.0/21 */
+    {0x17fe8000u, PROTO_UNKNOWN, 0},
+    {0x186e0000u, PROTO_AWS, 21}, /* 24.110.0.0/21 */
+    {0x186e0800u, PROTO_AWS, 23}, /* 24.110.8.0/23 */
+    {0x186e0a00u, PROTO_UNKNOWN, 0},
+    {0x186e1000u, PROTO_AWS, 20}, /* 24.110.16.0/20 */
+    {0x186e2000u, PROTO_CLOUDFRONT, 19}, /* 24.110.32.0/19 */
+    {0x186e4000u, PROTO_UNKNOWN, 0},
+    {0x186e8000u, PROTO_CLOUDFRONT, 17}, /* 24.110.128.0/17 */
+    {0x186f0000u, PROTO_UNKNOWN, 0},
+    {0x1b000000u, PROTO_AWS, 22}, /* 27.0.0.0/22 */
     {0x1b000400u, PROTO_UNKNOWN, 0},
     {0x1b00ec00u, PROTO_KAKAO, 22}, /* 27.0.236.0/22 */
     {0x1b00ed00u, PROTO_KAKAO, 24}, /* 27.0.237.0/24 */
@@ -794,24 +1976,740 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x1f0d4100u, PROTO_FACEBOOK, 24}, /* 31.13.65.0/24 */
     {0x1f0d6000u, PROTO_FACEBOOK, 19}, /* 31.13.96.0/19 */
     {0x1f0d8000u, PROTO_UNKNOWN, 0},
-    {0x22c00000u, PROTO_AMAZON, 10}, /* 34.192.0.0/10 */
-    {0x22d00000u, PROTO_AMAZON, 12}, /* 34.208.0.0/12 */
-    {0x22f00000u, PROTO_AMAZON, 10}, /* 34.192.0.0/10 */
-    {0x22f80000u, PROTO_AMAZON, 13}, /* 34.248.0.0/13 */
+    {0x1fdcdc00u, PROTO_AWS, 22}, /* 31.220.220.0/22 */
+    {0x1fdce000u, PROTO_UNKNOWN, 0},
+    {0x1fdceb00u, PROTO_AWS, 24}, /* 31.220.235.0/24 */
+    {0x1fdced00u, PROTO_UNKNOWN, 0},
+    {0x1fdcf700u, PROTO_AWS, 24}, /* 31.220.247.0/24 */
+    {0x1fdcf800u, PROTO_UNKNOWN, 0},
+    {0x1fdcfc00u, PROTO_AWS, 24}, /* 31.220.252.0/24 */
+    {0x1fdcfd00u, PROTO_UNKNOWN, 0},
+    {0x20b80000u, PROTO_AWS, 13}, /* 32.184.0.0/13 */
+    {0x20c00000u, PROTO_AWS, 12}, /* 32.192.0.0/12 */
+    {0x20d00000u, PROTO_UNKNOWN, 0},
+    {0x20e80000u, PROTO_AWS, 16}, /* 32.232.0.0/16 */
+    {0x20e90000u, PROTO_UNKNOWN, 0},
+    {0x20ec0000u, PROTO_AWS, 15}, /* 32.236.0.0/15 */
+    {0x20ee0000u, PROTO_UNKNOWN, 0},
+    {0x20f00000u, PROTO_AWS, 15}, /* 32.240.0.0/15 */
+    {0x20f20000u, PROTO_UNKNOWN, 0},
+    {0x22000000u, PROTO_GOOGLE_CLOUD, 17}, /* 34.0.0.0/17 */
+    {0x22008000u, PROTO_GOOGLE_CLOUD, 18}, /* 34.0.128.0/18 */
+    {0x2200c000u, PROTO_GOOGLE_CLOUD, 19}, /* 34.0.192.0/19 */
+    {0x2200e000u, PROTO_GOOGLE_CLOUD, 22}, /* 34.0.224.0/22 */
+    {0x2200e400u, PROTO_GOOGLE, 22}, /* 34.0.228.0/22 */
+    {0x2200e800u, PROTO_GOOGLE, 21}, /* 34.0.232.0/21 */
+    {0x2200f000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.0.240.0/20 */
+    {0x22010000u, PROTO_GOOGLE_CLOUD, 18}, /* 34.1.0.0/18 */
+    {0x22014000u, PROTO_GOOGLE, 18}, /* 34.1.64.0/18 */
+    {0x22018000u, PROTO_GOOGLE_CLOUD, 17}, /* 34.1.128.0/17 */
+    {0x22020000u, PROTO_GOOGLE_CLOUD, 18}, /* 34.2.0.0/18 */
+    {0x22024000u, PROTO_GOOGLE, 21}, /* 34.2.64.0/21 */
+    {0x22024800u, PROTO_GOOGLE, 22}, /* 34.2.72.0/22 */
+    {0x22024c00u, PROTO_GOOGLE_CLOUD, 23}, /* 34.2.76.0/23 */
+    {0x22024e00u, PROTO_GOOGLE, 23}, /* 34.2.78.0/23 */
+    {0x22025000u, PROTO_GOOGLE, 20}, /* 34.2.80.0/20 */
+    {0x22026000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.2.96.0/20 */
+    {0x22027000u, PROTO_GOOGLE, 20}, /* 34.2.112.0/20 */
+    {0x22028000u, PROTO_GOOGLE_CLOUD, 17}, /* 34.2.128.0/17 */
+    {0x22030000u, PROTO_GOOGLE, 23}, /* 34.3.0.0/23 */
+    {0x22030200u, PROTO_UNKNOWN, 0},
+    {0x22030300u, PROTO_GOOGLE, 24}, /* 34.3.3.0/24 */
+    {0x22030500u, PROTO_UNKNOWN, 0},
+    {0x22030800u, PROTO_GOOGLE, 21}, /* 34.3.8.0/21 */
+    {0x22031000u, PROTO_GOOGLE, 20}, /* 34.3.16.0/20 */
+    {0x22032000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.3.32.0/20 */
+    {0x22033000u, PROTO_GOOGLE, 20}, /* 34.3.48.0/20 */
+    {0x22034000u, PROTO_GOOGLE, 21}, /* 34.3.64.0/21 */
+    {0x22034800u, PROTO_GOOGLE, 22}, /* 34.3.72.0/22 */
+    {0x22034c00u, PROTO_GOOGLE_CLOUD, 22}, /* 34.3.76.0/22 */
+    {0x22035000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.3.80.0/20 */
+    {0x22037000u, PROTO_GOOGLE, 20}, /* 34.3.112.0/20 */
+    {0x22038000u, PROTO_UNKNOWN, 0},
+    {0x22040000u, PROTO_GOOGLE, 20}, /* 34.4.0.0/20 */
+    {0x22041000u, PROTO_GOOGLE_CLOUD, 22}, /* 34.4.16.0/22 */
+    {0x22041400u, PROTO_GOOGLE, 22}, /* 34.4.20.0/22 */
+    {0x22041800u, PROTO_GOOGLE_CLOUD, 21}, /* 34.4.24.0/21 */
+    {0x22042000u, PROTO_GOOGLE_CLOUD, 19}, /* 34.4.32.0/19 */
+    {0x22046000u, PROTO_GOOGLE_CLOUD, 22}, /* 34.4.96.0/22 */
+    {0x22046400u, PROTO_GOOGLE_CLOUD, 24}, /* 34.4.100.0/24 */
+    {0x22046500u, PROTO_GOOGLE, 24}, /* 34.4.101.0/24 */
+    {0x22046600u, PROTO_GOOGLE_CLOUD, 23}, /* 34.4.102.0/23 */
+    {0x22046800u, PROTO_GOOGLE_CLOUD, 21}, /* 34.4.104.0/21 */
+    {0x22047000u, PROTO_GOOGLE, 20}, /* 34.4.112.0/20 */
+    {0x22048000u, PROTO_GOOGLE_CLOUD, 18}, /* 34.4.128.0/18 */
+    {0x2204c000u, PROTO_GOOGLE_CLOUD, 24}, /* 34.4.192.0/24 */
+    {0x2204c100u, PROTO_GOOGLE, 24}, /* 34.4.193.0/24 */
+    {0x2204c200u, PROTO_GOOGLE, 23}, /* 34.4.194.0/23 */
+    {0x2204c400u, PROTO_GOOGLE, 22}, /* 34.4.196.0/22 */
+    {0x2204c800u, PROTO_GOOGLE, 21}, /* 34.4.200.0/21 */
+    {0x2204d000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.4.208.0/20 */
+    {0x2204e000u, PROTO_GOOGLE, 19}, /* 34.4.224.0/19 */
+    {0x22050000u, PROTO_GOOGLE, 16}, /* 34.5.0.0/16 */
+    {0x22060000u, PROTO_GOOGLE_CLOUD, 15}, /* 34.6.0.0/15 */
+    {0x22080000u, PROTO_GOOGLE_CLOUD, 14}, /* 34.8.0.0/14 */
+    {0x220c0000u, PROTO_GOOGLE_CLOUD, 16}, /* 34.12.0.0/16 */
+    {0x220d0000u, PROTO_GOOGLE_CLOUD, 18}, /* 34.13.0.0/18 */
+    {0x220d4000u, PROTO_GOOGLE, 22}, /* 34.13.64.0/22 */
+    {0x220d4400u, PROTO_GOOGLE_CLOUD, 22}, /* 34.13.68.0/22 */
+    {0x220d4800u, PROTO_GOOGLE_CLOUD, 21}, /* 34.13.72.0/21 */
+    {0x220d5000u, PROTO_GOOGLE, 20}, /* 34.13.80.0/20 */
+    {0x220d7000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.13.112.0/20 */
+    {0x220d8000u, PROTO_GOOGLE_CLOUD, 17}, /* 34.13.128.0/17 */
+    {0x220e0000u, PROTO_GOOGLE_CLOUD, 15}, /* 34.14.0.0/15 */
+    {0x22100000u, PROTO_GOOGLE_CLOUD, 12}, /* 34.16.0.0/12 */
+    {0x22200000u, PROTO_GOOGLE_CLOUD, 15}, /* 34.32.0.0/15 */
+    {0x22220000u, PROTO_GOOGLE_CLOUD, 17}, /* 34.34.0.0/17 */
+    {0x22228000u, PROTO_GOOGLE_CLOUD, 18}, /* 34.34.128.0/18 */
+    {0x2222c000u, PROTO_GOOGLE, 20}, /* 34.34.192.0/20 */
+    {0x2222d000u, PROTO_GOOGLE, 21}, /* 34.34.208.0/21 */
+    {0x2222d800u, PROTO_GOOGLE_CLOUD, 21}, /* 34.34.216.0/21 */
+    {0x2222e000u, PROTO_GOOGLE, 19}, /* 34.34.224.0/19 */
+    {0x22230000u, PROTO_GOOGLE_CLOUD, 16}, /* 34.35.0.0/16 */
+    {0x22240000u, PROTO_GOOGLE_CLOUD, 14}, /* 34.36.0.0/14 */
+    {0x22280000u, PROTO_GOOGLE_CLOUD, 15}, /* 34.40.0.0/15 */
+    {0x222a0000u, PROTO_GOOGLE_CLOUD, 16}, /* 34.42.0.0/16 */
+    {0x222b0000u, PROTO_GOOGLE, 16}, /* 34.43.0.0/16 */
+    {0x222c0000u, PROTO_GOOGLE_CLOUD, 14}, /* 34.44.0.0/14 */
+    {0x22300000u, PROTO_GOOGLE_CLOUD, 15}, /* 34.48.0.0/15 */
+    {0x22320000u, PROTO_GOOGLE_CLOUD, 17}, /* 34.50.0.0/17 */
+    {0x22328000u, PROTO_GOOGLE, 20}, /* 34.50.128.0/20 */
+    {0x22329000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.50.144.0/20 */
+    {0x2232a000u, PROTO_GOOGLE_CLOUD, 19}, /* 34.50.160.0/19 */
+    {0x2232c000u, PROTO_GOOGLE_CLOUD, 18}, /* 34.50.192.0/18 */
+    {0x22330000u, PROTO_GOOGLE_CLOUD, 16}, /* 34.51.0.0/16 */
+    {0x22340000u, PROTO_GOOGLE, 17}, /* 34.52.0.0/17 */
+    {0x22348000u, PROTO_GOOGLE_CLOUD, 17}, /* 34.52.128.0/17 */
+    {0x22350000u, PROTO_GOOGLE_CLOUD, 16}, /* 34.53.0.0/16 */
+    {0x22360000u, PROTO_GOOGLE_CLOUD, 15}, /* 34.54.0.0/15 */
+    {0x22380000u, PROTO_GOOGLE_CLOUD, 13}, /* 34.56.0.0/13 */
+    {0x22400000u, PROTO_GOOGLE, 19}, /* 34.64.0.0/19 */
+    {0x22402000u, PROTO_GOOGLE_CLOUD, 19}, /* 34.64.32.0/19 */
+    {0x22404000u, PROTO_GOOGLE_CLOUD, 18}, /* 34.64.64.0/18 */
+    {0x22408000u, PROTO_GOOGLE_CLOUD, 17}, /* 34.64.128.0/17 */
+    {0x22410000u, PROTO_GOOGLE_CLOUD, 16}, /* 34.65.0.0/16 */
+    {0x22420000u, PROTO_GOOGLE_CLOUD, 15}, /* 34.66.0.0/15 */
+    {0x22440000u, PROTO_GOOGLE_CLOUD, 14}, /* 34.68.0.0/14 */
+    {0x22480000u, PROTO_GOOGLE_CLOUD, 13}, /* 34.72.0.0/13 */
+    {0x22500000u, PROTO_GOOGLE_CLOUD, 12}, /* 34.80.0.0/12 */
+    {0x22600000u, PROTO_GOOGLE, 18}, /* 34.96.0.0/18 */
+    {0x22604000u, PROTO_GOOGLE_CLOUD, 18}, /* 34.96.64.0/18 */
+    {0x22608000u, PROTO_GOOGLE_CLOUD, 17}, /* 34.96.128.0/17 */
+    {0x22610000u, PROTO_GOOGLE_CLOUD, 16}, /* 34.97.0.0/16 */
+    {0x22620000u, PROTO_GOOGLE, 18}, /* 34.98.0.0/18 */
+    {0x22624000u, PROTO_GOOGLE_CLOUD, 18}, /* 34.98.64.0/18 */
+    {0x22628000u, PROTO_GOOGLE_CLOUD, 21}, /* 34.98.128.0/21 */
+    {0x22628800u, PROTO_GOOGLE, 21}, /* 34.98.136.0/21 */
+    {0x22629000u, PROTO_GOOGLE, 20}, /* 34.98.144.0/20 */
+    {0x2262a000u, PROTO_GOOGLE, 19}, /* 34.98.160.0/19 */
+    {0x2262c000u, PROTO_GOOGLE, 18}, /* 34.98.192.0/18 */
+    {0x22630000u, PROTO_GOOGLE, 16}, /* 34.99.0.0/16 */
+    {0x22640000u, PROTO_GOOGLE, 17}, /* 34.100.0.0/17 */
+    {0x22648000u, PROTO_GOOGLE_CLOUD, 17}, /* 34.100.128.0/17 */
+    {0x22650000u, PROTO_GOOGLE, 20}, /* 34.101.0.0/20 */
+    {0x22651000u, PROTO_GOOGLE, 23}, /* 34.101.16.0/23 */
+    {0x22651200u, PROTO_GOOGLE_CLOUD, 24}, /* 34.101.18.0/24 */
+    {0x22651300u, PROTO_GOOGLE, 24}, /* 34.101.19.0/24 */
+    {0x22651400u, PROTO_GOOGLE_CLOUD, 22}, /* 34.101.20.0/22 */
+    {0x22651c00u, PROTO_GOOGLE, 22}, /* 34.101.28.0/22 */
+    {0x22652000u, PROTO_GOOGLE_CLOUD, 19}, /* 34.101.32.0/19 */
+    {0x22654000u, PROTO_GOOGLE_CLOUD, 18}, /* 34.101.64.0/18 */
+    {0x22658000u, PROTO_GOOGLE_CLOUD, 17}, /* 34.101.128.0/17 */
+    {0x22660000u, PROTO_GOOGLE_CLOUD, 16}, /* 34.102.0.0/16 */
+    {0x22670000u, PROTO_GOOGLE, 16}, /* 34.103.0.0/16 */
+    {0x22680000u, PROTO_GOOGLE, 20}, /* 34.104.0.0/20 */
+    {0x22681000u, PROTO_GOOGLE, 21}, /* 34.104.16.0/21 */
+    {0x22681800u, PROTO_GOOGLE, 23}, /* 34.104.24.0/23 */
+    {0x22681a00u, PROTO_GOOGLE, 24}, /* 34.104.26.0/24 */
+    {0x22681b00u, PROTO_GOOGLE_CLOUD, 24}, /* 34.104.27.0/24 */
+    {0x22681c00u, PROTO_GOOGLE, 22}, /* 34.104.28.0/22 */
+    {0x22682000u, PROTO_GOOGLE, 20}, /* 34.104.32.0/20 */
+    {0x22683000u, PROTO_GOOGLE, 24}, /* 34.104.48.0/24 */
+    {0x22683100u, PROTO_GOOGLE_CLOUD, 24}, /* 34.104.49.0/24 */
+    {0x22683200u, PROTO_GOOGLE_CLOUD, 23}, /* 34.104.50.0/23 */
+    {0x22683400u, PROTO_GOOGLE_CLOUD, 24}, /* 34.104.52.0/24 */
+    {0x22683500u, PROTO_GOOGLE, 24}, /* 34.104.53.0/24 */
+    {0x22683600u, PROTO_GOOGLE, 23}, /* 34.104.54.0/23 */
+    {0x22683800u, PROTO_GOOGLE_CLOUD, 21}, /* 34.104.56.0/21 */
+    {0x22684000u, PROTO_GOOGLE_CLOUD, 18}, /* 34.104.64.0/18 */
+    {0x22688000u, PROTO_GOOGLE_CLOUD, 17}, /* 34.104.128.0/17 */
+    {0x22690000u, PROTO_GOOGLE_CLOUD, 16}, /* 34.105.0.0/16 */
+    {0x226a0000u, PROTO_GOOGLE_CLOUD, 15}, /* 34.106.0.0/15 */
+    {0x226c0000u, PROTO_GOOGLE_CLOUD, 16}, /* 34.108.0.0/16 */
+    {0x226d0000u, PROTO_GOOGLE, 16}, /* 34.109.0.0/16 */
+    {0x226e0000u, PROTO_GOOGLE, 17}, /* 34.110.0.0/17 */
+    {0x226e8000u, PROTO_GOOGLE_CLOUD, 17}, /* 34.110.128.0/17 */
+    {0x226f0000u, PROTO_GOOGLE_CLOUD, 16}, /* 34.111.0.0/16 */
+    {0x22700000u, PROTO_GOOGLE_CLOUD, 15}, /* 34.112.0.0/15 */
+    {0x22720000u, PROTO_GOOGLE, 15}, /* 34.114.0.0/15 */
+    {0x22740000u, PROTO_GOOGLE_CLOUD, 21}, /* 34.116.0.0/21 */
+    {0x22740800u, PROTO_GOOGLE, 21}, /* 34.116.8.0/21 */
+    {0x22741000u, PROTO_GOOGLE, 20}, /* 34.116.16.0/20 */
+    {0x22742000u, PROTO_GOOGLE, 19}, /* 34.116.32.0/19 */
+    {0x22744000u, PROTO_GOOGLE_CLOUD, 18}, /* 34.116.64.0/18 */
+    {0x22748000u, PROTO_GOOGLE_CLOUD, 17}, /* 34.116.128.0/17 */
+    {0x22750000u, PROTO_GOOGLE_CLOUD, 16}, /* 34.117.0.0/16 */
+    {0x22760000u, PROTO_GOOGLE_CLOUD, 17}, /* 34.118.0.0/17 */
+    {0x22768000u, PROTO_GOOGLE_CLOUD, 18}, /* 34.118.128.0/18 */
+    {0x2276c000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.118.192.0/20 */
+    {0x2276d000u, PROTO_GOOGLE, 20}, /* 34.118.208.0/20 */
+    {0x2276f000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.118.240.0/20 */
+    {0x22770000u, PROTO_GOOGLE, 16}, /* 34.119.0.0/16 */
+    {0x22780000u, PROTO_GOOGLE_CLOUD, 14}, /* 34.120.0.0/14 */
+    {0x227c0000u, PROTO_GOOGLE_CLOUD, 18}, /* 34.124.0.0/18 */
+    {0x227c4000u, PROTO_GOOGLE, 19}, /* 34.124.64.0/19 */
+    {0x227c6000u, PROTO_GOOGLE, 20}, /* 34.124.96.0/20 */
+    {0x227c7000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.124.112.0/20 */
+    {0x227c8000u, PROTO_GOOGLE_CLOUD, 17}, /* 34.124.128.0/17 */
+    {0x227d0000u, PROTO_GOOGLE_CLOUD, 16}, /* 34.125.0.0/16 */
+    {0x227e0000u, PROTO_GOOGLE, 18}, /* 34.126.0.0/18 */
+    {0x227e4000u, PROTO_GOOGLE_CLOUD, 18}, /* 34.126.64.0/18 */
+    {0x227ec000u, PROTO_GOOGLE_CLOUD, 19}, /* 34.126.192.0/19 */
+    {0x227ee000u, PROTO_GOOGLE, 19}, /* 34.126.224.0/19 */
+    {0x227f0000u, PROTO_GOOGLE_CLOUD, 17}, /* 34.127.0.0/17 */
+    {0x227f8000u, PROTO_GOOGLE, 20}, /* 34.127.128.0/20 */
+    {0x227f9000u, PROTO_GOOGLE, 21}, /* 34.127.144.0/21 */
+    {0x227f9800u, PROTO_GOOGLE, 22}, /* 34.127.152.0/22 */
+    {0x227f9c00u, PROTO_GOOGLE_CLOUD, 22}, /* 34.127.156.0/22 */
+    {0x227fa000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.127.160.0/20 */
+    {0x227fb000u, PROTO_GOOGLE, 24}, /* 34.127.176.0/24 */
+    {0x227fb100u, PROTO_GOOGLE_CLOUD, 24}, /* 34.127.177.0/24 */
+    {0x227fb200u, PROTO_GOOGLE_CLOUD, 23}, /* 34.127.178.0/23 */
+    {0x227fb400u, PROTO_GOOGLE_CLOUD, 24}, /* 34.127.180.0/24 */
+    {0x227fb500u, PROTO_GOOGLE, 24}, /* 34.127.181.0/24 */
+    {0x227fb600u, PROTO_GOOGLE, 23}, /* 34.127.182.0/23 */
+    {0x227fb800u, PROTO_GOOGLE_CLOUD, 21}, /* 34.127.184.0/21 */
+    {0x227fc000u, PROTO_GOOGLE, 18}, /* 34.127.192.0/18 */
+    {0x22800000u, PROTO_GOOGLE, 22}, /* 34.128.0.0/22 */
+    {0x22800400u, PROTO_GOOGLE_CLOUD, 22}, /* 34.128.4.0/22 */
+    {0x22800800u, PROTO_GOOGLE, 21}, /* 34.128.8.0/21 */
+    {0x22801000u, PROTO_GOOGLE, 20}, /* 34.128.16.0/20 */
+    {0x22802000u, PROTO_GOOGLE_CLOUD, 22}, /* 34.128.32.0/22 */
+    {0x22802400u, PROTO_GOOGLE_CLOUD, 23}, /* 34.128.36.0/23 */
+    {0x22802600u, PROTO_GOOGLE, 23}, /* 34.128.38.0/23 */
+    {0x22802a00u, PROTO_GOOGLE_CLOUD, 23}, /* 34.128.42.0/23 */
+    {0x22802c00u, PROTO_GOOGLE_CLOUD, 22}, /* 34.128.44.0/22 */
+    {0x22803000u, PROTO_GOOGLE_CLOUD, 23}, /* 34.128.48.0/23 */
+    {0x22803200u, PROTO_GOOGLE, 23}, /* 34.128.50.0/23 */
+    {0x22803400u, PROTO_GOOGLE_CLOUD, 22}, /* 34.128.52.0/22 */
+    {0x22803800u, PROTO_GOOGLE, 23}, /* 34.128.56.0/23 */
+    {0x22803a00u, PROTO_GOOGLE_CLOUD, 23}, /* 34.128.58.0/23 */
+    {0x22803c00u, PROTO_GOOGLE_CLOUD, 22}, /* 34.128.60.0/22 */
+    {0x22804000u, PROTO_GOOGLE_CLOUD, 18}, /* 34.128.64.0/18 */
+    {0x2280c000u, PROTO_GOOGLE, 20}, /* 34.128.192.0/20 */
+    {0x2280d000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.128.208.0/20 */
+    {0x2280f000u, PROTO_GOOGLE, 20}, /* 34.128.240.0/20 */
+    {0x22810000u, PROTO_GOOGLE_CLOUD, 16}, /* 34.129.0.0/16 */
+    {0x22820000u, PROTO_GOOGLE_CLOUD, 15}, /* 34.130.0.0/15 */
+    {0x22840000u, PROTO_GOOGLE_CLOUD, 14}, /* 34.132.0.0/14 */
+    {0x228c0000u, PROTO_GOOGLE_CLOUD, 15}, /* 34.140.0.0/15 */
+    {0x228e0000u, PROTO_GOOGLE_CLOUD, 16}, /* 34.142.0.0/16 */
+    {0x228f0000u, PROTO_GOOGLE, 18}, /* 34.143.0.0/18 */
+    {0x228f4000u, PROTO_GOOGLE_CLOUD, 21}, /* 34.143.64.0/21 */
+    {0x228f4800u, PROTO_GOOGLE, 21}, /* 34.143.72.0/21 */
+    {0x228f5000u, PROTO_GOOGLE, 20}, /* 34.143.80.0/20 */
+    {0x228f6000u, PROTO_GOOGLE, 19}, /* 34.143.96.0/19 */
+    {0x228f8000u, PROTO_GOOGLE_CLOUD, 17}, /* 34.143.128.0/17 */
+    {0x22900000u, PROTO_GOOGLE, 17}, /* 34.144.0.0/17 */
+    {0x22908000u, PROTO_GOOGLE, 19}, /* 34.144.128.0/19 */
+    {0x2290a000u, PROTO_GOOGLE, 21}, /* 34.144.160.0/21 */
+    {0x2290a800u, PROTO_GOOGLE, 22}, /* 34.144.168.0/22 */
+    {0x2290ac00u, PROTO_GOOGLE_CLOUD, 22}, /* 34.144.172.0/22 */
+    {0x2290b000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.144.176.0/20 */
+    {0x2290c000u, PROTO_GOOGLE_CLOUD, 18}, /* 34.144.192.0/18 */
+    {0x22910000u, PROTO_GOOGLE_CLOUD, 16}, /* 34.145.0.0/16 */
+    {0x22920000u, PROTO_GOOGLE_CLOUD, 15}, /* 34.146.0.0/15 */
+    {0x22940000u, PROTO_GOOGLE_CLOUD, 14}, /* 34.148.0.0/14 */
+    {0x22980000u, PROTO_GOOGLE_CLOUD, 18}, /* 34.152.0.0/18 */
+    {0x22984000u, PROTO_GOOGLE_CLOUD, 22}, /* 34.152.64.0/22 */
+    {0x22984400u, PROTO_GOOGLE_CLOUD, 23}, /* 34.152.68.0/23 */
+    {0x22984600u, PROTO_GOOGLE, 23}, /* 34.152.70.0/23 */
+    {0x22984800u, PROTO_GOOGLE_CLOUD, 21}, /* 34.152.72.0/21 */
+    {0x22985000u, PROTO_GOOGLE_CLOUD, 23}, /* 34.152.80.0/23 */
+    {0x22985200u, PROTO_GOOGLE, 23}, /* 34.152.82.0/23 */
+    {0x22985400u, PROTO_GOOGLE_CLOUD, 22}, /* 34.152.84.0/22 */
+    {0x22985800u, PROTO_GOOGLE, 21}, /* 34.152.88.0/21 */
+    {0x22986000u, PROTO_GOOGLE_CLOUD, 23}, /* 34.152.96.0/23 */
+    {0x22986200u, PROTO_GOOGLE_CLOUD, 24}, /* 34.152.98.0/24 */
+    {0x22986300u, PROTO_GOOGLE, 24}, /* 34.152.99.0/24 */
+    {0x22986400u, PROTO_GOOGLE_CLOUD, 22}, /* 34.152.100.0/22 */
+    {0x22986800u, PROTO_GOOGLE_CLOUD, 21}, /* 34.152.104.0/21 */
+    {0x22987000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.152.112.0/20 */
+    {0x22988000u, PROTO_GOOGLE, 17}, /* 34.152.128.0/17 */
+    {0x22990000u, PROTO_GOOGLE, 20}, /* 34.153.0.0/20 */
+    {0x22991000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.153.16.0/20 */
+    {0x22992000u, PROTO_GOOGLE_CLOUD, 23}, /* 34.153.32.0/23 */
+    {0x22992200u, PROTO_GOOGLE, 23}, /* 34.153.34.0/23 */
+    {0x22992600u, PROTO_GOOGLE_CLOUD, 24}, /* 34.153.38.0/24 */
+    {0x22992700u, PROTO_GOOGLE, 24}, /* 34.153.39.0/24 */
+    {0x22992800u, PROTO_GOOGLE_CLOUD, 21}, /* 34.153.40.0/21 */
+    {0x22993800u, PROTO_GOOGLE, 23}, /* 34.153.56.0/23 */
+    {0x22993a00u, PROTO_GOOGLE_CLOUD, 23}, /* 34.153.58.0/23 */
+    {0x22993c00u, PROTO_GOOGLE, 23}, /* 34.153.60.0/23 */
+    {0x22993e00u, PROTO_GOOGLE_CLOUD, 23}, /* 34.153.62.0/23 */
+    {0x22994000u, PROTO_GOOGLE, 18}, /* 34.153.64.0/18 */
+    {0x22998000u, PROTO_GOOGLE_CLOUD, 18}, /* 34.153.128.0/18 */
+    {0x2299c000u, PROTO_GOOGLE_CLOUD, 19}, /* 34.153.192.0/19 */
+    {0x2299e000u, PROTO_GOOGLE_CLOUD, 23}, /* 34.153.224.0/23 */
+    {0x2299e200u, PROTO_GOOGLE, 23}, /* 34.153.226.0/23 */
+    {0x2299e600u, PROTO_GOOGLE_CLOUD, 24}, /* 34.153.230.0/24 */
+    {0x2299e700u, PROTO_GOOGLE, 24}, /* 34.153.231.0/24 */
+    {0x2299e800u, PROTO_GOOGLE_CLOUD, 21}, /* 34.153.232.0/21 */
+    {0x2299f800u, PROTO_GOOGLE, 23}, /* 34.153.248.0/23 */
+    {0x2299fa00u, PROTO_GOOGLE_CLOUD, 23}, /* 34.153.250.0/23 */
+    {0x2299fc00u, PROTO_GOOGLE_CLOUD, 22}, /* 34.153.252.0/22 */
+    {0x229a0000u, PROTO_GOOGLE_CLOUD, 15}, /* 34.154.0.0/15 */
+    {0x229c0000u, PROTO_GOOGLE_CLOUD, 16}, /* 34.156.0.0/16 */
+    {0x229d0000u, PROTO_GOOGLE_CLOUD, 21}, /* 34.157.0.0/21 */
+    {0x229d0800u, PROTO_GOOGLE_CLOUD, 23}, /* 34.157.8.0/23 */
+    {0x229d0a00u, PROTO_GOOGLE, 23}, /* 34.157.10.0/23 */
+    {0x229d0c00u, PROTO_GOOGLE_CLOUD, 22}, /* 34.157.12.0/22 */
+    {0x229d1000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.157.16.0/20 */
+    {0x229d2000u, PROTO_GOOGLE_CLOUD, 19}, /* 34.157.32.0/19 */
+    {0x229d4000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.157.64.0/20 */
+    {0x229d5000u, PROTO_GOOGLE_CLOUD, 22}, /* 34.157.80.0/22 */
+    {0x229d5400u, PROTO_GOOGLE_CLOUD, 23}, /* 34.157.84.0/23 */
+    {0x229d5600u, PROTO_GOOGLE, 24}, /* 34.157.86.0/24 */
+    {0x229d5700u, PROTO_GOOGLE_CLOUD, 24}, /* 34.157.87.0/24 */
+    {0x229d5800u, PROTO_GOOGLE_CLOUD, 21}, /* 34.157.88.0/21 */
+    {0x229d6000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.157.96.0/20 */
+    {0x229d7000u, PROTO_GOOGLE_CLOUD, 21}, /* 34.157.112.0/21 */
+    {0x229d7800u, PROTO_GOOGLE, 24}, /* 34.157.120.0/24 */
+    {0x229d7900u, PROTO_GOOGLE_CLOUD, 24}, /* 34.157.121.0/24 */
+    {0x229d7b00u, PROTO_GOOGLE_CLOUD, 25}, /* 34.157.123.0/25 */
+    {0x229d7b80u, PROTO_GOOGLE, 25}, /* 34.157.123.128/25 */
+    {0x229d7c00u, PROTO_GOOGLE_CLOUD, 22}, /* 34.157.124.0/22 */
+    {0x229d8000u, PROTO_GOOGLE_CLOUD, 21}, /* 34.157.128.0/21 */
+    {0x229d8800u, PROTO_GOOGLE_CLOUD, 23}, /* 34.157.136.0/23 */
+    {0x229d8a00u, PROTO_GOOGLE, 23}, /* 34.157.138.0/23 */
+    {0x229d8c00u, PROTO_GOOGLE_CLOUD, 22}, /* 34.157.140.0/22 */
+    {0x229d9000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.157.144.0/20 */
+    {0x229da000u, PROTO_GOOGLE_CLOUD, 19}, /* 34.157.160.0/19 */
+    {0x229dc000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.157.192.0/20 */
+    {0x229dd000u, PROTO_GOOGLE_CLOUD, 22}, /* 34.157.208.0/22 */
+    {0x229dd400u, PROTO_GOOGLE_CLOUD, 23}, /* 34.157.212.0/23 */
+    {0x229dd600u, PROTO_GOOGLE, 24}, /* 34.157.214.0/24 */
+    {0x229dd700u, PROTO_GOOGLE_CLOUD, 24}, /* 34.157.215.0/24 */
+    {0x229dd800u, PROTO_GOOGLE_CLOUD, 21}, /* 34.157.216.0/21 */
+    {0x229de000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.157.224.0/20 */
+    {0x229df000u, PROTO_GOOGLE_CLOUD, 21}, /* 34.157.240.0/21 */
+    {0x229df800u, PROTO_GOOGLE, 24}, /* 34.157.248.0/24 */
+    {0x229df900u, PROTO_GOOGLE_CLOUD, 24}, /* 34.157.249.0/24 */
+    {0x229dfa00u, PROTO_GOOGLE_CLOUD, 23}, /* 34.157.250.0/23 */
+    {0x229dfc00u, PROTO_GOOGLE_CLOUD, 22}, /* 34.157.252.0/22 */
+    {0x229e0000u, PROTO_GOOGLE, 21}, /* 34.158.0.0/21 */
+    {0x229e0800u, PROTO_GOOGLE_CLOUD, 21}, /* 34.158.8.0/21 */
+    {0x229e1000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.158.16.0/20 */
+    {0x229e2000u, PROTO_GOOGLE_CLOUD, 19}, /* 34.158.32.0/19 */
+    {0x229e4000u, PROTO_GOOGLE_CLOUD, 18}, /* 34.158.64.0/18 */
+    {0x229ec000u, PROTO_GOOGLE_CLOUD, 19}, /* 34.158.192.0/19 */
+    {0x229ee000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.158.224.0/20 */
+    {0x229ef000u, PROTO_GOOGLE_CLOUD, 21}, /* 34.158.240.0/21 */
+    {0x229ef800u, PROTO_GOOGLE, 21}, /* 34.158.248.0/21 */
+    {0x229f0000u, PROTO_GOOGLE_CLOUD, 16}, /* 34.159.0.0/16 */
+    {0x22a00000u, PROTO_GOOGLE_CLOUD, 14}, /* 34.160.0.0/14 */
+    {0x22a40000u, PROTO_GOOGLE_CLOUD, 15}, /* 34.164.0.0/15 */
+    {0x22a60000u, PROTO_GOOGLE_CLOUD, 16}, /* 34.166.0.0/16 */
+    {0x22a70000u, PROTO_GOOGLE, 16}, /* 34.167.0.0/16 */
+    {0x22a80000u, PROTO_GOOGLE_CLOUD, 13}, /* 34.168.0.0/13 */
+    {0x22b00000u, PROTO_GOOGLE_CLOUD, 16}, /* 34.176.0.0/16 */
+    {0x22b10000u, PROTO_GOOGLE, 19}, /* 34.177.0.0/19 */
+    {0x22b12000u, PROTO_GOOGLE_CLOUD, 22}, /* 34.177.32.0/22 */
+    {0x22b12400u, PROTO_GOOGLE_CLOUD, 23}, /* 34.177.36.0/23 */
+    {0x22b12600u, PROTO_GOOGLE, 23}, /* 34.177.38.0/23 */
+    {0x22b12800u, PROTO_GOOGLE_CLOUD, 21}, /* 34.177.40.0/21 */
+    {0x22b13800u, PROTO_GOOGLE, 21}, /* 34.177.56.0/21 */
+    {0x22b14000u, PROTO_GOOGLE_CLOUD, 23}, /* 34.177.64.0/23 */
+    {0x22b14200u, PROTO_GOOGLE_CLOUD, 24}, /* 34.177.66.0/24 */
+    {0x22b14300u, PROTO_GOOGLE, 24}, /* 34.177.67.0/24 */
+    {0x22b14400u, PROTO_GOOGLE_CLOUD, 22}, /* 34.177.68.0/22 */
+    {0x22b14c00u, PROTO_GOOGLE_CLOUD, 23}, /* 34.177.76.0/23 */
+    {0x22b14e00u, PROTO_GOOGLE_CLOUD, 25}, /* 34.177.78.0/25 */
+    {0x22b14e80u, PROTO_GOOGLE, 25}, /* 34.177.78.128/25 */
+    {0x22b14f00u, PROTO_GOOGLE_CLOUD, 24}, /* 34.177.79.0/24 */
+    {0x22b15000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.177.80.0/20 */
+    {0x22b17000u, PROTO_GOOGLE_CLOUD, 21}, /* 34.177.112.0/21 */
+    {0x22b17800u, PROTO_GOOGLE_CLOUD, 22}, /* 34.177.120.0/22 */
+    {0x22b17c00u, PROTO_GOOGLE, 22}, /* 34.177.124.0/22 */
+    {0x22b18000u, PROTO_GOOGLE, 17}, /* 34.177.128.0/17 */
+    {0x22b20000u, PROTO_GOOGLE_CLOUD, 15}, /* 34.178.0.0/15 */
+    {0x22b40000u, PROTO_GOOGLE_CLOUD, 17}, /* 34.180.0.0/17 */
+    {0x22b48000u, PROTO_GOOGLE, 17}, /* 34.180.128.0/17 */
+    {0x22b50000u, PROTO_GOOGLE_CLOUD, 16}, /* 34.181.0.0/16 */
+    {0x22b70000u, PROTO_GOOGLE_CLOUD, 21}, /* 34.183.0.0/21 */
+    {0x22b70800u, PROTO_GOOGLE_CLOUD, 23}, /* 34.183.8.0/23 */
+    {0x22b70a00u, PROTO_GOOGLE, 23}, /* 34.183.10.0/23 */
+    {0x22b70c00u, PROTO_GOOGLE_CLOUD, 22}, /* 34.183.12.0/22 */
+    {0x22b71400u, PROTO_GOOGLE, 25}, /* 34.183.20.0/25 */
+    {0x22b71480u, PROTO_GOOGLE_CLOUD, 25}, /* 34.183.20.128/25 */
+    {0x22b71500u, PROTO_GOOGLE_CLOUD, 24}, /* 34.183.21.0/24 */
+    {0x22b71600u, PROTO_GOOGLE, 23}, /* 34.183.22.0/23 */
+    {0x22b71800u, PROTO_GOOGLE_CLOUD, 22}, /* 34.183.24.0/22 */
+    {0x22b71c00u, PROTO_GOOGLE_CLOUD, 23}, /* 34.183.28.0/23 */
+    {0x22b71e00u, PROTO_GOOGLE, 23}, /* 34.183.30.0/23 */
+    {0x22b72000u, PROTO_GOOGLE_CLOUD, 22}, /* 34.183.32.0/22 */
+    {0x22b72400u, PROTO_GOOGLE_CLOUD, 23}, /* 34.183.36.0/23 */
+    {0x22b72600u, PROTO_GOOGLE, 23}, /* 34.183.38.0/23 */
+    {0x22b72800u, PROTO_GOOGLE_CLOUD, 21}, /* 34.183.40.0/21 */
+    {0x22b73000u, PROTO_GOOGLE, 23}, /* 34.183.48.0/23 */
+    {0x22b73200u, PROTO_GOOGLE_CLOUD, 23}, /* 34.183.50.0/23 */
+    {0x22b73400u, PROTO_GOOGLE_CLOUD, 22}, /* 34.183.52.0/22 */
+    {0x22b73c00u, PROTO_GOOGLE_CLOUD, 23}, /* 34.183.60.0/23 */
+    {0x22b73e00u, PROTO_GOOGLE, 23}, /* 34.183.62.0/23 */
+    {0x22b74200u, PROTO_GOOGLE_CLOUD, 23}, /* 34.183.66.0/23 */
+    {0x22b74400u, PROTO_GOOGLE_CLOUD, 22}, /* 34.183.68.0/22 */
+    {0x22b74800u, PROTO_GOOGLE_CLOUD, 21}, /* 34.183.72.0/21 */
+    {0x22b75000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.183.80.0/20 */
+    {0x22b77000u, PROTO_GOOGLE_CLOUD, 21}, /* 34.183.112.0/21 */
+    {0x22b77800u, PROTO_GOOGLE_CLOUD, 22}, /* 34.183.120.0/22 */
+    {0x22b77c00u, PROTO_GOOGLE_CLOUD, 23}, /* 34.183.124.0/23 */
+    {0x22b77e00u, PROTO_GOOGLE, 23}, /* 34.183.126.0/23 */
+    {0x22b78000u, PROTO_GOOGLE_CLOUD, 22}, /* 34.183.128.0/22 */
+    {0x22b78400u, PROTO_GOOGLE_CLOUD, 23}, /* 34.183.132.0/23 */
+    {0x22b78600u, PROTO_GOOGLE, 23}, /* 34.183.134.0/23 */
+    {0x22b78800u, PROTO_GOOGLE_CLOUD, 21}, /* 34.183.136.0/21 */
+    {0x22b79000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.183.144.0/20 */
+    {0x22b7a000u, PROTO_GOOGLE_CLOUD, 21}, /* 34.183.160.0/21 */
+    {0x22b7a800u, PROTO_GOOGLE_CLOUD, 22}, /* 34.183.168.0/22 */
+    {0x22b7ac00u, PROTO_GOOGLE_CLOUD, 23}, /* 34.183.172.0/23 */
+    {0x22b7ae00u, PROTO_GOOGLE, 23}, /* 34.183.174.0/23 */
+    {0x22b7b000u, PROTO_GOOGLE, 20}, /* 34.183.176.0/20 */
+    {0x22b7c000u, PROTO_GOOGLE, 18}, /* 34.183.192.0/18 */
+    {0x22b80000u, PROTO_GOOGLE_CLOUD, 21}, /* 34.184.0.0/21 */
+    {0x22b80800u, PROTO_GOOGLE_CLOUD, 23}, /* 34.184.8.0/23 */
+    {0x22b80a00u, PROTO_GOOGLE, 23}, /* 34.184.10.0/23 */
+    {0x22b80c00u, PROTO_GOOGLE_CLOUD, 22}, /* 34.184.12.0/22 */
+    {0x22b81400u, PROTO_GOOGLE, 23}, /* 34.184.20.0/23 */
+    {0x22b81600u, PROTO_GOOGLE_CLOUD, 23}, /* 34.184.22.0/23 */
+    {0x22b81800u, PROTO_GOOGLE_CLOUD, 22}, /* 34.184.24.0/22 */
+    {0x22b81c00u, PROTO_GOOGLE, 23}, /* 34.184.28.0/23 */
+    {0x22b81e00u, PROTO_GOOGLE_CLOUD, 23}, /* 34.184.30.0/23 */
+    {0x22b82000u, PROTO_GOOGLE_CLOUD, 22}, /* 34.184.32.0/22 */
+    {0x22b82400u, PROTO_GOOGLE, 22}, /* 34.184.36.0/22 */
+    {0x22b82800u, PROTO_GOOGLE_CLOUD, 21}, /* 34.184.40.0/21 */
+    {0x22b83800u, PROTO_GOOGLE_CLOUD, 22}, /* 34.184.56.0/22 */
+    {0x22b83c00u, PROTO_GOOGLE, 22}, /* 34.184.60.0/22 */
+    {0x22b84000u, PROTO_GOOGLE_CLOUD, 19}, /* 34.184.64.0/19 */
+    {0x22b86000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.184.96.0/20 */
+    {0x22b87000u, PROTO_GOOGLE_CLOUD, 21}, /* 34.184.112.0/21 */
+    {0x22b87800u, PROTO_GOOGLE_CLOUD, 22}, /* 34.184.120.0/22 */
+    {0x22b87c00u, PROTO_GOOGLE, 23}, /* 34.184.124.0/23 */
+    {0x22b87e00u, PROTO_GOOGLE_CLOUD, 23}, /* 34.184.126.0/23 */
+    {0x22b88000u, PROTO_GOOGLE_CLOUD, 21}, /* 34.184.128.0/21 */
+    {0x22b88800u, PROTO_GOOGLE_CLOUD, 22}, /* 34.184.136.0/22 */
+    {0x22b88c00u, PROTO_GOOGLE, 23}, /* 34.184.140.0/23 */
+    {0x22b88e00u, PROTO_GOOGLE_CLOUD, 23}, /* 34.184.142.0/23 */
+    {0x22b89000u, PROTO_GOOGLE_CLOUD, 20}, /* 34.184.144.0/20 */
+    {0x22b8a000u, PROTO_GOOGLE_CLOUD, 21}, /* 34.184.160.0/21 */
+    {0x22b8a800u, PROTO_GOOGLE_CLOUD, 23}, /* 34.184.168.0/23 */
+    {0x22b8aa00u, PROTO_GOOGLE_CLOUD, 24}, /* 34.184.170.0/24 */
+    {0x22b8ab00u, PROTO_GOOGLE, 24}, /* 34.184.171.0/24 */
+    {0x22b8ac00u, PROTO_GOOGLE_CLOUD, 23}, /* 34.184.172.0/23 */
+    {0x22b8ae00u, PROTO_GOOGLE, 23}, /* 34.184.174.0/23 */
+    {0x22b8b000u, PROTO_GOOGLE, 20}, /* 34.184.176.0/20 */
+    {0x22b8c000u, PROTO_GOOGLE, 18}, /* 34.184.192.0/18 */
+    {0x22b94000u, PROTO_GOOGLE_CLOUD, 18}, /* 34.185.64.0/18 */
+    {0x22b98000u, PROTO_GOOGLE_CLOUD, 17}, /* 34.185.128.0/17 */
+    {0x22ba0000u, PROTO_GOOGLE_CLOUD, 15}, /* 34.186.0.0/15 */
+    {0x22bc0000u, PROTO_GOOGLE, 14}, /* 34.188.0.0/14 */
+    {0x22c00000u, PROTO_AWS, 15}, /* 34.192.0.0/15 */
+    {0x22c20000u, PROTO_AWS, 16}, /* 34.194.0.0/16 */
+    {0x22c30000u, PROTO_AWS, 17}, /* 34.195.0.0/17 */
+    {0x22c38000u, PROTO_AWS, 18}, /* 34.195.128.0/18 */
+    {0x22c3c000u, PROTO_AWS, 19}, /* 34.195.192.0/19 */
+    {0x22c3e000u, PROTO_AWS, 20}, /* 34.195.224.0/20 */
+    {0x22c3f000u, PROTO_AWS, 21}, /* 34.195.240.0/21 */
+    {0x22c3f800u, PROTO_AWS, 22}, /* 34.195.248.0/22 */
+    {0x22c3fc00u, PROTO_CLOUDFRONT, 24}, /* 34.195.252.0/24 */
+    {0x22c3fd00u, PROTO_AWS, 24}, /* 34.195.253.0/24 */
+    {0x22c3fe00u, PROTO_AWS, 23}, /* 34.195.254.0/23 */
+    {0x22c40000u, PROTO_AWS, 14}, /* 34.196.0.0/14 */
+    {0x22c80000u, PROTO_AWS, 13}, /* 34.200.0.0/13 */
+    {0x22d80000u, PROTO_AWS, 19}, /* 34.216.0.0/19 */
+    {0x22d82000u, PROTO_AWS, 20}, /* 34.216.32.0/20 */
+    {0x22d83000u, PROTO_AWS, 23}, /* 34.216.48.0/23 */
+    {0x22d83200u, PROTO_AWS, 24}, /* 34.216.50.0/24 */
+    {0x22d83300u, PROTO_CLOUDFRONT, 25}, /* 34.216.51.0/25 */
+    {0x22d83380u, PROTO_AWS, 25}, /* 34.216.51.128/25 */
+    {0x22d83400u, PROTO_AWS, 22}, /* 34.216.52.0/22 */
+    {0x22d83800u, PROTO_AWS, 21}, /* 34.216.56.0/21 */
+    {0x22d84000u, PROTO_AWS, 18}, /* 34.216.64.0/18 */
+    {0x22d88000u, PROTO_AWS, 17}, /* 34.216.128.0/17 */
+    {0x22d90000u, PROTO_AWS, 16}, /* 34.217.0.0/16 */
+    {0x22da0000u, PROTO_AWS, 15}, /* 34.218.0.0/15 */
+    {0x22de0000u, PROTO_AWS, 16}, /* 34.222.0.0/16 */
+    {0x22df0000u, PROTO_AWS, 21}, /* 34.223.0.0/21 */
+    {0x22df0800u, PROTO_AWS, 22}, /* 34.223.8.0/22 */
+    {0x22df0c00u, PROTO_AWS, 25}, /* 34.223.12.0/25 */
+    {0x22df0c80u, PROTO_AWS, 26}, /* 34.223.12.128/26 */
+    {0x22df0cc0u, PROTO_AWS, 27}, /* 34.223.12.192/27 */
+    {0x22df0ce0u, PROTO_CLOUDFRONT, 27}, /* 34.223.12.224/27 */
+    {0x22df0d00u, PROTO_AWS, 24}, /* 34.223.13.0/24 */
+    {0x22df0e00u, PROTO_AWS, 23}, /* 34.223.14.0/23 */
+    {0x22df1000u, PROTO_AWS, 20}, /* 34.223.16.0/20 */
+    {0x22df2000u, PROTO_AWS, 19}, /* 34.223.32.0/19 */
+    {0x22df4000u, PROTO_AWS, 20}, /* 34.223.64.0/20 */
+    {0x22df5000u, PROTO_AWS, 25}, /* 34.223.80.0/25 */
+    {0x22df5080u, PROTO_AWS, 26}, /* 34.223.80.128/26 */
+    {0x22df50c0u, PROTO_CLOUDFRONT, 26}, /* 34.223.80.192/26 */
+    {0x22df5100u, PROTO_AWS, 24}, /* 34.223.81.0/24 */
+    {0x22df5200u, PROTO_AWS, 23}, /* 34.223.82.0/23 */
+    {0x22df5400u, PROTO_AWS, 22}, /* 34.223.84.0/22 */
+    {0x22df5800u, PROTO_AWS, 21}, /* 34.223.88.0/21 */
+    {0x22df6000u, PROTO_AWS, 19}, /* 34.223.96.0/19 */
+    {0x22df8000u, PROTO_AWS, 17}, /* 34.223.128.0/17 */
+    {0x22e00000u, PROTO_AWS, 15}, /* 34.224.0.0/15 */
+    {0x22e20000u, PROTO_AWS, 21}, /* 34.226.0.0/21 */
+    {0x22e20800u, PROTO_AWS, 22}, /* 34.226.8.0/22 */
+    {0x22e20c00u, PROTO_AWS, 23}, /* 34.226.12.0/23 */
+    {0x22e20e00u, PROTO_CLOUDFRONT, 24}, /* 34.226.14.0/24 */
+    {0x22e20f00u, PROTO_AWS, 24}, /* 34.226.15.0/24 */
+    {0x22e21000u, PROTO_AWS, 20}, /* 34.226.16.0/20 */
+    {0x22e22000u, PROTO_AWS, 19}, /* 34.226.32.0/19 */
+    {0x22e24000u, PROTO_AWS, 18}, /* 34.226.64.0/18 */
+    {0x22e28000u, PROTO_AWS, 17}, /* 34.226.128.0/17 */
+    {0x22e30000u, PROTO_AWS, 16}, /* 34.227.0.0/16 */
+    {0x22e40000u, PROTO_AWS, 14}, /* 34.228.0.0/14 */
+    {0x22e80000u, PROTO_AWS, 13}, /* 34.232.0.0/13 */
+    {0x22f00000u, PROTO_AWS, 12}, /* 34.240.0.0/12 */
     {0x23000000u, PROTO_UNKNOWN, 0},
-    {0x23980000u, PROTO_AMAZON, 13}, /* 35.152.0.0/13 */
-    {0x239a0000u, PROTO_AMAZON, 16}, /* 35.154.0.0/16 */
-    {0x239b0000u, PROTO_AMAZON, 13}, /* 35.152.0.0/13 */
-    {0x239c0000u, PROTO_AMAZON, 14}, /* 35.156.0.0/14 */
-    {0x23a00000u, PROTO_AMAZON, 13}, /* 35.160.0.0/13 */
-    {0x23a80000u, PROTO_UNKNOWN, 0},
-    {0x23b00000u, PROTO_AMAZON, 13}, /* 35.176.0.0/13 */
-    {0x23b60000u, PROTO_AMAZON, 15}, /* 35.182.0.0/15 */
-    {0x23b80000u, PROTO_GOOGLE, 13}, /* 35.184.0.0/13 */
-    {0x23ba0000u, PROTO_GOOGLE, 16}, /* 35.186.0.0/16 */
-    {0x23bb0000u, PROTO_GOOGLE, 13}, /* 35.184.0.0/13 */
-    {0x23c00000u, PROTO_GOOGLE, 12}, /* 35.192.0.0/12 */
-    {0x23d00000u, PROTO_UNKNOWN, 0},
+    {0x23120000u, PROTO_AWS, 15}, /* 35.18.0.0/15 */
+    {0x23140000u, PROTO_UNKNOWN, 0},
+    {0x231a0000u, PROTO_AWS, 15}, /* 35.26.0.0/15 */
+    {0x231c0000u, PROTO_AWS, 14}, /* 35.28.0.0/14 */
+    {0x23200000u, PROTO_UNKNOWN, 0},
+    {0x23226000u, PROTO_AWS, 21}, /* 35.34.96.0/21 */
+    {0x23226800u, PROTO_AWS, 23}, /* 35.34.104.0/23 */
+    {0x23226a00u, PROTO_AWS, 24}, /* 35.34.106.0/24 */
+    {0x23226b00u, PROTO_UNKNOWN, 0},
+    {0x232a0000u, PROTO_AWS, 15}, /* 35.42.0.0/15 */
+    {0x232e0000u, PROTO_UNKNOWN, 0},
+    {0x23300000u, PROTO_AWS, 15}, /* 35.48.0.0/15 */
+    {0x23320000u, PROTO_UNKNOWN, 0},
+    {0x23328000u, PROTO_AWS, 21}, /* 35.50.128.0/21 */
+    {0x23328800u, PROTO_UNKNOWN, 0},
+    {0x23328900u, PROTO_AWS, 24}, /* 35.50.137.0/24 */
+    {0x23328a00u, PROTO_UNKNOWN, 0},
+    {0x23328b00u, PROTO_AWS, 24}, /* 35.50.139.0/24 */
+    {0x23328c00u, PROTO_UNKNOWN, 0},
+    {0x23328d00u, PROTO_AWS, 24}, /* 35.50.141.0/24 */
+    {0x23328e00u, PROTO_AWS, 23}, /* 35.50.142.0/23 */
+    {0x23329200u, PROTO_UNKNOWN, 0},
+    {0x2332a000u, PROTO_AWS, 23}, /* 35.50.160.0/23 */
+    {0x2332a200u, PROTO_UNKNOWN, 0},
+    {0x2332b000u, PROTO_AWS, 23}, /* 35.50.176.0/23 */
+    {0x2332b200u, PROTO_AWS, 24}, /* 35.50.178.0/24 */
+    {0x2332b300u, PROTO_UNKNOWN, 0},
+    {0x2332c000u, PROTO_AWS, 22}, /* 35.50.192.0/22 */
+    {0x2332c400u, PROTO_AWS, 23}, /* 35.50.196.0/23 */
+    {0x2332c600u, PROTO_UNKNOWN, 0},
+    {0x2332d000u, PROTO_AWS, 22}, /* 35.50.208.0/22 */
+    {0x2332d400u, PROTO_AWS, 23}, /* 35.50.212.0/23 */
+    {0x2332d600u, PROTO_AWS, 24}, /* 35.50.214.0/24 */
+    {0x2332d700u, PROTO_UNKNOWN, 0},
+    {0x2332e000u, PROTO_AWS, 24}, /* 35.50.224.0/24 */
+    {0x2332e100u, PROTO_UNKNOWN, 0},
+    {0x2332e200u, PROTO_AWS, 23}, /* 35.50.226.0/23 */
+    {0x2332e400u, PROTO_AWS, 22}, /* 35.50.228.0/22 */
+    {0x2332e800u, PROTO_AWS, 21}, /* 35.50.232.0/21 */
+    {0x2332f000u, PROTO_AWS, 23}, /* 35.50.240.0/23 */
+    {0x2332f200u, PROTO_AWS, 24}, /* 35.50.242.0/24 */
+    {0x2332f300u, PROTO_UNKNOWN, 0},
+    {0x23340000u, PROTO_AWS, 15}, /* 35.52.0.0/15 */
+    {0x23360000u, PROTO_UNKNOWN, 0},
+    {0x23361000u, PROTO_AWS, 20}, /* 35.54.16.0/20 */
+    {0x23362000u, PROTO_AWS, 19}, /* 35.54.32.0/19 */
+    {0x23364000u, PROTO_AWS, 18}, /* 35.54.64.0/18 */
+    {0x23368000u, PROTO_UNKNOWN, 0},
+    {0x23370000u, PROTO_AWS, 17}, /* 35.55.0.0/17 */
+    {0x23378000u, PROTO_UNKNOWN, 0},
+    {0x23380000u, PROTO_AWS, 15}, /* 35.56.0.0/15 */
+    {0x233a0000u, PROTO_UNKNOWN, 0},
+    {0x233c0000u, PROTO_AWS, 15}, /* 35.60.0.0/15 */
+    {0x233e0000u, PROTO_UNKNOWN, 0},
+    {0x23474000u, PROTO_AWS, 20}, /* 35.71.64.0/20 */
+    {0x23475000u, PROTO_UNKNOWN, 0},
+    {0x23475a00u, PROTO_AWS, 23}, /* 35.71.90.0/23 */
+    {0x23475e00u, PROTO_AWS, 24}, /* 35.71.94.0/24 */
+    {0x23475f00u, PROTO_UNKNOWN, 0},
+    {0x23476000u, PROTO_AWS, 19}, /* 35.71.96.0/19 */
+    {0x23478000u, PROTO_AWS, 17}, /* 35.71.128.0/17 */
+    {0x23480000u, PROTO_AWS, 13}, /* 35.72.0.0/13 */
+    {0x23580000u, PROTO_AWS, 14}, /* 35.88.0.0/14 */
+    {0x235c0000u, PROTO_AWS, 16}, /* 35.92.0.0/16 */
+    {0x235d0000u, PROTO_AWS, 17}, /* 35.93.0.0/17 */
+    {0x235d8000u, PROTO_AWS, 19}, /* 35.93.128.0/19 */
+    {0x235da000u, PROTO_AWS, 21}, /* 35.93.160.0/21 */
+    {0x235da800u, PROTO_CLOUDFRONT, 22}, /* 35.93.168.0/22 */
+    {0x235dac00u, PROTO_CLOUDFRONT, 23}, /* 35.93.172.0/23 */
+    {0x235dae00u, PROTO_AWS, 23}, /* 35.93.174.0/23 */
+    {0x235db000u, PROTO_AWS, 20}, /* 35.93.176.0/20 */
+    {0x235dc000u, PROTO_AWS, 18}, /* 35.93.192.0/18 */
+    {0x235e0000u, PROTO_AWS, 15}, /* 35.94.0.0/15 */
+    {0x23600000u, PROTO_UNKNOWN, 0},
+    {0x23804000u, PROTO_AWS, 18}, /* 35.128.64.0/18 */
+    {0x2380c000u, PROTO_UNKNOWN, 0},
+    {0x23980000u, PROTO_AWS, 14}, /* 35.152.0.0/14 */
+    {0x239c0000u, PROTO_AWS, 15}, /* 35.156.0.0/15 */
+    {0x239e0000u, PROTO_AWS, 17}, /* 35.158.0.0/17 */
+    {0x239e8000u, PROTO_AWS, 21}, /* 35.158.128.0/21 */
+    {0x239e8800u, PROTO_CLOUDFRONT, 24}, /* 35.158.136.0/24 */
+    {0x239e8900u, PROTO_AWS, 24}, /* 35.158.137.0/24 */
+    {0x239e8a00u, PROTO_AWS, 23}, /* 35.158.138.0/23 */
+    {0x239e8c00u, PROTO_AWS, 22}, /* 35.158.140.0/22 */
+    {0x239e9000u, PROTO_AWS, 20}, /* 35.158.144.0/20 */
+    {0x239ea000u, PROTO_AWS, 19}, /* 35.158.160.0/19 */
+    {0x239ec000u, PROTO_AWS, 18}, /* 35.158.192.0/18 */
+    {0x239f0000u, PROTO_AWS, 16}, /* 35.159.0.0/16 */
+    {0x23a00000u, PROTO_AWS, 15}, /* 35.160.0.0/15 */
+    {0x23a20000u, PROTO_AWS, 19}, /* 35.162.0.0/19 */
+    {0x23a22000u, PROTO_AWS, 20}, /* 35.162.32.0/20 */
+    {0x23a23000u, PROTO_AWS, 21}, /* 35.162.48.0/21 */
+    {0x23a23800u, PROTO_AWS, 22}, /* 35.162.56.0/22 */
+    {0x23a23c00u, PROTO_AWS, 23}, /* 35.162.60.0/23 */
+    {0x23a23e00u, PROTO_AWS, 24}, /* 35.162.62.0/24 */
+    {0x23a23f00u, PROTO_AWS, 25}, /* 35.162.63.0/25 */
+    {0x23a23f80u, PROTO_AWS, 26}, /* 35.162.63.128/26 */
+    {0x23a23fc0u, PROTO_CLOUDFRONT, 26}, /* 35.162.63.192/26 */
+    {0x23a24000u, PROTO_AWS, 18}, /* 35.162.64.0/18 */
+    {0x23a28000u, PROTO_AWS, 17}, /* 35.162.128.0/17 */
+    {0x23a30000u, PROTO_AWS, 16}, /* 35.163.0.0/16 */
+    {0x23a40000u, PROTO_AWS, 15}, /* 35.164.0.0/15 */
+    {0x23a60000u, PROTO_AWS, 16}, /* 35.166.0.0/16 */
+    {0x23a70000u, PROTO_AWS, 17}, /* 35.167.0.0/17 */
+    {0x23a78000u, PROTO_AWS, 19}, /* 35.167.128.0/19 */
+    {0x23a7a000u, PROTO_AWS, 20}, /* 35.167.160.0/20 */
+    {0x23a7b000u, PROTO_AWS, 21}, /* 35.167.176.0/21 */
+    {0x23a7b800u, PROTO_AWS, 22}, /* 35.167.184.0/22 */
+    {0x23a7bc00u, PROTO_AWS, 23}, /* 35.167.188.0/23 */
+    {0x23a7be00u, PROTO_AWS, 24}, /* 35.167.190.0/24 */
+    {0x23a7bf00u, PROTO_AWS, 25}, /* 35.167.191.0/25 */
+    {0x23a7bf80u, PROTO_CLOUDFRONT, 26}, /* 35.167.191.128/26 */
+    {0x23a7bfc0u, PROTO_AWS, 26}, /* 35.167.191.192/26 */
+    {0x23a7c000u, PROTO_AWS, 18}, /* 35.167.192.0/18 */
+    {0x23a80000u, PROTO_AWS, 13}, /* 35.168.0.0/13 */
+    {0x23b80000u, PROTO_GOOGLE_CLOUD, 15}, /* 35.184.0.0/15 */
+    {0x23ba0000u, PROTO_GOOGLE_CLOUD, 16}, /* 35.186.0.0/16 */
+    {0x23bb0000u, PROTO_GOOGLE_CLOUD, 17}, /* 35.187.0.0/17 */
+    {0x23bb8000u, PROTO_GOOGLE, 20}, /* 35.187.128.0/20 */
+    {0x23bb9000u, PROTO_GOOGLE_CLOUD, 20}, /* 35.187.144.0/20 */
+    {0x23bba000u, PROTO_GOOGLE_CLOUD, 19}, /* 35.187.160.0/19 */
+    {0x23bbc000u, PROTO_GOOGLE_CLOUD, 18}, /* 35.187.192.0/18 */
+    {0x23bc0000u, PROTO_GOOGLE_CLOUD, 15}, /* 35.188.0.0/15 */
+    {0x23be0000u, PROTO_GOOGLE_CLOUD, 18}, /* 35.190.0.0/18 */
+    {0x23be4000u, PROTO_GOOGLE_CLOUD, 19}, /* 35.190.64.0/19 */
+    {0x23be6000u, PROTO_GOOGLE, 20}, /* 35.190.96.0/20 */
+    {0x23be7000u, PROTO_GOOGLE_CLOUD, 20}, /* 35.190.112.0/20 */
+    {0x23be8000u, PROTO_GOOGLE_CLOUD, 18}, /* 35.190.128.0/18 */
+    {0x23bec000u, PROTO_GOOGLE_CLOUD, 19}, /* 35.190.192.0/19 */
+    {0x23bee000u, PROTO_GOOGLE_CLOUD, 20}, /* 35.190.224.0/20 */
+    {0x23bef000u, PROTO_GOOGLE, 20}, /* 35.190.240.0/20 */
+    {0x23bf0000u, PROTO_GOOGLE, 16}, /* 35.191.0.0/16 */
+    {0x23c00000u, PROTO_GOOGLE_CLOUD, 14}, /* 35.192.0.0/14 */
+    {0x23c40000u, PROTO_GOOGLE_CLOUD, 15}, /* 35.196.0.0/15 */
+    {0x23c60000u, PROTO_GOOGLE_CLOUD, 16}, /* 35.198.0.0/16 */
+    {0x23c70000u, PROTO_GOOGLE_CLOUD, 17}, /* 35.199.0.0/17 */
+    {0x23c78000u, PROTO_GOOGLE, 20}, /* 35.199.128.0/20 */
+    {0x23c79000u, PROTO_GOOGLE_CLOUD, 20}, /* 35.199.144.0/20 */
+    {0x23c7a000u, PROTO_GOOGLE_CLOUD, 19}, /* 35.199.160.0/19 */
+    {0x23c7c000u, PROTO_UNKNOWN, 0},
+    {0x23c80000u, PROTO_GOOGLE_CLOUD, 16}, /* 35.200.0.0/16 */
+    {0x23c90000u, PROTO_GOOGLE_CLOUD, 19}, /* 35.201.0.0/19 */
+    {0x23c92000u, PROTO_GOOGLE, 21}, /* 35.201.32.0/21 */
+    {0x23c92800u, PROTO_GOOGLE, 24}, /* 35.201.40.0/24 */
+    {0x23c92900u, PROTO_GOOGLE_CLOUD, 24}, /* 35.201.41.0/24 */
+    {0x23c92a00u, PROTO_GOOGLE, 23}, /* 35.201.42.0/23 */
+    {0x23c92c00u, PROTO_GOOGLE, 22}, /* 35.201.44.0/22 */
+    {0x23c93000u, PROTO_GOOGLE, 20}, /* 35.201.48.0/20 */
+    {0x23c94000u, PROTO_GOOGLE_CLOUD, 18}, /* 35.201.64.0/18 */
+    {0x23c98000u, PROTO_GOOGLE_CLOUD, 17}, /* 35.201.128.0/17 */
+    {0x23ca0000u, PROTO_GOOGLE_CLOUD, 16}, /* 35.202.0.0/16 */
+    {0x23cb0000u, PROTO_GOOGLE_CLOUD, 17}, /* 35.203.0.0/17 */
+    {0x23cb8000u, PROTO_GOOGLE_CLOUD, 18}, /* 35.203.128.0/18 */
+    {0x23cbc000u, PROTO_GOOGLE, 20}, /* 35.203.192.0/20 */
+    {0x23cbd000u, PROTO_GOOGLE, 23}, /* 35.203.208.0/23 */
+    {0x23cbd200u, PROTO_GOOGLE_CLOUD, 23}, /* 35.203.210.0/23 */
+    {0x23cbd400u, PROTO_GOOGLE_CLOUD, 22}, /* 35.203.212.0/22 */
+    {0x23cbdc00u, PROTO_GOOGLE, 22}, /* 35.203.220.0/22 */
+    {0x23cbe000u, PROTO_GOOGLE, 21}, /* 35.203.224.0/21 */
+    {0x23cbe800u, PROTO_GOOGLE_CLOUD, 21}, /* 35.203.232.0/21 */
+    {0x23cbf000u, PROTO_GOOGLE, 20}, /* 35.203.240.0/20 */
+    {0x23cc0000u, PROTO_GOOGLE_CLOUD, 15}, /* 35.204.0.0/15 */
+    {0x23ce0000u, PROTO_GOOGLE, 21}, /* 35.206.0.0/21 */
+    {0x23ce0800u, PROTO_GOOGLE, 23}, /* 35.206.8.0/23 */
+    {0x23ce0a00u, PROTO_GOOGLE_CLOUD, 23}, /* 35.206.10.0/23 */
+    {0x23ce0c00u, PROTO_GOOGLE, 22}, /* 35.206.12.0/22 */
+    {0x23ce1000u, PROTO_GOOGLE, 20}, /* 35.206.16.0/20 */
+    {0x23ce2000u, PROTO_GOOGLE_CLOUD, 19}, /* 35.206.32.0/19 */
+    {0x23ce4000u, PROTO_GOOGLE_CLOUD, 18}, /* 35.206.64.0/18 */
+    {0x23ce8000u, PROTO_GOOGLE_CLOUD, 17}, /* 35.206.128.0/17 */
+    {0x23cf0000u, PROTO_GOOGLE_CLOUD, 16}, /* 35.207.0.0/16 */
+    {0x23d00000u, PROTO_GOOGLE_CLOUD, 13}, /* 35.208.0.0/13 */
+    {0x23d80000u, PROTO_GOOGLE_CLOUD, 15}, /* 35.216.0.0/15 */
+    {0x23da0000u, PROTO_GOOGLE, 16}, /* 35.218.0.0/16 */
+    {0x23db0000u, PROTO_GOOGLE_CLOUD, 17}, /* 35.219.0.0/17 */
+    {0x23db8000u, PROTO_GOOGLE_CLOUD, 18}, /* 35.219.128.0/18 */
+    {0x23dbc000u, PROTO_GOOGLE, 19}, /* 35.219.192.0/19 */
+    {0x23dbe000u, PROTO_GOOGLE_CLOUD, 19}, /* 35.219.224.0/19 */
+    {0x23dc0000u, PROTO_GOOGLE_CLOUD, 20}, /* 35.220.0.0/20 */
+    {0x23dc1000u, PROTO_GOOGLE_CLOUD, 21}, /* 35.220.16.0/21 */
+    {0x23dc1800u, PROTO_GOOGLE_CLOUD, 22}, /* 35.220.24.0/22 */
+    {0x23dc1c00u, PROTO_GOOGLE, 23}, /* 35.220.28.0/23 */
+    {0x23dc1e00u, PROTO_GOOGLE, 24}, /* 35.220.30.0/24 */
+    {0x23dc1f00u, PROTO_GOOGLE_CLOUD, 24}, /* 35.220.31.0/24 */
+    {0x23dc2000u, PROTO_GOOGLE_CLOUD, 19}, /* 35.220.32.0/19 */
+    {0x23dc4000u, PROTO_GOOGLE_CLOUD, 18}, /* 35.220.64.0/18 */
+    {0x23dc8000u, PROTO_GOOGLE_CLOUD, 17}, /* 35.220.128.0/17 */
+    {0x23dd0000u, PROTO_GOOGLE_CLOUD, 16}, /* 35.221.0.0/16 */
+    {0x23de0000u, PROTO_GOOGLE_CLOUD, 15}, /* 35.222.0.0/15 */
+    {0x23e00000u, PROTO_GOOGLE_CLOUD, 14}, /* 35.224.0.0/14 */
+    {0x23e40000u, PROTO_GOOGLE_CLOUD, 16}, /* 35.228.0.0/16 */
+    {0x23e50000u, PROTO_GOOGLE, 20}, /* 35.229.0.0/20 */
+    {0x23e51000u, PROTO_GOOGLE_CLOUD, 20}, /* 35.229.16.0/20 */
+    {0x23e52000u, PROTO_GOOGLE_CLOUD, 19}, /* 35.229.32.0/19 */
+    {0x23e54000u, PROTO_GOOGLE_CLOUD, 18}, /* 35.229.64.0/18 */
+    {0x23e58000u, PROTO_GOOGLE_CLOUD, 17}, /* 35.229.128.0/17 */
+    {0x23e68000u, PROTO_GOOGLE_CLOUD, 18}, /* 35.230.128.0/18 */
+    {0x23e6c000u, PROTO_GOOGLE, 19}, /* 35.230.192.0/19 */
+    {0x23e6e000u, PROTO_GOOGLE, 20}, /* 35.230.224.0/20 */
+    {0x23e6f000u, PROTO_GOOGLE_CLOUD, 20}, /* 35.230.240.0/20 */
+    {0x23e70000u, PROTO_GOOGLE_CLOUD, 16}, /* 35.231.0.0/16 */
+    {0x23e80000u, PROTO_GOOGLE_CLOUD, 15}, /* 35.232.0.0/15 */
+    {0x23ea0000u, PROTO_GOOGLE_CLOUD, 16}, /* 35.234.0.0/16 */
+    {0x23eb0000u, PROTO_GOOGLE_CLOUD, 17}, /* 35.235.0.0/17 */
+    {0x23eb8000u, PROTO_GOOGLE, 19}, /* 35.235.128.0/19 */
+    {0x23eba000u, PROTO_GOOGLE, 21}, /* 35.235.160.0/21 */
+    {0x23eba800u, PROTO_GOOGLE, 22}, /* 35.235.168.0/22 */
+    {0x23ebac00u, PROTO_GOOGLE_CLOUD, 22}, /* 35.235.172.0/22 */
+    {0x23ebb000u, PROTO_GOOGLE, 20}, /* 35.235.176.0/20 */
+    {0x23ebd000u, PROTO_GOOGLE, 21}, /* 35.235.208.0/21 */
+    {0x23ebd800u, PROTO_GOOGLE_CLOUD, 21}, /* 35.235.216.0/21 */
+    {0x23ebe000u, PROTO_GOOGLE, 19}, /* 35.235.224.0/19 */
+    {0x23ec0000u, PROTO_GOOGLE_CLOUD, 14}, /* 35.236.0.0/14 */
+    {0x23f00000u, PROTO_GOOGLE_CLOUD, 15}, /* 35.240.0.0/15 */
+    {0x23f20000u, PROTO_GOOGLE_CLOUD, 20}, /* 35.242.0.0/20 */
+    {0x23f21000u, PROTO_GOOGLE_CLOUD, 21}, /* 35.242.16.0/21 */
+    {0x23f21800u, PROTO_GOOGLE_CLOUD, 22}, /* 35.242.24.0/22 */
+    {0x23f21c00u, PROTO_GOOGLE, 23}, /* 35.242.28.0/23 */
+    {0x23f21e00u, PROTO_GOOGLE, 24}, /* 35.242.30.0/24 */
+    {0x23f21f00u, PROTO_GOOGLE_CLOUD, 24}, /* 35.242.31.0/24 */
+    {0x23f22000u, PROTO_GOOGLE_CLOUD, 19}, /* 35.242.32.0/19 */
+    {0x23f24000u, PROTO_GOOGLE_CLOUD, 18}, /* 35.242.64.0/18 */
+    {0x23f28000u, PROTO_GOOGLE_CLOUD, 17}, /* 35.242.128.0/17 */
+    {0x23f30000u, PROTO_GOOGLE_CLOUD, 20}, /* 35.243.0.0/20 */
+    {0x23f31000u, PROTO_GOOGLE, 20}, /* 35.243.16.0/20 */
+    {0x23f32000u, PROTO_GOOGLE_CLOUD, 20}, /* 35.243.32.0/20 */
+    {0x23f33000u, PROTO_GOOGLE, 21}, /* 35.243.48.0/21 */
+    {0x23f33800u, PROTO_GOOGLE_CLOUD, 21}, /* 35.243.56.0/21 */
+    {0x23f34000u, PROTO_GOOGLE_CLOUD, 18}, /* 35.243.64.0/18 */
+    {0x23f38000u, PROTO_GOOGLE_CLOUD, 17}, /* 35.243.128.0/17 */
+    {0x23f40000u, PROTO_GOOGLE_CLOUD, 14}, /* 35.244.0.0/14 */
+    {0x23f80000u, PROTO_UNKNOWN, 0},
+    {0x23fc0000u, PROTO_GOOGLE_CLOUD, 14}, /* 35.252.0.0/14 */
+    {0x24000000u, PROTO_UNKNOWN, 0},
+    {0x2467e800u, PROTO_CLOUDFRONT, 25}, /* 36.103.232.0/25 */
+    {0x2467e880u, PROTO_CLOUDFRONT, 26}, /* 36.103.232.128/26 */
+    {0x2467e8c0u, PROTO_UNKNOWN, 0},
     {0x254db800u, PROTO_NETFLIX, 21}, /* 37.77.184.0/21 */
     {0x254dba00u, PROTO_NETFLIX, 23}, /* 37.77.186.0/23 */
     {0x254dbe00u, PROTO_NETFLIX, 21}, /* 37.77.184.0/21 */
@@ -819,14 +2717,418 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x258b5000u, PROTO_APPLE, 21}, /* 37.139.80.0/21 */
     {0x258b5700u, PROTO_APPLE, 24}, /* 37.139.87.0/24 */
     {0x258b5800u, PROTO_UNKNOWN, 0},
+    {0x25cb9d00u, PROTO_AWS, 24}, /* 37.203.157.0/24 */
+    {0x25cb9e00u, PROTO_UNKNOWN, 0},
     {0x26487e00u, PROTO_NETFLIX, 24}, /* 38.72.126.0/24 */
     {0x26487f00u, PROTO_UNKNOWN, 0},
-    {0x28400000u, PROTO_AZURE, 18}, /* 40.64.0.0/18 */
-    {0x28404000u, PROTO_UNKNOWN, 0},
-    {0x2bfac000u, PROTO_AMAZON, 24}, /* 43.250.192.0/24 */
+    {0x28200000u, PROTO_AWS, 16}, /* 40.32.0.0/16 */
+    {0x28210000u, PROTO_UNKNOWN, 0},
+    {0x28230000u, PROTO_AWS, 16}, /* 40.35.0.0/16 */
+    {0x28240000u, PROTO_UNKNOWN, 0},
+    {0x28260000u, PROTO_AWS, 15}, /* 40.38.0.0/15 */
+    {0x28280000u, PROTO_UNKNOWN, 0},
+    {0x28400000u, PROTO_AZURE, 15}, /* 40.64.0.0/15 */
+    {0x28420000u, PROTO_UNKNOWN, 0},
+    {0x28422000u, PROTO_AZURE, 19}, /* 40.66.32.0/19 */
+    {0x28424000u, PROTO_UNKNOWN, 0},
+    {0x28427800u, PROTO_AZURE, 21}, /* 40.66.120.0/21 */
+    {0x28428000u, PROTO_UNKNOWN, 0},
+    {0x28430000u, PROTO_AZURE, 19}, /* 40.67.0.0/19 */
+    {0x28432000u, PROTO_UNKNOWN, 0},
+    {0x28432800u, PROTO_AZURE, 21}, /* 40.67.40.0/21 */
+    {0x28433000u, PROTO_AZURE, 20}, /* 40.67.48.0/20 */
+    {0x28434000u, PROTO_AZURE, 19}, /* 40.67.64.0/19 */
+    {0x28436000u, PROTO_AZURE, 20}, /* 40.67.96.0/20 */
+    {0x28437000u, PROTO_UNKNOWN, 0},
+    {0x28437800u, PROTO_AZURE, 21}, /* 40.67.120.0/21 */
+    {0x28438000u, PROTO_AZURE, 17}, /* 40.67.128.0/17 */
+    {0x28440000u, PROTO_AZURE, 16}, /* 40.68.0.0/16 */
+    {0x28450000u, PROTO_AZURE, 17}, /* 40.69.0.0/17 */
+    {0x28458000u, PROTO_AZURE, 18}, /* 40.69.128.0/18 */
+    {0x2845c000u, PROTO_AZURE, 19}, /* 40.69.192.0/19 */
+    {0x2845e000u, PROTO_UNKNOWN, 0},
+    {0x28460000u, PROTO_AZURE, 15}, /* 40.70.0.0/15 */
+    {0x28480000u, PROTO_UNKNOWN, 0},
+    {0x284a0000u, PROTO_AZURE, 15}, /* 40.74.0.0/15 */
+    {0x284c0000u, PROTO_AZURE, 16}, /* 40.76.0.0/16 */
+    {0x284d0000u, PROTO_AZURE, 17}, /* 40.77.0.0/17 */
+    {0x284d8000u, PROTO_AZURE, 19}, /* 40.77.128.0/19 */
+    {0x284da000u, PROTO_AZURE, 22}, /* 40.77.160.0/22 */
+    {0x284da400u, PROTO_AZURE, 23}, /* 40.77.164.0/23 */
+    {0x284da600u, PROTO_AZURE, 25}, /* 40.77.166.0/25 */
+    {0x284da680u, PROTO_AZURE, 28}, /* 40.77.166.128/28 */
+    {0x284da690u, PROTO_UNKNOWN, 0},
+    {0x284da6a0u, PROTO_AZURE, 27}, /* 40.77.166.160/27 */
+    {0x284da6c0u, PROTO_AZURE, 26}, /* 40.77.166.192/26 */
+    {0x284da700u, PROTO_AZURE, 24}, /* 40.77.167.0/24 */
+    {0x284da800u, PROTO_AZURE, 22}, /* 40.77.168.0/22 */
+    {0x284dac00u, PROTO_AZURE, 23}, /* 40.77.172.0/23 */
+    {0x284dae00u, PROTO_AZURE, 24}, /* 40.77.174.0/24 */
+    {0x284daf00u, PROTO_AZURE, 25}, /* 40.77.175.0/25 */
+    {0x284daf80u, PROTO_AZURE, 26}, /* 40.77.175.128/26 */
+    {0x284dafc0u, PROTO_AZURE, 27}, /* 40.77.175.192/27 */
+    {0x284dafe0u, PROTO_UNKNOWN, 0},
+    {0x284daff0u, PROTO_AZURE, 28}, /* 40.77.175.240/28 */
+    {0x284db000u, PROTO_AZURE, 20}, /* 40.77.176.0/20 */
+    {0x284dc000u, PROTO_AZURE, 21}, /* 40.77.192.0/21 */
+    {0x284dc800u, PROTO_AZURE, 23}, /* 40.77.200.0/23 */
+    {0x284dca00u, PROTO_AZURE, 24}, /* 40.77.202.0/24 */
+    {0x284dcb00u, PROTO_UNKNOWN, 0},
+    {0x284de000u, PROTO_AZURE, 20}, /* 40.77.224.0/20 */
+    {0x284df000u, PROTO_AZURE, 22}, /* 40.77.240.0/22 */
+    {0x284df400u, PROTO_AZURE, 25}, /* 40.77.244.0/25 */
+    {0x284df480u, PROTO_UNKNOWN, 0},
+    {0x284df500u, PROTO_AZURE, 24}, /* 40.77.245.0/24 */
+    {0x284df600u, PROTO_AZURE, 23}, /* 40.77.246.0/23 */
+    {0x284df800u, PROTO_AZURE, 21}, /* 40.77.248.0/21 */
+    {0x284e0000u, PROTO_AZURE, 17}, /* 40.78.0.0/17 */
+    {0x284e8000u, PROTO_AZURE, 18}, /* 40.78.128.0/18 */
+    {0x284ec000u, PROTO_AZURE, 20}, /* 40.78.192.0/20 */
+    {0x284ed000u, PROTO_AZURE, 27}, /* 40.78.208.0/27 */
+    {0x284ed020u, PROTO_AZURE, 30}, /* 40.78.208.32/30 */
+    {0x284ed024u, PROTO_UNKNOWN, 0},
+    {0x284ed030u, PROTO_AZURE, 28}, /* 40.78.208.48/28 */
+    {0x284ed040u, PROTO_AZURE, 27}, /* 40.78.208.64/27 */
+    {0x284ed060u, PROTO_UNKNOWN, 0},
+    {0x284ed080u, PROTO_AZURE, 26}, /* 40.78.208.128/26 */
+    {0x284ed0c0u, PROTO_UNKNOWN, 0},
+    {0x284ed100u, PROTO_AZURE, 24}, /* 40.78.209.0/24 */
+    {0x284ed200u, PROTO_AZURE, 23}, /* 40.78.210.0/23 */
+    {0x284ed400u, PROTO_AZURE, 22}, /* 40.78.212.0/22 */
+    {0x284ed800u, PROTO_AZURE, 21}, /* 40.78.216.0/21 */
+    {0x284ee000u, PROTO_AZURE, 19}, /* 40.78.224.0/19 */
+    {0x284f0000u, PROTO_AZURE, 16}, /* 40.79.0.0/16 */
+    {0x28500000u, PROTO_AZURE, 18}, /* 40.80.0.0/18 */
+    {0x28504000u, PROTO_AZURE, 19}, /* 40.80.64.0/19 */
+    {0x28506000u, PROTO_AZURE, 20}, /* 40.80.96.0/20 */
+    {0x28507000u, PROTO_UNKNOWN, 0},
+    {0x28509000u, PROTO_AZURE, 20}, /* 40.80.144.0/20 */
+    {0x2850a000u, PROTO_AZURE, 24}, /* 40.80.160.0/24 */
+    {0x2850a100u, PROTO_AZURE, 28}, /* 40.80.161.0/28 */
+    {0x2850a110u, PROTO_UNKNOWN, 0},
+    {0x2850a800u, PROTO_AZURE, 21}, /* 40.80.168.0/21 */
+    {0x2850b000u, PROTO_AZURE, 20}, /* 40.80.176.0/20 */
+    {0x2850c000u, PROTO_AZURE, 18}, /* 40.80.192.0/18 */
+    {0x28510000u, PROTO_AZURE, 16}, /* 40.81.0.0/16 */
+    {0x28520000u, PROTO_AZURE, 19}, /* 40.82.0.0/19 */
+    {0x28522000u, PROTO_AZURE, 20}, /* 40.82.32.0/20 */
+    {0x28523000u, PROTO_AZURE, 22}, /* 40.82.48.0/22 */
+    {0x28523400u, PROTO_UNKNOWN, 0},
+    {0x28523c00u, PROTO_AZURE, 22}, /* 40.82.60.0/22 */
+    {0x28524000u, PROTO_AZURE, 21}, /* 40.82.64.0/21 */
+    {0x28524800u, PROTO_UNKNOWN, 0},
+    {0x28525000u, PROTO_AZURE, 22}, /* 40.82.80.0/22 */
+    {0x28525400u, PROTO_UNKNOWN, 0},
+    {0x28525c00u, PROTO_AZURE, 22}, /* 40.82.92.0/22 */
+    {0x28526400u, PROTO_UNKNOWN, 0},
+    {0x28528000u, PROTO_AZURE, 17}, /* 40.82.128.0/17 */
+    {0x28530000u, PROTO_AZURE, 16}, /* 40.83.0.0/16 */
+    {0x28540000u, PROTO_AZURE, 15}, /* 40.84.0.0/15 */
+    {0x28560000u, PROTO_AZURE, 16}, /* 40.86.0.0/16 */
+    {0x28570000u, PROTO_AZURE, 17}, /* 40.87.0.0/17 */
+    {0x28578000u, PROTO_AZURE, 18}, /* 40.87.128.0/18 */
+    {0x2857c000u, PROTO_AZURE, 19}, /* 40.87.192.0/19 */
+    {0x2857e000u, PROTO_AZURE, 20}, /* 40.87.224.0/20 */
+    {0x2857f000u, PROTO_UNKNOWN, 0},
+    {0x28580000u, PROTO_AZURE, 15}, /* 40.88.0.0/15 */
+    {0x285a0000u, PROTO_UNKNOWN, 0},
+    {0x285a0800u, PROTO_AZURE, 21}, /* 40.90.8.0/21 */
+    {0x285a1000u, PROTO_AZURE, 20}, /* 40.90.16.0/20 */
+    {0x285a2000u, PROTO_UNKNOWN, 0},
+    {0x285a8000u, PROTO_AZURE, 17}, /* 40.90.128.0/17 */
+    {0x285b0000u, PROTO_AZURE, 16}, /* 40.91.0.0/16 */
+    {0x285c0000u, PROTO_UNKNOWN, 0},
+    {0x285d0000u, PROTO_AZURE, 16}, /* 40.93.0.0/16 */
+    {0x285e0000u, PROTO_UNKNOWN, 0},
+    {0x28602e00u, PROTO_AZURE, 24}, /* 40.96.46.0/24 */
+    {0x28602f00u, PROTO_UNKNOWN, 0},
+    {0x28603200u, PROTO_AZURE, 24}, /* 40.96.50.0/24 */
+    {0x28603300u, PROTO_UNKNOWN, 0},
+    {0x28603400u, PROTO_AZURE, 24}, /* 40.96.52.0/24 */
+    {0x28603500u, PROTO_UNKNOWN, 0},
+    {0x28603700u, PROTO_AZURE, 24}, /* 40.96.55.0/24 */
+    {0x28603800u, PROTO_UNKNOWN, 0},
+    {0x28603d00u, PROTO_AZURE, 24}, /* 40.96.61.0/24 */
+    {0x28603e00u, PROTO_UNKNOWN, 0},
+    {0x28603f00u, PROTO_AZURE, 24}, /* 40.96.63.0/24 */
+    {0x28604000u, PROTO_UNKNOWN, 0},
+    {0x2860ff00u, PROTO_AZURE, 24}, /* 40.96.255.0/24 */
+    {0x28610000u, PROTO_UNKNOWN, 0},
+    {0x28610400u, PROTO_AZURE, 22}, /* 40.97.4.0/22 */
+    {0x28610800u, PROTO_UNKNOWN, 0},
+    {0x28610c00u, PROTO_AZURE, 22}, /* 40.97.12.0/22 */
+    {0x28611000u, PROTO_UNKNOWN, 0},
+    {0x28611400u, PROTO_AZURE, 22}, /* 40.97.20.0/22 */
+    {0x28611800u, PROTO_UNKNOWN, 0},
+    {0x28612000u, PROTO_AZURE, 22}, /* 40.97.32.0/22 */
+    {0x28612400u, PROTO_UNKNOWN, 0},
+    {0x28612c00u, PROTO_AZURE, 22}, /* 40.97.44.0/22 */
+    {0x28613000u, PROTO_UNKNOWN, 0},
+    {0x28613400u, PROTO_AZURE, 22}, /* 40.97.52.0/22 */
+    {0x28613800u, PROTO_UNKNOWN, 0},
+    {0x28613c00u, PROTO_AZURE, 22}, /* 40.97.60.0/22 */
+    {0x28614000u, PROTO_UNKNOWN, 0},
+    {0x28614800u, PROTO_AZURE, 24}, /* 40.97.72.0/24 */
+    {0x28614900u, PROTO_AZURE, 25}, /* 40.97.73.0/25 */
+    {0x28614980u, PROTO_AZURE, 26}, /* 40.97.73.128/26 */
+    {0x286149c0u, PROTO_UNKNOWN, 0},
+    {0x28620000u, PROTO_AZURE, 22}, /* 40.98.0.0/22 */
+    {0x28620400u, PROTO_AZURE, 26}, /* 40.98.4.0/26 */
+    {0x28620440u, PROTO_UNKNOWN, 0},
+    {0x28620500u, PROTO_AZURE, 24}, /* 40.98.5.0/24 */
+    {0x28620600u, PROTO_AZURE, 23}, /* 40.98.6.0/23 */
+    {0x28620800u, PROTO_AZURE, 22}, /* 40.98.8.0/22 */
+    {0x28620c00u, PROTO_AZURE, 24}, /* 40.98.12.0/24 */
+    {0x28620d00u, PROTO_UNKNOWN, 0},
+    {0x28621000u, PROTO_AZURE, 24}, /* 40.98.16.0/24 */
+    {0x28621100u, PROTO_UNKNOWN, 0},
+    {0x28621200u, PROTO_AZURE, 23}, /* 40.98.18.0/23 */
+    {0x28621400u, PROTO_AZURE, 22}, /* 40.98.20.0/22 */
+    {0x28621800u, PROTO_AZURE, 21}, /* 40.98.24.0/21 */
+    {0x28622000u, PROTO_UNKNOWN, 0},
+    {0x28640400u, PROTO_AZURE, 22}, /* 40.100.4.0/22 */
+    {0x28640800u, PROTO_UNKNOWN, 0},
+    {0x28641800u, PROTO_AZURE, 22}, /* 40.100.24.0/22 */
+    {0x28641c00u, PROTO_UNKNOWN, 0},
+    {0x28642400u, PROTO_AZURE, 22}, /* 40.100.36.0/22 */
+    {0x28642800u, PROTO_UNKNOWN, 0},
+    {0x28642c80u, PROTO_AZURE, 26}, /* 40.100.44.128/26 */
+    {0x28642cc0u, PROTO_UNKNOWN, 0},
+    {0x28642d40u, PROTO_AZURE, 26}, /* 40.100.45.64/26 */
+    {0x28642d80u, PROTO_UNKNOWN, 0},
+    {0x28643a00u, PROTO_AZURE, 23}, /* 40.100.58.0/23 */
+    {0x28643c00u, PROTO_AZURE, 22}, /* 40.100.60.0/22 */
+    {0x28644000u, PROTO_AZURE, 21}, /* 40.100.64.0/21 */
+    {0x28644800u, PROTO_AZURE, 24}, /* 40.100.72.0/24 */
+    {0x28644900u, PROTO_AZURE, 25}, /* 40.100.73.0/25 */
+    {0x28644980u, PROTO_AZURE, 26}, /* 40.100.73.128/26 */
+    {0x286449c0u, PROTO_UNKNOWN, 0},
+    {0x28645000u, PROTO_AZURE, 24}, /* 40.100.80.0/24 */
+    {0x28645100u, PROTO_UNKNOWN, 0},
+    {0x28650000u, PROTO_AZURE, 22}, /* 40.101.0.0/22 */
+    {0x28650400u, PROTO_UNKNOWN, 0},
+    {0x28651400u, PROTO_AZURE, 22}, /* 40.101.20.0/22 */
+    {0x28651c00u, PROTO_UNKNOWN, 0},
+    {0x28653800u, PROTO_AZURE, 22}, /* 40.101.56.0/22 */
+    {0x28653c00u, PROTO_UNKNOWN, 0},
+    {0x28657000u, PROTO_AZURE, 22}, /* 40.101.112.0/22 */
+    {0x28657400u, PROTO_AZURE, 25}, /* 40.101.116.0/25 */
+    {0x28657480u, PROTO_AZURE, 26}, /* 40.101.116.128/26 */
+    {0x286574c0u, PROTO_UNKNOWN, 0},
+    {0x28661000u, PROTO_AZURE, 22}, /* 40.102.16.0/22 */
+    {0x28661400u, PROTO_UNKNOWN, 0},
+    {0x28661800u, PROTO_AZURE, 25}, /* 40.102.24.0/25 */
+    {0x28661880u, PROTO_AZURE, 26}, /* 40.102.24.128/26 */
+    {0x286618c0u, PROTO_UNKNOWN, 0},
+    {0x286b0100u, PROTO_AZURE, 24}, /* 40.107.1.0/24 */
+    {0x286b0200u, PROTO_AZURE, 23}, /* 40.107.2.0/23 */
+    {0x286b0600u, PROTO_UNKNOWN, 0},
+    {0x286b0a00u, PROTO_AZURE, 23}, /* 40.107.10.0/23 */
+    {0x286b0c00u, PROTO_AZURE, 24}, /* 40.107.12.0/24 */
+    {0x286b0d00u, PROTO_UNKNOWN, 0},
+    {0x286b2600u, PROTO_AZURE, 23}, /* 40.107.38.0/23 */
+    {0x286b2800u, PROTO_AZURE, 21}, /* 40.107.40.0/21 */
+    {0x286b3000u, PROTO_AZURE, 20}, /* 40.107.48.0/20 */
+    {0x286b4000u, PROTO_UNKNOWN, 0},
+    {0x286b4200u, PROTO_AZURE, 23}, /* 40.107.66.0/23 */
+    {0x286b4600u, PROTO_UNKNOWN, 0},
+    {0x286b4800u, PROTO_AZURE, 24}, /* 40.107.72.0/24 */
+    {0x286b4900u, PROTO_UNKNOWN, 0},
+    {0x286b4a00u, PROTO_AZURE, 23}, /* 40.107.74.0/23 */
+    {0x286b4c00u, PROTO_AZURE, 24}, /* 40.107.76.0/24 */
+    {0x286b4d00u, PROTO_UNKNOWN, 0},
+    {0x286b8200u, PROTO_AZURE, 24}, /* 40.107.130.0/24 */
+    {0x286b8300u, PROTO_UNKNOWN, 0},
+    {0x286b8400u, PROTO_AZURE, 24}, /* 40.107.132.0/24 */
+    {0x286b8500u, PROTO_UNKNOWN, 0},
+    {0x286b8900u, PROTO_AZURE, 24}, /* 40.107.137.0/24 */
+    {0x286b8a00u, PROTO_AZURE, 23}, /* 40.107.138.0/23 */
+    {0x286b8e00u, PROTO_UNKNOWN, 0},
+    {0x286b9000u, PROTO_AZURE, 20}, /* 40.107.144.0/20 */
+    {0x286bb000u, PROTO_AZURE, 22}, /* 40.107.176.0/22 */
+    {0x286bb400u, PROTO_AZURE, 24}, /* 40.107.180.0/24 */
+    {0x286bb500u, PROTO_UNKNOWN, 0},
+    {0x286bc000u, PROTO_AZURE, 22}, /* 40.107.192.0/22 */
+    {0x286bc400u, PROTO_UNKNOWN, 0},
+    {0x286bc500u, PROTO_AZURE, 24}, /* 40.107.197.0/24 */
+    {0x286bc600u, PROTO_AZURE, 23}, /* 40.107.198.0/23 */
+    {0x286bc800u, PROTO_AZURE, 21}, /* 40.107.200.0/21 */
+    {0x286bd000u, PROTO_AZURE, 23}, /* 40.107.208.0/23 */
+    {0x286bd200u, PROTO_AZURE, 24}, /* 40.107.210.0/24 */
+    {0x286bd300u, PROTO_UNKNOWN, 0},
+    {0x28700000u, PROTO_AZURE, 19}, /* 40.112.0.0/19 */
+    {0x28702000u, PROTO_UNKNOWN, 0},
+    {0x28702400u, PROTO_AZURE, 23}, /* 40.112.36.0/23 */
+    {0x28702600u, PROTO_UNKNOWN, 0},
+    {0x287026c0u, PROTO_AZURE, 26}, /* 40.112.38.192/26 */
+    {0x28702700u, PROTO_UNKNOWN, 0},
+    {0x28703000u, PROTO_AZURE, 20}, /* 40.112.48.0/20 */
+    {0x28704000u, PROTO_AZURE, 18}, /* 40.112.64.0/18 */
+    {0x28708000u, PROTO_AZURE, 17}, /* 40.112.128.0/17 */
+    {0x28710000u, PROTO_AZURE, 16}, /* 40.113.0.0/16 */
+    {0x28720000u, PROTO_AZURE, 15}, /* 40.114.0.0/15 */
+    {0x28740000u, PROTO_AZURE, 14}, /* 40.116.0.0/14 */
+    {0x28780000u, PROTO_AZURE, 17}, /* 40.120.0.0/17 */
+    {0x28788000u, PROTO_AZURE, 18}, /* 40.120.128.0/18 */
+    {0x2878c000u, PROTO_UNKNOWN, 0},
+    {0x28790000u, PROTO_AZURE, 16}, /* 40.121.0.0/16 */
+    {0x287a0000u, PROTO_AZURE, 15}, /* 40.122.0.0/15 */
+    {0x287c0000u, PROTO_AZURE, 16}, /* 40.124.0.0/16 */
+    {0x287d0000u, PROTO_AZURE, 17}, /* 40.125.0.0/17 */
+    {0x287d8000u, PROTO_UNKNOWN, 0},
+    {0x287e0000u, PROTO_AZURE, 18}, /* 40.126.0.0/18 */
+    {0x287e4000u, PROTO_UNKNOWN, 0},
+    {0x287e8000u, PROTO_AZURE, 17}, /* 40.126.128.0/17 */
+    {0x287f0000u, PROTO_AZURE, 19}, /* 40.127.0.0/19 */
+    {0x287f2000u, PROTO_AZURE, 24}, /* 40.127.32.0/24 */
+    {0x287f2100u, PROTO_UNKNOWN, 0},
+    {0x287f4000u, PROTO_AZURE, 19}, /* 40.127.64.0/19 */
+    {0x287f6000u, PROTO_AZURE, 20}, /* 40.127.96.0/20 */
+    {0x287f7000u, PROTO_UNKNOWN, 0},
+    {0x287f8000u, PROTO_AZURE, 17}, /* 40.127.128.0/17 */
+    {0x28800000u, PROTO_UNKNOWN, 0},
+    {0x288ad800u, PROTO_AWS, 22}, /* 40.138.216.0/22 */
+    {0x288adc00u, PROTO_UNKNOWN, 0},
+    {0x288f4000u, PROTO_AWS, 21}, /* 40.143.64.0/21 */
+    {0x288f4800u, PROTO_UNKNOWN, 0},
+    {0x28a30000u, PROTO_AWS, 22}, /* 40.163.0.0/22 */
+    {0x28a30400u, PROTO_UNKNOWN, 0},
+    {0x28a40000u, PROTO_AWS, 14}, /* 40.164.0.0/14 */
+    {0x28a80000u, PROTO_UNKNOWN, 0},
+    {0x28a8e000u, PROTO_AWS, 21}, /* 40.168.224.0/21 */
+    {0x28a8e800u, PROTO_UNKNOWN, 0},
+    {0x28a8ff00u, PROTO_AWS, 24}, /* 40.168.255.0/24 */
+    {0x28a90000u, PROTO_UNKNOWN, 0},
+    {0x28ac0000u, PROTO_AWS, 14}, /* 40.172.0.0/14 */
+    {0x28b40000u, PROTO_AWS, 15}, /* 40.180.0.0/15 */
+    {0x28b60000u, PROTO_UNKNOWN, 0},
+    {0x28ba0000u, PROTO_AWS, 15}, /* 40.186.0.0/15 */
+    {0x28bc0000u, PROTO_AWS, 16}, /* 40.188.0.0/16 */
+    {0x28bd0000u, PROTO_UNKNOWN, 0},
+    {0x28c00000u, PROTO_AWS, 14}, /* 40.192.0.0/14 */
+    {0x28c40000u, PROTO_UNKNOWN, 0},
+    {0x28c90000u, PROTO_AWS, 16}, /* 40.201.0.0/16 */
+    {0x28ca0000u, PROTO_UNKNOWN, 0},
+    {0x28eb4000u, PROTO_AWS, 18}, /* 40.235.64.0/18 */
+    {0x28eb8000u, PROTO_AWS, 17}, /* 40.235.128.0/17 */
+    {0x28ec0000u, PROTO_UNKNOWN, 0},
+    {0x28ee0000u, PROTO_AWS, 15}, /* 40.238.0.0/15 */
+    {0x28f00000u, PROTO_UNKNOWN, 0},
+    {0x2bc00000u, PROTO_AWS, 16}, /* 43.192.0.0/16 */
+    {0x2bc10000u, PROTO_AWS, 18}, /* 43.193.0.0/18 */
+    {0x2bc14000u, PROTO_AWS, 22}, /* 43.193.64.0/22 */
+    {0x2bc14400u, PROTO_UNKNOWN, 0},
+    {0x2bc20000u, PROTO_AWS, 20}, /* 43.194.0.0/20 */
+    {0x2bc21000u, PROTO_AWS, 24}, /* 43.194.16.0/24 */
+    {0x2bc21100u, PROTO_UNKNOWN, 0},
+    {0x2bc30000u, PROTO_AWS, 20}, /* 43.195.0.0/20 */
+    {0x2bc31000u, PROTO_AWS, 22}, /* 43.195.16.0/22 */
+    {0x2bc31400u, PROTO_AWS, 23}, /* 43.195.20.0/23 */
+    {0x2bc31600u, PROTO_UNKNOWN, 0},
+    {0x2bc40000u, PROTO_AWS, 16}, /* 43.196.0.0/16 */
+    {0x2bc50000u, PROTO_UNKNOWN, 0},
+    {0x2bc60000u, PROTO_AWS, 15}, /* 43.198.0.0/15 */
+    {0x2bc80000u, PROTO_AWS, 13}, /* 43.200.0.0/13 */
+    {0x2bd80000u, PROTO_AWS, 15}, /* 43.216.0.0/15 */
+    {0x2bda0000u, PROTO_AWS, 19}, /* 43.218.0.0/19 */
+    {0x2bda2000u, PROTO_AWS, 20}, /* 43.218.32.0/20 */
+    {0x2bda3000u, PROTO_AWS, 21}, /* 43.218.48.0/21 */
+    {0x2bda3800u, PROTO_AWS, 26}, /* 43.218.56.0/26 */
+    {0x2bda3840u, PROTO_CLOUDFRONT, 26}, /* 43.218.56.64/26 */
+    {0x2bda3880u, PROTO_CLOUDFRONT, 25}, /* 43.218.56.128/25 */
+    {0x2bda3900u, PROTO_AWS, 24}, /* 43.218.57.0/24 */
+    {0x2bda3a00u, PROTO_AWS, 23}, /* 43.218.58.0/23 */
+    {0x2bda3c00u, PROTO_AWS, 22}, /* 43.218.60.0/22 */
+    {0x2bda4400u, PROTO_AWS, 23}, /* 43.218.68.0/23 */
+    {0x2bda4600u, PROTO_AWS, 24}, /* 43.218.70.0/24 */
+    {0x2bda4700u, PROTO_CLOUDFRONT, 26}, /* 43.218.71.0/26 */
+    {0x2bda4740u, PROTO_AWS, 26}, /* 43.218.71.64/26 */
+    {0x2bda4780u, PROTO_AWS, 25}, /* 43.218.71.128/25 */
+    {0x2bda4800u, PROTO_AWS, 21}, /* 43.218.72.0/21 */
+    {0x2bda5000u, PROTO_AWS, 20}, /* 43.218.80.0/20 */
+    {0x2bda6000u, PROTO_AWS, 19}, /* 43.218.96.0/19 */
+    {0x2bda8000u, PROTO_AWS, 17}, /* 43.218.128.0/17 */
+    {0x2bdb0000u, PROTO_UNKNOWN, 0},
+    {0x2bdc0000u, PROTO_AWS, 15}, /* 43.220.0.0/15 */
+    {0x2bde0000u, PROTO_UNKNOWN, 0},
+    {0x2be21b00u, PROTO_AWS, 24}, /* 43.226.27.0/24 */
+    {0x2be21c00u, PROTO_UNKNOWN, 0},
+    {0x2bf92c00u, PROTO_AWS, 22}, /* 43.249.44.0/22 */
+    {0x2bf93000u, PROTO_UNKNOWN, 0},
+    {0x2bf94800u, PROTO_FASTLY, 22}, /* 43.249.72.0/22 */
+    {0x2bf94c00u, PROTO_UNKNOWN, 0},
+    {0x2bfac000u, PROTO_AWS, 23}, /* 43.250.192.0/23 */
     {0x2bfac200u, PROTO_UNKNOWN, 0},
-    {0x2d380000u, PROTO_GOOGLE, 18}, /* 45.56.0.0/18 */
-    {0x2d384000u, PROTO_UNKNOWN, 0},
+    {0x2cc00000u, PROTO_AWS, 12}, /* 44.192.0.0/12 */
+    {0x2cd00000u, PROTO_AWS, 13}, /* 44.208.0.0/13 */
+    {0x2cd80000u, PROTO_AWS, 14}, /* 44.216.0.0/14 */
+    {0x2cdc0000u, PROTO_AWS, 17}, /* 44.220.0.0/17 */
+    {0x2cdc8000u, PROTO_AWS, 18}, /* 44.220.128.0/18 */
+    {0x2cdcc000u, PROTO_AWS, 23}, /* 44.220.192.0/23 */
+    {0x2cdcc200u, PROTO_CLOUDFRONT, 23}, /* 44.220.194.0/23 */
+    {0x2cdcc400u, PROTO_CLOUDFRONT, 22}, /* 44.220.196.0/22 */
+    {0x2cdccc00u, PROTO_AWS, 22}, /* 44.220.204.0/22 */
+    {0x2cdcd000u, PROTO_AWS, 20}, /* 44.220.208.0/20 */
+    {0x2cdce000u, PROTO_AWS, 19}, /* 44.220.224.0/19 */
+    {0x2cdd0000u, PROTO_AWS, 16}, /* 44.221.0.0/16 */
+    {0x2cde0000u, PROTO_AWS, 18}, /* 44.222.0.0/18 */
+    {0x2cde4000u, PROTO_AWS, 23}, /* 44.222.64.0/23 */
+    {0x2cde4200u, PROTO_CLOUDFRONT, 24}, /* 44.222.66.0/24 */
+    {0x2cde4300u, PROTO_AWS, 24}, /* 44.222.67.0/24 */
+    {0x2cde4400u, PROTO_AWS, 22}, /* 44.222.68.0/22 */
+    {0x2cde4800u, PROTO_AWS, 21}, /* 44.222.72.0/21 */
+    {0x2cde5000u, PROTO_AWS, 20}, /* 44.222.80.0/20 */
+    {0x2cde6000u, PROTO_AWS, 19}, /* 44.222.96.0/19 */
+    {0x2cde8000u, PROTO_AWS, 17}, /* 44.222.128.0/17 */
+    {0x2cdf0000u, PROTO_AWS, 16}, /* 44.223.0.0/16 */
+    {0x2ce00000u, PROTO_AWS, 15}, /* 44.224.0.0/15 */
+    {0x2ce20000u, PROTO_AWS, 16}, /* 44.226.0.0/16 */
+    {0x2ce30000u, PROTO_AWS, 17}, /* 44.227.0.0/17 */
+    {0x2ce38000u, PROTO_AWS, 19}, /* 44.227.128.0/19 */
+    {0x2ce3a000u, PROTO_AWS, 20}, /* 44.227.160.0/20 */
+    {0x2ce3b000u, PROTO_AWS, 23}, /* 44.227.176.0/23 */
+    {0x2ce3b200u, PROTO_CLOUDFRONT, 24}, /* 44.227.178.0/24 */
+    {0x2ce3b300u, PROTO_AWS, 24}, /* 44.227.179.0/24 */
+    {0x2ce3b400u, PROTO_AWS, 22}, /* 44.227.180.0/22 */
+    {0x2ce3b800u, PROTO_AWS, 21}, /* 44.227.184.0/21 */
+    {0x2ce3c000u, PROTO_AWS, 18}, /* 44.227.192.0/18 */
+    {0x2ce40000u, PROTO_AWS, 14}, /* 44.228.0.0/14 */
+    {0x2ce80000u, PROTO_AWS, 15}, /* 44.232.0.0/15 */
+    {0x2cea0000u, PROTO_AWS, 18}, /* 44.234.0.0/18 */
+    {0x2cea4000u, PROTO_AWS, 20}, /* 44.234.64.0/20 */
+    {0x2cea5000u, PROTO_AWS, 21}, /* 44.234.80.0/21 */
+    {0x2cea5800u, PROTO_AWS, 23}, /* 44.234.88.0/23 */
+    {0x2cea5a00u, PROTO_AWS, 25}, /* 44.234.90.0/25 */
+    {0x2cea5a80u, PROTO_AWS, 26}, /* 44.234.90.128/26 */
+    {0x2cea5ac0u, PROTO_AWS, 27}, /* 44.234.90.192/27 */
+    {0x2cea5ae0u, PROTO_AWS, 28}, /* 44.234.90.224/28 */
+    {0x2cea5af0u, PROTO_AWS, 29}, /* 44.234.90.240/29 */
+    {0x2cea5af8u, PROTO_AWS, 30}, /* 44.234.90.248/30 */
+    {0x2cea5afcu, PROTO_CLOUDFRONT, 30}, /* 44.234.90.252/30 */
+    {0x2cea5b00u, PROTO_AWS, 24}, /* 44.234.91.0/24 */
+    {0x2cea5c00u, PROTO_AWS, 22}, /* 44.234.92.0/22 */
+    {0x2cea6000u, PROTO_AWS, 21}, /* 44.234.96.0/21 */
+    {0x2cea6800u, PROTO_AWS, 22}, /* 44.234.104.0/22 */
+    {0x2cea6c00u, PROTO_AWS, 25}, /* 44.234.108.0/25 */
+    {0x2cea6c80u, PROTO_CLOUDFRONT, 25}, /* 44.234.108.128/25 */
+    {0x2cea6d00u, PROTO_AWS, 24}, /* 44.234.109.0/24 */
+    {0x2cea6e00u, PROTO_AWS, 23}, /* 44.234.110.0/23 */
+    {0x2cea7000u, PROTO_AWS, 20}, /* 44.234.112.0/20 */
+    {0x2cea8000u, PROTO_AWS, 17}, /* 44.234.128.0/17 */
+    {0x2ceb0000u, PROTO_AWS, 16}, /* 44.235.0.0/16 */
+    {0x2cec0000u, PROTO_AWS, 14}, /* 44.236.0.0/14 */
+    {0x2cf00000u, PROTO_AWS, 12}, /* 44.240.0.0/12 */
+    {0x2d000000u, PROTO_UNKNOWN, 0},
+    {0x2d21a000u, PROTO_AWS, 22}, /* 45.33.160.0/22 */
+    {0x2d21a400u, PROTO_UNKNOWN, 0},
+    {0x2d21a500u, PROTO_AWS, 24}, /* 45.33.165.0/24 */
+    {0x2d21a600u, PROTO_AWS, 23}, /* 45.33.166.0/23 */
+    {0x2d21a800u, PROTO_AWS, 21}, /* 45.33.168.0/21 */
+    {0x2d21b800u, PROTO_AWS, 22}, /* 45.33.184.0/22 */
+    {0x2d21bc00u, PROTO_AWS, 24}, /* 45.33.188.0/24 */
+    {0x2d21bd00u, PROTO_UNKNOWN, 0},
+    {0x2d220000u, PROTO_AWS, 15}, /* 45.34.0.0/15 */
+    {0x2d240000u, PROTO_UNKNOWN, 0},
     {0x2d390000u, PROTO_NETFLIX, 17}, /* 45.57.0.0/17 */
     {0x2d390800u, PROTO_NETFLIX, 23}, /* 45.57.8.0/23 */
     {0x2d390900u, PROTO_NETFLIX, 24}, /* 45.57.9.0/24 */
@@ -839,879 +3141,1395 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x2d392b00u, PROTO_NETFLIX, 17}, /* 45.57.0.0/17 */
     {0x2d393400u, PROTO_NETFLIX, 24}, /* 45.57.52.0/24 */
     {0x2d393500u, PROTO_NETFLIX, 17}, /* 45.57.0.0/17 */
-    {0x2d398000u, PROTO_UNKNOWN, 0},
+    {0x2d398000u, PROTO_AWS, 18}, /* 45.57.128.0/18 */
+    {0x2d39c000u, PROTO_UNKNOWN, 0},
     {0x2d402800u, PROTO_FACEBOOK, 22}, /* 45.64.40.0/22 */
     {0x2d402c00u, PROTO_UNKNOWN, 0},
-    {0x2d79e400u, PROTO_GOOGLE, 24}, /* 45.121.228.0/24 */
-    {0x2d79e800u, PROTO_UNKNOWN, 0},
-    {0x2e1cf700u, PROTO_GOOGLE, 24}, /* 46.28.247.0/24 */
-    {0x2e1cf800u, PROTO_UNKNOWN, 0},
-    {0x2e338000u, PROTO_AMAZON, 18}, /* 46.51.128.0/18 */
-    {0x2e33c000u, PROTO_AMAZON, 20}, /* 46.51.192.0/20 */
-    {0x2e33d000u, PROTO_UNKNOWN, 0},
-    {0x2e33d800u, PROTO_AMAZON, 21}, /* 46.51.216.0/21 */
-    {0x2e33e000u, PROTO_AMAZON, 19}, /* 46.51.224.0/19 */
+    {0x2d718000u, PROTO_AWS, 22}, /* 45.113.128.0/22 */
+    {0x2d718400u, PROTO_UNKNOWN, 0},
+    {0x2e338000u, PROTO_AWS, 18}, /* 46.51.128.0/18 */
+    {0x2e33c000u, PROTO_AWS, 20}, /* 46.51.192.0/20 */
+    {0x2e33d000u, PROTO_AWS, 22}, /* 46.51.208.0/22 */
+    {0x2e33d400u, PROTO_UNKNOWN, 0},
+    {0x2e33d800u, PROTO_AWS, 21}, /* 46.51.216.0/21 */
+    {0x2e33e000u, PROTO_AWS, 19}, /* 46.51.224.0/19 */
     {0x2e340000u, PROTO_UNKNOWN, 0},
-    {0x2e890000u, PROTO_AMAZON, 17}, /* 46.137.0.0/17 */
-    {0x2e898000u, PROTO_AMAZON, 18}, /* 46.137.128.0/18 */
-    {0x2e89c000u, PROTO_AMAZON, 19}, /* 46.137.192.0/19 */
+    {0x2e890000u, PROTO_AWS, 16}, /* 46.137.0.0/16 */
     {0x2e8a0000u, PROTO_UNKNOWN, 0},
+    {0x2ea80000u, PROTO_AWS, 15}, /* 46.168.0.0/15 */
+    {0x2eaa0000u, PROTO_UNKNOWN, 0},
     {0x2ee42000u, PROTO_YAHOO, 21}, /* 46.228.32.0/21 */
     {0x2ee43000u, PROTO_UNKNOWN, 0},
-    {0x32100000u, PROTO_AMAZON, 14}, /* 50.16.0.0/14 */
-    {0x3210f500u, PROTO_AMAZON, 24}, /* 50.16.245.0/24 */
-    {0x3210f600u, PROTO_AMAZON, 14}, /* 50.16.0.0/14 */
-    {0x3210fc00u, PROTO_AMAZON, 22}, /* 50.16.252.0/22 */
-    {0x32110000u, PROTO_AMAZON, 16}, /* 50.17.0.0/16 */
-    {0x32120000u, PROTO_AMAZON, 18}, /* 50.18.0.0/18 */
-    {0x3212c000u, PROTO_AMAZON, 20}, /* 50.18.192.0/20 */
-    {0x3212e000u, PROTO_AMAZON, 19}, /* 50.18.224.0/19 */
-    {0x32130000u, PROTO_AMAZON, 17}, /* 50.19.0.0/17 */
+    {0x2f800000u, PROTO_AWS, 16}, /* 47.128.0.0/16 */
+    {0x2f810000u, PROTO_AWS, 18}, /* 47.129.0.0/18 */
+    {0x2f814000u, PROTO_AWS, 20}, /* 47.129.64.0/20 */
+    {0x2f815000u, PROTO_AWS, 23}, /* 47.129.80.0/23 */
+    {0x2f815200u, PROTO_CLOUDFRONT, 23}, /* 47.129.82.0/23 */
+    {0x2f815400u, PROTO_CLOUDFRONT, 24}, /* 47.129.84.0/24 */
+    {0x2f815500u, PROTO_AWS, 24}, /* 47.129.85.0/24 */
+    {0x2f815600u, PROTO_AWS, 23}, /* 47.129.86.0/23 */
+    {0x2f815800u, PROTO_AWS, 21}, /* 47.129.88.0/21 */
+    {0x2f816000u, PROTO_AWS, 19}, /* 47.129.96.0/19 */
+    {0x2f818000u, PROTO_AWS, 17}, /* 47.129.128.0/17 */
+    {0x2f820000u, PROTO_AWS, 15}, /* 47.130.0.0/15 */
+    {0x2f840000u, PROTO_UNKNOWN, 0},
+    {0x30c00000u, PROTO_AZURE, 11}, /* 48.192.0.0/11 */
+    {0x30e00000u, PROTO_UNKNOWN, 0},
+    {0x32100000u, PROTO_AWS, 14}, /* 50.16.0.0/14 */
     {0x32140000u, PROTO_UNKNOWN, 0},
-    {0x32700000u, PROTO_AMAZON, 16}, /* 50.112.0.0/16 */
-    {0x32708000u, PROTO_AMAZON, 19}, /* 50.112.128.0/19 */
-    {0x3270c000u, PROTO_AMAZON, 18}, /* 50.112.192.0/18 */
+    {0x32550000u, PROTO_AZURE, 16}, /* 50.85.0.0/16 */
+    {0x32560000u, PROTO_UNKNOWN, 0},
+    {0x32700000u, PROTO_AWS, 16}, /* 50.112.0.0/16 */
     {0x32710000u, PROTO_UNKNOWN, 0},
-    {0x34000000u, PROTO_AMAZON, 15}, /* 52.0.0.0/15 */
-    {0x34040000u, PROTO_AMAZON, 14}, /* 52.4.0.0/14 */
-    {0x34080000u, PROTO_AMAZON, 16}, /* 52.8.0.0/16 */
-    {0x340a0000u, PROTO_AMAZON, 15}, /* 52.10.0.0/15 */
-    {0x340dfc00u, PROTO_AMAZON, 23}, /* 52.13.252.0/23 */
-    {0x340dfe00u, PROTO_AMAZON, 15}, /* 52.12.0.0/15 */
-    {0x340e0000u, PROTO_AMAZON, 16}, /* 52.14.0.0/16 */
-    {0x34100000u, PROTO_AMAZON, 15}, /* 52.16.0.0/15 */
-    {0x34140000u, PROTO_AMAZON, 14}, /* 52.20.0.0/14 */
-    {0x341c0000u, PROTO_AMAZON, 16}, /* 52.28.0.0/16 */
-    {0x341e0000u, PROTO_AMAZON, 15}, /* 52.30.0.0/15 */
-    {0x34200000u, PROTO_AMAZON, 14}, /* 52.32.0.0/14 */
-    {0x342c0000u, PROTO_AMAZON, 15}, /* 52.44.0.0/15 */
-    {0x342e0000u, PROTO_AMAZON, 18}, /* 52.46.0.0/18 */
-    {0x342e0200u, PROTO_AMAZON, 23}, /* 52.46.2.0/23 */
-    {0x342e0600u, PROTO_AMAZON, 24}, /* 52.46.6.0/24 */
-    {0x342e0a00u, PROTO_AMAZON, 18}, /* 52.46.0.0/18 */
-    {0x342e0b00u, PROTO_AMAZON, 24}, /* 52.46.11.0/24 */
-    {0x342e1000u, PROTO_AMAZON, 18}, /* 52.46.0.0/18 */
-    {0x342e1200u, PROTO_AMAZON, 24}, /* 52.46.18.0/24 */
-    {0x342e1600u, PROTO_AMAZON, 18}, /* 52.46.0.0/18 */
-    {0x342e4000u, PROTO_UNKNOWN, 0},
-    {0x342e5000u, PROTO_AMAZON, 21}, /* 52.46.80.0/21 */
-    {0x342e5800u, PROTO_UNKNOWN, 0},
-    {0x342f0000u, PROTO_AMAZON, 16}, /* 52.47.0.0/16 */
-    {0x34300000u, PROTO_AMAZON, 14}, /* 52.48.0.0/14 */
-    {0x34340000u, PROTO_AMAZON, 15}, /* 52.52.0.0/15 */
-    {0x34380000u, PROTO_AMAZON, 16}, /* 52.56.0.0/16 */
-    {0x343a0000u, PROTO_AMAZON, 15}, /* 52.58.0.0/15 */
-    {0x343c0000u, PROTO_AMAZON, 16}, /* 52.60.0.0/16 */
-    {0x343d0000u, PROTO_UNKNOWN, 0},
-    {0x343e0000u, PROTO_AMAZON, 15}, /* 52.62.0.0/15 */
-    {0x34400000u, PROTO_AMAZON, 17}, /* 52.64.0.0/17 */
-    {0x34410000u, PROTO_AMAZON, 16}, /* 52.65.0.0/16 */
-    {0x34422000u, PROTO_AMAZON, 19}, /* 52.66.32.0/19 */
-    {0x34424000u, PROTO_AMAZON, 18}, /* 52.66.64.0/18 */
-    {0x34428000u, PROTO_AMAZON, 19}, /* 52.66.128.0/19 */
-    {0x3442a000u, PROTO_AMAZON, 16}, /* 52.66.0.0/16 */
-    {0x34440000u, PROTO_AMAZON, 15}, /* 52.68.0.0/15 */
-    {0x344a0000u, PROTO_AMAZON, 16}, /* 52.74.0.0/16 */
-    {0x344b0000u, PROTO_UNKNOWN, 0},
-    {0x344c0000u, PROTO_AMAZON, 17}, /* 52.76.0.0/17 */
-    {0x344d0000u, PROTO_AMAZON, 16}, /* 52.77.0.0/16 */
-    {0x344f2000u, PROTO_AMAZON, 19}, /* 52.79.32.0/19 */
-    {0x344f4000u, PROTO_AMAZON, 18}, /* 52.79.64.0/18 */
-    {0x344f8000u, PROTO_AMAZON, 17}, /* 52.79.128.0/17 */
-    {0x34500000u, PROTO_UNKNOWN, 0},
-    {0x3452bb00u, PROTO_AMAZON, 24}, /* 52.82.187.0/24 */
-    {0x3452bc00u, PROTO_UNKNOWN, 0},
-    {0x34530000u, PROTO_AMAZON, 16}, /* 52.83.0.0/16 */
-    {0x34540000u, PROTO_AMAZON, 15}, /* 52.84.0.0/15 */
-    {0x34540100u, PROTO_AMAZON, 24}, /* 52.84.1.0/24 */
-    {0x3454e200u, PROTO_AMAZON, 23}, /* 52.84.226.0/23 */
-    {0x3454e300u, PROTO_AMAZON, 24}, /* 52.84.227.0/24 */
-    {0x34560000u, PROTO_AMAZON, 15}, /* 52.86.0.0/15 */
-    {0x345c0000u, PROTO_AMAZON, 20}, /* 52.92.0.0/20 */
-    {0x345c0100u, PROTO_AMAZON, 24}, /* 52.92.1.0/24 */
-    {0x345c1000u, PROTO_AMAZON, 20}, /* 52.92.16.0/20 */
-    {0x345c1100u, PROTO_AMAZON, 24}, /* 52.92.17.0/24 */
-    {0x345c2000u, PROTO_AMAZON, 22}, /* 52.92.32.0/22 */
-    {0x345c2100u, PROTO_AMAZON, 24}, /* 52.92.33.0/24 */
-    {0x345c2300u, PROTO_AMAZON, 22}, /* 52.92.32.0/22 */
-    {0x345c2400u, PROTO_UNKNOWN, 0},
-    {0x345c2800u, PROTO_AMAZON, 21}, /* 52.92.40.0/21 */
-    {0x345c3000u, PROTO_AMAZON, 22}, /* 52.92.48.0/22 */
-    {0x345c3100u, PROTO_AMAZON, 24}, /* 52.92.49.0/24 */
-    {0x345c3400u, PROTO_AMAZON, 22}, /* 52.92.52.0/22 */
-    {0x345c3500u, PROTO_AMAZON, 24}, /* 52.92.53.0/24 */
-    {0x345c3800u, PROTO_AMAZON, 22}, /* 52.92.56.0/22 */
-    {0x345c3900u, PROTO_AMAZON, 24}, /* 52.92.57.0/24 */
-    {0x345c3c00u, PROTO_AMAZON, 22}, /* 52.92.60.0/22 */
-    {0x345c4100u, PROTO_AMAZON, 24}, /* 52.92.65.0/24 */
-    {0x345c4400u, PROTO_AMAZON, 22}, /* 52.92.68.0/22 */
-    {0x345c4500u, PROTO_AMAZON, 24}, /* 52.92.69.0/24 */
-    {0x345c4800u, PROTO_AMAZON, 22}, /* 52.92.72.0/22 */
-    {0x345c4900u, PROTO_AMAZON, 24}, /* 52.92.73.0/24 */
-    {0x345c4c00u, PROTO_AMAZON, 22}, /* 52.92.76.0/22 */
-    {0x345c5000u, PROTO_UNKNOWN, 0},
-    {0x345c5400u, PROTO_AMAZON, 22}, /* 52.92.84.0/22 */
-    {0x345c5500u, PROTO_AMAZON, 24}, /* 52.92.85.0/24 */
-    {0x345c5800u, PROTO_AMAZON, 22}, /* 52.92.88.0/22 */
-    {0x345c5900u, PROTO_AMAZON, 24}, /* 52.92.89.0/24 */
-    {0x345c5c00u, PROTO_UNKNOWN, 0},
-    {0x345cf800u, PROTO_AMAZON, 22}, /* 52.92.248.0/22 */
-    {0x345cf900u, PROTO_AMAZON, 24}, /* 52.92.249.0/24 */
-    {0x345cfc00u, PROTO_AMAZON, 22}, /* 52.92.252.0/22 */
-    {0x345cfd00u, PROTO_AMAZON, 24}, /* 52.92.253.0/24 */
-    {0x345d0000u, PROTO_AMAZON, 16}, /* 52.93.0.0/16 */
-    {0x345e0000u, PROTO_AMAZON, 22}, /* 52.94.0.0/22 */
-    {0x345e0400u, PROTO_AMAZON, 24}, /* 52.94.4.0/24 */
-    {0x345e1000u, PROTO_UNKNOWN, 0},
-    {0x345e1100u, PROTO_AMAZON, 24}, /* 52.94.17.0/24 */
-    {0x345e1200u, PROTO_UNKNOWN, 0},
-    {0x345e1400u, PROTO_AMAZON, 24}, /* 52.94.20.0/24 */
+    {0x33000000u, PROTO_AWS, 20}, /* 51.0.0.0/20 */
+    {0x33001000u, PROTO_AWS, 21}, /* 51.0.16.0/21 */
+    {0x33001800u, PROTO_AWS, 22}, /* 51.0.24.0/22 */
+    {0x33001c00u, PROTO_AWS, 24}, /* 51.0.28.0/24 */
+    {0x33001d00u, PROTO_AWS, 28}, /* 51.0.29.0/28 */
+    {0x33001d10u, PROTO_UNKNOWN, 0},
+    {0x33001d80u, PROTO_AWS, 28}, /* 51.0.29.128/28 */
+    {0x33001d90u, PROTO_UNKNOWN, 0},
+    {0x33001f00u, PROTO_AWS, 24}, /* 51.0.31.0/24 */
+    {0x33002000u, PROTO_UNKNOWN, 0},
+    {0x33004000u, PROTO_AWS, 18}, /* 51.0.64.0/18 */
+    {0x33008000u, PROTO_AWS, 20}, /* 51.0.128.0/20 */
+    {0x33009000u, PROTO_UNKNOWN, 0},
+    {0x3300f900u, PROTO_AWS, 24}, /* 51.0.249.0/24 */
+    {0x3300fa00u, PROTO_AWS, 30}, /* 51.0.250.0/30 */
+    {0x3300fa04u, PROTO_UNKNOWN, 0},
+    {0x3300fb00u, PROTO_AWS, 24}, /* 51.0.251.0/24 */
+    {0x3300fd00u, PROTO_UNKNOWN, 0},
+    {0x33040000u, PROTO_AZURE, 15}, /* 51.4.0.0/15 */
+    {0x33060000u, PROTO_UNKNOWN, 0},
+    {0x33080000u, PROTO_AZURE, 16}, /* 51.8.0.0/16 */
+    {0x33090000u, PROTO_UNKNOWN, 0},
+    {0x330b0000u, PROTO_AZURE, 16}, /* 51.11.0.0/16 */
+    {0x330c0000u, PROTO_AZURE, 15}, /* 51.12.0.0/15 */
+    {0x330e0000u, PROTO_UNKNOWN, 0},
+    {0x33100000u, PROTO_AWS, 15}, /* 51.16.0.0/15 */
+    {0x33120000u, PROTO_UNKNOWN, 0},
+    {0x33140000u, PROTO_AWS, 15}, /* 51.20.0.0/15 */
+    {0x33160000u, PROTO_UNKNOWN, 0},
+    {0x33180000u, PROTO_AWS, 16}, /* 51.24.0.0/16 */
+    {0x33190000u, PROTO_UNKNOWN, 0},
+    {0x33220000u, PROTO_AWS, 15}, /* 51.34.0.0/15 */
+    {0x33240000u, PROTO_UNKNOWN, 0},
+    {0x332c0000u, PROTO_AWS, 17}, /* 51.44.0.0/17 */
+    {0x332c8000u, PROTO_AWS, 18}, /* 51.44.128.0/18 */
+    {0x332cc000u, PROTO_AWS, 19}, /* 51.44.192.0/19 */
+    {0x332ce000u, PROTO_AWS, 21}, /* 51.44.224.0/21 */
+    {0x332ce800u, PROTO_AWS, 23}, /* 51.44.232.0/23 */
+    {0x332cea00u, PROTO_CLOUDFRONT, 23}, /* 51.44.234.0/23 */
+    {0x332cec00u, PROTO_CLOUDFRONT, 22}, /* 51.44.236.0/22 */
+    {0x332cf000u, PROTO_AWS, 20}, /* 51.44.240.0/20 */
+    {0x332d0000u, PROTO_AWS, 16}, /* 51.45.0.0/16 */
+    {0x332e0000u, PROTO_AWS, 15}, /* 51.46.0.0/15 */
+    {0x33320000u, PROTO_UNKNOWN, 0},
+    {0x33350000u, PROTO_AZURE, 16}, /* 51.53.0.0/16 */
+    {0x33360000u, PROTO_UNKNOWN, 0},
+    {0x33380000u, PROTO_AZURE, 14}, /* 51.56.0.0/14 */
+    {0x333c0000u, PROTO_UNKNOWN, 0},
+    {0x33480000u, PROTO_AWS, 19}, /* 51.72.0.0/19 */
+    {0x33482000u, PROTO_AWS, 21}, /* 51.72.32.0/21 */
+    {0x33482800u, PROTO_AWS, 25}, /* 51.72.40.0/25 */
+    {0x33482880u, PROTO_CLOUDFRONT, 27}, /* 51.72.40.128/27 */
+    {0x334828a0u, PROTO_AWS, 27}, /* 51.72.40.160/27 */
+    {0x334828c0u, PROTO_AWS, 26}, /* 51.72.40.192/26 */
+    {0x33482900u, PROTO_AWS, 24}, /* 51.72.41.0/24 */
+    {0x33482a00u, PROTO_AWS, 23}, /* 51.72.42.0/23 */
+    {0x33482c00u, PROTO_AWS, 22}, /* 51.72.44.0/22 */
+    {0x33483000u, PROTO_AWS, 20}, /* 51.72.48.0/20 */
+    {0x33484000u, PROTO_AWS, 18}, /* 51.72.64.0/18 */
+    {0x33488000u, PROTO_AWS, 17}, /* 51.72.128.0/17 */
+    {0x33490000u, PROTO_AWS, 16}, /* 51.73.0.0/16 */
+    {0x334a0000u, PROTO_AWS, 20}, /* 51.74.0.0/20 */
+    {0x334a1000u, PROTO_AWS, 23}, /* 51.74.16.0/23 */
+    {0x334a1200u, PROTO_UNKNOWN, 0},
+    {0x334a1400u, PROTO_CLOUDFRONT, 23}, /* 51.74.20.0/23 */
+    {0x334a1600u, PROTO_CLOUDFRONT, 24}, /* 51.74.22.0/24 */
+    {0x334a1700u, PROTO_UNKNOWN, 0},
+    {0x334a4000u, PROTO_AWS, 18}, /* 51.74.64.0/18 */
+    {0x334ac000u, PROTO_CLOUDFRONT, 18}, /* 51.74.192.0/18 */
+    {0x334b0000u, PROTO_UNKNOWN, 0},
+    {0x33540000u, PROTO_AWS, 14}, /* 51.84.0.0/14 */
+    {0x33580000u, PROTO_UNKNOWN, 0},
+    {0x335c0000u, PROTO_AWS, 14}, /* 51.92.0.0/14 */
+    {0x33600000u, PROTO_AWS, 16}, /* 51.96.0.0/16 */
+    {0x33610000u, PROTO_UNKNOWN, 0},
+    {0x33640000u, PROTO_AWS, 15}, /* 51.100.0.0/15 */
+    {0x33660000u, PROTO_AWS, 16}, /* 51.102.0.0/16 */
+    {0x33670000u, PROTO_AZURE, 17}, /* 51.103.0.0/17 */
+    {0x33678000u, PROTO_AZURE, 18}, /* 51.103.128.0/18 */
+    {0x3367c000u, PROTO_AZURE, 26}, /* 51.103.192.0/26 */
+    {0x3367c040u, PROTO_UNKNOWN, 0},
+    {0x3367c800u, PROTO_AZURE, 21}, /* 51.103.200.0/21 */
+    {0x3367d000u, PROTO_AZURE, 20}, /* 51.103.208.0/20 */
+    {0x3367e000u, PROTO_AZURE, 19}, /* 51.103.224.0/19 */
+    {0x33680000u, PROTO_AZURE, 15}, /* 51.104.0.0/15 */
+    {0x336a0000u, PROTO_UNKNOWN, 0},
+    {0x336b0000u, PROTO_AZURE, 16}, /* 51.107.0.0/16 */
+    {0x336c0000u, PROTO_UNKNOWN, 0},
+    {0x33700000u, PROTO_AWS, 16}, /* 51.112.0.0/16 */
+    {0x33710000u, PROTO_UNKNOWN, 0},
+    {0x33740000u, PROTO_AZURE, 16}, /* 51.116.0.0/16 */
+    {0x33750000u, PROTO_UNKNOWN, 0},
+    {0x33760000u, PROTO_AWS, 16}, /* 51.118.0.0/16 */
+    {0x33770000u, PROTO_UNKNOWN, 0},
+    {0x33780000u, PROTO_AZURE, 16}, /* 51.120.0.0/16 */
+    {0x33790000u, PROTO_UNKNOWN, 0},
+    {0x337c0000u, PROTO_AZURE, 16}, /* 51.124.0.0/16 */
+    {0x337d0000u, PROTO_UNKNOWN, 0},
+    {0x33840000u, PROTO_AZURE, 16}, /* 51.132.0.0/16 */
+    {0x33850000u, PROTO_UNKNOWN, 0},
+    {0x33880000u, PROTO_AZURE, 15}, /* 51.136.0.0/15 */
+    {0x338a0000u, PROTO_AZURE, 17}, /* 51.138.0.0/17 */
+    {0x338a8000u, PROTO_AZURE, 19}, /* 51.138.128.0/19 */
+    {0x338aa000u, PROTO_AZURE, 21}, /* 51.138.160.0/21 */
+    {0x338aa800u, PROTO_UNKNOWN, 0},
+    {0x338ab000u, PROTO_AZURE, 20}, /* 51.138.176.0/20 */
+    {0x338ac000u, PROTO_AZURE, 19}, /* 51.138.192.0/19 */
+    {0x338ae000u, PROTO_AZURE, 20}, /* 51.138.224.0/20 */
+    {0x338af000u, PROTO_UNKNOWN, 0},
+    {0x338c0000u, PROTO_AZURE, 14}, /* 51.140.0.0/14 */
+    {0x33900000u, PROTO_AZURE, 15}, /* 51.144.0.0/15 */
+    {0x33920000u, PROTO_UNKNOWN, 0},
+    {0x33a40000u, PROTO_AWS, 14}, /* 51.164.0.0/14 */
+    {0x33a80000u, PROTO_AWS, 15}, /* 51.168.0.0/15 */
+    {0x33aa0000u, PROTO_UNKNOWN, 0},
+    {0x33ac0000u, PROTO_AWS, 15}, /* 51.172.0.0/15 */
+    {0x33ae0000u, PROTO_UNKNOWN, 0},
+    {0x33c80000u, PROTO_AWS, 13}, /* 51.200.0.0/13 */
+    {0x33d00000u, PROTO_UNKNOWN, 0},
+    {0x33e00000u, PROTO_AWS, 15}, /* 51.224.0.0/15 */
+    {0x33e20000u, PROTO_UNKNOWN, 0},
+    {0x34000000u, PROTO_AWS, 13}, /* 52.0.0.0/13 */
+    {0x34080000u, PROTO_AWS, 14}, /* 52.8.0.0/14 */
+    {0x340c0000u, PROTO_AWS, 15}, /* 52.12.0.0/15 */
+    {0x340e0000u, PROTO_AWS, 16}, /* 52.14.0.0/16 */
+    {0x340f0000u, PROTO_AWS, 18}, /* 52.15.0.0/18 */
+    {0x340f4000u, PROTO_AWS, 19}, /* 52.15.64.0/19 */
+    {0x340f6000u, PROTO_AWS, 20}, /* 52.15.96.0/20 */
+    {0x340f7000u, PROTO_AWS, 21}, /* 52.15.112.0/21 */
+    {0x340f7800u, PROTO_AWS, 22}, /* 52.15.120.0/22 */
+    {0x340f7c00u, PROTO_AWS, 23}, /* 52.15.124.0/23 */
+    {0x340f7e00u, PROTO_AWS, 24}, /* 52.15.126.0/24 */
+    {0x340f7f00u, PROTO_AWS, 25}, /* 52.15.127.0/25 */
+    {0x340f7f80u, PROTO_CLOUDFRONT, 26}, /* 52.15.127.128/26 */
+    {0x340f7fc0u, PROTO_AWS, 26}, /* 52.15.127.192/26 */
+    {0x340f8000u, PROTO_AWS, 17}, /* 52.15.128.0/17 */
+    {0x34100000u, PROTO_AWS, 12}, /* 52.16.0.0/12 */
+    {0x34200000u, PROTO_AWS, 13}, /* 52.32.0.0/13 */
+    {0x34280000u, PROTO_AWS, 14}, /* 52.40.0.0/14 */
+    {0x342c0000u, PROTO_AWS, 15}, /* 52.44.0.0/15 */
+    {0x342e0000u, PROTO_CLOUDFRONT, 18}, /* 52.46.0.0/18 */
+    {0x342e4000u, PROTO_AWS, 18}, /* 52.46.64.0/18 */
+    {0x342e8000u, PROTO_AWS, 19}, /* 52.46.128.0/19 */
+    {0x342ea000u, PROTO_UNKNOWN, 0},
+    {0x342ea400u, PROTO_AWS, 22}, /* 52.46.164.0/22 */
+    {0x342ea800u, PROTO_AWS, 21}, /* 52.46.168.0/21 */
+    {0x342eb800u, PROTO_AWS, 22}, /* 52.46.184.0/22 */
+    {0x342ebc00u, PROTO_UNKNOWN, 0},
+    {0x342ec000u, PROTO_AWS, 19}, /* 52.46.192.0/19 */
+    {0x342ee000u, PROTO_AWS, 20}, /* 52.46.224.0/20 */
+    {0x342ef000u, PROTO_AWS, 22}, /* 52.46.240.0/22 */
+    {0x342ef400u, PROTO_UNKNOWN, 0},
+    {0x342ef900u, PROTO_AWS, 24}, /* 52.46.249.0/24 */
+    {0x342efa00u, PROTO_AWS, 23}, /* 52.46.250.0/23 */
+    {0x342efc00u, PROTO_AWS, 22}, /* 52.46.252.0/22 */
+    {0x342f0000u, PROTO_AWS, 17}, /* 52.47.0.0/17 */
+    {0x342f8000u, PROTO_AWS, 21}, /* 52.47.128.0/21 */
+    {0x342f8800u, PROTO_AWS, 23}, /* 52.47.136.0/23 */
+    {0x342f8a00u, PROTO_AWS, 24}, /* 52.47.138.0/24 */
+    {0x342f8b00u, PROTO_CLOUDFRONT, 24}, /* 52.47.139.0/24 */
+    {0x342f8c00u, PROTO_AWS, 22}, /* 52.47.140.0/22 */
+    {0x342f9000u, PROTO_AWS, 20}, /* 52.47.144.0/20 */
+    {0x342fa000u, PROTO_AWS, 19}, /* 52.47.160.0/19 */
+    {0x342fc000u, PROTO_AWS, 18}, /* 52.47.192.0/18 */
+    {0x34300000u, PROTO_AWS, 14}, /* 52.48.0.0/14 */
+    {0x34340000u, PROTO_AWS, 17}, /* 52.52.0.0/17 */
+    {0x34348000u, PROTO_AWS, 19}, /* 52.52.128.0/19 */
+    {0x3434a000u, PROTO_AWS, 20}, /* 52.52.160.0/20 */
+    {0x3434b000u, PROTO_AWS, 21}, /* 52.52.176.0/21 */
+    {0x3434b800u, PROTO_AWS, 22}, /* 52.52.184.0/22 */
+    {0x3434bc00u, PROTO_AWS, 23}, /* 52.52.188.0/23 */
+    {0x3434be00u, PROTO_AWS, 24}, /* 52.52.190.0/24 */
+    {0x3434bf00u, PROTO_AWS, 25}, /* 52.52.191.0/25 */
+    {0x3434bf80u, PROTO_CLOUDFRONT, 26}, /* 52.52.191.128/26 */
+    {0x3434bfc0u, PROTO_AWS, 26}, /* 52.52.191.192/26 */
+    {0x3434c000u, PROTO_AWS, 18}, /* 52.52.192.0/18 */
+    {0x34350000u, PROTO_AWS, 16}, /* 52.53.0.0/16 */
+    {0x34360000u, PROTO_AWS, 15}, /* 52.54.0.0/15 */
+    {0x34380000u, PROTO_AWS, 18}, /* 52.56.0.0/18 */
+    {0x34384000u, PROTO_AWS, 19}, /* 52.56.64.0/19 */
+    {0x34386000u, PROTO_AWS, 20}, /* 52.56.96.0/20 */
+    {0x34387000u, PROTO_AWS, 21}, /* 52.56.112.0/21 */
+    {0x34387800u, PROTO_AWS, 22}, /* 52.56.120.0/22 */
+    {0x34387c00u, PROTO_AWS, 23}, /* 52.56.124.0/23 */
+    {0x34387e00u, PROTO_AWS, 24}, /* 52.56.126.0/24 */
+    {0x34387f00u, PROTO_CLOUDFRONT, 25}, /* 52.56.127.0/25 */
+    {0x34387f80u, PROTO_AWS, 25}, /* 52.56.127.128/25 */
+    {0x34388000u, PROTO_AWS, 17}, /* 52.56.128.0/17 */
+    {0x34398000u, PROTO_AWS, 18}, /* 52.57.128.0/18 */
+    {0x3439c000u, PROTO_AWS, 19}, /* 52.57.192.0/19 */
+    {0x3439e000u, PROTO_AWS, 20}, /* 52.57.224.0/20 */
+    {0x3439f000u, PROTO_AWS, 21}, /* 52.57.240.0/21 */
+    {0x3439f800u, PROTO_AWS, 22}, /* 52.57.248.0/22 */
+    {0x3439fc00u, PROTO_AWS, 23}, /* 52.57.252.0/23 */
+    {0x3439fe00u, PROTO_CLOUDFRONT, 24}, /* 52.57.254.0/24 */
+    {0x3439ff00u, PROTO_AWS, 24}, /* 52.57.255.0/24 */
+    {0x343a0000u, PROTO_AWS, 15}, /* 52.58.0.0/15 */
+    {0x343c0000u, PROTO_AWS, 14}, /* 52.60.0.0/14 */
+    {0x34400000u, PROTO_AWS, 15}, /* 52.64.0.0/15 */
+    {0x34420000u, PROTO_AWS, 17}, /* 52.66.0.0/17 */
+    {0x34428000u, PROTO_AWS, 18}, /* 52.66.128.0/18 */
+    {0x3442c000u, PROTO_AWS, 23}, /* 52.66.192.0/23 */
+    {0x3442c200u, PROTO_AWS, 25}, /* 52.66.194.0/25 */
+    {0x3442c280u, PROTO_CLOUDFRONT, 26}, /* 52.66.194.128/26 */
+    {0x3442c2c0u, PROTO_AWS, 26}, /* 52.66.194.192/26 */
+    {0x3442c300u, PROTO_AWS, 24}, /* 52.66.195.0/24 */
+    {0x3442c400u, PROTO_AWS, 22}, /* 52.66.196.0/22 */
+    {0x3442c800u, PROTO_AWS, 21}, /* 52.66.200.0/21 */
+    {0x3442d000u, PROTO_AWS, 20}, /* 52.66.208.0/20 */
+    {0x3442e000u, PROTO_AWS, 19}, /* 52.66.224.0/19 */
+    {0x34430000u, PROTO_AWS, 16}, /* 52.67.0.0/16 */
+    {0x34440000u, PROTO_AWS, 14}, /* 52.68.0.0/14 */
+    {0x344c0000u, PROTO_AWS, 15}, /* 52.76.0.0/15 */
+    {0x344e0000u, PROTO_AWS, 17}, /* 52.78.0.0/17 */
+    {0x344e8000u, PROTO_AWS, 18}, /* 52.78.128.0/18 */
+    {0x344ec000u, PROTO_AWS, 19}, /* 52.78.192.0/19 */
+    {0x344ee000u, PROTO_AWS, 20}, /* 52.78.224.0/20 */
+    {0x344ef000u, PROTO_AWS, 22}, /* 52.78.240.0/22 */
+    {0x344ef400u, PROTO_AWS, 23}, /* 52.78.244.0/23 */
+    {0x344ef600u, PROTO_AWS, 24}, /* 52.78.246.0/24 */
+    {0x344ef700u, PROTO_AWS, 25}, /* 52.78.247.0/25 */
+    {0x344ef780u, PROTO_CLOUDFRONT, 26}, /* 52.78.247.128/26 */
+    {0x344ef7c0u, PROTO_AWS, 26}, /* 52.78.247.192/26 */
+    {0x344ef800u, PROTO_AWS, 21}, /* 52.78.248.0/21 */
+    {0x344f0000u, PROTO_AWS, 16}, /* 52.79.0.0/16 */
+    {0x34500000u, PROTO_AWS, 15}, /* 52.80.0.0/15 */
+    {0x34520000u, PROTO_AWS, 17}, /* 52.82.0.0/17 */
+    {0x34528000u, PROTO_CLOUDFRONT, 19}, /* 52.82.128.0/19 */
+    {0x3452a000u, PROTO_AWS, 21}, /* 52.82.160.0/21 */
+    {0x3452a800u, PROTO_AWS, 24}, /* 52.82.168.0/24 */
+    {0x3452a900u, PROTO_AWS, 27}, /* 52.82.169.0/27 */
+    {0x3452a920u, PROTO_UNKNOWN, 0},
+    {0x3452aa00u, PROTO_AWS, 23}, /* 52.82.170.0/23 */
+    {0x3452ac00u, PROTO_UNKNOWN, 0},
+    {0x3452b000u, PROTO_AWS, 21}, /* 52.82.176.0/21 */
+    {0x3452b800u, PROTO_AWS, 23}, /* 52.82.184.0/23 */
+    {0x3452ba00u, PROTO_UNKNOWN, 0},
+    {0x3452bb00u, PROTO_AWS, 24}, /* 52.82.187.0/24 */
+    {0x3452bc00u, PROTO_AWS, 22}, /* 52.82.188.0/22 */
+    {0x3452c000u, PROTO_AWS, 18}, /* 52.82.192.0/18 */
+    {0x34530000u, PROTO_AWS, 16}, /* 52.83.0.0/16 */
+    {0x34540000u, PROTO_CLOUDFRONT, 15}, /* 52.84.0.0/15 */
+    {0x34560000u, PROTO_AWS, 15}, /* 52.86.0.0/15 */
+    {0x34580000u, PROTO_AWS, 14}, /* 52.88.0.0/14 */
+    {0x345c0000u, PROTO_AWS, 16}, /* 52.92.0.0/16 */
+    {0x345d0000u, PROTO_AWS, 21}, /* 52.93.0.0/21 */
+    {0x345d0800u, PROTO_AWS, 22}, /* 52.93.8.0/22 */
+    {0x345d0c00u, PROTO_AWS, 24}, /* 52.93.12.0/24 */
+    {0x345d0d00u, PROTO_UNKNOWN, 0},
+    {0x345d0e00u, PROTO_AWS, 24}, /* 52.93.14.0/24 */
+    {0x345d0f00u, PROTO_UNKNOWN, 0},
+    {0x345d1000u, PROTO_AWS, 22}, /* 52.93.16.0/22 */
+    {0x345d1400u, PROTO_AWS, 23}, /* 52.93.20.0/23 */
+    {0x345d1600u, PROTO_UNKNOWN, 0},
+    {0x345d1630u, PROTO_AWS, 28}, /* 52.93.22.48/28 */
+    {0x345d1640u, PROTO_AWS, 29}, /* 52.93.22.64/29 */
+    {0x345d1648u, PROTO_UNKNOWN, 0},
+    {0x345d1700u, PROTO_AWS, 24}, /* 52.93.23.0/24 */
+    {0x345d1800u, PROTO_AWS, 21}, /* 52.93.24.0/21 */
+    {0x345d2000u, PROTO_UNKNOWN, 0},
+    {0x345d20b0u, PROTO_AWS, 32}, /* 52.93.32.176/32 */
+    {0x345d20b1u, PROTO_UNKNOWN, 0},
+    {0x345d20b3u, PROTO_AWS, 32}, /* 52.93.32.179/32 */
+    {0x345d20b5u, PROTO_UNKNOWN, 0},
+    {0x345d20b7u, PROTO_AWS, 32}, /* 52.93.32.183/32 */
+    {0x345d20b9u, PROTO_UNKNOWN, 0},
+    {0x345d2108u, PROTO_AWS, 30}, /* 52.93.33.8/30 */
+    {0x345d210cu, PROTO_UNKNOWN, 0},
+    {0x345d21e0u, PROTO_AWS, 31}, /* 52.93.33.224/31 */
+    {0x345d21e2u, PROTO_UNKNOWN, 0},
+    {0x345d21e6u, PROTO_AWS, 31}, /* 52.93.33.230/31 */
+    {0x345d21e8u, PROTO_UNKNOWN, 0},
+    {0x345d2200u, PROTO_AWS, 23}, /* 52.93.34.0/23 */
+    {0x345d2400u, PROTO_AWS, 22}, /* 52.93.36.0/22 */
+    {0x345d2c00u, PROTO_AWS, 23}, /* 52.93.44.0/23 */
+    {0x345d2e00u, PROTO_UNKNOWN, 0},
+    {0x345d2f00u, PROTO_AWS, 24}, /* 52.93.47.0/24 */
+    {0x345d3000u, PROTO_AWS, 22}, /* 52.93.48.0/22 */
+    {0x345d3400u, PROTO_UNKNOWN, 0},
+    {0x345d34a0u, PROTO_AWS, 29}, /* 52.93.52.160/29 */
+    {0x345d34a8u, PROTO_UNKNOWN, 0},
+    {0x345d3500u, PROTO_AWS, 29}, /* 52.93.53.0/29 */
+    {0x345d3508u, PROTO_UNKNOWN, 0},
+    {0x345d3790u, PROTO_AWS, 30}, /* 52.93.55.144/30 */
+    {0x345d3794u, PROTO_AWS, 31}, /* 52.93.55.148/31 */
+    {0x345d3796u, PROTO_UNKNOWN, 0},
+    {0x345d3798u, PROTO_AWS, 29}, /* 52.93.55.152/29 */
+    {0x345d37a8u, PROTO_UNKNOWN, 0},
+    {0x345d3800u, PROTO_AWS, 21}, /* 52.93.56.0/21 */
+    {0x345d4000u, PROTO_AWS, 22}, /* 52.93.64.0/22 */
+    {0x345d4400u, PROTO_AWS, 23}, /* 52.93.68.0/23 */
+    {0x345d4600u, PROTO_UNKNOWN, 0},
+    {0x345d4628u, PROTO_AWS, 29}, /* 52.93.70.40/29 */
+    {0x345d4630u, PROTO_UNKNOWN, 0},
+    {0x345d4680u, PROTO_AWS, 25}, /* 52.93.70.128/25 */
+    {0x345d4700u, PROTO_UNKNOWN, 0},
+    {0x345d4725u, PROTO_AWS, 32}, /* 52.93.71.37/32 */
+    {0x345d4726u, PROTO_AWS, 31}, /* 52.93.71.38/31 */
+    {0x345d4728u, PROTO_AWS, 29}, /* 52.93.71.40/29 */
+    {0x345d4730u, PROTO_UNKNOWN, 0},
+    {0x345d4800u, PROTO_AWS, 21}, /* 52.93.72.0/21 */
+    {0x345d5000u, PROTO_AWS, 22}, /* 52.93.80.0/22 */
+    {0x345d5400u, PROTO_UNKNOWN, 0},
+    {0x345d54a0u, PROTO_AWS, 29}, /* 52.93.84.160/29 */
+    {0x345d54a8u, PROTO_UNKNOWN, 0},
+    {0x345d54c0u, PROTO_AWS, 29}, /* 52.93.84.192/29 */
+    {0x345d54c8u, PROTO_UNKNOWN, 0},
+    {0x345d56a0u, PROTO_AWS, 29}, /* 52.93.86.160/29 */
+    {0x345d56a8u, PROTO_UNKNOWN, 0},
+    {0x345d56c0u, PROTO_AWS, 29}, /* 52.93.86.192/29 */
+    {0x345d56c8u, PROTO_UNKNOWN, 0},
+    {0x345d5760u, PROTO_AWS, 27}, /* 52.93.87.96/27 */
+    {0x345d5780u, PROTO_UNKNOWN, 0},
+    {0x345d58a0u, PROTO_AWS, 29}, /* 52.93.88.160/29 */
+    {0x345d58a8u, PROTO_UNKNOWN, 0},
+    {0x345d58c0u, PROTO_AWS, 29}, /* 52.93.88.192/29 */
+    {0x345d58c8u, PROTO_UNKNOWN, 0},
+    {0x345d5aa0u, PROTO_AWS, 29}, /* 52.93.90.160/29 */
+    {0x345d5aa8u, PROTO_UNKNOWN, 0},
+    {0x345d5ac0u, PROTO_AWS, 29}, /* 52.93.90.192/29 */
+    {0x345d5ac8u, PROTO_UNKNOWN, 0},
+    {0x345d5b60u, PROTO_AWS, 28}, /* 52.93.91.96/28 */
+    {0x345d5b70u, PROTO_AWS, 30}, /* 52.93.91.112/30 */
+    {0x345d5b74u, PROTO_UNKNOWN, 0},
+    {0x345d5c00u, PROTO_AWS, 22}, /* 52.93.92.0/22 */
+    {0x345d6400u, PROTO_AWS, 23}, /* 52.93.100.0/23 */
+    {0x345d6600u, PROTO_UNKNOWN, 0},
+    {0x345d6f00u, PROTO_AWS, 24}, /* 52.93.111.0/24 */
+    {0x345d7000u, PROTO_AWS, 23}, /* 52.93.112.0/23 */
+    {0x345d7200u, PROTO_UNKNOWN, 0},
+    {0x345d7300u, PROTO_AWS, 24}, /* 52.93.115.0/24 */
+    {0x345d7500u, PROTO_UNKNOWN, 0},
+    {0x345d7790u, PROTO_AWS, 30}, /* 52.93.119.144/30 */
+    {0x345d7794u, PROTO_UNKNOWN, 0},
+    {0x345d78b0u, PROTO_AWS, 30}, /* 52.93.120.176/30 */
+    {0x345d78b4u, PROTO_UNKNOWN, 0},
+    {0x345d79bbu, PROTO_AWS, 32}, /* 52.93.121.187/32 */
+    {0x345d79bcu, PROTO_AWS, 31}, /* 52.93.121.188/31 */
+    {0x345d79beu, PROTO_AWS, 32}, /* 52.93.121.190/32 */
+    {0x345d79bfu, PROTO_UNKNOWN, 0},
+    {0x345d79c3u, PROTO_AWS, 32}, /* 52.93.121.195/32 */
+    {0x345d79c4u, PROTO_AWS, 31}, /* 52.93.121.196/31 */
+    {0x345d79c6u, PROTO_AWS, 32}, /* 52.93.121.198/32 */
+    {0x345d79c7u, PROTO_UNKNOWN, 0},
+    {0x345d7a83u, PROTO_AWS, 32}, /* 52.93.122.131/32 */
+    {0x345d7a84u, PROTO_UNKNOWN, 0},
+    {0x345d7acau, PROTO_AWS, 31}, /* 52.93.122.202/31 */
+    {0x345d7accu, PROTO_UNKNOWN, 0},
+    {0x345d7adau, PROTO_AWS, 32}, /* 52.93.122.218/32 */
+    {0x345d7adbu, PROTO_UNKNOWN, 0},
+    {0x345d7affu, PROTO_AWS, 32}, /* 52.93.122.255/32 */
+    {0x345d7b00u, PROTO_UNKNOWN, 0},
+    {0x345d7b06u, PROTO_AWS, 32}, /* 52.93.123.6/32 */
+    {0x345d7b07u, PROTO_UNKNOWN, 0},
+    {0x345d7b0bu, PROTO_AWS, 32}, /* 52.93.123.11/32 */
+    {0x345d7b0cu, PROTO_UNKNOWN, 0},
+    {0x345d7b62u, PROTO_AWS, 31}, /* 52.93.123.98/31 */
+    {0x345d7b64u, PROTO_UNKNOWN, 0},
+    {0x345d7b88u, PROTO_AWS, 32}, /* 52.93.123.136/32 */
+    {0x345d7b89u, PROTO_UNKNOWN, 0},
+    {0x345d7bffu, PROTO_AWS, 32}, /* 52.93.123.255/32 */
+    {0x345d7c00u, PROTO_UNKNOWN, 0},
+    {0x345d7c0eu, PROTO_AWS, 31}, /* 52.93.124.14/31 */
+    {0x345d7c10u, PROTO_UNKNOWN, 0},
+    {0x345d7c60u, PROTO_AWS, 31}, /* 52.93.124.96/31 */
+    {0x345d7c62u, PROTO_UNKNOWN, 0},
+    {0x345d7cd2u, PROTO_AWS, 31}, /* 52.93.124.210/31 */
+    {0x345d7cd6u, PROTO_UNKNOWN, 0},
+    {0x345d7d2au, PROTO_AWS, 31}, /* 52.93.125.42/31 */
+    {0x345d7d2cu, PROTO_UNKNOWN, 0},
+    {0x345d7e4cu, PROTO_AWS, 32}, /* 52.93.126.76/32 */
+    {0x345d7e4du, PROTO_UNKNOWN, 0},
+    {0x345d7e7au, PROTO_AWS, 31}, /* 52.93.126.122/31 */
+    {0x345d7e7cu, PROTO_UNKNOWN, 0},
+    {0x345d7e82u, PROTO_AWS, 31}, /* 52.93.126.130/31 */
+    {0x345d7e84u, PROTO_AWS, 30}, /* 52.93.126.132/30 */
+    {0x345d7e8cu, PROTO_UNKNOWN, 0},
+    {0x345d7e90u, PROTO_AWS, 30}, /* 52.93.126.144/30 */
+    {0x345d7e94u, PROTO_UNKNOWN, 0},
+    {0x345d7ec6u, PROTO_AWS, 31}, /* 52.93.126.198/31 */
+    {0x345d7ec8u, PROTO_UNKNOWN, 0},
+    {0x345d7eccu, PROTO_AWS, 30}, /* 52.93.126.204/30 */
+    {0x345d7ed0u, PROTO_UNKNOWN, 0},
+    {0x345d7ed4u, PROTO_AWS, 30}, /* 52.93.126.212/30 */
+    {0x345d7ed8u, PROTO_UNKNOWN, 0},
+    {0x345d7eeau, PROTO_AWS, 31}, /* 52.93.126.234/31 */
+    {0x345d7eecu, PROTO_UNKNOWN, 0},
+    {0x345d7ef4u, PROTO_AWS, 31}, /* 52.93.126.244/31 */
+    {0x345d7ef6u, PROTO_UNKNOWN, 0},
+    {0x345d7efau, PROTO_AWS, 31}, /* 52.93.126.250/31 */
+    {0x345d7efcu, PROTO_UNKNOWN, 0},
+    {0x345d7f11u, PROTO_AWS, 32}, /* 52.93.127.17/32 */
+    {0x345d7f12u, PROTO_AWS, 31}, /* 52.93.127.18/31 */
+    {0x345d7f14u, PROTO_UNKNOWN, 0},
+    {0x345d7f18u, PROTO_AWS, 30}, /* 52.93.127.24/30 */
+    {0x345d7f1cu, PROTO_UNKNOWN, 0},
+    {0x345d7f44u, PROTO_AWS, 30}, /* 52.93.127.68/30 */
+    {0x345d7f48u, PROTO_UNKNOWN, 0},
+    {0x345d7f5cu, PROTO_AWS, 30}, /* 52.93.127.92/30 */
+    {0x345d7f60u, PROTO_AWS, 27}, /* 52.93.127.96/27 */
+    {0x345d7f80u, PROTO_AWS, 30}, /* 52.93.127.128/30 */
+    {0x345d7f84u, PROTO_AWS, 31}, /* 52.93.127.132/31 */
+    {0x345d7f86u, PROTO_UNKNOWN, 0},
+    {0x345d7f8au, PROTO_AWS, 31}, /* 52.93.127.138/31 */
+    {0x345d7f8cu, PROTO_UNKNOWN, 0},
+    {0x345d7f92u, PROTO_AWS, 31}, /* 52.93.127.146/31 */
+    {0x345d7f96u, PROTO_UNKNOWN, 0},
+    {0x345d7f98u, PROTO_AWS, 29}, /* 52.93.127.152/29 */
+    {0x345d7fa8u, PROTO_AWS, 31}, /* 52.93.127.168/31 */
+    {0x345d7faau, PROTO_UNKNOWN, 0},
+    {0x345d7facu, PROTO_AWS, 30}, /* 52.93.127.172/30 */
+    {0x345d7fb0u, PROTO_AWS, 29}, /* 52.93.127.176/29 */
+    {0x345d7fb8u, PROTO_AWS, 31}, /* 52.93.127.184/31 */
+    {0x345d7fbau, PROTO_UNKNOWN, 0},
+    {0x345d7fc2u, PROTO_AWS, 31}, /* 52.93.127.194/31 */
+    {0x345d7fc4u, PROTO_AWS, 30}, /* 52.93.127.196/30 */
+    {0x345d7fc8u, PROTO_AWS, 29}, /* 52.93.127.200/29 */
+    {0x345d7fd0u, PROTO_UNKNOWN, 0},
+    {0x345d7fd8u, PROTO_AWS, 30}, /* 52.93.127.216/30 */
+    {0x345d7fdcu, PROTO_AWS, 31}, /* 52.93.127.220/31 */
+    {0x345d7fdeu, PROTO_UNKNOWN, 0},
+    {0x345d7fe8u, PROTO_AWS, 32}, /* 52.93.127.232/32 */
+    {0x345d7fe9u, PROTO_UNKNOWN, 0},
+    {0x345d7fedu, PROTO_AWS, 32}, /* 52.93.127.237/32 */
+    {0x345d7feeu, PROTO_AWS, 31}, /* 52.93.127.238/31 */
+    {0x345d7ff0u, PROTO_UNKNOWN, 0},
+    {0x345d7ff4u, PROTO_AWS, 30}, /* 52.93.127.244/30 */
+    {0x345d7ff8u, PROTO_AWS, 29}, /* 52.93.127.248/29 */
+    {0x345d8000u, PROTO_UNKNOWN, 0},
+    {0x345d815fu, PROTO_AWS, 32}, /* 52.93.129.95/32 */
+    {0x345d8160u, PROTO_UNKNOWN, 0},
+    {0x345d83d9u, PROTO_AWS, 32}, /* 52.93.131.217/32 */
+    {0x345d83dau, PROTO_UNKNOWN, 0},
+    {0x345d857fu, PROTO_AWS, 32}, /* 52.93.133.127/32 */
+    {0x345d8580u, PROTO_UNKNOWN, 0},
+    {0x345d8581u, PROTO_AWS, 32}, /* 52.93.133.129/32 */
+    {0x345d8582u, PROTO_UNKNOWN, 0},
+    {0x345d8583u, PROTO_AWS, 32}, /* 52.93.133.131/32 */
+    {0x345d8584u, PROTO_UNKNOWN, 0},
+    {0x345d8585u, PROTO_AWS, 32}, /* 52.93.133.133/32 */
+    {0x345d8586u, PROTO_UNKNOWN, 0},
+    {0x345d8599u, PROTO_AWS, 32}, /* 52.93.133.153/32 */
+    {0x345d859au, PROTO_UNKNOWN, 0},
+    {0x345d859bu, PROTO_AWS, 32}, /* 52.93.133.155/32 */
+    {0x345d859cu, PROTO_UNKNOWN, 0},
+    {0x345d85afu, PROTO_AWS, 32}, /* 52.93.133.175/32 */
+    {0x345d85b0u, PROTO_UNKNOWN, 0},
+    {0x345d85b1u, PROTO_AWS, 32}, /* 52.93.133.177/32 */
+    {0x345d85b2u, PROTO_UNKNOWN, 0},
+    {0x345d85b3u, PROTO_AWS, 32}, /* 52.93.133.179/32 */
+    {0x345d85b4u, PROTO_UNKNOWN, 0},
+    {0x345d85b5u, PROTO_AWS, 32}, /* 52.93.133.181/32 */
+    {0x345d85b6u, PROTO_UNKNOWN, 0},
+    {0x345d86b5u, PROTO_AWS, 32}, /* 52.93.134.181/32 */
+    {0x345d86b6u, PROTO_UNKNOWN, 0},
+    {0x345d87c3u, PROTO_AWS, 32}, /* 52.93.135.195/32 */
+    {0x345d87c4u, PROTO_UNKNOWN, 0},
+    {0x345d8800u, PROTO_AWS, 22}, /* 52.93.136.0/22 */
+    {0x345d8c00u, PROTO_AWS, 24}, /* 52.93.140.0/24 */
+    {0x345d8d00u, PROTO_UNKNOWN, 0},
+    {0x345d8d80u, PROTO_AWS, 25}, /* 52.93.141.128/25 */
+    {0x345d8e00u, PROTO_UNKNOWN, 0},
+    {0x345d9200u, PROTO_AWS, 23}, /* 52.93.146.0/23 */
+    {0x345d9400u, PROTO_AWS, 25}, /* 52.93.148.0/25 */
+    {0x345d9480u, PROTO_AWS, 26}, /* 52.93.148.128/26 */
+    {0x345d94c0u, PROTO_UNKNOWN, 0},
+    {0x345d9500u, PROTO_AWS, 24}, /* 52.93.149.0/24 */
+    {0x345d9600u, PROTO_AWS, 23}, /* 52.93.150.0/23 */
+    {0x345d9800u, PROTO_UNKNOWN, 0},
+    {0x345d98a0u, PROTO_AWS, 29}, /* 52.93.152.160/29 */
+    {0x345d98a8u, PROTO_UNKNOWN, 0},
+    {0x345d98c0u, PROTO_AWS, 29}, /* 52.93.152.192/29 */
+    {0x345d98c8u, PROTO_UNKNOWN, 0},
+    {0x345d9940u, PROTO_AWS, 29}, /* 52.93.153.64/29 */
+    {0x345d9948u, PROTO_UNKNOWN, 0},
+    {0x345d9950u, PROTO_AWS, 32}, /* 52.93.153.80/32 */
+    {0x345d9951u, PROTO_UNKNOWN, 0},
+    {0x345d9960u, PROTO_AWS, 29}, /* 52.93.153.96/29 */
+    {0x345d9968u, PROTO_UNKNOWN, 0},
+    {0x345d9980u, PROTO_AWS, 29}, /* 52.93.153.128/29 */
+    {0x345d9988u, PROTO_UNKNOWN, 0},
+    {0x345d9994u, PROTO_AWS, 31}, /* 52.93.153.148/31 */
+    {0x345d9996u, PROTO_UNKNOWN, 0},
+    {0x345d99a8u, PROTO_AWS, 29}, /* 52.93.153.168/29 */
+    {0x345d99b0u, PROTO_AWS, 30}, /* 52.93.153.176/30 */
+    {0x345d99b4u, PROTO_UNKNOWN, 0},
+    {0x345d9c00u, PROTO_AWS, 22}, /* 52.93.156.0/22 */
+    {0x345da000u, PROTO_UNKNOWN, 0},
+    {0x345db280u, PROTO_AWS, 26}, /* 52.93.178.128/26 */
+    {0x345db2c0u, PROTO_AWS, 27}, /* 52.93.178.192/27 */
+    {0x345db2e0u, PROTO_AWS, 29}, /* 52.93.178.224/29 */
+    {0x345db2e8u, PROTO_AWS, 30}, /* 52.93.178.232/30 */
+    {0x345db2ecu, PROTO_UNKNOWN, 0},
+    {0x345db680u, PROTO_AWS, 26}, /* 52.93.182.128/26 */
+    {0x345db6c0u, PROTO_UNKNOWN, 0},
+    {0x345db740u, PROTO_AWS, 27}, /* 52.93.183.64/27 */
+    {0x345db760u, PROTO_UNKNOWN, 0},
+    {0x345dc1c0u, PROTO_AWS, 29}, /* 52.93.193.192/29 */
+    {0x345dc1c8u, PROTO_AWS, 30}, /* 52.93.193.200/30 */
+    {0x345dc1ccu, PROTO_UNKNOWN, 0},
+    {0x345dc600u, PROTO_AWS, 25}, /* 52.93.198.0/25 */
+    {0x345dc680u, PROTO_UNKNOWN, 0},
+    {0x345dc718u, PROTO_AWS, 29}, /* 52.93.199.24/29 */
+    {0x345dc720u, PROTO_AWS, 28}, /* 52.93.199.32/28 */
+    {0x345dc730u, PROTO_UNKNOWN, 0},
+    {0x345dc758u, PROTO_AWS, 29}, /* 52.93.199.88/29 */
+    {0x345dc760u, PROTO_AWS, 28}, /* 52.93.199.96/28 */
+    {0x345dc770u, PROTO_UNKNOWN, 0},
+    {0x345dc950u, PROTO_AWS, 28}, /* 52.93.201.80/28 */
+    {0x345dc970u, PROTO_UNKNOWN, 0},
+    {0x345de4a0u, PROTO_AWS, 29}, /* 52.93.228.160/29 */
+    {0x345de4a8u, PROTO_UNKNOWN, 0},
+    {0x345de4c0u, PROTO_AWS, 29}, /* 52.93.228.192/29 */
+    {0x345de4c8u, PROTO_UNKNOWN, 0},
+    {0x345de540u, PROTO_AWS, 29}, /* 52.93.229.64/29 */
+    {0x345de548u, PROTO_UNKNOWN, 0},
+    {0x345de560u, PROTO_AWS, 29}, /* 52.93.229.96/29 */
+    {0x345de568u, PROTO_UNKNOWN, 0},
+    {0x345de580u, PROTO_AWS, 29}, /* 52.93.229.128/29 */
+    {0x345de588u, PROTO_UNKNOWN, 0},
+    {0x345de594u, PROTO_AWS, 31}, /* 52.93.229.148/31 */
+    {0x345de596u, PROTO_UNKNOWN, 0},
+    {0x345dec00u, PROTO_AWS, 22}, /* 52.93.236.0/22 */
+    {0x345df400u, PROTO_AWS, 23}, /* 52.93.244.0/23 */
+    {0x345df600u, PROTO_UNKNOWN, 0},
+    {0x345df6d8u, PROTO_AWS, 29}, /* 52.93.246.216/29 */
+    {0x345df6e0u, PROTO_UNKNOWN, 0},
+    {0x345df700u, PROTO_AWS, 25}, /* 52.93.247.0/25 */
+    {0x345df780u, PROTO_UNKNOWN, 0},
+    {0x345df800u, PROTO_AWS, 22}, /* 52.93.248.0/22 */
+    {0x345dfc00u, PROTO_UNKNOWN, 0},
+    {0x345dfe00u, PROTO_AWS, 23}, /* 52.93.254.0/23 */
+    {0x345e0000u, PROTO_AWS, 20}, /* 52.94.0.0/20 */
+    {0x345e1000u, PROTO_AWS, 22}, /* 52.94.16.0/22 */
+    {0x345e1400u, PROTO_AWS, 24}, /* 52.94.20.0/24 */
     {0x345e1500u, PROTO_UNKNOWN, 0},
-    {0x345e1800u, PROTO_AMAZON, 23}, /* 52.94.24.0/23 */
-    {0x345e1a00u, PROTO_UNKNOWN, 0},
-    {0x345e1c00u, PROTO_AMAZON, 23}, /* 52.94.28.0/23 */
-    {0x345e1e00u, PROTO_UNKNOWN, 0},
-    {0x345e2000u, PROTO_AMAZON, 20}, /* 52.94.32.0/20 */
-    {0x345e4000u, PROTO_AMAZON, 22}, /* 52.94.64.0/22 */
-    {0x345e4400u, PROTO_UNKNOWN, 0},
-    {0x345e5000u, PROTO_AMAZON, 20}, /* 52.94.80.0/20 */
-    {0x345e7000u, PROTO_AMAZON, 22}, /* 52.94.112.0/22 */
-    {0x345e7400u, PROTO_UNKNOWN, 0},
-    {0x345ecc00u, PROTO_AMAZON, 23}, /* 52.94.204.0/23 */
-    {0x345ed000u, PROTO_AMAZON, 21}, /* 52.94.208.0/21 */
-    {0x345ee000u, PROTO_AMAZON, 20}, /* 52.94.224.0/20 */
-    {0x345ef000u, PROTO_AMAZON, 22}, /* 52.94.240.0/22 */
-    {0x345ef400u, PROTO_UNKNOWN, 0},
-    {0x345efc00u, PROTO_AMAZON, 23}, /* 52.94.252.0/23 */
-    {0x345f0000u, PROTO_AMAZON, 21}, /* 52.95.0.0/21 */
-    {0x345f0800u, PROTO_UNKNOWN, 0},
-    {0x345f0a00u, PROTO_AMAZON, 23}, /* 52.95.10.0/23 */
-    {0x345f0c00u, PROTO_AMAZON, 22}, /* 52.95.12.0/22 */
-    {0x345f1000u, PROTO_AMAZON, 21}, /* 52.95.16.0/21 */
-    {0x345f1800u, PROTO_AMAZON, 22}, /* 52.95.24.0/22 */
-    {0x345f1c00u, PROTO_UNKNOWN, 0},
-    {0x345f1e00u, PROTO_AMAZON, 23}, /* 52.95.30.0/23 */
+    {0x345e1600u, PROTO_AWS, 23}, /* 52.94.22.0/23 */
+    {0x345e1800u, PROTO_AWS, 22}, /* 52.94.24.0/22 */
+    {0x345e1c00u, PROTO_AWS, 23}, /* 52.94.28.0/23 */
+    {0x345e1e00u, PROTO_AWS, 24}, /* 52.94.30.0/24 */
+    {0x345e1f00u, PROTO_UNKNOWN, 0},
+    {0x345e2000u, PROTO_AWS, 19}, /* 52.94.32.0/19 */
+    {0x345e4000u, PROTO_AWS, 22}, /* 52.94.64.0/22 */
+    {0x345e4400u, PROTO_AWS, 23}, /* 52.94.68.0/23 */
+    {0x345e4600u, PROTO_UNKNOWN, 0},
+    {0x345e4800u, PROTO_AWS, 21}, /* 52.94.72.0/21 */
+    {0x345e5000u, PROTO_AWS, 20}, /* 52.94.80.0/20 */
+    {0x345e6000u, PROTO_AWS, 19}, /* 52.94.96.0/19 */
+    {0x345e8000u, PROTO_AWS, 20}, /* 52.94.128.0/20 */
+    {0x345e9000u, PROTO_AWS, 23}, /* 52.94.144.0/23 */
+    {0x345e9200u, PROTO_AWS, 24}, /* 52.94.146.0/24 */
+    {0x345e9300u, PROTO_UNKNOWN, 0},
+    {0x345e9400u, PROTO_AWS, 22}, /* 52.94.148.0/22 */
+    {0x345e9800u, PROTO_UNKNOWN, 0},
+    {0x345e9803u, PROTO_AWS, 32}, /* 52.94.152.3/32 */
+    {0x345e9804u, PROTO_UNKNOWN, 0},
+    {0x345e9809u, PROTO_AWS, 32}, /* 52.94.152.9/32 */
+    {0x345e980au, PROTO_UNKNOWN, 0},
+    {0x345e980bu, PROTO_AWS, 32}, /* 52.94.152.11/32 */
+    {0x345e980du, PROTO_UNKNOWN, 0},
+    {0x345e982cu, PROTO_AWS, 32}, /* 52.94.152.44/32 */
+    {0x345e982du, PROTO_UNKNOWN, 0},
+    {0x345e983cu, PROTO_AWS, 30}, /* 52.94.152.60/30 */
+    {0x345e9844u, PROTO_AWS, 31}, /* 52.94.152.68/31 */
+    {0x345e9846u, PROTO_UNKNOWN, 0},
+    {0x345e98b0u, PROTO_AWS, 28}, /* 52.94.152.176/28 */
+    {0x345e98c0u, PROTO_AWS, 30}, /* 52.94.152.192/30 */
+    {0x345e98c4u, PROTO_UNKNOWN, 0},
+    {0x345ea000u, PROTO_AWS, 19}, /* 52.94.160.0/19 */
+    {0x345ec000u, PROTO_AWS, 22}, /* 52.94.192.0/22 */
+    {0x345ec400u, PROTO_AWS, 23}, /* 52.94.196.0/23 */
+    {0x345ec600u, PROTO_AWS, 25}, /* 52.94.198.0/25 */
+    {0x345ec680u, PROTO_AWS, 27}, /* 52.94.198.128/27 */
+    {0x345ec6a0u, PROTO_UNKNOWN, 0},
+    {0x345ec700u, PROTO_AWS, 24}, /* 52.94.199.0/24 */
+    {0x345ec900u, PROTO_AWS, 25}, /* 52.94.201.0/25 */
+    {0x345ec980u, PROTO_UNKNOWN, 0},
+    {0x345ecc00u, PROTO_AWS, 22}, /* 52.94.204.0/22 */
+    {0x345ed000u, PROTO_AWS, 20}, /* 52.94.208.0/20 */
+    {0x345ef000u, PROTO_AWS, 21}, /* 52.94.240.0/21 */
+    {0x345ef800u, PROTO_AWS, 25}, /* 52.94.248.0/25 */
+    {0x345ef880u, PROTO_AWS, 26}, /* 52.94.248.128/26 */
+    {0x345ef8c0u, PROTO_AWS, 27}, /* 52.94.248.192/27 */
+    {0x345ef8e0u, PROTO_AWS, 28}, /* 52.94.248.224/28 */
+    {0x345ef8f0u, PROTO_UNKNOWN, 0},
+    {0x345ef920u, PROTO_AWS, 27}, /* 52.94.249.32/27 */
+    {0x345ef940u, PROTO_AWS, 26}, /* 52.94.249.64/26 */
+    {0x345ef980u, PROTO_AWS, 25}, /* 52.94.249.128/25 */
+    {0x345efa00u, PROTO_AWS, 26}, /* 52.94.250.0/26 */
+    {0x345efa40u, PROTO_UNKNOWN, 0},
+    {0x345efa50u, PROTO_AWS, 28}, /* 52.94.250.80/28 */
+    {0x345efa60u, PROTO_AWS, 27}, /* 52.94.250.96/27 */
+    {0x345efa80u, PROTO_AWS, 26}, /* 52.94.250.128/26 */
+    {0x345efac0u, PROTO_AWS, 28}, /* 52.94.250.192/28 */
+    {0x345efad0u, PROTO_UNKNOWN, 0},
+    {0x345efc00u, PROTO_AWS, 22}, /* 52.94.252.0/22 */
+    {0x345f0000u, PROTO_AWS, 20}, /* 52.95.0.0/20 */
+    {0x345f1000u, PROTO_AWS, 21}, /* 52.95.16.0/21 */
+    {0x345f1800u, PROTO_AWS, 22}, /* 52.95.24.0/22 */
+    {0x345f1c00u, PROTO_AWS, 24}, /* 52.95.28.0/24 */
+    {0x345f1d00u, PROTO_AWS, 26}, /* 52.95.29.0/26 */
+    {0x345f1d40u, PROTO_UNKNOWN, 0},
+    {0x345f1e00u, PROTO_AWS, 23}, /* 52.95.30.0/23 */
     {0x345f2000u, PROTO_UNKNOWN, 0},
-    {0x345f2200u, PROTO_AMAZON, 24}, /* 52.95.34.0/24 */
-    {0x345f2400u, PROTO_AMAZON, 22}, /* 52.95.36.0/22 */
-    {0x345f2800u, PROTO_UNKNOWN, 0},
-    {0x345f3000u, PROTO_AMAZON, 22}, /* 52.95.48.0/22 */
-    {0x345f3c00u, PROTO_UNKNOWN, 0},
-    {0x345f4000u, PROTO_AMAZON, 20}, /* 52.95.64.0/20 */
-    {0x345f4800u, PROTO_AMAZON, 23}, /* 52.95.72.0/23 */
-    {0x345f4c00u, PROTO_AMAZON, 20}, /* 52.95.64.0/20 */
-    {0x345f6000u, PROTO_AMAZON, 22}, /* 52.95.96.0/22 */
-    {0x345f6c00u, PROTO_AMAZON, 23}, /* 52.95.108.0/23 */
-    {0x345f6e00u, PROTO_UNKNOWN, 0},
-    {0x345f6f00u, PROTO_AMAZON, 24}, /* 52.95.111.0/24 */
-    {0x345f7000u, PROTO_AMAZON, 20}, /* 52.95.112.0/20 */
-    {0x345f8000u, PROTO_AMAZON, 24}, /* 52.95.128.0/24 */
-    {0x345fc000u, PROTO_AMAZON, 20}, /* 52.95.192.0/20 */
-    {0x345fd000u, PROTO_UNKNOWN, 0},
-    {0x345fd400u, PROTO_AMAZON, 22}, /* 52.95.212.0/22 */
-    {0x345fd800u, PROTO_UNKNOWN, 0},
-    {0x345fe000u, PROTO_AMAZON, 24}, /* 52.95.224.0/24 */
-    {0x345fe100u, PROTO_UNKNOWN, 0},
-    {0x345ff000u, PROTO_AMAZON, 24}, /* 52.95.240.0/24 */
-    {0x345fff00u, PROTO_UNKNOWN, 0},
-    {0x34778000u, PROTO_AMAZON, 17}, /* 52.119.128.0/17 */
-    {0x34779000u, PROTO_AMAZON, 21}, /* 52.119.144.0/21 */
-    {0x34779800u, PROTO_AMAZON, 22}, /* 52.119.152.0/22 */
-    {0x34779c00u, PROTO_AMAZON, 17}, /* 52.119.128.0/17 */
-    {0x3477a000u, PROTO_AMAZON, 20}, /* 52.119.160.0/20 */
-    {0x3477b000u, PROTO_AMAZON, 17}, /* 52.119.128.0/17 */
-    {0x3477c000u, PROTO_AMAZON, 22}, /* 52.119.192.0/22 */
-    {0x3477c400u, PROTO_AMAZON, 17}, /* 52.119.128.0/17 */
-    {0x3477d400u, PROTO_AMAZON, 23}, /* 52.119.212.0/23 */
-    {0x3477d600u, PROTO_AMAZON, 17}, /* 52.119.128.0/17 */
-    {0x3477d800u, PROTO_AMAZON, 21}, /* 52.119.216.0/21 */
-    {0x3477e800u, PROTO_AMAZON, 17}, /* 52.119.128.0/17 */
-    {0x34780000u, PROTO_UNKNOWN, 0},
-    {0x347c8000u, PROTO_AMAZON, 17}, /* 52.124.128.0/17 */
+    {0x345f2200u, PROTO_AWS, 23}, /* 52.95.34.0/23 */
+    {0x345f2400u, PROTO_AWS, 22}, /* 52.95.36.0/22 */
+    {0x345f2800u, PROTO_AWS, 23}, /* 52.95.40.0/23 */
+    {0x345f2a00u, PROTO_AWS, 24}, /* 52.95.42.0/24 */
+    {0x345f2b00u, PROTO_UNKNOWN, 0},
+    {0x345f3000u, PROTO_AWS, 20}, /* 52.95.48.0/20 */
+    {0x345f4000u, PROTO_AWS, 18}, /* 52.95.64.0/18 */
+    {0x345fc000u, PROTO_AWS, 20}, /* 52.95.192.0/20 */
+    {0x345fd000u, PROTO_AWS, 21}, /* 52.95.208.0/21 */
+    {0x345fd800u, PROTO_AWS, 22}, /* 52.95.216.0/22 */
+    {0x345fdc00u, PROTO_UNKNOWN, 0},
+    {0x345fe000u, PROTO_AWS, 22}, /* 52.95.224.0/22 */
+    {0x345fe400u, PROTO_AWS, 23}, /* 52.95.228.0/23 */
+    {0x345fe600u, PROTO_AWS, 24}, /* 52.95.230.0/24 */
+    {0x345fe700u, PROTO_UNKNOWN, 0},
+    {0x345feb00u, PROTO_AWS, 24}, /* 52.95.235.0/24 */
+    {0x345fec00u, PROTO_UNKNOWN, 0},
+    {0x345fef00u, PROTO_AWS, 24}, /* 52.95.239.0/24 */
+    {0x345ff000u, PROTO_AWS, 21}, /* 52.95.240.0/21 */
+    {0x345ff800u, PROTO_AWS, 22}, /* 52.95.248.0/22 */
+    {0x345ffc00u, PROTO_AWS, 23}, /* 52.95.252.0/23 */
+    {0x345ffe00u, PROTO_AWS, 24}, /* 52.95.254.0/24 */
+    {0x345fff00u, PROTO_AWS, 25}, /* 52.95.255.0/25 */
+    {0x345fff80u, PROTO_AWS, 28}, /* 52.95.255.128/28 */
+    {0x345fff90u, PROTO_UNKNOWN, 0},
+    {0x34600b00u, PROTO_AZURE, 24}, /* 52.96.11.0/24 */
+    {0x34600c00u, PROTO_UNKNOWN, 0},
+    {0x34650000u, PROTO_AZURE, 16}, /* 52.101.0.0/16 */
+    {0x34660000u, PROTO_UNKNOWN, 0},
+    {0x34668000u, PROTO_AZURE, 17}, /* 52.102.128.0/17 */
+    {0x34670000u, PROTO_AZURE, 16}, /* 52.103.0.0/16 */
+    {0x34680000u, PROTO_UNKNOWN, 0},
+    {0x346a0000u, PROTO_AZURE, 16}, /* 52.106.0.0/16 */
+    {0x346b0000u, PROTO_UNKNOWN, 0},
+    {0x346c0000u, PROTO_AZURE, 21}, /* 52.108.0.0/21 */
+    {0x346c0800u, PROTO_UNKNOWN, 0},
+    {0x346c1000u, PROTO_AZURE, 20}, /* 52.108.16.0/20 */
+    {0x346c2000u, PROTO_AZURE, 19}, /* 52.108.32.0/19 */
+    {0x346c4000u, PROTO_UNKNOWN, 0},
+    {0x346c4400u, PROTO_AZURE, 22}, /* 52.108.68.0/22 */
+    {0x346c4800u, PROTO_AZURE, 21}, /* 52.108.72.0/21 */
+    {0x346c5000u, PROTO_AZURE, 20}, /* 52.108.80.0/20 */
+    {0x346c7000u, PROTO_AZURE, 23}, /* 52.108.112.0/23 */
+    {0x346c7200u, PROTO_UNKNOWN, 0},
+    {0x346c7300u, PROTO_AZURE, 24}, /* 52.108.115.0/24 */
+    {0x346c7400u, PROTO_AZURE, 23}, /* 52.108.116.0/23 */
+    {0x346c7600u, PROTO_AZURE, 24}, /* 52.108.118.0/24 */
+    {0x346c7700u, PROTO_UNKNOWN, 0},
+    {0x346c7900u, PROTO_AZURE, 24}, /* 52.108.121.0/24 */
+    {0x346c7a00u, PROTO_AZURE, 23}, /* 52.108.122.0/23 */
+    {0x346c7c00u, PROTO_AZURE, 22}, /* 52.108.124.0/22 */
+    {0x346c8000u, PROTO_AZURE, 21}, /* 52.108.128.0/21 */
+    {0x346c8800u, PROTO_AZURE, 22}, /* 52.108.136.0/22 */
+    {0x346c8c00u, PROTO_UNKNOWN, 0},
+    {0x346c9000u, PROTO_AZURE, 21}, /* 52.108.144.0/21 */
+    {0x346c9800u, PROTO_AZURE, 22}, /* 52.108.152.0/22 */
+    {0x346c9c00u, PROTO_AZURE, 24}, /* 52.108.156.0/24 */
+    {0x346c9d00u, PROTO_UNKNOWN, 0},
+    {0x346ca500u, PROTO_AZURE, 24}, /* 52.108.165.0/24 */
+    {0x346ca600u, PROTO_AZURE, 23}, /* 52.108.166.0/23 */
+    {0x346ca800u, PROTO_AZURE, 21}, /* 52.108.168.0/21 */
+    {0x346cb000u, PROTO_AZURE, 20}, /* 52.108.176.0/20 */
+    {0x346cc000u, PROTO_AZURE, 18}, /* 52.108.192.0/18 */
+    {0x346d0000u, PROTO_AZURE, 16}, /* 52.109.0.0/16 */
+    {0x346e0000u, PROTO_UNKNOWN, 0},
+    {0x346fc000u, PROTO_AZURE, 20}, /* 52.111.192.0/20 */
+    {0x346fd000u, PROTO_AZURE, 22}, /* 52.111.208.0/22 */
+    {0x346fd400u, PROTO_UNKNOWN, 0},
+    {0x346fe000u, PROTO_AZURE, 19}, /* 52.111.224.0/19 */
+    {0x34700000u, PROTO_AZURE, 20}, /* 52.112.0.0/20 */
+    {0x34701000u, PROTO_AZURE, 22}, /* 52.112.16.0/22 */
+    {0x34701400u, PROTO_UNKNOWN, 0},
+    {0x34701600u, PROTO_AZURE, 23}, /* 52.112.22.0/23 */
+    {0x34701a00u, PROTO_AZURE, 24}, /* 52.112.26.0/24 */
+    {0x34701b00u, PROTO_UNKNOWN, 0},
+    {0x34702000u, PROTO_AZURE, 24}, /* 52.112.32.0/24 */
+    {0x34702100u, PROTO_UNKNOWN, 0},
+    {0x34702200u, PROTO_AZURE, 23}, /* 52.112.34.0/23 */
+    {0x34702400u, PROTO_AZURE, 22}, /* 52.112.36.0/22 */
+    {0x34702800u, PROTO_AZURE, 21}, /* 52.112.40.0/21 */
+    {0x34703000u, PROTO_AZURE, 20}, /* 52.112.48.0/20 */
+    {0x34704000u, PROTO_UNKNOWN, 0},
+    {0x34704100u, PROTO_AZURE, 24}, /* 52.112.65.0/24 */
+    {0x34704300u, PROTO_UNKNOWN, 0},
+    {0x34704400u, PROTO_AZURE, 23}, /* 52.112.68.0/23 */
+    {0x34704600u, PROTO_AZURE, 24}, /* 52.112.70.0/24 */
+    {0x34704700u, PROTO_UNKNOWN, 0},
+    {0x34704800u, PROTO_AZURE, 21}, /* 52.112.72.0/21 */
+    {0x34705000u, PROTO_UNKNOWN, 0},
+    {0x34705400u, PROTO_AZURE, 22}, /* 52.112.84.0/22 */
+    {0x34705800u, PROTO_AZURE, 21}, /* 52.112.88.0/21 */
+    {0x34706000u, PROTO_AZURE, 24}, /* 52.112.96.0/24 */
+    {0x34706100u, PROTO_UNKNOWN, 0},
+    {0x34706400u, PROTO_AZURE, 22}, /* 52.112.100.0/22 */
+    {0x34706800u, PROTO_UNKNOWN, 0},
+    {0x34706900u, PROTO_AZURE, 24}, /* 52.112.105.0/24 */
+    {0x34706a00u, PROTO_AZURE, 23}, /* 52.112.106.0/23 */
+    {0x34706e00u, PROTO_UNKNOWN, 0},
+    {0x34707000u, PROTO_AZURE, 21}, /* 52.112.112.0/21 */
+    {0x34707800u, PROTO_AZURE, 24}, /* 52.112.120.0/24 */
+    {0x34707900u, PROTO_UNKNOWN, 0},
+    {0x34707a00u, PROTO_AZURE, 23}, /* 52.112.122.0/23 */
+    {0x34707c00u, PROTO_AZURE, 22}, /* 52.112.124.0/22 */
+    {0x34708000u, PROTO_AZURE, 18}, /* 52.112.128.0/18 */
+    {0x3470c000u, PROTO_AZURE, 19}, /* 52.112.192.0/19 */
+    {0x3470e000u, PROTO_AZURE, 22}, /* 52.112.224.0/22 */
+    {0x3470e400u, PROTO_AZURE, 23}, /* 52.112.228.0/23 */
+    {0x3470e600u, PROTO_UNKNOWN, 0},
+    {0x3470e700u, PROTO_AZURE, 24}, /* 52.112.231.0/24 */
+    {0x3470e800u, PROTO_AZURE, 21}, /* 52.112.232.0/21 */
+    {0x3470f000u, PROTO_AZURE, 20}, /* 52.112.240.0/20 */
+    {0x34710000u, PROTO_AZURE, 21}, /* 52.113.0.0/21 */
+    {0x34710800u, PROTO_AZURE, 22}, /* 52.113.8.0/22 */
+    {0x34710c00u, PROTO_AZURE, 24}, /* 52.113.12.0/24 */
+    {0x34710d00u, PROTO_UNKNOWN, 0},
+    {0x34710e00u, PROTO_AZURE, 24}, /* 52.113.14.0/24 */
+    {0x34710f00u, PROTO_UNKNOWN, 0},
+    {0x34711000u, PROTO_AZURE, 20}, /* 52.113.16.0/20 */
+    {0x34712000u, PROTO_AZURE, 19}, /* 52.113.32.0/19 */
+    {0x34716000u, PROTO_UNKNOWN, 0},
+    {0x34716500u, PROTO_AZURE, 24}, /* 52.113.101.0/24 */
+    {0x34716600u, PROTO_AZURE, 23}, /* 52.113.102.0/23 */
+    {0x34716800u, PROTO_UNKNOWN, 0},
+    {0x34716a00u, PROTO_AZURE, 23}, /* 52.113.106.0/23 */
+    {0x34716c00u, PROTO_AZURE, 22}, /* 52.113.108.0/22 */
+    {0x34717000u, PROTO_AZURE, 20}, /* 52.113.112.0/20 */
+    {0x34718000u, PROTO_AZURE, 23}, /* 52.113.128.0/23 */
+    {0x34718200u, PROTO_UNKNOWN, 0},
+    {0x34718300u, PROTO_AZURE, 24}, /* 52.113.131.0/24 */
+    {0x34718400u, PROTO_AZURE, 22}, /* 52.113.132.0/22 */
+    {0x34718800u, PROTO_AZURE, 21}, /* 52.113.136.0/21 */
+    {0x34719000u, PROTO_AZURE, 20}, /* 52.113.144.0/20 */
+    {0x3471a000u, PROTO_AZURE, 19}, /* 52.113.160.0/19 */
+    {0x3471c000u, PROTO_AZURE, 23}, /* 52.113.192.0/23 */
+    {0x3471c200u, PROTO_UNKNOWN, 0},
+    {0x3471c600u, PROTO_AZURE, 23}, /* 52.113.198.0/23 */
+    {0x3471c800u, PROTO_AZURE, 21}, /* 52.113.200.0/21 */
+    {0x3471d000u, PROTO_AZURE, 20}, /* 52.113.208.0/20 */
+    {0x3471e000u, PROTO_AZURE, 19}, /* 52.113.224.0/19 */
+    {0x34720000u, PROTO_AZURE, 18}, /* 52.114.0.0/18 */
+    {0x34724000u, PROTO_UNKNOWN, 0},
+    {0x34724100u, PROTO_AZURE, 24}, /* 52.114.65.0/24 */
+    {0x34724200u, PROTO_UNKNOWN, 0},
+    {0x34724300u, PROTO_AZURE, 24}, /* 52.114.67.0/24 */
+    {0x34724400u, PROTO_UNKNOWN, 0},
+    {0x34724500u, PROTO_AZURE, 24}, /* 52.114.69.0/24 */
+    {0x34724600u, PROTO_UNKNOWN, 0},
+    {0x34724700u, PROTO_AZURE, 24}, /* 52.114.71.0/24 */
+    {0x34724800u, PROTO_AZURE, 21}, /* 52.114.72.0/21 */
+    {0x34725000u, PROTO_AZURE, 20}, /* 52.114.80.0/20 */
+    {0x34726000u, PROTO_AZURE, 22}, /* 52.114.96.0/22 */
+    {0x34726400u, PROTO_AZURE, 24}, /* 52.114.100.0/24 */
+    {0x34726500u, PROTO_UNKNOWN, 0},
+    {0x34726800u, PROTO_AZURE, 21}, /* 52.114.104.0/21 */
+    {0x34727000u, PROTO_AZURE, 22}, /* 52.114.112.0/22 */
+    {0x34727400u, PROTO_UNKNOWN, 0},
+    {0x34727800u, PROTO_AZURE, 24}, /* 52.114.120.0/24 */
+    {0x34727900u, PROTO_UNKNOWN, 0},
+    {0x34727a00u, PROTO_AZURE, 24}, /* 52.114.122.0/24 */
+    {0x34727b00u, PROTO_UNKNOWN, 0},
+    {0x34727c00u, PROTO_AZURE, 24}, /* 52.114.124.0/24 */
+    {0x34727d00u, PROTO_UNKNOWN, 0},
+    {0x34727e00u, PROTO_AZURE, 24}, /* 52.114.126.0/24 */
+    {0x34727f00u, PROTO_UNKNOWN, 0},
+    {0x34728000u, PROTO_AZURE, 18}, /* 52.114.128.0/18 */
+    {0x3472c000u, PROTO_AZURE, 21}, /* 52.114.192.0/21 */
+    {0x3472c800u, PROTO_AZURE, 22}, /* 52.114.200.0/22 */
+    {0x3472cc00u, PROTO_UNKNOWN, 0},
+    {0x3472cd00u, PROTO_AZURE, 24}, /* 52.114.205.0/24 */
+    {0x3472ce00u, PROTO_AZURE, 23}, /* 52.114.206.0/23 */
+    {0x3472d000u, PROTO_AZURE, 20}, /* 52.114.208.0/20 */
+    {0x3472e000u, PROTO_AZURE, 19}, /* 52.114.224.0/19 */
+    {0x34730000u, PROTO_AZURE, 18}, /* 52.115.0.0/18 */
+    {0x34734000u, PROTO_UNKNOWN, 0},
+    {0x34734100u, PROTO_AZURE, 24}, /* 52.115.65.0/24 */
+    {0x34734200u, PROTO_AZURE, 23}, /* 52.115.66.0/23 */
+    {0x34734400u, PROTO_AZURE, 22}, /* 52.115.68.0/22 */
+    {0x34734800u, PROTO_AZURE, 21}, /* 52.115.72.0/21 */
+    {0x34735800u, PROTO_AZURE, 22}, /* 52.115.88.0/22 */
+    {0x34735c00u, PROTO_AZURE, 23}, /* 52.115.92.0/23 */
+    {0x34735e00u, PROTO_AZURE, 24}, /* 52.115.94.0/24 */
+    {0x34735f00u, PROTO_UNKNOWN, 0},
+    {0x34736000u, PROTO_AZURE, 20}, /* 52.115.96.0/20 */
+    {0x34737000u, PROTO_AZURE, 22}, /* 52.115.112.0/22 */
+    {0x34737400u, PROTO_AZURE, 23}, /* 52.115.116.0/23 */
+    {0x34737600u, PROTO_UNKNOWN, 0},
+    {0x34737700u, PROTO_AZURE, 24}, /* 52.115.119.0/24 */
+    {0x34737800u, PROTO_UNKNOWN, 0},
+    {0x34737900u, PROTO_AZURE, 24}, /* 52.115.121.0/24 */
+    {0x34737a00u, PROTO_UNKNOWN, 0},
+    {0x34737b00u, PROTO_AZURE, 24}, /* 52.115.123.0/24 */
+    {0x34737c00u, PROTO_UNKNOWN, 0},
+    {0x34737d00u, PROTO_AZURE, 24}, /* 52.115.125.0/24 */
+    {0x34737e00u, PROTO_UNKNOWN, 0},
+    {0x34737f00u, PROTO_AZURE, 24}, /* 52.115.127.0/24 */
+    {0x34738000u, PROTO_AZURE, 18}, /* 52.115.128.0/18 */
+    {0x3473c000u, PROTO_AZURE, 19}, /* 52.115.192.0/19 */
+    {0x3473e000u, PROTO_AZURE, 20}, /* 52.115.224.0/20 */
+    {0x3473f000u, PROTO_AZURE, 21}, /* 52.115.240.0/21 */
+    {0x3473f800u, PROTO_UNKNOWN, 0},
+    {0x34778000u, PROTO_AWS, 18}, /* 52.119.128.0/18 */
+    {0x3477c000u, PROTO_AWS, 21}, /* 52.119.192.0/21 */
+    {0x3477c800u, PROTO_UNKNOWN, 0},
+    {0x3477cd00u, PROTO_AWS, 24}, /* 52.119.205.0/24 */
+    {0x3477ce00u, PROTO_AWS, 23}, /* 52.119.206.0/23 */
+    {0x3477d000u, PROTO_AWS, 20}, /* 52.119.208.0/20 */
+    {0x3477f000u, PROTO_AWS, 21}, /* 52.119.240.0/21 */
+    {0x3477f800u, PROTO_AWS, 23}, /* 52.119.248.0/23 */
+    {0x3477fa00u, PROTO_UNKNOWN, 0},
+    {0x3477fc00u, PROTO_AWS, 22}, /* 52.119.252.0/22 */
+    {0x34780000u, PROTO_AZURE, 15}, /* 52.120.0.0/15 */
+    {0x347a0000u, PROTO_AZURE, 16}, /* 52.122.0.0/16 */
+    {0x347b0000u, PROTO_AZURE, 17}, /* 52.123.0.0/17 */
+    {0x347b8000u, PROTO_UNKNOWN, 0},
+    {0x347b8400u, PROTO_AZURE, 22}, /* 52.123.132.0/22 */
+    {0x347b8800u, PROTO_AZURE, 21}, /* 52.123.136.0/21 */
+    {0x347b9000u, PROTO_AZURE, 20}, /* 52.123.144.0/20 */
+    {0x347ba000u, PROTO_AZURE, 19}, /* 52.123.160.0/19 */
+    {0x347bc000u, PROTO_AZURE, 22}, /* 52.123.192.0/22 */
+    {0x347bc400u, PROTO_UNKNOWN, 0},
+    {0x347bc600u, PROTO_AZURE, 23}, /* 52.123.198.0/23 */
+    {0x347bca00u, PROTO_UNKNOWN, 0},
+    {0x347bcc00u, PROTO_AZURE, 22}, /* 52.123.204.0/22 */
+    {0x347bd000u, PROTO_AZURE, 20}, /* 52.123.208.0/20 */
+    {0x347be000u, PROTO_UNKNOWN, 0},
+    {0x347c8000u, PROTO_CLOUDFRONT, 17}, /* 52.124.128.0/17 */
     {0x347d0000u, PROTO_UNKNOWN, 0},
-    {0x34818000u, PROTO_AMAZON, 17}, /* 52.129.128.0/17 */
-    {0x34820000u, PROTO_UNKNOWN, 0},
-    {0x34908000u, PROTO_AMAZON, 17}, /* 52.144.128.0/17 */
-    {0x34910000u, PROTO_UNKNOWN, 0},
-    {0x34c00000u, PROTO_AMAZON, 15}, /* 52.192.0.0/15 */
-    {0x34c20000u, PROTO_UNKNOWN, 0},
-    {0x34c40000u, PROTO_AMAZON, 14}, /* 52.196.0.0/14 */
-    {0x34c80000u, PROTO_AMAZON, 13}, /* 52.200.0.0/13 */
-    {0x34d80000u, PROTO_AMAZON, 15}, /* 52.216.0.0/15 */
-    {0x34d80100u, PROTO_AMAZON, 24}, /* 52.216.1.0/24 */
-    {0x34dc0000u, PROTO_AMAZON, 15}, /* 52.220.0.0/15 */
-    {0x34de0000u, PROTO_AMAZON, 17}, /* 52.222.0.0/17 */
-    {0x34de8100u, PROTO_AMAZON, 24}, /* 52.222.129.0/24 */
-    {0x34defa00u, PROTO_AMAZON, 23}, /* 52.222.250.0/23 */
-    {0x34defb00u, PROTO_AMAZON, 24}, /* 52.222.251.0/24 */
-    {0x34df0000u, PROTO_UNKNOWN, 0},
-    {0x36400000u, PROTO_AMAZON, 15}, /* 54.64.0.0/15 */
-    {0x36420000u, PROTO_AMAZON, 17}, /* 54.66.0.0/17 */
-    {0x36438000u, PROTO_UNKNOWN, 0},
-    {0x36440000u, PROTO_AMAZON, 15}, /* 54.68.0.0/15 */
-    {0x36480000u, PROTO_AMAZON, 16}, /* 54.72.0.0/16 */
-    {0x364a0000u, PROTO_AMAZON, 15}, /* 54.74.0.0/15 */
-    {0x364e0000u, PROTO_AMAZON, 16}, /* 54.78.0.0/16 */
-    {0x364f0000u, PROTO_AMAZON, 17}, /* 54.79.0.0/17 */
-    {0x36500000u, PROTO_AMAZON, 14}, /* 54.80.0.0/14 */
-    {0x36540000u, PROTO_AMAZON, 15}, /* 54.84.0.0/15 */
-    {0x36560000u, PROTO_AMAZON, 16}, /* 54.86.0.0/16 */
-    {0x365a0000u, PROTO_AMAZON, 15}, /* 54.90.0.0/15 */
-    {0x365c0000u, PROTO_AMAZON, 17}, /* 54.92.0.0/17 */
-    {0x365d0000u, PROTO_AMAZON, 19}, /* 54.93.0.0/19 */
-    {0x365d4000u, PROTO_AMAZON, 18}, /* 54.93.64.0/18 */
-    {0x365d8000u, PROTO_AMAZON, 17}, /* 54.93.128.0/17 */
-    {0x365e8000u, PROTO_AMAZON, 18}, /* 54.94.128.0/18 */
-    {0x365f0000u, PROTO_AMAZON, 17}, /* 54.95.0.0/17 */
+    {0x347d8000u, PROTO_AZURE, 20}, /* 52.125.128.0/20 */
+    {0x347d9000u, PROTO_UNKNOWN, 0},
+    {0x34818200u, PROTO_AWS, 23}, /* 52.129.130.0/23 */
+    {0x34818400u, PROTO_UNKNOWN, 0},
+    {0x3481e000u, PROTO_AWS, 22}, /* 52.129.224.0/22 */
+    {0x3481e400u, PROTO_UNKNOWN, 0},
+    {0x34880000u, PROTO_AZURE, 13}, /* 52.136.0.0/13 */
+    {0x34900000u, PROTO_UNKNOWN, 0},
+    {0x34908520u, PROTO_AWS, 27}, /* 52.144.133.32/27 */
+    {0x34908540u, PROTO_UNKNOWN, 0},
+    {0x3490c000u, PROTO_AWS, 24}, /* 52.144.192.0/24 */
+    {0x3490c100u, PROTO_AWS, 25}, /* 52.144.193.0/25 */
+    {0x3490c180u, PROTO_AWS, 26}, /* 52.144.193.128/26 */
+    {0x3490c1c0u, PROTO_UNKNOWN, 0},
+    {0x3490c200u, PROTO_AWS, 24}, /* 52.144.194.0/24 */
+    {0x3490c300u, PROTO_AWS, 26}, /* 52.144.195.0/26 */
+    {0x3490c340u, PROTO_UNKNOWN, 0},
+    {0x3490c4c0u, PROTO_AWS, 26}, /* 52.144.196.192/26 */
+    {0x3490c500u, PROTO_UNKNOWN, 0},
+    {0x3490c580u, PROTO_AWS, 25}, /* 52.144.197.128/25 */
+    {0x3490c600u, PROTO_UNKNOWN, 0},
+    {0x3490c780u, PROTO_AWS, 26}, /* 52.144.199.128/26 */
+    {0x3490c7c0u, PROTO_UNKNOWN, 0},
+    {0x3490c840u, PROTO_AWS, 26}, /* 52.144.200.64/26 */
+    {0x3490c8c0u, PROTO_UNKNOWN, 0},
+    {0x3490c940u, PROTO_AWS, 26}, /* 52.144.201.64/26 */
+    {0x3490c9c0u, PROTO_UNKNOWN, 0},
+    {0x3490cd00u, PROTO_AWS, 26}, /* 52.144.205.0/26 */
+    {0x3490cd40u, PROTO_UNKNOWN, 0},
+    {0x3490d000u, PROTO_AWS, 30}, /* 52.144.208.0/30 */
+    {0x3490d004u, PROTO_UNKNOWN, 0},
+    {0x3490d040u, PROTO_AWS, 26}, /* 52.144.208.64/26 */
+    {0x3490d080u, PROTO_AWS, 25}, /* 52.144.208.128/25 */
+    {0x3490d100u, PROTO_AWS, 24}, /* 52.144.209.0/24 */
+    {0x3490d300u, PROTO_AWS, 25}, /* 52.144.211.0/25 */
+    {0x3490d380u, PROTO_AWS, 26}, /* 52.144.211.128/26 */
+    {0x3490d3c0u, PROTO_AWS, 29}, /* 52.144.211.192/29 */
+    {0x3490d3c8u, PROTO_AWS, 30}, /* 52.144.211.200/30 */
+    {0x3490d3ccu, PROTO_UNKNOWN, 0},
+    {0x3490d440u, PROTO_AWS, 26}, /* 52.144.212.64/26 */
+    {0x3490d480u, PROTO_UNKNOWN, 0},
+    {0x3490d4c0u, PROTO_AWS, 26}, /* 52.144.212.192/26 */
+    {0x3490d500u, PROTO_UNKNOWN, 0},
+    {0x3490d540u, PROTO_AWS, 26}, /* 52.144.213.64/26 */
+    {0x3490d580u, PROTO_UNKNOWN, 0},
+    {0x3490d680u, PROTO_AWS, 26}, /* 52.144.214.128/26 */
+    {0x3490d6c0u, PROTO_UNKNOWN, 0},
+    {0x3490d700u, PROTO_AWS, 30}, /* 52.144.215.0/30 */
+    {0x3490d704u, PROTO_UNKNOWN, 0},
+    {0x3490d7c0u, PROTO_AWS, 29}, /* 52.144.215.192/29 */
+    {0x3490d7c8u, PROTO_AWS, 30}, /* 52.144.215.200/30 */
+    {0x3490d7ccu, PROTO_UNKNOWN, 0},
+    {0x3490d800u, PROTO_AWS, 29}, /* 52.144.216.0/29 */
+    {0x3490d808u, PROTO_AWS, 30}, /* 52.144.216.8/30 */
+    {0x3490d80cu, PROTO_UNKNOWN, 0},
+    {0x3490da00u, PROTO_AWS, 25}, /* 52.144.218.0/25 */
+    {0x3490da80u, PROTO_UNKNOWN, 0},
+    {0x3490df40u, PROTO_AWS, 26}, /* 52.144.223.64/26 */
+    {0x3490dfc0u, PROTO_UNKNOWN, 0},
+    {0x3490e040u, PROTO_AWS, 26}, /* 52.144.224.64/26 */
+    {0x3490e080u, PROTO_AWS, 25}, /* 52.144.224.128/25 */
+    {0x3490e180u, PROTO_AWS, 26}, /* 52.144.225.128/26 */
+    {0x3490e1c0u, PROTO_UNKNOWN, 0},
+    {0x3490e340u, PROTO_AWS, 26}, /* 52.144.227.64/26 */
+    {0x3490e380u, PROTO_UNKNOWN, 0},
+    {0x3490e3c0u, PROTO_AWS, 26}, /* 52.144.227.192/26 */
+    {0x3490e400u, PROTO_AWS, 30}, /* 52.144.228.0/30 */
+    {0x3490e404u, PROTO_UNKNOWN, 0},
+    {0x3490e440u, PROTO_AWS, 26}, /* 52.144.228.64/26 */
+    {0x3490e480u, PROTO_AWS, 25}, /* 52.144.228.128/25 */
+    {0x3490e580u, PROTO_UNKNOWN, 0},
+    {0x3490e600u, PROTO_AWS, 26}, /* 52.144.230.0/26 */
+    {0x3490e640u, PROTO_UNKNOWN, 0},
+    {0x3490e6ccu, PROTO_AWS, 30}, /* 52.144.230.204/30 */
+    {0x3490e6d4u, PROTO_UNKNOWN, 0},
+    {0x3490e740u, PROTO_AWS, 26}, /* 52.144.231.64/26 */
+    {0x3490e780u, PROTO_UNKNOWN, 0},
+    {0x3490e940u, PROTO_AWS, 29}, /* 52.144.233.64/29 */
+    {0x3490e948u, PROTO_UNKNOWN, 0},
+    {0x3490e980u, PROTO_AWS, 29}, /* 52.144.233.128/29 */
+    {0x3490e988u, PROTO_UNKNOWN, 0},
+    {0x3490e9c0u, PROTO_AWS, 26}, /* 52.144.233.192/26 */
+    {0x3490ea00u, PROTO_UNKNOWN, 0},
+    {0x34920000u, PROTO_AZURE, 15}, /* 52.146.0.0/15 */
+    {0x34940000u, PROTO_AZURE, 14}, /* 52.148.0.0/14 */
+    {0x34980000u, PROTO_AZURE, 13}, /* 52.152.0.0/13 */
+    {0x34a00000u, PROTO_AZURE, 12}, /* 52.160.0.0/12 */
+    {0x34b00000u, PROTO_AZURE, 14}, /* 52.176.0.0/14 */
+    {0x34b40000u, PROTO_AZURE, 17}, /* 52.180.0.0/17 */
+    {0x34b48000u, PROTO_AZURE, 18}, /* 52.180.128.0/18 */
+    {0x34b4c000u, PROTO_UNKNOWN, 0},
+    {0x34b68000u, PROTO_AZURE, 17}, /* 52.182.128.0/17 */
+    {0x34b70000u, PROTO_AZURE, 16}, /* 52.183.0.0/16 */
+    {0x34b80000u, PROTO_AZURE, 13}, /* 52.184.0.0/13 */
+    {0x34c00000u, PROTO_AWS, 14}, /* 52.192.0.0/14 */
+    {0x34c40000u, PROTO_AWS, 15}, /* 52.196.0.0/15 */
+    {0x34c60000u, PROTO_AWS, 16}, /* 52.198.0.0/16 */
+    {0x34c70000u, PROTO_AWS, 18}, /* 52.199.0.0/18 */
+    {0x34c74000u, PROTO_AWS, 19}, /* 52.199.64.0/19 */
+    {0x34c76000u, PROTO_AWS, 20}, /* 52.199.96.0/20 */
+    {0x34c77000u, PROTO_AWS, 21}, /* 52.199.112.0/21 */
+    {0x34c77800u, PROTO_AWS, 22}, /* 52.199.120.0/22 */
+    {0x34c77c00u, PROTO_AWS, 23}, /* 52.199.124.0/23 */
+    {0x34c77e00u, PROTO_AWS, 24}, /* 52.199.126.0/24 */
+    {0x34c77f00u, PROTO_AWS, 25}, /* 52.199.127.0/25 */
+    {0x34c77f80u, PROTO_AWS, 26}, /* 52.199.127.128/26 */
+    {0x34c77fc0u, PROTO_CLOUDFRONT, 26}, /* 52.199.127.192/26 */
+    {0x34c78000u, PROTO_AWS, 17}, /* 52.199.128.0/17 */
+    {0x34c80000u, PROTO_AWS, 13}, /* 52.200.0.0/13 */
+    {0x34d00000u, PROTO_AWS, 14}, /* 52.208.0.0/14 */
+    {0x34d40000u, PROTO_AWS, 17}, /* 52.212.0.0/17 */
+    {0x34d48000u, PROTO_AWS, 18}, /* 52.212.128.0/18 */
+    {0x34d4c000u, PROTO_AWS, 19}, /* 52.212.192.0/19 */
+    {0x34d4e000u, PROTO_AWS, 20}, /* 52.212.224.0/20 */
+    {0x34d4f000u, PROTO_AWS, 21}, /* 52.212.240.0/21 */
+    {0x34d4f800u, PROTO_CLOUDFRONT, 26}, /* 52.212.248.0/26 */
+    {0x34d4f840u, PROTO_AWS, 26}, /* 52.212.248.64/26 */
+    {0x34d4f880u, PROTO_AWS, 25}, /* 52.212.248.128/25 */
+    {0x34d4f900u, PROTO_AWS, 24}, /* 52.212.249.0/24 */
+    {0x34d4fa00u, PROTO_AWS, 23}, /* 52.212.250.0/23 */
+    {0x34d4fc00u, PROTO_AWS, 22}, /* 52.212.252.0/22 */
+    {0x34d50000u, PROTO_AWS, 16}, /* 52.213.0.0/16 */
+    {0x34d60000u, PROTO_AWS, 15}, /* 52.214.0.0/15 */
+    {0x34da0000u, PROTO_AWS, 16}, /* 52.218.0.0/16 */
+    {0x34db0000u, PROTO_AWS, 20}, /* 52.219.0.0/20 */
+    {0x34db1000u, PROTO_AWS, 22}, /* 52.219.16.0/22 */
+    {0x34db1400u, PROTO_AWS, 23}, /* 52.219.20.0/23 */
+    {0x34db1600u, PROTO_UNKNOWN, 0},
+    {0x34db1700u, PROTO_AWS, 24}, /* 52.219.23.0/24 */
+    {0x34db1800u, PROTO_AWS, 21}, /* 52.219.24.0/21 */
+    {0x34db2000u, PROTO_AWS, 20}, /* 52.219.32.0/20 */
+    {0x34db3000u, PROTO_UNKNOWN, 0},
+    {0x34db3800u, PROTO_AWS, 21}, /* 52.219.56.0/21 */
+    {0x34db4800u, PROTO_AWS, 22}, /* 52.219.72.0/22 */
+    {0x34db4c00u, PROTO_UNKNOWN, 0},
+    {0x34db5000u, PROTO_AWS, 20}, /* 52.219.80.0/20 */
+    {0x34db6000u, PROTO_AWS, 19}, /* 52.219.96.0/19 */
+    {0x34db8000u, PROTO_AWS, 18}, /* 52.219.128.0/18 */
+    {0x34dbc000u, PROTO_AWS, 20}, /* 52.219.192.0/20 */
+    {0x34dbd000u, PROTO_AWS, 21}, /* 52.219.208.0/21 */
+    {0x34dbd800u, PROTO_AWS, 22}, /* 52.219.216.0/22 */
+    {0x34dbdc00u, PROTO_AWS, 23}, /* 52.219.220.0/23 */
+    {0x34dbde00u, PROTO_UNKNOWN, 0},
+    {0x34dbe000u, PROTO_AWS, 21}, /* 52.219.224.0/21 */
+    {0x34dbe800u, PROTO_AWS, 22}, /* 52.219.232.0/22 */
+    {0x34dbec00u, PROTO_UNKNOWN, 0},
+    {0x34dbfe00u, PROTO_AWS, 23}, /* 52.219.254.0/23 */
+    {0x34dc0000u, PROTO_AWS, 17}, /* 52.220.0.0/17 */
+    {0x34dc8000u, PROTO_AWS, 19}, /* 52.220.128.0/19 */
+    {0x34dca000u, PROTO_AWS, 20}, /* 52.220.160.0/20 */
+    {0x34dcb000u, PROTO_AWS, 21}, /* 52.220.176.0/21 */
+    {0x34dcb800u, PROTO_AWS, 22}, /* 52.220.184.0/22 */
+    {0x34dcbc00u, PROTO_AWS, 23}, /* 52.220.188.0/23 */
+    {0x34dcbe00u, PROTO_AWS, 24}, /* 52.220.190.0/24 */
+    {0x34dcbf00u, PROTO_CLOUDFRONT, 26}, /* 52.220.191.0/26 */
+    {0x34dcbf40u, PROTO_AWS, 26}, /* 52.220.191.64/26 */
+    {0x34dcbf80u, PROTO_AWS, 25}, /* 52.220.191.128/25 */
+    {0x34dcc000u, PROTO_AWS, 18}, /* 52.220.192.0/18 */
+    {0x34dd0000u, PROTO_AWS, 16}, /* 52.221.0.0/16 */
+    {0x34de0000u, PROTO_AWS, 17}, /* 52.222.0.0/17 */
+    {0x34de8000u, PROTO_CLOUDFRONT, 17}, /* 52.222.128.0/17 */
+    {0x34df0000u, PROTO_AWS, 17}, /* 52.223.0.0/17 */
+    {0x34df8000u, PROTO_UNKNOWN, 0},
+    {0x34dfc000u, PROTO_AWS, 18}, /* 52.223.192.0/18 */
+    {0x34e00000u, PROTO_AZURE, 15}, /* 52.224.0.0/15 */
+    {0x34e20000u, PROTO_AZURE, 16}, /* 52.226.0.0/16 */
+    {0x34e30000u, PROTO_UNKNOWN, 0},
+    {0x34e40000u, PROTO_AZURE, 14}, /* 52.228.0.0/14 */
+    {0x34e80000u, PROTO_AZURE, 15}, /* 52.232.0.0/15 */
+    {0x34ea0000u, PROTO_AZURE, 16}, /* 52.234.0.0/16 */
+    {0x34eb0000u, PROTO_AZURE, 17}, /* 52.235.0.0/17 */
+    {0x34eb8000u, PROTO_UNKNOWN, 0},
+    {0x34ec0000u, PROTO_AZURE, 15}, /* 52.236.0.0/15 */
+    {0x34ee0000u, PROTO_AZURE, 18}, /* 52.238.0.0/18 */
+    {0x34ee4000u, PROTO_UNKNOWN, 0},
+    {0x34eec000u, PROTO_AZURE, 18}, /* 52.238.192.0/18 */
+    {0x34ef0000u, PROTO_AZURE, 17}, /* 52.239.0.0/17 */
+    {0x34ef8000u, PROTO_AZURE, 19}, /* 52.239.128.0/19 */
+    {0x34efa000u, PROTO_AZURE, 22}, /* 52.239.160.0/22 */
+    {0x34efa400u, PROTO_AZURE, 23}, /* 52.239.164.0/23 */
+    {0x34efa600u, PROTO_UNKNOWN, 0},
+    {0x34efa700u, PROTO_AZURE, 24}, /* 52.239.167.0/24 */
+    {0x34efa800u, PROTO_AZURE, 21}, /* 52.239.168.0/21 */
+    {0x34efb000u, PROTO_UNKNOWN, 0},
+    {0x34efb080u, PROTO_AZURE, 25}, /* 52.239.176.128/25 */
+    {0x34efb100u, PROTO_AZURE, 24}, /* 52.239.177.0/24 */
+    {0x34efb200u, PROTO_AZURE, 23}, /* 52.239.178.0/23 */
+    {0x34efb400u, PROTO_AZURE, 22}, /* 52.239.180.0/22 */
+    {0x34efbc00u, PROTO_AZURE, 23}, /* 52.239.188.0/23 */
+    {0x34efbe00u, PROTO_AZURE, 24}, /* 52.239.190.0/24 */
+    {0x34efbf00u, PROTO_AZURE, 28}, /* 52.239.191.0/28 */
+    {0x34efbf10u, PROTO_UNKNOWN, 0},
+    {0x34efc000u, PROTO_AZURE, 18}, /* 52.239.192.0/18 */
+    {0x34f00000u, PROTO_AZURE, 15}, /* 52.240.0.0/15 */
+    {0x34f20000u, PROTO_AZURE, 16}, /* 52.242.0.0/16 */
+    {0x34f30000u, PROTO_UNKNOWN, 0},
+    {0x34f32000u, PROTO_AZURE, 19}, /* 52.243.32.0/19 */
+    {0x34f34000u, PROTO_AZURE, 18}, /* 52.243.64.0/18 */
+    {0x34f38000u, PROTO_UNKNOWN, 0},
+    {0x34f50800u, PROTO_AZURE, 21}, /* 52.245.8.0/21 */
+    {0x34f51000u, PROTO_AZURE, 20}, /* 52.245.16.0/20 */
+    {0x34f52000u, PROTO_AZURE, 19}, /* 52.245.32.0/19 */
+    {0x34f54000u, PROTO_AZURE, 18}, /* 52.245.64.0/18 */
+    {0x34f58000u, PROTO_UNKNOWN, 0},
+    {0x34f60000u, PROTO_AZURE, 17}, /* 52.246.0.0/17 */
+    {0x34f68000u, PROTO_AZURE, 20}, /* 52.246.128.0/20 */
+    {0x34f69000u, PROTO_UNKNOWN, 0},
+    {0x34f69800u, PROTO_AZURE, 21}, /* 52.246.152.0/21 */
+    {0x34f6a000u, PROTO_AZURE, 19}, /* 52.246.160.0/19 */
+    {0x34f6c000u, PROTO_AZURE, 18}, /* 52.246.192.0/18 */
+    {0x34f70000u, PROTO_AZURE, 17}, /* 52.247.0.0/17 */
+    {0x34f78000u, PROTO_UNKNOWN, 0},
+    {0x34f7c000u, PROTO_AZURE, 18}, /* 52.247.192.0/18 */
+    {0x34f80000u, PROTO_AZURE, 16}, /* 52.248.0.0/16 */
+    {0x34f90000u, PROTO_AZURE, 18}, /* 52.249.0.0/18 */
+    {0x34f94000u, PROTO_AZURE, 19}, /* 52.249.64.0/19 */
+    {0x34f96000u, PROTO_UNKNOWN, 0},
+    {0x34f98000u, PROTO_AZURE, 17}, /* 52.249.128.0/17 */
+    {0x34fa0000u, PROTO_AZURE, 16}, /* 52.250.0.0/16 */
+    {0x34fb0000u, PROTO_AZURE, 17}, /* 52.251.0.0/17 */
+    {0x34fb8000u, PROTO_AZURE, 22}, /* 52.251.128.0/22 */
+    {0x34fb8400u, PROTO_UNKNOWN, 0},
+    {0x34fc0000u, PROTO_AZURE, 16}, /* 52.252.0.0/16 */
+    {0x34fd0000u, PROTO_AZURE, 17}, /* 52.253.0.0/17 */
+    {0x34fd8000u, PROTO_AZURE, 20}, /* 52.253.128.0/20 */
+    {0x34fd9000u, PROTO_UNKNOWN, 0},
+    {0x34fd9400u, PROTO_AZURE, 22}, /* 52.253.148.0/22 */
+    {0x34fd9800u, PROTO_AZURE, 21}, /* 52.253.152.0/21 */
+    {0x34fda000u, PROTO_AZURE, 19}, /* 52.253.160.0/19 */
+    {0x34fde000u, PROTO_AZURE, 20}, /* 52.253.224.0/20 */
+    {0x34fdf000u, PROTO_UNKNOWN, 0},
+    {0x34fe0000u, PROTO_AZURE, 15}, /* 52.254.0.0/15 */
+    {0x35000000u, PROTO_UNKNOWN, 0},
+    {0x36050000u, PROTO_AWS, 16}, /* 54.5.0.0/16 */
+    {0x36060000u, PROTO_AWS, 15}, /* 54.6.0.0/15 */
+    {0x36080000u, PROTO_AWS, 16}, /* 54.8.0.0/16 */
+    {0x36090000u, PROTO_UNKNOWN, 0},
+    {0x36140000u, PROTO_AWS, 15}, /* 54.20.0.0/15 */
+    {0x36160000u, PROTO_UNKNOWN, 0},
+    {0x36190000u, PROTO_AWS, 21}, /* 54.25.0.0/21 */
+    {0x36190800u, PROTO_UNKNOWN, 0},
+    {0x36190e00u, PROTO_AWS, 23}, /* 54.25.14.0/23 */
+    {0x36191000u, PROTO_UNKNOWN, 0},
+    {0x36191400u, PROTO_AWS, 24}, /* 54.25.20.0/24 */
+    {0x36191500u, PROTO_UNKNOWN, 0},
+    {0x36192000u, PROTO_AWS, 19}, /* 54.25.32.0/19 */
+    {0x36194000u, PROTO_UNKNOWN, 0},
+    {0x36195200u, PROTO_AWS, 24}, /* 54.25.82.0/24 */
+    {0x36195300u, PROTO_UNKNOWN, 0},
+    {0x3619c000u, PROTO_AWS, 18}, /* 54.25.192.0/18 */
+    {0x361a0000u, PROTO_UNKNOWN, 0},
+    {0x361aa600u, PROTO_AWS, 24}, /* 54.26.166.0/24 */
+    {0x361aa700u, PROTO_UNKNOWN, 0},
+    {0x36200000u, PROTO_AWS, 15}, /* 54.32.0.0/15 */
+    {0x36220000u, PROTO_UNKNOWN, 0},
+    {0x362e0000u, PROTO_AWS, 17}, /* 54.46.0.0/17 */
+    {0x362e8000u, PROTO_UNKNOWN, 0},
+    {0x36360000u, PROTO_AWS, 15}, /* 54.54.0.0/15 */
+    {0x36380000u, PROTO_UNKNOWN, 0},
+    {0x36400000u, PROTO_AWS, 11}, /* 54.64.0.0/11 */
     {0x36600000u, PROTO_UNKNOWN, 0},
-    {0x36900000u, PROTO_AMAZON, 14}, /* 54.144.0.0/14 */
-    {0x36940000u, PROTO_AMAZON, 15}, /* 54.148.0.0/15 */
-    {0x36950a00u, PROTO_AMAZON, 24}, /* 54.149.10.0/24 */
-    {0x36950b00u, PROTO_AMAZON, 15}, /* 54.148.0.0/15 */
-    {0x36960000u, PROTO_AMAZON, 16}, /* 54.150.0.0/16 */
-    {0x36970000u, PROTO_AMAZON, 17}, /* 54.151.0.0/17 */
-    {0x36980000u, PROTO_AMAZON, 16}, /* 54.152.0.0/16 */
-    {0x36990000u, PROTO_AMAZON, 17}, /* 54.153.0.0/17 */
-    {0x369a0000u, PROTO_AMAZON, 16}, /* 54.154.0.0/16 */
-    {0x369c0000u, PROTO_AMAZON, 14}, /* 54.156.0.0/14 */
-    {0x36a40000u, PROTO_AMAZON, 15}, /* 54.164.0.0/15 */
-    {0x36a80000u, PROTO_AMAZON, 16}, /* 54.168.0.0/16 */
-    {0x36a90000u, PROTO_AMAZON, 17}, /* 54.169.0.0/17 */
-    {0x36aa0000u, PROTO_AMAZON, 16}, /* 54.170.0.0/16 */
-    {0x36ac0000u, PROTO_AMAZON, 15}, /* 54.172.0.0/15 */
-    {0x36b20000u, PROTO_AMAZON, 17}, /* 54.178.0.0/17 */
-    {0x36b38000u, PROTO_AMAZON, 18}, /* 54.179.128.0/18 */
-    {0x36b40000u, PROTO_UNKNOWN, 0},
-    {0x36b60000u, PROTO_AMAZON, 21}, /* 54.182.0.0/21 */
-    {0x36b60800u, PROTO_AMAZON, 22}, /* 54.182.8.0/22 */
-    {0x36b60c00u, PROTO_UNKNOWN, 0},
-    {0x36b61000u, PROTO_AMAZON, 22}, /* 54.182.16.0/22 */
-    {0x36b61400u, PROTO_UNKNOWN, 0},
-    {0x36b68000u, PROTO_AMAZON, 23}, /* 54.182.128.0/23 */
-    {0x36b6a000u, PROTO_UNKNOWN, 0},
-    {0x36b6a200u, PROTO_AMAZON, 23}, /* 54.182.162.0/23 */
-    {0x36b6aa00u, PROTO_AMAZON, 24}, /* 54.182.170.0/24 */
-    {0x36b6ab00u, PROTO_UNKNOWN, 0},
-    {0x36b6ae00u, PROTO_AMAZON, 23}, /* 54.182.174.0/23 */
-    {0x36b6bc00u, PROTO_UNKNOWN, 0},
-    {0x36b6bf00u, PROTO_AMAZON, 24}, /* 54.182.191.0/24 */
-    {0x36b6d000u, PROTO_UNKNOWN, 0},
-    {0x36b6d100u, PROTO_AMAZON, 24}, /* 54.182.209.0/24 */
-    {0x36b6e000u, PROTO_AMAZON, 23}, /* 54.182.224.0/23 */
-    {0x36b6e600u, PROTO_AMAZON, 24}, /* 54.182.230.0/24 */
-    {0x36b6f000u, PROTO_AMAZON, 23}, /* 54.182.240.0/23 */
-    {0x36b6f200u, PROTO_AMAZON, 24}, /* 54.182.242.0/24 */
-    {0x36b6f600u, PROTO_AMAZON, 23}, /* 54.182.246.0/23 */
-    {0x36b6fc00u, PROTO_AMAZON, 24}, /* 54.182.252.0/24 */
-    {0x36b70000u, PROTO_AMAZON, 17}, /* 54.183.0.0/17 */
-    {0x36b80000u, PROTO_AMAZON, 15}, /* 54.184.0.0/15 */
-    {0x36be0000u, PROTO_AMAZON, 16}, /* 54.190.0.0/16 */
-    {0x36c00000u, PROTO_AMAZON, 17}, /* 54.192.0.0/17 */
-    {0x36c00100u, PROTO_AMAZON, 24}, /* 54.192.1.0/24 */
-    {0x36c00200u, PROTO_AMAZON, 23}, /* 54.192.2.0/23 */
-    {0x36c00300u, PROTO_AMAZON, 24}, /* 54.192.3.0/24 */
-    {0x36c00400u, PROTO_AMAZON, 23}, /* 54.192.4.0/23 */
-    {0x36c00500u, PROTO_AMAZON, 24}, /* 54.192.5.0/24 */
-    {0x36c00600u, PROTO_AMAZON, 23}, /* 54.192.6.0/23 */
-    {0x36c00700u, PROTO_AMAZON, 24}, /* 54.192.7.0/24 */
-    {0x36c00800u, PROTO_AMAZON, 21}, /* 54.192.8.0/21 */
-    {0x36c00900u, PROTO_AMAZON, 24}, /* 54.192.9.0/24 */
-    {0x36c00a00u, PROTO_AMAZON, 23}, /* 54.192.10.0/23 */
-    {0x36c00b00u, PROTO_AMAZON, 24}, /* 54.192.11.0/24 */
-    {0x36c00c00u, PROTO_AMAZON, 23}, /* 54.192.12.0/23 */
-    {0x36c00d00u, PROTO_AMAZON, 24}, /* 54.192.13.0/24 */
-    {0x36c00e00u, PROTO_AMAZON, 23}, /* 54.192.14.0/23 */
-    {0x36c00f00u, PROTO_AMAZON, 24}, /* 54.192.15.0/24 */
-    {0x36c01000u, PROTO_AMAZON, 20}, /* 54.192.16.0/20 */
-    {0x36c01100u, PROTO_AMAZON, 24}, /* 54.192.17.0/24 */
-    {0x36c01200u, PROTO_AMAZON, 23}, /* 54.192.18.0/23 */
-    {0x36c01300u, PROTO_AMAZON, 24}, /* 54.192.19.0/24 */
-    {0x36c01400u, PROTO_AMAZON, 23}, /* 54.192.20.0/23 */
-    {0x36c01500u, PROTO_AMAZON, 24}, /* 54.192.21.0/24 */
-    {0x36c01600u, PROTO_AMAZON, 23}, /* 54.192.22.0/23 */
-    {0x36c01700u, PROTO_AMAZON, 24}, /* 54.192.23.0/24 */
-    {0x36c01800u, PROTO_AMAZON, 21}, /* 54.192.24.0/21 */
-    {0x36c01900u, PROTO_AMAZON, 24}, /* 54.192.25.0/24 */
-    {0x36c01a00u, PROTO_AMAZON, 23}, /* 54.192.26.0/23 */
-    {0x36c01b00u, PROTO_AMAZON, 24}, /* 54.192.27.0/24 */
-    {0x36c01c00u, PROTO_AMAZON, 23}, /* 54.192.28.0/23 */
-    {0x36c01d00u, PROTO_AMAZON, 24}, /* 54.192.29.0/24 */
-    {0x36c01e00u, PROTO_AMAZON, 23}, /* 54.192.30.0/23 */
-    {0x36c01f00u, PROTO_AMAZON, 24}, /* 54.192.31.0/24 */
-    {0x36c02000u, PROTO_AMAZON, 19}, /* 54.192.32.0/19 */
-    {0x36c02100u, PROTO_AMAZON, 24}, /* 54.192.33.0/24 */
-    {0x36c02200u, PROTO_AMAZON, 23}, /* 54.192.34.0/23 */
-    {0x36c02300u, PROTO_AMAZON, 24}, /* 54.192.35.0/24 */
-    {0x36c02400u, PROTO_AMAZON, 23}, /* 54.192.36.0/23 */
-    {0x36c02500u, PROTO_AMAZON, 24}, /* 54.192.37.0/24 */
-    {0x36c02600u, PROTO_AMAZON, 23}, /* 54.192.38.0/23 */
-    {0x36c02700u, PROTO_AMAZON, 24}, /* 54.192.39.0/24 */
-    {0x36c02800u, PROTO_AMAZON, 21}, /* 54.192.40.0/21 */
-    {0x36c02900u, PROTO_AMAZON, 24}, /* 54.192.41.0/24 */
-    {0x36c02a00u, PROTO_AMAZON, 23}, /* 54.192.42.0/23 */
-    {0x36c02b00u, PROTO_AMAZON, 24}, /* 54.192.43.0/24 */
-    {0x36c02c00u, PROTO_AMAZON, 23}, /* 54.192.44.0/23 */
-    {0x36c02d00u, PROTO_AMAZON, 24}, /* 54.192.45.0/24 */
-    {0x36c02e00u, PROTO_AMAZON, 23}, /* 54.192.46.0/23 */
-    {0x36c02f00u, PROTO_AMAZON, 24}, /* 54.192.47.0/24 */
-    {0x36c03000u, PROTO_AMAZON, 20}, /* 54.192.48.0/20 */
-    {0x36c03100u, PROTO_AMAZON, 24}, /* 54.192.49.0/24 */
-    {0x36c03200u, PROTO_AMAZON, 23}, /* 54.192.50.0/23 */
-    {0x36c03300u, PROTO_AMAZON, 24}, /* 54.192.51.0/24 */
-    {0x36c03400u, PROTO_AMAZON, 23}, /* 54.192.52.0/23 */
-    {0x36c03500u, PROTO_AMAZON, 24}, /* 54.192.53.0/24 */
-    {0x36c03600u, PROTO_AMAZON, 23}, /* 54.192.54.0/23 */
-    {0x36c03700u, PROTO_AMAZON, 24}, /* 54.192.55.0/24 */
-    {0x36c03800u, PROTO_AMAZON, 21}, /* 54.192.56.0/21 */
-    {0x36c03900u, PROTO_AMAZON, 24}, /* 54.192.57.0/24 */
-    {0x36c03a00u, PROTO_AMAZON, 23}, /* 54.192.58.0/23 */
-    {0x36c03b00u, PROTO_AMAZON, 24}, /* 54.192.59.0/24 */
-    {0x36c03c00u, PROTO_AMAZON, 23}, /* 54.192.60.0/23 */
-    {0x36c03d00u, PROTO_AMAZON, 24}, /* 54.192.61.0/24 */
-    {0x36c03e00u, PROTO_AMAZON, 23}, /* 54.192.62.0/23 */
-    {0x36c03f00u, PROTO_AMAZON, 24}, /* 54.192.63.0/24 */
-    {0x36c04000u, PROTO_AMAZON, 18}, /* 54.192.64.0/18 */
-    {0x36c04100u, PROTO_AMAZON, 24}, /* 54.192.65.0/24 */
-    {0x36c04200u, PROTO_AMAZON, 23}, /* 54.192.66.0/23 */
-    {0x36c04300u, PROTO_AMAZON, 24}, /* 54.192.67.0/24 */
-    {0x36c04400u, PROTO_AMAZON, 23}, /* 54.192.68.0/23 */
-    {0x36c04500u, PROTO_AMAZON, 24}, /* 54.192.69.0/24 */
-    {0x36c04600u, PROTO_AMAZON, 23}, /* 54.192.70.0/23 */
-    {0x36c04700u, PROTO_AMAZON, 24}, /* 54.192.71.0/24 */
-    {0x36c04800u, PROTO_AMAZON, 21}, /* 54.192.72.0/21 */
-    {0x36c04900u, PROTO_AMAZON, 24}, /* 54.192.73.0/24 */
-    {0x36c04a00u, PROTO_AMAZON, 23}, /* 54.192.74.0/23 */
-    {0x36c04b00u, PROTO_AMAZON, 24}, /* 54.192.75.0/24 */
-    {0x36c04c00u, PROTO_AMAZON, 23}, /* 54.192.76.0/23 */
-    {0x36c04d00u, PROTO_AMAZON, 24}, /* 54.192.77.0/24 */
-    {0x36c04e00u, PROTO_AMAZON, 23}, /* 54.192.78.0/23 */
-    {0x36c04f00u, PROTO_AMAZON, 24}, /* 54.192.79.0/24 */
-    {0x36c05000u, PROTO_AMAZON, 20}, /* 54.192.80.0/20 */
-    {0x36c05100u, PROTO_AMAZON, 24}, /* 54.192.81.0/24 */
-    {0x36c05200u, PROTO_AMAZON, 23}, /* 54.192.82.0/23 */
-    {0x36c05300u, PROTO_AMAZON, 24}, /* 54.192.83.0/24 */
-    {0x36c05400u, PROTO_AMAZON, 23}, /* 54.192.84.0/23 */
-    {0x36c05500u, PROTO_AMAZON, 24}, /* 54.192.85.0/24 */
-    {0x36c05600u, PROTO_AMAZON, 23}, /* 54.192.86.0/23 */
-    {0x36c05700u, PROTO_AMAZON, 24}, /* 54.192.87.0/24 */
-    {0x36c05800u, PROTO_AMAZON, 21}, /* 54.192.88.0/21 */
-    {0x36c05900u, PROTO_AMAZON, 24}, /* 54.192.89.0/24 */
-    {0x36c05a00u, PROTO_AMAZON, 23}, /* 54.192.90.0/23 */
-    {0x36c05b00u, PROTO_AMAZON, 24}, /* 54.192.91.0/24 */
-    {0x36c05c00u, PROTO_AMAZON, 23}, /* 54.192.92.0/23 */
-    {0x36c05d00u, PROTO_AMAZON, 24}, /* 54.192.93.0/24 */
-    {0x36c05e00u, PROTO_AMAZON, 23}, /* 54.192.94.0/23 */
-    {0x36c05f00u, PROTO_AMAZON, 24}, /* 54.192.95.0/24 */
-    {0x36c06000u, PROTO_AMAZON, 19}, /* 54.192.96.0/19 */
-    {0x36c06100u, PROTO_AMAZON, 24}, /* 54.192.97.0/24 */
-    {0x36c06200u, PROTO_AMAZON, 23}, /* 54.192.98.0/23 */
-    {0x36c06300u, PROTO_AMAZON, 24}, /* 54.192.99.0/24 */
-    {0x36c06400u, PROTO_AMAZON, 23}, /* 54.192.100.0/23 */
-    {0x36c06500u, PROTO_AMAZON, 24}, /* 54.192.101.0/24 */
-    {0x36c06600u, PROTO_AMAZON, 23}, /* 54.192.102.0/23 */
-    {0x36c06700u, PROTO_AMAZON, 24}, /* 54.192.103.0/24 */
-    {0x36c06800u, PROTO_AMAZON, 21}, /* 54.192.104.0/21 */
-    {0x36c06900u, PROTO_AMAZON, 24}, /* 54.192.105.0/24 */
-    {0x36c06a00u, PROTO_AMAZON, 23}, /* 54.192.106.0/23 */
-    {0x36c06b00u, PROTO_AMAZON, 24}, /* 54.192.107.0/24 */
-    {0x36c06c00u, PROTO_AMAZON, 23}, /* 54.192.108.0/23 */
-    {0x36c06d00u, PROTO_AMAZON, 24}, /* 54.192.109.0/24 */
-    {0x36c06e00u, PROTO_AMAZON, 23}, /* 54.192.110.0/23 */
-    {0x36c06f00u, PROTO_AMAZON, 24}, /* 54.192.111.0/24 */
-    {0x36c07000u, PROTO_AMAZON, 20}, /* 54.192.112.0/20 */
-    {0x36c07100u, PROTO_AMAZON, 24}, /* 54.192.113.0/24 */
-    {0x36c07200u, PROTO_AMAZON, 23}, /* 54.192.114.0/23 */
-    {0x36c07300u, PROTO_AMAZON, 24}, /* 54.192.115.0/24 */
-    {0x36c07400u, PROTO_AMAZON, 23}, /* 54.192.116.0/23 */
-    {0x36c07500u, PROTO_AMAZON, 24}, /* 54.192.117.0/24 */
-    {0x36c07600u, PROTO_AMAZON, 23}, /* 54.192.118.0/23 */
-    {0x36c07700u, PROTO_AMAZON, 24}, /* 54.192.119.0/24 */
-    {0x36c07800u, PROTO_AMAZON, 21}, /* 54.192.120.0/21 */
-    {0x36c07900u, PROTO_AMAZON, 24}, /* 54.192.121.0/24 */
-    {0x36c07a00u, PROTO_AMAZON, 23}, /* 54.192.122.0/23 */
-    {0x36c07b00u, PROTO_AMAZON, 24}, /* 54.192.123.0/24 */
-    {0x36c07c00u, PROTO_AMAZON, 23}, /* 54.192.124.0/23 */
-    {0x36c07d00u, PROTO_AMAZON, 24}, /* 54.192.125.0/24 */
-    {0x36c07e00u, PROTO_AMAZON, 23}, /* 54.192.126.0/23 */
-    {0x36c07f00u, PROTO_AMAZON, 24}, /* 54.192.127.0/24 */
-    {0x36c08000u, PROTO_AMAZON, 17}, /* 54.192.128.0/17 */
-    {0x36c08100u, PROTO_AMAZON, 24}, /* 54.192.129.0/24 */
-    {0x36c08200u, PROTO_AMAZON, 23}, /* 54.192.130.0/23 */
-    {0x36c08300u, PROTO_AMAZON, 24}, /* 54.192.131.0/24 */
-    {0x36c08400u, PROTO_AMAZON, 23}, /* 54.192.132.0/23 */
-    {0x36c08500u, PROTO_AMAZON, 24}, /* 54.192.133.0/24 */
-    {0x36c08600u, PROTO_AMAZON, 23}, /* 54.192.134.0/23 */
-    {0x36c08700u, PROTO_AMAZON, 24}, /* 54.192.135.0/24 */
-    {0x36c08800u, PROTO_AMAZON, 21}, /* 54.192.136.0/21 */
-    {0x36c08900u, PROTO_AMAZON, 24}, /* 54.192.137.0/24 */
-    {0x36c08a00u, PROTO_AMAZON, 23}, /* 54.192.138.0/23 */
-    {0x36c08b00u, PROTO_AMAZON, 24}, /* 54.192.139.0/24 */
-    {0x36c08c00u, PROTO_AMAZON, 23}, /* 54.192.140.0/23 */
-    {0x36c08d00u, PROTO_AMAZON, 24}, /* 54.192.141.0/24 */
-    {0x36c08e00u, PROTO_AMAZON, 23}, /* 54.192.142.0/23 */
-    {0x36c08f00u, PROTO_AMAZON, 24}, /* 54.192.143.0/24 */
-    {0x36c09000u, PROTO_AMAZON, 20}, /* 54.192.144.0/20 */
-    {0x36c09100u, PROTO_AMAZON, 24}, /* 54.192.145.0/24 */
-    {0x36c09200u, PROTO_AMAZON, 23}, /* 54.192.146.0/23 */
-    {0x36c09300u, PROTO_AMAZON, 24}, /* 54.192.147.0/24 */
-    {0x36c09400u, PROTO_AMAZON, 23}, /* 54.192.148.0/23 */
-    {0x36c09500u, PROTO_AMAZON, 24}, /* 54.192.149.0/24 */
-    {0x36c09600u, PROTO_AMAZON, 23}, /* 54.192.150.0/23 */
-    {0x36c09700u, PROTO_AMAZON, 24}, /* 54.192.151.0/24 */
-    {0x36c09800u, PROTO_AMAZON, 21}, /* 54.192.152.0/21 */
-    {0x36c09900u, PROTO_AMAZON, 24}, /* 54.192.153.0/24 */
-    {0x36c09a00u, PROTO_AMAZON, 23}, /* 54.192.154.0/23 */
-    {0x36c09b00u, PROTO_AMAZON, 24}, /* 54.192.155.0/24 */
-    {0x36c09c00u, PROTO_AMAZON, 23}, /* 54.192.156.0/23 */
-    {0x36c09d00u, PROTO_AMAZON, 24}, /* 54.192.157.0/24 */
-    {0x36c09e00u, PROTO_AMAZON, 23}, /* 54.192.158.0/23 */
-    {0x36c09f00u, PROTO_AMAZON, 24}, /* 54.192.159.0/24 */
-    {0x36c0a000u, PROTO_AMAZON, 19}, /* 54.192.160.0/19 */
-    {0x36c0a100u, PROTO_AMAZON, 24}, /* 54.192.161.0/24 */
-    {0x36c0a200u, PROTO_AMAZON, 23}, /* 54.192.162.0/23 */
-    {0x36c0a300u, PROTO_AMAZON, 24}, /* 54.192.163.0/24 */
-    {0x36c0a400u, PROTO_AMAZON, 23}, /* 54.192.164.0/23 */
-    {0x36c0a500u, PROTO_AMAZON, 24}, /* 54.192.165.0/24 */
-    {0x36c0a600u, PROTO_AMAZON, 23}, /* 54.192.166.0/23 */
-    {0x36c0a700u, PROTO_AMAZON, 24}, /* 54.192.167.0/24 */
-    {0x36c0a800u, PROTO_AMAZON, 21}, /* 54.192.168.0/21 */
-    {0x36c0a900u, PROTO_AMAZON, 24}, /* 54.192.169.0/24 */
-    {0x36c0aa00u, PROTO_AMAZON, 23}, /* 54.192.170.0/23 */
-    {0x36c0ab00u, PROTO_AMAZON, 24}, /* 54.192.171.0/24 */
-    {0x36c0ac00u, PROTO_AMAZON, 23}, /* 54.192.172.0/23 */
-    {0x36c0ad00u, PROTO_AMAZON, 24}, /* 54.192.173.0/24 */
-    {0x36c0ae00u, PROTO_AMAZON, 23}, /* 54.192.174.0/23 */
-    {0x36c0af00u, PROTO_AMAZON, 24}, /* 54.192.175.0/24 */
-    {0x36c0b000u, PROTO_AMAZON, 20}, /* 54.192.176.0/20 */
-    {0x36c0b100u, PROTO_AMAZON, 24}, /* 54.192.177.0/24 */
-    {0x36c0b200u, PROTO_AMAZON, 23}, /* 54.192.178.0/23 */
-    {0x36c0b300u, PROTO_AMAZON, 24}, /* 54.192.179.0/24 */
-    {0x36c0b400u, PROTO_AMAZON, 23}, /* 54.192.180.0/23 */
-    {0x36c0b500u, PROTO_AMAZON, 24}, /* 54.192.181.0/24 */
-    {0x36c0b600u, PROTO_AMAZON, 23}, /* 54.192.182.0/23 */
-    {0x36c0b700u, PROTO_AMAZON, 24}, /* 54.192.183.0/24 */
-    {0x36c0b800u, PROTO_AMAZON, 21}, /* 54.192.184.0/21 */
-    {0x36c0b900u, PROTO_AMAZON, 24}, /* 54.192.185.0/24 */
-    {0x36c0ba00u, PROTO_AMAZON, 23}, /* 54.192.186.0/23 */
-    {0x36c0bb00u, PROTO_AMAZON, 24}, /* 54.192.187.0/24 */
-    {0x36c0bc00u, PROTO_AMAZON, 23}, /* 54.192.188.0/23 */
-    {0x36c0bd00u, PROTO_AMAZON, 24}, /* 54.192.189.0/24 */
-    {0x36c0be00u, PROTO_AMAZON, 23}, /* 54.192.190.0/23 */
-    {0x36c0bf00u, PROTO_AMAZON, 24}, /* 54.192.191.0/24 */
-    {0x36c0c000u, PROTO_AMAZON, 18}, /* 54.192.192.0/18 */
-    {0x36c0c100u, PROTO_AMAZON, 24}, /* 54.192.193.0/24 */
-    {0x36c0c200u, PROTO_AMAZON, 23}, /* 54.192.194.0/23 */
-    {0x36c0c300u, PROTO_AMAZON, 24}, /* 54.192.195.0/24 */
-    {0x36c0c400u, PROTO_AMAZON, 23}, /* 54.192.196.0/23 */
-    {0x36c0c500u, PROTO_AMAZON, 24}, /* 54.192.197.0/24 */
-    {0x36c0c600u, PROTO_AMAZON, 23}, /* 54.192.198.0/23 */
-    {0x36c0c700u, PROTO_AMAZON, 24}, /* 54.192.199.0/24 */
-    {0x36c0c800u, PROTO_AMAZON, 21}, /* 54.192.200.0/21 */
-    {0x36c0c900u, PROTO_AMAZON, 24}, /* 54.192.201.0/24 */
-    {0x36c0ca00u, PROTO_AMAZON, 23}, /* 54.192.202.0/23 */
-    {0x36c0cb00u, PROTO_AMAZON, 24}, /* 54.192.203.0/24 */
-    {0x36c0cc00u, PROTO_AMAZON, 23}, /* 54.192.204.0/23 */
-    {0x36c0cd00u, PROTO_AMAZON, 24}, /* 54.192.205.0/24 */
-    {0x36c0ce00u, PROTO_AMAZON, 23}, /* 54.192.206.0/23 */
-    {0x36c0cf00u, PROTO_AMAZON, 24}, /* 54.192.207.0/24 */
-    {0x36c0d000u, PROTO_AMAZON, 20}, /* 54.192.208.0/20 */
-    {0x36c0d100u, PROTO_AMAZON, 24}, /* 54.192.209.0/24 */
-    {0x36c0d200u, PROTO_AMAZON, 23}, /* 54.192.210.0/23 */
-    {0x36c0d300u, PROTO_AMAZON, 24}, /* 54.192.211.0/24 */
-    {0x36c0d400u, PROTO_AMAZON, 23}, /* 54.192.212.0/23 */
-    {0x36c0d500u, PROTO_AMAZON, 24}, /* 54.192.213.0/24 */
-    {0x36c0d600u, PROTO_AMAZON, 23}, /* 54.192.214.0/23 */
-    {0x36c0d700u, PROTO_AMAZON, 24}, /* 54.192.215.0/24 */
-    {0x36c0d800u, PROTO_AMAZON, 21}, /* 54.192.216.0/21 */
-    {0x36c0d900u, PROTO_AMAZON, 24}, /* 54.192.217.0/24 */
-    {0x36c0da00u, PROTO_AMAZON, 23}, /* 54.192.218.0/23 */
-    {0x36c0db00u, PROTO_AMAZON, 24}, /* 54.192.219.0/24 */
-    {0x36c0dc00u, PROTO_AMAZON, 23}, /* 54.192.220.0/23 */
-    {0x36c0dd00u, PROTO_AMAZON, 24}, /* 54.192.221.0/24 */
-    {0x36c0de00u, PROTO_AMAZON, 23}, /* 54.192.222.0/23 */
-    {0x36c0df00u, PROTO_AMAZON, 24}, /* 54.192.223.0/24 */
-    {0x36c0e000u, PROTO_AMAZON, 19}, /* 54.192.224.0/19 */
-    {0x36c0e100u, PROTO_AMAZON, 24}, /* 54.192.225.0/24 */
-    {0x36c0e200u, PROTO_AMAZON, 23}, /* 54.192.226.0/23 */
-    {0x36c0e300u, PROTO_AMAZON, 24}, /* 54.192.227.0/24 */
-    {0x36c0e400u, PROTO_AMAZON, 23}, /* 54.192.228.0/23 */
-    {0x36c0e500u, PROTO_AMAZON, 24}, /* 54.192.229.0/24 */
-    {0x36c0e600u, PROTO_AMAZON, 23}, /* 54.192.230.0/23 */
-    {0x36c0e700u, PROTO_AMAZON, 24}, /* 54.192.231.0/24 */
-    {0x36c0e800u, PROTO_AMAZON, 21}, /* 54.192.232.0/21 */
-    {0x36c0e900u, PROTO_AMAZON, 24}, /* 54.192.233.0/24 */
-    {0x36c0ea00u, PROTO_AMAZON, 23}, /* 54.192.234.0/23 */
-    {0x36c0eb00u, PROTO_AMAZON, 24}, /* 54.192.235.0/24 */
-    {0x36c0ec00u, PROTO_AMAZON, 23}, /* 54.192.236.0/23 */
-    {0x36c0ed00u, PROTO_AMAZON, 24}, /* 54.192.237.0/24 */
-    {0x36c0ee00u, PROTO_AMAZON, 23}, /* 54.192.238.0/23 */
-    {0x36c0ef00u, PROTO_AMAZON, 24}, /* 54.192.239.0/24 */
-    {0x36c0f000u, PROTO_AMAZON, 20}, /* 54.192.240.0/20 */
-    {0x36c0f100u, PROTO_AMAZON, 24}, /* 54.192.241.0/24 */
-    {0x36c0f200u, PROTO_AMAZON, 23}, /* 54.192.242.0/23 */
-    {0x36c0f300u, PROTO_AMAZON, 24}, /* 54.192.243.0/24 */
-    {0x36c0f400u, PROTO_AMAZON, 23}, /* 54.192.244.0/23 */
-    {0x36c0f500u, PROTO_AMAZON, 24}, /* 54.192.245.0/24 */
-    {0x36c0f600u, PROTO_AMAZON, 23}, /* 54.192.246.0/23 */
-    {0x36c0f700u, PROTO_AMAZON, 24}, /* 54.192.247.0/24 */
-    {0x36c0f800u, PROTO_AMAZON, 21}, /* 54.192.248.0/21 */
-    {0x36c0f900u, PROTO_AMAZON, 24}, /* 54.192.249.0/24 */
-    {0x36c0fa00u, PROTO_AMAZON, 23}, /* 54.192.250.0/23 */
-    {0x36c0fb00u, PROTO_AMAZON, 24}, /* 54.192.251.0/24 */
-    {0x36c0fc00u, PROTO_AMAZON, 23}, /* 54.192.252.0/23 */
-    {0x36c0fd00u, PROTO_AMAZON, 24}, /* 54.192.253.0/24 */
-    {0x36c0fe00u, PROTO_AMAZON, 23}, /* 54.192.254.0/23 */
-    {0x36c0ff00u, PROTO_AMAZON, 24}, /* 54.192.255.0/24 */
-    {0x36c10000u, PROTO_AMAZON, 17}, /* 54.193.0.0/17 */
-    {0x36c20000u, PROTO_AMAZON, 16}, /* 54.194.0.0/16 */
-    {0x36c40000u, PROTO_AMAZON, 15}, /* 54.196.0.0/15 */
-    {0x36c60000u, PROTO_AMAZON, 16}, /* 54.198.0.0/16 */
-    {0x36c70000u, PROTO_AMAZON, 17}, /* 54.199.0.0/17 */
-    {0x36c80000u, PROTO_AMAZON, 15}, /* 54.200.0.0/15 */
-    {0x36ce0000u, PROTO_AMAZON, 17}, /* 54.206.0.0/17 */
-    {0x36d00000u, PROTO_AMAZON, 15}, /* 54.208.0.0/15 */
-    {0x36d20000u, PROTO_AMAZON, 16}, /* 54.210.0.0/16 */
-    {0x36d60000u, PROTO_AMAZON, 17}, /* 54.214.0.0/17 */
-    {0x36d78000u, PROTO_AMAZON, 18}, /* 54.215.128.0/18 */
-    {0x36d80000u, PROTO_AMAZON, 15}, /* 54.216.0.0/15 */
-    {0x36da0000u, PROTO_AMAZON, 17}, /* 54.218.0.0/17 */
-    {0x36db8000u, PROTO_AMAZON, 18}, /* 54.219.128.0/18 */
-    {0x36dc0000u, PROTO_AMAZON, 16}, /* 54.220.0.0/16 */
-    {0x36de0000u, PROTO_UNKNOWN, 0},
-    {0x36e00000u, PROTO_AMAZON, 12}, /* 54.224.0.0/12 */
-    {0x36e20000u, PROTO_AMAZON, 15}, /* 54.226.0.0/15 */
-    {0x36e40000u, PROTO_AMAZON, 16}, /* 54.228.0.0/16 */
-    {0x36e50000u, PROTO_AMAZON, 17}, /* 54.229.0.0/17 */
-    {0x36e60000u, PROTO_AMAZON, 16}, /* 54.230.0.0/16 */
-    {0x36e60400u, PROTO_AMAZON, 22}, /* 54.230.4.0/22 */
-    {0x36e62800u, PROTO_AMAZON, 16}, /* 54.230.0.0/16 */
-    {0x36e62c00u, PROTO_AMAZON, 22}, /* 54.230.44.0/22 */
-    {0x36e66800u, PROTO_AMAZON, 16}, /* 54.230.0.0/16 */
-    {0x36e66c00u, PROTO_AMAZON, 22}, /* 54.230.108.0/22 */
-    {0x36e69800u, PROTO_AMAZON, 16}, /* 54.230.0.0/16 */
-    {0x36e69c00u, PROTO_AMAZON, 22}, /* 54.230.156.0/22 */
-    {0x36e6aa00u, PROTO_AMAZON, 24}, /* 54.230.170.0/24 */
-    {0x36e6ab00u, PROTO_AMAZON, 22}, /* 54.230.168.0/22 */
-    {0x36e6b300u, PROTO_AMAZON, 24}, /* 54.230.179.0/24 */
-    {0x36e6b400u, PROTO_AMAZON, 22}, /* 54.230.180.0/22 */
-    {0x36e6d400u, PROTO_AMAZON, 23}, /* 54.230.212.0/23 */
-    {0x36e6d500u, PROTO_AMAZON, 24}, /* 54.230.213.0/24 */
-    {0x36e6d600u, PROTO_AMAZON, 23}, /* 54.230.214.0/23 */
-    {0x36e6d700u, PROTO_AMAZON, 24}, /* 54.230.215.0/24 */
-    {0x36e6d800u, PROTO_AMAZON, 22}, /* 54.230.216.0/22 */
-    {0x36e6dc00u, PROTO_AMAZON, 16}, /* 54.230.0.0/16 */
-    {0x36e6e000u, PROTO_AMAZON, 22}, /* 54.230.224.0/22 */
-    {0x36e6e400u, PROTO_AMAZON, 16}, /* 54.230.0.0/16 */
-    {0x36e6e800u, PROTO_AMAZON, 22}, /* 54.230.232.0/22 */
-    {0x36e6ec00u, PROTO_AMAZON, 16}, /* 54.230.0.0/16 */
-    {0x36e6f000u, PROTO_AMAZON, 21}, /* 54.230.240.0/21 */
-    {0x36e70000u, PROTO_AMAZON, 17}, /* 54.231.0.0/17 */
-    {0x36e70100u, PROTO_AMAZON, 24}, /* 54.231.1.0/24 */
-    {0x36e70200u, PROTO_AMAZON, 23}, /* 54.231.2.0/23 */
-    {0x36e70300u, PROTO_AMAZON, 24}, /* 54.231.3.0/24 */
-    {0x36e70400u, PROTO_AMAZON, 23}, /* 54.231.4.0/23 */
-    {0x36e70500u, PROTO_AMAZON, 24}, /* 54.231.5.0/24 */
-    {0x36e70600u, PROTO_AMAZON, 23}, /* 54.231.6.0/23 */
-    {0x36e70700u, PROTO_AMAZON, 24}, /* 54.231.7.0/24 */
-    {0x36e70800u, PROTO_AMAZON, 23}, /* 54.231.8.0/23 */
-    {0x36e70900u, PROTO_AMAZON, 24}, /* 54.231.9.0/24 */
-    {0x36e70a00u, PROTO_AMAZON, 23}, /* 54.231.10.0/23 */
-    {0x36e70b00u, PROTO_AMAZON, 24}, /* 54.231.11.0/24 */
-    {0x36e70c00u, PROTO_AMAZON, 23}, /* 54.231.12.0/23 */
-    {0x36e70d00u, PROTO_AMAZON, 24}, /* 54.231.13.0/24 */
-    {0x36e70e00u, PROTO_AMAZON, 23}, /* 54.231.14.0/23 */
-    {0x36e70f00u, PROTO_AMAZON, 24}, /* 54.231.15.0/24 */
-    {0x36e71000u, PROTO_AMAZON, 23}, /* 54.231.16.0/23 */
-    {0x36e71100u, PROTO_AMAZON, 24}, /* 54.231.17.0/24 */
-    {0x36e71200u, PROTO_AMAZON, 23}, /* 54.231.18.0/23 */
-    {0x36e71300u, PROTO_AMAZON, 24}, /* 54.231.19.0/24 */
-    {0x36e71400u, PROTO_AMAZON, 23}, /* 54.231.20.0/23 */
-    {0x36e71500u, PROTO_AMAZON, 24}, /* 54.231.21.0/24 */
-    {0x36e71600u, PROTO_AMAZON, 23}, /* 54.231.22.0/23 */
-    {0x36e71700u, PROTO_AMAZON, 24}, /* 54.231.23.0/24 */
-    {0x36e71800u, PROTO_AMAZON, 23}, /* 54.231.24.0/23 */
-    {0x36e71900u, PROTO_AMAZON, 24}, /* 54.231.25.0/24 */
-    {0x36e71a00u, PROTO_AMAZON, 23}, /* 54.231.26.0/23 */
-    {0x36e71b00u, PROTO_AMAZON, 24}, /* 54.231.27.0/24 */
-    {0x36e71c00u, PROTO_AMAZON, 23}, /* 54.231.28.0/23 */
-    {0x36e71d00u, PROTO_AMAZON, 24}, /* 54.231.29.0/24 */
-    {0x36e71e00u, PROTO_AMAZON, 23}, /* 54.231.30.0/23 */
-    {0x36e71f00u, PROTO_AMAZON, 24}, /* 54.231.31.0/24 */
-    {0x36e72000u, PROTO_AMAZON, 23}, /* 54.231.32.0/23 */
-    {0x36e72100u, PROTO_AMAZON, 24}, /* 54.231.33.0/24 */
-    {0x36e72200u, PROTO_AMAZON, 23}, /* 54.231.34.0/23 */
-    {0x36e72300u, PROTO_AMAZON, 24}, /* 54.231.35.0/24 */
-    {0x36e72400u, PROTO_AMAZON, 23}, /* 54.231.36.0/23 */
-    {0x36e72500u, PROTO_AMAZON, 24}, /* 54.231.37.0/24 */
-    {0x36e72600u, PROTO_AMAZON, 23}, /* 54.231.38.0/23 */
-    {0x36e72700u, PROTO_AMAZON, 24}, /* 54.231.39.0/24 */
-    {0x36e72800u, PROTO_AMAZON, 23}, /* 54.231.40.0/23 */
-    {0x36e72900u, PROTO_AMAZON, 24}, /* 54.231.41.0/24 */
-    {0x36e72a00u, PROTO_AMAZON, 23}, /* 54.231.42.0/23 */
-    {0x36e72b00u, PROTO_AMAZON, 24}, /* 54.231.43.0/24 */
-    {0x36e72c00u, PROTO_AMAZON, 23}, /* 54.231.44.0/23 */
-    {0x36e72d00u, PROTO_AMAZON, 24}, /* 54.231.45.0/24 */
-    {0x36e72e00u, PROTO_AMAZON, 23}, /* 54.231.46.0/23 */
-    {0x36e72f00u, PROTO_AMAZON, 24}, /* 54.231.47.0/24 */
-    {0x36e73000u, PROTO_AMAZON, 23}, /* 54.231.48.0/23 */
-    {0x36e73100u, PROTO_AMAZON, 24}, /* 54.231.49.0/24 */
-    {0x36e73200u, PROTO_AMAZON, 23}, /* 54.231.50.0/23 */
-    {0x36e73300u, PROTO_AMAZON, 24}, /* 54.231.51.0/24 */
-    {0x36e73400u, PROTO_AMAZON, 23}, /* 54.231.52.0/23 */
-    {0x36e73500u, PROTO_AMAZON, 24}, /* 54.231.53.0/24 */
-    {0x36e73600u, PROTO_AMAZON, 23}, /* 54.231.54.0/23 */
-    {0x36e73700u, PROTO_AMAZON, 24}, /* 54.231.55.0/24 */
-    {0x36e73800u, PROTO_AMAZON, 23}, /* 54.231.56.0/23 */
-    {0x36e73900u, PROTO_AMAZON, 24}, /* 54.231.57.0/24 */
-    {0x36e73a00u, PROTO_AMAZON, 23}, /* 54.231.58.0/23 */
-    {0x36e73b00u, PROTO_AMAZON, 24}, /* 54.231.59.0/24 */
-    {0x36e73c00u, PROTO_AMAZON, 23}, /* 54.231.60.0/23 */
-    {0x36e73d00u, PROTO_AMAZON, 24}, /* 54.231.61.0/24 */
-    {0x36e73e00u, PROTO_AMAZON, 23}, /* 54.231.62.0/23 */
-    {0x36e73f00u, PROTO_AMAZON, 24}, /* 54.231.63.0/24 */
-    {0x36e74000u, PROTO_AMAZON, 23}, /* 54.231.64.0/23 */
-    {0x36e74100u, PROTO_AMAZON, 24}, /* 54.231.65.0/24 */
-    {0x36e74200u, PROTO_AMAZON, 23}, /* 54.231.66.0/23 */
-    {0x36e74300u, PROTO_AMAZON, 24}, /* 54.231.67.0/24 */
-    {0x36e74400u, PROTO_AMAZON, 23}, /* 54.231.68.0/23 */
-    {0x36e74500u, PROTO_AMAZON, 24}, /* 54.231.69.0/24 */
-    {0x36e74600u, PROTO_AMAZON, 23}, /* 54.231.70.0/23 */
-    {0x36e74700u, PROTO_AMAZON, 24}, /* 54.231.71.0/24 */
-    {0x36e74800u, PROTO_AMAZON, 23}, /* 54.231.72.0/23 */
-    {0x36e74900u, PROTO_AMAZON, 24}, /* 54.231.73.0/24 */
-    {0x36e74a00u, PROTO_AMAZON, 23}, /* 54.231.74.0/23 */
-    {0x36e74b00u, PROTO_AMAZON, 24}, /* 54.231.75.0/24 */
-    {0x36e74c00u, PROTO_AMAZON, 23}, /* 54.231.76.0/23 */
-    {0x36e74d00u, PROTO_AMAZON, 24}, /* 54.231.77.0/24 */
-    {0x36e74e00u, PROTO_AMAZON, 23}, /* 54.231.78.0/23 */
-    {0x36e74f00u, PROTO_AMAZON, 24}, /* 54.231.79.0/24 */
-    {0x36e75000u, PROTO_AMAZON, 23}, /* 54.231.80.0/23 */
-    {0x36e75100u, PROTO_AMAZON, 24}, /* 54.231.81.0/24 */
-    {0x36e75200u, PROTO_AMAZON, 23}, /* 54.231.82.0/23 */
-    {0x36e75300u, PROTO_AMAZON, 24}, /* 54.231.83.0/24 */
-    {0x36e75400u, PROTO_AMAZON, 23}, /* 54.231.84.0/23 */
-    {0x36e75500u, PROTO_AMAZON, 24}, /* 54.231.85.0/24 */
-    {0x36e75600u, PROTO_AMAZON, 23}, /* 54.231.86.0/23 */
-    {0x36e75700u, PROTO_AMAZON, 24}, /* 54.231.87.0/24 */
-    {0x36e75800u, PROTO_AMAZON, 23}, /* 54.231.88.0/23 */
-    {0x36e75900u, PROTO_AMAZON, 24}, /* 54.231.89.0/24 */
-    {0x36e75a00u, PROTO_AMAZON, 23}, /* 54.231.90.0/23 */
-    {0x36e75b00u, PROTO_AMAZON, 24}, /* 54.231.91.0/24 */
-    {0x36e75c00u, PROTO_AMAZON, 23}, /* 54.231.92.0/23 */
-    {0x36e75d00u, PROTO_AMAZON, 24}, /* 54.231.93.0/24 */
-    {0x36e75e00u, PROTO_AMAZON, 23}, /* 54.231.94.0/23 */
-    {0x36e75f00u, PROTO_AMAZON, 24}, /* 54.231.95.0/24 */
-    {0x36e76000u, PROTO_AMAZON, 23}, /* 54.231.96.0/23 */
-    {0x36e76100u, PROTO_AMAZON, 24}, /* 54.231.97.0/24 */
-    {0x36e76200u, PROTO_AMAZON, 23}, /* 54.231.98.0/23 */
-    {0x36e76300u, PROTO_AMAZON, 24}, /* 54.231.99.0/24 */
-    {0x36e76400u, PROTO_AMAZON, 23}, /* 54.231.100.0/23 */
-    {0x36e76500u, PROTO_AMAZON, 24}, /* 54.231.101.0/24 */
-    {0x36e76600u, PROTO_AMAZON, 23}, /* 54.231.102.0/23 */
-    {0x36e76700u, PROTO_AMAZON, 24}, /* 54.231.103.0/24 */
-    {0x36e76800u, PROTO_AMAZON, 23}, /* 54.231.104.0/23 */
-    {0x36e76900u, PROTO_AMAZON, 24}, /* 54.231.105.0/24 */
-    {0x36e76a00u, PROTO_AMAZON, 23}, /* 54.231.106.0/23 */
-    {0x36e76b00u, PROTO_AMAZON, 24}, /* 54.231.107.0/24 */
-    {0x36e76c00u, PROTO_AMAZON, 23}, /* 54.231.108.0/23 */
-    {0x36e76d00u, PROTO_AMAZON, 24}, /* 54.231.109.0/24 */
-    {0x36e76e00u, PROTO_AMAZON, 23}, /* 54.231.110.0/23 */
-    {0x36e76f00u, PROTO_AMAZON, 24}, /* 54.231.111.0/24 */
-    {0x36e77000u, PROTO_AMAZON, 23}, /* 54.231.112.0/23 */
-    {0x36e77100u, PROTO_AMAZON, 24}, /* 54.231.113.0/24 */
-    {0x36e77200u, PROTO_AMAZON, 23}, /* 54.231.114.0/23 */
-    {0x36e77300u, PROTO_AMAZON, 24}, /* 54.231.115.0/24 */
-    {0x36e77400u, PROTO_AMAZON, 23}, /* 54.231.116.0/23 */
-    {0x36e77500u, PROTO_AMAZON, 24}, /* 54.231.117.0/24 */
-    {0x36e77600u, PROTO_AMAZON, 23}, /* 54.231.118.0/23 */
-    {0x36e77700u, PROTO_AMAZON, 24}, /* 54.231.119.0/24 */
-    {0x36e77800u, PROTO_AMAZON, 23}, /* 54.231.120.0/23 */
-    {0x36e77900u, PROTO_AMAZON, 24}, /* 54.231.121.0/24 */
-    {0x36e77a00u, PROTO_AMAZON, 23}, /* 54.231.122.0/23 */
-    {0x36e77b00u, PROTO_AMAZON, 24}, /* 54.231.123.0/24 */
-    {0x36e77c00u, PROTO_AMAZON, 23}, /* 54.231.124.0/23 */
-    {0x36e77d00u, PROTO_AMAZON, 24}, /* 54.231.125.0/24 */
-    {0x36e77e00u, PROTO_AMAZON, 23}, /* 54.231.126.0/23 */
-    {0x36e77f00u, PROTO_AMAZON, 24}, /* 54.231.127.0/24 */
-    {0x36e78000u, PROTO_AMAZON, 19}, /* 54.231.128.0/19 */
-    {0x36e78100u, PROTO_AMAZON, 24}, /* 54.231.129.0/24 */
-    {0x36e78800u, PROTO_AMAZON, 21}, /* 54.231.136.0/21 */
-    {0x36e78900u, PROTO_AMAZON, 24}, /* 54.231.137.0/24 */
-    {0x36e79000u, PROTO_AMAZON, 21}, /* 54.231.144.0/21 */
-    {0x36e79100u, PROTO_AMAZON, 24}, /* 54.231.145.0/24 */
-    {0x36e79800u, PROTO_AMAZON, 21}, /* 54.231.152.0/21 */
-    {0x36e79900u, PROTO_AMAZON, 24}, /* 54.231.153.0/24 */
-    {0x36e7a000u, PROTO_AMAZON, 19}, /* 54.231.160.0/19 */
-    {0x36e7a100u, PROTO_AMAZON, 24}, /* 54.231.161.0/24 */
-    {0x36e7a200u, PROTO_AMAZON, 23}, /* 54.231.162.0/23 */
-    {0x36e7a300u, PROTO_AMAZON, 24}, /* 54.231.163.0/24 */
-    {0x36e7a400u, PROTO_AMAZON, 23}, /* 54.231.164.0/23 */
-    {0x36e7a500u, PROTO_AMAZON, 24}, /* 54.231.165.0/24 */
-    {0x36e7a600u, PROTO_AMAZON, 23}, /* 54.231.166.0/23 */
-    {0x36e7a700u, PROTO_AMAZON, 24}, /* 54.231.167.0/24 */
-    {0x36e7a800u, PROTO_AMAZON, 23}, /* 54.231.168.0/23 */
-    {0x36e7a900u, PROTO_AMAZON, 24}, /* 54.231.169.0/24 */
-    {0x36e7aa00u, PROTO_AMAZON, 23}, /* 54.231.170.0/23 */
-    {0x36e7ab00u, PROTO_AMAZON, 24}, /* 54.231.171.0/24 */
-    {0x36e7ac00u, PROTO_AMAZON, 23}, /* 54.231.172.0/23 */
-    {0x36e7ad00u, PROTO_AMAZON, 24}, /* 54.231.173.0/24 */
-    {0x36e7ae00u, PROTO_AMAZON, 23}, /* 54.231.174.0/23 */
-    {0x36e7af00u, PROTO_AMAZON, 24}, /* 54.231.175.0/24 */
-    {0x36e7b000u, PROTO_AMAZON, 23}, /* 54.231.176.0/23 */
-    {0x36e7b100u, PROTO_AMAZON, 24}, /* 54.231.177.0/24 */
-    {0x36e7b200u, PROTO_AMAZON, 23}, /* 54.231.178.0/23 */
-    {0x36e7b300u, PROTO_AMAZON, 24}, /* 54.231.179.0/24 */
-    {0x36e7b400u, PROTO_AMAZON, 23}, /* 54.231.180.0/23 */
-    {0x36e7b500u, PROTO_AMAZON, 24}, /* 54.231.181.0/24 */
-    {0x36e7b600u, PROTO_AMAZON, 23}, /* 54.231.182.0/23 */
-    {0x36e7b700u, PROTO_AMAZON, 24}, /* 54.231.183.0/24 */
-    {0x36e7b800u, PROTO_AMAZON, 23}, /* 54.231.184.0/23 */
-    {0x36e7b900u, PROTO_AMAZON, 24}, /* 54.231.185.0/24 */
-    {0x36e7ba00u, PROTO_AMAZON, 23}, /* 54.231.186.0/23 */
-    {0x36e7bb00u, PROTO_AMAZON, 24}, /* 54.231.187.0/24 */
-    {0x36e7bc00u, PROTO_AMAZON, 23}, /* 54.231.188.0/23 */
-    {0x36e7bd00u, PROTO_AMAZON, 24}, /* 54.231.189.0/24 */
-    {0x36e7be00u, PROTO_AMAZON, 23}, /* 54.231.190.0/23 */
-    {0x36e7bf00u, PROTO_AMAZON, 24}, /* 54.231.191.0/24 */
-    {0x36e7c000u, PROTO_AMAZON, 20}, /* 54.231.192.0/20 */
-    {0x36e7c100u, PROTO_AMAZON, 24}, /* 54.231.193.0/24 */
-    {0x36e7d000u, PROTO_AMAZON, 12}, /* 54.224.0.0/12 */
-    {0x36e7e000u, PROTO_AMAZON, 21}, /* 54.231.224.0/21 */
-    {0x36e7e100u, PROTO_AMAZON, 24}, /* 54.231.225.0/24 */
-    {0x36e7e800u, PROTO_AMAZON, 21}, /* 54.231.232.0/21 */
-    {0x36e7e900u, PROTO_AMAZON, 24}, /* 54.231.233.0/24 */
-    {0x36e7f000u, PROTO_AMAZON, 22}, /* 54.231.240.0/22 */
-    {0x36e7f100u, PROTO_AMAZON, 24}, /* 54.231.241.0/24 */
-    {0x36e7f400u, PROTO_AMAZON, 22}, /* 54.231.244.0/22 */
-    {0x36e7f500u, PROTO_AMAZON, 24}, /* 54.231.245.0/24 */
-    {0x36e7f800u, PROTO_AMAZON, 22}, /* 54.231.248.0/22 */
-    {0x36e7f900u, PROTO_AMAZON, 24}, /* 54.231.249.0/24 */
-    {0x36e80000u, PROTO_AMAZON, 17}, /* 54.232.0.0/17 */
-    {0x36e88000u, PROTO_AMAZON, 18}, /* 54.232.128.0/18 */
-    {0x36e90000u, PROTO_AMAZON, 12}, /* 54.224.0.0/12 */
-    {0x36e94000u, PROTO_AMAZON, 18}, /* 54.233.64.0/18 */
-    {0x36e98000u, PROTO_AMAZON, 17}, /* 54.233.128.0/17 */
-    {0x36ea0000u, PROTO_AMAZON, 15}, /* 54.234.0.0/15 */
-    {0x36ec0000u, PROTO_AMAZON, 18}, /* 54.236.0.0/18 */
-    {0x36ec8000u, PROTO_AMAZON, 17}, /* 54.236.128.0/17 */
-    {0x36ed0000u, PROTO_AMAZON, 16}, /* 54.237.0.0/16 */
-    {0x36ee0000u, PROTO_AMAZON, 17}, /* 54.238.0.0/17 */
-    {0x36ef0000u, PROTO_AMAZON, 12}, /* 54.224.0.0/12 */
-    {0x36ef0200u, PROTO_AMAZON, 23}, /* 54.239.2.0/23 */
-    {0x36ef0400u, PROTO_AMAZON, 22}, /* 54.239.4.0/22 */
-    {0x36ef0800u, PROTO_AMAZON, 21}, /* 54.239.8.0/21 */
-    {0x36ef0900u, PROTO_AMAZON, 24}, /* 54.239.9.0/24 */
-    {0x36ef1000u, PROTO_AMAZON, 20}, /* 54.239.16.0/20 */
-    {0x36ef1100u, PROTO_AMAZON, 24}, /* 54.239.17.0/24 */
-    {0x36ef2800u, PROTO_AMAZON, 12}, /* 54.224.0.0/12 */
-    {0x36ef3000u, PROTO_AMAZON, 22}, /* 54.239.48.0/22 */
-    {0x36ef3400u, PROTO_AMAZON, 23}, /* 54.239.52.0/23 */
-    {0x36ef3800u, PROTO_AMAZON, 21}, /* 54.239.56.0/21 */
-    {0x36ef4000u, PROTO_AMAZON, 12}, /* 54.224.0.0/12 */
-    {0x36ef6000u, PROTO_AMAZON, 24}, /* 54.239.96.0/24 */
-    {0x36ef6100u, PROTO_AMAZON, 12}, /* 54.224.0.0/12 */
-    {0x36ef6400u, PROTO_AMAZON, 23}, /* 54.239.100.0/23 */
-    {0x36ef6600u, PROTO_AMAZON, 12}, /* 54.224.0.0/12 */
-    {0x36ef6800u, PROTO_AMAZON, 23}, /* 54.239.104.0/23 */
-    {0x36ef6a00u, PROTO_AMAZON, 12}, /* 54.224.0.0/12 */
-    {0x36ef6c00u, PROTO_AMAZON, 22}, /* 54.239.108.0/22 */
-    {0x36ef7000u, PROTO_AMAZON, 12}, /* 54.224.0.0/12 */
-    {0x36ef7200u, PROTO_AMAZON, 24}, /* 54.239.114.0/24 */
-    {0x36ef7300u, PROTO_AMAZON, 12}, /* 54.224.0.0/12 */
-    {0x36ef7400u, PROTO_AMAZON, 22}, /* 54.239.116.0/22 */
-    {0x36ef7800u, PROTO_AMAZON, 12}, /* 54.224.0.0/12 */
-    {0x36ef8000u, PROTO_AMAZON, 24}, /* 54.239.128.0/24 */
-    {0x36ef8200u, PROTO_AMAZON, 23}, /* 54.239.130.0/23 */
-    {0x36ef8600u, PROTO_AMAZON, 24}, /* 54.239.134.0/24 */
-    {0x36ef8c00u, PROTO_AMAZON, 22}, /* 54.239.140.0/22 */
-    {0x36ef9000u, PROTO_AMAZON, 24}, /* 54.239.144.0/24 */
-    {0x36ef9200u, PROTO_AMAZON, 12}, /* 54.224.0.0/12 */
-    {0x36ef9700u, PROTO_AMAZON, 24}, /* 54.239.151.0/24 */
-    {0x36ef9800u, PROTO_AMAZON, 23}, /* 54.239.152.0/23 */
-    {0x36ef9a00u, PROTO_AMAZON, 24}, /* 54.239.154.0/24 */
-    {0x36ef9b00u, PROTO_AMAZON, 12}, /* 54.224.0.0/12 */
-    {0x36ef9c00u, PROTO_AMAZON, 22}, /* 54.239.156.0/22 */
-    {0x36efa200u, PROTO_AMAZON, 23}, /* 54.239.162.0/23 */
-    {0x36efa600u, PROTO_AMAZON, 24}, /* 54.239.166.0/24 */
-    {0x36efa800u, PROTO_AMAZON, 23}, /* 54.239.168.0/23 */
-    {0x36efaa00u, PROTO_AMAZON, 24}, /* 54.239.170.0/24 */
-    {0x36efab00u, PROTO_AMAZON, 12}, /* 54.224.0.0/12 */
-    {0x36efac00u, PROTO_AMAZON, 23}, /* 54.239.172.0/23 */
-    {0x36efb000u, PROTO_AMAZON, 24}, /* 54.239.176.0/24 */
-    {0x36efb400u, PROTO_AMAZON, 23}, /* 54.239.180.0/23 */
-    {0x36efb600u, PROTO_AMAZON, 24}, /* 54.239.182.0/24 */
-    {0x36efb800u, PROTO_AMAZON, 12}, /* 54.224.0.0/12 */
-    {0x36efba00u, PROTO_AMAZON, 23}, /* 54.239.186.0/23 */
-    {0x36efbc00u, PROTO_AMAZON, 22}, /* 54.239.188.0/22 */
-    {0x36efc200u, PROTO_AMAZON, 23}, /* 54.239.194.0/23 */
-    {0x36efc400u, PROTO_AMAZON, 24}, /* 54.239.196.0/24 */
-    {0x36efc500u, PROTO_AMAZON, 12}, /* 54.224.0.0/12 */
-    {0x36efc800u, PROTO_AMAZON, 23}, /* 54.239.200.0/23 */
-    {0x36efca00u, PROTO_AMAZON, 24}, /* 54.239.202.0/24 */
-    {0x36efcb00u, PROTO_AMAZON, 12}, /* 54.224.0.0/12 */
-    {0x36efcc00u, PROTO_AMAZON, 23}, /* 54.239.204.0/23 */
-    {0x36efda00u, PROTO_AMAZON, 24}, /* 54.239.218.0/24 */
-    {0x36efde00u, PROTO_AMAZON, 12}, /* 54.224.0.0/12 */
-    {0x36efdf00u, PROTO_AMAZON, 24}, /* 54.239.223.0/24 */
-    {0x36efe000u, PROTO_AMAZON, 12}, /* 54.224.0.0/12 */
-    {0x36f00800u, PROTO_AMAZON, 21}, /* 54.240.8.0/21 */
-    {0x36f01000u, PROTO_AMAZON, 24}, /* 54.240.16.0/24 */
-    {0x36f01100u, PROTO_AMAZON, 12}, /* 54.240.0.0/12 */
-    {0x36f01800u, PROTO_AMAZON, 22}, /* 54.240.24.0/22 */
-    {0x36f01c00u, PROTO_AMAZON, 12}, /* 54.240.0.0/12 */
-    {0x36f01e00u, PROTO_AMAZON, 23}, /* 54.240.30.0/23 */
-    {0x36f02000u, PROTO_AMAZON, 20}, /* 54.240.32.0/20 */
-    {0x36f03000u, PROTO_AMAZON, 23}, /* 54.240.48.0/23 */
-    {0x36f03400u, PROTO_AMAZON, 22}, /* 54.240.52.0/22 */
-    {0x36f03800u, PROTO_AMAZON, 24}, /* 54.240.56.0/24 */
-    {0x36f03a00u, PROTO_AMAZON, 23}, /* 54.240.58.0/23 */
-    {0x36f03c00u, PROTO_AMAZON, 22}, /* 54.240.60.0/22 */
-    {0x36f04000u, PROTO_AMAZON, 12}, /* 54.240.0.0/12 */
-    {0x36f08000u, PROTO_AMAZON, 24}, /* 54.240.128.0/24 */
-    {0x36f08400u, PROTO_AMAZON, 12}, /* 54.240.0.0/12 */
-    {0x36f09000u, PROTO_AMAZON, 24}, /* 54.240.144.0/24 */
-    {0x36f09900u, PROTO_AMAZON, 12}, /* 54.240.0.0/12 */
-    {0x36f09c00u, PROTO_AMAZON, 24}, /* 54.240.156.0/24 */
-    {0x36f0a000u, PROTO_AMAZON, 23}, /* 54.240.160.0/23 */
-    {0x36f0b200u, PROTO_AMAZON, 12}, /* 54.240.0.0/12 */
-    {0x36f0b800u, PROTO_AMAZON, 23}, /* 54.240.184.0/23 */
-    {0x36f0c000u, PROTO_AMAZON, 22}, /* 54.240.192.0/22 */
-    {0x36f0c400u, PROTO_AMAZON, 24}, /* 54.240.196.0/24 */
-    {0x36f0c900u, PROTO_AMAZON, 12}, /* 54.240.0.0/12 */
-    {0x36f0ca00u, PROTO_AMAZON, 24}, /* 54.240.202.0/24 */
-    {0x36f0cc00u, PROTO_AMAZON, 22}, /* 54.240.204.0/22 */
-    {0x36f0e000u, PROTO_AMAZON, 12}, /* 54.240.0.0/12 */
-    {0x36f0e100u, PROTO_AMAZON, 24}, /* 54.240.225.0/24 */
-    {0x36f0e400u, PROTO_AMAZON, 12}, /* 54.240.0.0/12 */
-    {0x36f0e600u, PROTO_AMAZON, 24}, /* 54.240.230.0/24 */
-    {0x36f0e700u, PROTO_AMAZON, 12}, /* 54.240.0.0/12 */
-    {0x36f0e800u, PROTO_AMAZON, 22}, /* 54.240.232.0/22 */
-    {0x36f0f000u, PROTO_AMAZON, 24}, /* 54.240.240.0/24 */
-    {0x36f0f100u, PROTO_AMAZON, 12}, /* 54.240.0.0/12 */
-    {0x36f0f800u, PROTO_AMAZON, 24}, /* 54.240.248.0/24 */
-    {0x36f0f900u, PROTO_AMAZON, 12}, /* 54.240.0.0/12 */
-    {0x36f0fa00u, PROTO_AMAZON, 24}, /* 54.240.250.0/24 */
-    {0x36f0fb00u, PROTO_AMAZON, 12}, /* 54.240.0.0/12 */
-    {0x36f0fc00u, PROTO_AMAZON, 24}, /* 54.240.252.0/24 */
-    {0x36f0fd00u, PROTO_AMAZON, 12}, /* 54.240.0.0/12 */
-    {0x36f10000u, PROTO_AMAZON, 17}, /* 54.241.0.0/17 */
-    {0x36f18000u, PROTO_AMAZON, 19}, /* 54.241.128.0/19 */
-    {0x36f1c000u, PROTO_AMAZON, 18}, /* 54.241.192.0/18 */
-    {0x36f20000u, PROTO_AMAZON, 15}, /* 54.242.0.0/15 */
-    {0x36f40000u, PROTO_AMAZON, 18}, /* 54.244.0.0/18 */
-    {0x36f48000u, PROTO_AMAZON, 17}, /* 54.244.128.0/17 */
-    {0x36f78000u, PROTO_AMAZON, 18}, /* 54.247.128.0/18 */
-    {0x36f80000u, PROTO_AMAZON, 17}, /* 54.248.0.0/17 */
-    {0x36f90000u, PROTO_AMAZON, 19}, /* 54.249.0.0/19 */
-    {0x36f94000u, PROTO_AMAZON, 18}, /* 54.249.64.0/18 */
-    {0x36f98000u, PROTO_AMAZON, 17}, /* 54.249.128.0/17 */
-    {0x36fa8000u, PROTO_AMAZON, 18}, /* 54.250.128.0/18 */
-    {0x36fb8000u, PROTO_AMAZON, 20}, /* 54.251.128.0/20 */
-    {0x36fba000u, PROTO_AMAZON, 19}, /* 54.251.160.0/19 */
-    {0x36fbc000u, PROTO_AMAZON, 18}, /* 54.251.192.0/18 */
-    {0x36fc0000u, PROTO_AMAZON, 16}, /* 54.252.0.0/16 */
-    {0x36fc8000u, PROTO_AMAZON, 17}, /* 54.252.128.0/17 */
+    {0x36660000u, PROTO_AWS, 16}, /* 54.102.0.0/16 */
+    {0x36670000u, PROTO_UNKNOWN, 0},
+    {0x36700000u, PROTO_AWS, 18}, /* 54.112.0.0/18 */
+    {0x36704000u, PROTO_UNKNOWN, 0},
+    {0x36730000u, PROTO_AWS, 16}, /* 54.115.0.0/16 */
+    {0x36740000u, PROTO_AWS, 15}, /* 54.116.0.0/15 */
+    {0x36760000u, PROTO_UNKNOWN, 0},
+    {0x36880000u, PROTO_AWS, 15}, /* 54.136.0.0/15 */
+    {0x368a0000u, PROTO_UNKNOWN, 0},
+    {0x36900000u, PROTO_AWS, 12}, /* 54.144.0.0/12 */
+    {0x36b00000u, PROTO_AWS, 14}, /* 54.176.0.0/14 */
+    {0x36b40000u, PROTO_AWS, 15}, /* 54.180.0.0/15 */
+    {0x36b60000u, PROTO_CLOUDFRONT, 16}, /* 54.182.0.0/16 */
+    {0x36b70000u, PROTO_AWS, 16}, /* 54.183.0.0/16 */
+    {0x36b80000u, PROTO_AWS, 13}, /* 54.184.0.0/13 */
+    {0x36c00000u, PROTO_CLOUDFRONT, 16}, /* 54.192.0.0/16 */
+    {0x36c10000u, PROTO_AWS, 16}, /* 54.193.0.0/16 */
+    {0x36c20000u, PROTO_AWS, 15}, /* 54.194.0.0/15 */
+    {0x36c40000u, PROTO_AWS, 14}, /* 54.196.0.0/14 */
+    {0x36c80000u, PROTO_AWS, 13}, /* 54.200.0.0/13 */
+    {0x36d80000u, PROTO_AWS, 14}, /* 54.216.0.0/14 */
+    {0x36dc0000u, PROTO_AWS, 15}, /* 54.220.0.0/15 */
+    {0x36de0000u, PROTO_AWS, 19}, /* 54.222.0.0/19 */
+    {0x36de2000u, PROTO_AWS, 21}, /* 54.222.32.0/21 */
+    {0x36de2800u, PROTO_UNKNOWN, 0},
+    {0x36de3000u, PROTO_AWS, 21}, /* 54.222.48.0/21 */
+    {0x36de3800u, PROTO_UNKNOWN, 0},
+    {0x36de3900u, PROTO_AWS, 24}, /* 54.222.57.0/24 */
+    {0x36de3a00u, PROTO_AWS, 28}, /* 54.222.58.0/28 */
+    {0x36de3a10u, PROTO_UNKNOWN, 0},
+    {0x36de3a20u, PROTO_AWS, 27}, /* 54.222.58.32/27 */
+    {0x36de3a40u, PROTO_UNKNOWN, 0},
+    {0x36de4000u, PROTO_AWS, 21}, /* 54.222.64.0/21 */
+    {0x36de4800u, PROTO_UNKNOWN, 0},
+    {0x36de4c00u, PROTO_AWS, 22}, /* 54.222.76.0/22 */
+    {0x36de5000u, PROTO_AWS, 20}, /* 54.222.80.0/20 */
+    {0x36de6000u, PROTO_AWS, 21}, /* 54.222.96.0/21 */
+    {0x36de6800u, PROTO_UNKNOWN, 0},
+    {0x36de7000u, PROTO_AWS, 20}, /* 54.222.112.0/20 */
+    {0x36de8000u, PROTO_AWS, 17}, /* 54.222.128.0/17 */
+    {0x36df0000u, PROTO_AWS, 16}, /* 54.223.0.0/16 */
+    {0x36e00000u, PROTO_AWS, 14}, /* 54.224.0.0/14 */
+    {0x36e40000u, PROTO_AWS, 15}, /* 54.228.0.0/15 */
+    {0x36e60000u, PROTO_CLOUDFRONT, 17}, /* 54.230.0.0/17 */
+    {0x36e68000u, PROTO_CLOUDFRONT, 18}, /* 54.230.128.0/18 */
+    {0x36e6c000u, PROTO_AWS, 21}, /* 54.230.192.0/21 */
+    {0x36e6c800u, PROTO_CLOUDFRONT, 21}, /* 54.230.200.0/21 */
+    {0x36e6d000u, PROTO_CLOUDFRONT, 20}, /* 54.230.208.0/20 */
+    {0x36e6e000u, PROTO_CLOUDFRONT, 19}, /* 54.230.224.0/19 */
+    {0x36e70000u, PROTO_AWS, 16}, /* 54.231.0.0/16 */
+    {0x36e90000u, PROTO_AWS, 17}, /* 54.233.0.0/17 */
+    {0x36e98000u, PROTO_AWS, 18}, /* 54.233.128.0/18 */
+    {0x36e9c000u, PROTO_AWS, 19}, /* 54.233.192.0/19 */
+    {0x36e9e000u, PROTO_AWS, 20}, /* 54.233.224.0/20 */
+    {0x36e9f000u, PROTO_AWS, 21}, /* 54.233.240.0/21 */
+    {0x36e9f800u, PROTO_AWS, 22}, /* 54.233.248.0/22 */
+    {0x36e9fc00u, PROTO_AWS, 23}, /* 54.233.252.0/23 */
+    {0x36e9fe00u, PROTO_AWS, 24}, /* 54.233.254.0/24 */
+    {0x36e9ff00u, PROTO_AWS, 25}, /* 54.233.255.0/25 */
+    {0x36e9ff80u, PROTO_CLOUDFRONT, 26}, /* 54.233.255.128/26 */
+    {0x36e9ffc0u, PROTO_AWS, 26}, /* 54.233.255.192/26 */
+    {0x36ea0000u, PROTO_AWS, 15}, /* 54.234.0.0/15 */
+    {0x36ee0000u, PROTO_AWS, 16}, /* 54.238.0.0/16 */
+    {0x36ef0000u, PROTO_AWS, 19}, /* 54.239.0.0/19 */
+    {0x36ef2000u, PROTO_AWS, 21}, /* 54.239.32.0/21 */
+    {0x36ef2800u, PROTO_UNKNOWN, 0},
+    {0x36ef2880u, PROTO_AWS, 31}, /* 54.239.40.128/31 */
+    {0x36ef2882u, PROTO_UNKNOWN, 0},
+    {0x36ef2884u, PROTO_AWS, 31}, /* 54.239.40.132/31 */
+    {0x36ef2886u, PROTO_AWS, 32}, /* 54.239.40.134/32 */
+    {0x36ef2887u, PROTO_UNKNOWN, 0},
+    {0x36ef2898u, PROTO_AWS, 29}, /* 54.239.40.152/29 */
+    {0x36ef28a0u, PROTO_UNKNOWN, 0},
+    {0x36ef3000u, PROTO_AWS, 20}, /* 54.239.48.0/20 */
+    {0x36ef4000u, PROTO_AWS, 21}, /* 54.239.64.0/21 */
+    {0x36ef4800u, PROTO_UNKNOWN, 0},
+    {0x36ef6000u, PROTO_AWS, 24}, /* 54.239.96.0/24 */
+    {0x36ef6100u, PROTO_UNKNOWN, 0},
+    {0x36ef6200u, PROTO_AWS, 23}, /* 54.239.98.0/23 */
+    {0x36ef6600u, PROTO_AWS, 24}, /* 54.239.102.0/24 */
+    {0x36ef6700u, PROTO_AWS, 25}, /* 54.239.103.0/25 */
+    {0x36ef6780u, PROTO_AWS, 26}, /* 54.239.103.128/26 */
+    {0x36ef67c0u, PROTO_UNKNOWN, 0},
+    {0x36ef6800u, PROTO_AWS, 21}, /* 54.239.104.0/21 */
+    {0x36ef7000u, PROTO_AWS, 23}, /* 54.239.112.0/23 */
+    {0x36ef7200u, PROTO_AWS, 25}, /* 54.239.114.0/25 */
+    {0x36ef7280u, PROTO_AWS, 26}, /* 54.239.114.128/26 */
+    {0x36ef72c0u, PROTO_UNKNOWN, 0},
+    {0x36ef7300u, PROTO_AWS, 25}, /* 54.239.115.0/25 */
+    {0x36ef7380u, PROTO_UNKNOWN, 0},
+    {0x36ef7400u, PROTO_AWS, 22}, /* 54.239.116.0/22 */
+    {0x36ef7800u, PROTO_AWS, 21}, /* 54.239.120.0/21 */
+    {0x36ef8000u, PROTO_CLOUDFRONT, 18}, /* 54.239.128.0/18 */
+    {0x36efc000u, PROTO_CLOUDFRONT, 19}, /* 54.239.192.0/19 */
+    {0x36efe000u, PROTO_UNKNOWN, 0},
+    {0x36f08000u, PROTO_CLOUDFRONT, 18}, /* 54.240.128.0/18 */
+    {0x36f0c000u, PROTO_AWS, 21}, /* 54.240.192.0/21 */
+    {0x36f0c800u, PROTO_AWS, 24}, /* 54.240.200.0/24 */
+    {0x36f0c900u, PROTO_UNKNOWN, 0},
+    {0x36f0ca00u, PROTO_AWS, 23}, /* 54.240.202.0/23 */
+    {0x36f0cc00u, PROTO_AWS, 22}, /* 54.240.204.0/22 */
+    {0x36f0d000u, PROTO_AWS, 20}, /* 54.240.208.0/20 */
+    {0x36f0e000u, PROTO_UNKNOWN, 0},
+    {0x36f0e100u, PROTO_AWS, 24}, /* 54.240.225.0/24 */
+    {0x36f0e200u, PROTO_AWS, 23}, /* 54.240.226.0/23 */
+    {0x36f0e400u, PROTO_AWS, 22}, /* 54.240.228.0/22 */
+    {0x36f0ec00u, PROTO_UNKNOWN, 0},
+    {0x36f0ec01u, PROTO_AWS, 32}, /* 54.240.236.1/32 */
+    {0x36f0ec03u, PROTO_UNKNOWN, 0},
+    {0x36f0ec05u, PROTO_AWS, 32}, /* 54.240.236.5/32 */
+    {0x36f0ec07u, PROTO_UNKNOWN, 0},
+    {0x36f0ec09u, PROTO_AWS, 32}, /* 54.240.236.9/32 */
+    {0x36f0ec0bu, PROTO_UNKNOWN, 0},
+    {0x36f0ec0du, PROTO_AWS, 32}, /* 54.240.236.13/32 */
+    {0x36f0ec0fu, PROTO_UNKNOWN, 0},
+    {0x36f0ec11u, PROTO_AWS, 32}, /* 54.240.236.17/32 */
+    {0x36f0ec13u, PROTO_UNKNOWN, 0},
+    {0x36f0ec15u, PROTO_AWS, 32}, /* 54.240.236.21/32 */
+    {0x36f0ec17u, PROTO_UNKNOWN, 0},
+    {0x36f0ec19u, PROTO_AWS, 32}, /* 54.240.236.25/32 */
+    {0x36f0ec1bu, PROTO_UNKNOWN, 0},
+    {0x36f0ec1du, PROTO_AWS, 32}, /* 54.240.236.29/32 */
+    {0x36f0ec1fu, PROTO_UNKNOWN, 0},
+    {0x36f0ec21u, PROTO_AWS, 32}, /* 54.240.236.33/32 */
+    {0x36f0ec23u, PROTO_UNKNOWN, 0},
+    {0x36f0ec25u, PROTO_AWS, 32}, /* 54.240.236.37/32 */
+    {0x36f0ec27u, PROTO_UNKNOWN, 0},
+    {0x36f0ec29u, PROTO_AWS, 32}, /* 54.240.236.41/32 */
+    {0x36f0ec2bu, PROTO_UNKNOWN, 0},
+    {0x36f0ec2du, PROTO_AWS, 32}, /* 54.240.236.45/32 */
+    {0x36f0ec2fu, PROTO_UNKNOWN, 0},
+    {0x36f0ec31u, PROTO_AWS, 32}, /* 54.240.236.49/32 */
+    {0x36f0ec33u, PROTO_UNKNOWN, 0},
+    {0x36f0ec35u, PROTO_AWS, 32}, /* 54.240.236.53/32 */
+    {0x36f0ec37u, PROTO_UNKNOWN, 0},
+    {0x36f0ec39u, PROTO_AWS, 32}, /* 54.240.236.57/32 */
+    {0x36f0ec3bu, PROTO_UNKNOWN, 0},
+    {0x36f0ec3du, PROTO_AWS, 32}, /* 54.240.236.61/32 */
+    {0x36f0ec3fu, PROTO_UNKNOWN, 0},
+    {0x36f0ec41u, PROTO_AWS, 32}, /* 54.240.236.65/32 */
+    {0x36f0ec43u, PROTO_UNKNOWN, 0},
+    {0x36f0ec45u, PROTO_AWS, 32}, /* 54.240.236.69/32 */
+    {0x36f0ec47u, PROTO_UNKNOWN, 0},
+    {0x36f0ec49u, PROTO_AWS, 32}, /* 54.240.236.73/32 */
+    {0x36f0ec4bu, PROTO_UNKNOWN, 0},
+    {0x36f0ec4du, PROTO_AWS, 32}, /* 54.240.236.77/32 */
+    {0x36f0ec4fu, PROTO_UNKNOWN, 0},
+    {0x36f0ec51u, PROTO_AWS, 32}, /* 54.240.236.81/32 */
+    {0x36f0ec53u, PROTO_UNKNOWN, 0},
+    {0x36f0ec55u, PROTO_AWS, 32}, /* 54.240.236.85/32 */
+    {0x36f0ec57u, PROTO_UNKNOWN, 0},
+    {0x36f0ec59u, PROTO_AWS, 32}, /* 54.240.236.89/32 */
+    {0x36f0ec5bu, PROTO_UNKNOWN, 0},
+    {0x36f0ec5du, PROTO_AWS, 32}, /* 54.240.236.93/32 */
+    {0x36f0ec5fu, PROTO_UNKNOWN, 0},
+    {0x36f0f100u, PROTO_AWS, 24}, /* 54.240.241.0/24 */
+    {0x36f0f200u, PROTO_AWS, 23}, /* 54.240.242.0/23 */
+    {0x36f0f400u, PROTO_AWS, 22}, /* 54.240.244.0/22 */
+    {0x36f0f800u, PROTO_AWS, 21}, /* 54.240.248.0/21 */
+    {0x36f10000u, PROTO_AWS, 16}, /* 54.241.0.0/16 */
+    {0x36f20000u, PROTO_AWS, 15}, /* 54.242.0.0/15 */
+    {0x36f40000u, PROTO_AWS, 14}, /* 54.244.0.0/14 */
+    {0x36f80000u, PROTO_AWS, 13}, /* 54.248.0.0/13 */
     {0x37000000u, PROTO_UNKNOWN, 0},
+    {0x38010000u, PROTO_AWS, 16}, /* 56.1.0.0/16 */
+    {0x38020000u, PROTO_UNKNOWN, 0},
+    {0x38050000u, PROTO_AWS, 16}, /* 56.5.0.0/16 */
+    {0x38070000u, PROTO_UNKNOWN, 0},
+    {0x38080000u, PROTO_AWS, 16}, /* 56.8.0.0/16 */
+    {0x38090000u, PROTO_UNKNOWN, 0},
+    {0x380a0000u, PROTO_AWS, 15}, /* 56.10.0.0/15 */
+    {0x380c0000u, PROTO_UNKNOWN, 0},
+    {0x382f0000u, PROTO_AWS, 16}, /* 56.47.0.0/16 */
+    {0x38300000u, PROTO_AWS, 13}, /* 56.48.0.0/13 */
+    {0x38380000u, PROTO_AWS, 16}, /* 56.56.0.0/16 */
+    {0x38390000u, PROTO_UNKNOWN, 0},
+    {0x383d0000u, PROTO_AWS, 16}, /* 56.61.0.0/16 */
+    {0x383f0000u, PROTO_UNKNOWN, 0},
+    {0x38440000u, PROTO_AWS, 17}, /* 56.68.0.0/17 */
+    {0x38448000u, PROTO_UNKNOWN, 0},
+    {0x38450000u, PROTO_AWS, 16}, /* 56.69.0.0/16 */
+    {0x38460000u, PROTO_AWS, 15}, /* 56.70.0.0/15 */
+    {0x38480000u, PROTO_UNKNOWN, 0},
+    {0x38600000u, PROTO_AWS, 14}, /* 56.96.0.0/14 */
+    {0x38640000u, PROTO_UNKNOWN, 0},
+    {0x38700000u, PROTO_AWS, 14}, /* 56.112.0.0/14 */
+    {0x38740000u, PROTO_UNKNOWN, 0},
+    {0x387c0000u, PROTO_AWS, 16}, /* 56.124.0.0/16 */
+    {0x387d0000u, PROTO_AWS, 19}, /* 56.125.0.0/19 */
+    {0x387d2000u, PROTO_AWS, 21}, /* 56.125.32.0/21 */
+    {0x387d2800u, PROTO_AWS, 22}, /* 56.125.40.0/22 */
+    {0x387d2c00u, PROTO_AWS, 23}, /* 56.125.44.0/23 */
+    {0x387d2e00u, PROTO_CLOUDFRONT, 24}, /* 56.125.46.0/24 */
+    {0x387d2f00u, PROTO_CLOUDFRONT, 32}, /* 56.125.47.0/32 */
+    {0x387d2f01u, PROTO_AWS, 32}, /* 56.125.47.1/32 */
+    {0x387d2f02u, PROTO_AWS, 31}, /* 56.125.47.2/31 */
+    {0x387d2f04u, PROTO_AWS, 30}, /* 56.125.47.4/30 */
+    {0x387d2f08u, PROTO_AWS, 29}, /* 56.125.47.8/29 */
+    {0x387d2f10u, PROTO_AWS, 28}, /* 56.125.47.16/28 */
+    {0x387d2f20u, PROTO_AWS, 27}, /* 56.125.47.32/27 */
+    {0x387d2f40u, PROTO_AWS, 26}, /* 56.125.47.64/26 */
+    {0x387d2f80u, PROTO_AWS, 25}, /* 56.125.47.128/25 */
+    {0x387d3000u, PROTO_CLOUDFRONT, 24}, /* 56.125.48.0/24 */
+    {0x387d3100u, PROTO_AWS, 24}, /* 56.125.49.0/24 */
+    {0x387d3200u, PROTO_AWS, 23}, /* 56.125.50.0/23 */
+    {0x387d3400u, PROTO_AWS, 22}, /* 56.125.52.0/22 */
+    {0x387d3800u, PROTO_AWS, 21}, /* 56.125.56.0/21 */
+    {0x387d4000u, PROTO_AWS, 18}, /* 56.125.64.0/18 */
+    {0x387d8000u, PROTO_AWS, 17}, /* 56.125.128.0/17 */
+    {0x387e0000u, PROTO_AWS, 15}, /* 56.126.0.0/15 */
+    {0x38800000u, PROTO_AWS, 14}, /* 56.128.0.0/14 */
+    {0x38840000u, PROTO_UNKNOWN, 0},
+    {0x38880000u, PROTO_AWS, 14}, /* 56.136.0.0/14 */
+    {0x388c0000u, PROTO_UNKNOWN, 0},
+    {0x389b0000u, PROTO_AWS, 16}, /* 56.155.0.0/16 */
+    {0x389c0000u, PROTO_AWS, 15}, /* 56.156.0.0/15 */
+    {0x389e0000u, PROTO_UNKNOWN, 0},
+    {0x389f0000u, PROTO_AWS, 16}, /* 56.159.0.0/16 */
+    {0x38a00000u, PROTO_UNKNOWN, 0},
+    {0x38a20000u, PROTO_AWS, 16}, /* 56.162.0.0/16 */
+    {0x38a30000u, PROTO_UNKNOWN, 0},
+    {0x38a40000u, PROTO_AWS, 16}, /* 56.164.0.0/16 */
+    {0x38a50000u, PROTO_UNKNOWN, 0},
+    {0x38b80000u, PROTO_AWS, 14}, /* 56.184.0.0/14 */
+    {0x38bc0000u, PROTO_UNKNOWN, 0},
+    {0x38e40000u, PROTO_AWS, 14}, /* 56.228.0.0/14 */
+    {0x38e80000u, PROTO_UNKNOWN, 0},
+    {0x38f00000u, PROTO_AWS, 13}, /* 56.240.0.0/13 */
+    {0x38f80000u, PROTO_UNKNOWN, 0},
+    {0x39960000u, PROTO_AZURE, 15}, /* 57.150.0.0/15 */
+    {0x39980000u, PROTO_AZURE, 13}, /* 57.152.0.0/13 */
+    {0x39a00000u, PROTO_AZURE, 12}, /* 57.160.0.0/12 */
+    {0x39b00000u, PROTO_UNKNOWN, 0},
+    {0x39b40000u, PROTO_AWS, 15}, /* 57.180.0.0/15 */
+    {0x39b60000u, PROTO_AWS, 17}, /* 57.182.0.0/17 */
+    {0x39b68000u, PROTO_AWS, 18}, /* 57.182.128.0/18 */
+    {0x39b6c000u, PROTO_AWS, 19}, /* 57.182.192.0/19 */
+    {0x39b6e000u, PROTO_AWS, 20}, /* 57.182.224.0/20 */
+    {0x39b6f000u, PROTO_AWS, 21}, /* 57.182.240.0/21 */
+    {0x39b6f800u, PROTO_AWS, 22}, /* 57.182.248.0/22 */
+    {0x39b6fc00u, PROTO_AWS, 24}, /* 57.182.252.0/24 */
+    {0x39b6fd00u, PROTO_CLOUDFRONT, 24}, /* 57.182.253.0/24 */
+    {0x39b6fe00u, PROTO_AWS, 23}, /* 57.182.254.0/23 */
+    {0x39b70000u, PROTO_AWS, 19}, /* 57.183.0.0/19 */
+    {0x39b72000u, PROTO_AWS, 21}, /* 57.183.32.0/21 */
+    {0x39b72800u, PROTO_AWS, 23}, /* 57.183.40.0/23 */
+    {0x39b72a00u, PROTO_CLOUDFRONT, 25}, /* 57.183.42.0/25 */
+    {0x39b72a80u, PROTO_AWS, 25}, /* 57.183.42.128/25 */
+    {0x39b72b00u, PROTO_AWS, 24}, /* 57.183.43.0/24 */
+    {0x39b72c00u, PROTO_AWS, 22}, /* 57.183.44.0/22 */
+    {0x39b73000u, PROTO_AWS, 20}, /* 57.183.48.0/20 */
+    {0x39b74000u, PROTO_AWS, 18}, /* 57.183.64.0/18 */
+    {0x39b78000u, PROTO_AWS, 17}, /* 57.183.128.0/17 */
+    {0x39b80000u, PROTO_UNKNOWN, 0},
+    {0x3afe8a00u, PROTO_CLOUDFRONT, 25}, /* 58.254.138.0/25 */
+    {0x3afe8a80u, PROTO_CLOUDFRONT, 26}, /* 58.254.138.128/26 */
+    {0x3afe8ac0u, PROTO_UNKNOWN, 0},
     {0x3d73e000u, PROTO_YAHOO, 20}, /* 61.115.224.0/20 */
     {0x3d73e400u, PROTO_YAHOO, 24}, /* 61.115.228.0/24 */
     {0x3d73e500u, PROTO_YAHOO, 20}, /* 61.115.224.0/20 */
@@ -1745,55 +4563,50 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x3e6dc800u, PROTO_WEBEX, 23}, /* 62.109.200.0/23 */
     {0x3e6dc900u, PROTO_WEBEX, 24}, /* 62.109.201.0/24 */
     {0x3e6e0000u, PROTO_UNKNOWN, 0},
-    {0x3f5c0c00u, PROTO_AMAZON, 22}, /* 63.92.12.0/22 */
-    {0x3f5c1000u, PROTO_UNKNOWN, 0},
+    {0x3f200000u, PROTO_AWS, 14}, /* 63.32.0.0/14 */
+    {0x3f240000u, PROTO_UNKNOWN, 0},
     {0x3fa36600u, PROTO_YAHOO, 24}, /* 63.163.102.0/24 */
     {0x3fa36700u, PROTO_UNKNOWN, 0},
-    {0x3fee0c00u, PROTO_AMAZON, 22}, /* 63.238.12.0/22 */
-    {0x3fee1000u, PROTO_AMAZON, 23}, /* 63.238.16.0/23 */
-    {0x3fee1200u, PROTO_UNKNOWN, 0},
+    {0x3fb00000u, PROTO_AWS, 12}, /* 63.176.0.0/12 */
+    {0x3fc00000u, PROTO_UNKNOWN, 0},
+    {0x3ff67000u, PROTO_AWS, 22}, /* 63.246.112.0/22 */
+    {0x3ff67400u, PROTO_UNKNOWN, 0},
+    {0x3ff67700u, PROTO_AWS, 24}, /* 63.246.119.0/24 */
+    {0x3ff67800u, PROTO_AWS, 21}, /* 63.246.120.0/21 */
+    {0x3ff68000u, PROTO_UNKNOWN, 0},
+    {0x3ff98000u, PROTO_AWS, 18}, /* 63.249.128.0/18 */
+    {0x3ff9c000u, PROTO_AWS, 19}, /* 63.249.192.0/19 */
+    {0x3ff9e000u, PROTO_UNKNOWN, 0},
     {0x3ffac000u, PROTO_YAHOO, 19}, /* 63.250.192.0/19 */
     {0x3ffac400u, PROTO_YAHOO, 22}, /* 63.250.196.0/22 */
     {0x3ffad000u, PROTO_YAHOO, 20}, /* 63.250.208.0/20 */
     {0x3ffae000u, PROTO_UNKNOWN, 0},
-    {0x4009e000u, PROTO_GOOGLE, 20}, /* 64.9.224.0/20 */
-    {0x4009e400u, PROTO_GOOGLE, 22}, /* 64.9.228.0/22 */
-    {0x4009e800u, PROTO_GOOGLE, 21}, /* 64.9.232.0/21 */
-    {0x4009ec00u, PROTO_GOOGLE, 22}, /* 64.9.236.0/22 */
-    {0x4009f000u, PROTO_GOOGLE, 20}, /* 64.9.240.0/20 */
-    {0x4009f300u, PROTO_GOOGLE, 24}, /* 64.9.243.0/24 */
-    {0x4009f400u, PROTO_GOOGLE, 22}, /* 64.9.244.0/22 */
-    {0x4009f800u, PROTO_GOOGLE, 23}, /* 64.9.248.0/23 */
-    {0x4009f900u, PROTO_GOOGLE, 24}, /* 64.9.249.0/24 */
-    {0x4009fa00u, PROTO_GOOGLE, 23}, /* 64.9.250.0/23 */
-    {0x4009fb00u, PROTO_GOOGLE, 24}, /* 64.9.251.0/24 */
-    {0x4009fc00u, PROTO_GOOGLE, 23}, /* 64.9.252.0/23 */
-    {0x4009fd00u, PROTO_GOOGLE, 24}, /* 64.9.253.0/24 */
-    {0x4009fe00u, PROTO_GOOGLE, 23}, /* 64.9.254.0/23 */
-    {0x4009ff00u, PROTO_GOOGLE, 24}, /* 64.9.255.0/24 */
-    {0x400a0000u, PROTO_UNKNOWN, 0},
+    {0x40040800u, PROTO_AZURE, 24}, /* 64.4.8.0/24 */
+    {0x40040900u, PROTO_UNKNOWN, 0},
+    {0x40043600u, PROTO_AZURE, 24}, /* 64.4.54.0/24 */
+    {0x40043700u, PROTO_UNKNOWN, 0},
+    {0x4007c800u, PROTO_AWS, 21}, /* 64.7.200.0/21 */
+    {0x4007d000u, PROTO_UNKNOWN, 0},
     {0x400f7000u, PROTO_GOOGLE, 20}, /* 64.15.112.0/20 */
-    {0x400f7100u, PROTO_GOOGLE, 24}, /* 64.15.113.0/24 */
-    {0x400f7200u, PROTO_GOOGLE, 23}, /* 64.15.114.0/23 */
-    {0x400f7300u, PROTO_GOOGLE, 24}, /* 64.15.115.0/24 */
-    {0x400f7400u, PROTO_GOOGLE, 23}, /* 64.15.116.0/23 */
-    {0x400f7500u, PROTO_GOOGLE, 24}, /* 64.15.117.0/24 */
-    {0x400f7600u, PROTO_GOOGLE, 23}, /* 64.15.118.0/23 */
-    {0x400f7700u, PROTO_GOOGLE, 24}, /* 64.15.119.0/24 */
-    {0x400f7800u, PROTO_GOOGLE, 23}, /* 64.15.120.0/23 */
-    {0x400f7900u, PROTO_GOOGLE, 24}, /* 64.15.121.0/24 */
-    {0x400f7a00u, PROTO_GOOGLE, 23}, /* 64.15.122.0/23 */
-    {0x400f7b00u, PROTO_GOOGLE, 24}, /* 64.15.123.0/24 */
-    {0x400f7c00u, PROTO_GOOGLE, 23}, /* 64.15.124.0/23 */
-    {0x400f7d00u, PROTO_GOOGLE, 24}, /* 64.15.125.0/24 */
-    {0x400f7e00u, PROTO_GOOGLE, 23}, /* 64.15.126.0/23 */
-    {0x400f7f00u, PROTO_GOOGLE, 24}, /* 64.15.127.0/24 */
     {0x400f8000u, PROTO_UNKNOWN, 0},
+    {0x40170000u, PROTO_AWS, 18}, /* 64.23.0.0/18 */
+    {0x40174000u, PROTO_UNKNOWN, 0},
+    {0x40254000u, PROTO_AWS, 18}, /* 64.37.64.0/18 */
+    {0x40258000u, PROTO_UNKNOWN, 0},
     {0x4038a000u, PROTO_YAHOO, 19}, /* 64.56.160.0/19 */
     {0x4038b000u, PROTO_YAHOO, 20}, /* 64.56.176.0/20 */
     {0x4038c000u, PROTO_UNKNOWN, 0},
     {0x403a4c00u, PROTO_YAHOO, 22}, /* 64.58.76.0/22 */
     {0x403a5000u, PROTO_UNKNOWN, 0},
+    {0x40428000u, PROTO_AWS, 22}, /* 64.66.128.0/22 */
+    {0x40428400u, PROTO_UNKNOWN, 0},
+    {0x40428500u, PROTO_AWS, 24}, /* 64.66.133.0/24 */
+    {0x40428600u, PROTO_AWS, 23}, /* 64.66.134.0/23 */
+    {0x40428800u, PROTO_AWS, 21}, /* 64.66.136.0/21 */
+    {0x40429000u, PROTO_AWS, 20}, /* 64.66.144.0/20 */
+    {0x4042a000u, PROTO_AWS, 22}, /* 64.66.160.0/22 */
+    {0x4042a400u, PROTO_AWS, 24}, /* 64.66.164.0/24 */
+    {0x4042a500u, PROTO_UNKNOWN, 0},
     {0x40446000u, PROTO_WEBEX, 21}, /* 64.68.96.0/21 */
     {0x40446100u, PROTO_WEBEX, 24}, /* 64.68.97.0/24 */
     {0x40446200u, PROTO_WEBEX, 23}, /* 64.68.98.0/23 */
@@ -1803,71 +4616,128 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x40447800u, PROTO_WEBEX, 21}, /* 64.68.120.0/21 */
     {0x40447900u, PROTO_WEBEX, 24}, /* 64.68.121.0/24 */
     {0x40448000u, PROTO_UNKNOWN, 0},
+    {0x4049c000u, PROTO_AWS, 19}, /* 64.73.192.0/19 */
+    {0x4049e000u, PROTO_UNKNOWN, 0},
+    {0x405bc000u, PROTO_AWS, 19}, /* 64.91.192.0/19 */
+    {0x405be000u, PROTO_UNKNOWN, 0},
+    {0x4071c000u, PROTO_AWS, 22}, /* 64.113.192.0/22 */
+    {0x4071c400u, PROTO_UNKNOWN, 0},
+    {0x4071df00u, PROTO_AWS, 24}, /* 64.113.223.0/24 */
+    {0x4071e000u, PROTO_UNKNOWN, 0},
     {0x40788000u, PROTO_NETFLIX, 17}, /* 64.120.128.0/17 */
     {0x40790000u, PROTO_UNKNOWN, 0},
     {0x409cd700u, PROTO_YAHOO, 24}, /* 64.156.215.0/24 */
     {0x409cd800u, PROTO_UNKNOWN, 0},
     {0x409d0400u, PROTO_YAHOO, 24}, /* 64.157.4.0/24 */
     {0x409d0500u, PROTO_UNKNOWN, 0},
+    {0x40bb8000u, PROTO_AWS, 20}, /* 64.187.128.0/20 */
+    {0x40bb9000u, PROTO_UNKNOWN, 0},
     {0x40d1e800u, PROTO_YAHOO, 24}, /* 64.209.232.0/24 */
     {0x40d1e900u, PROTO_UNKNOWN, 0},
+    {0x40e80000u, PROTO_AWS, 16}, /* 64.232.0.0/16 */
+    {0x40e90000u, PROTO_UNKNOWN, 0},
     {0x40e9a000u, PROTO_GOOGLE, 19}, /* 64.233.160.0/19 */
-    {0x40e9a100u, PROTO_GOOGLE, 24}, /* 64.233.161.0/24 */
-    {0x40e9a200u, PROTO_GOOGLE, 23}, /* 64.233.162.0/23 */
-    {0x40e9a300u, PROTO_GOOGLE, 24}, /* 64.233.163.0/24 */
-    {0x40e9a400u, PROTO_GOOGLE, 23}, /* 64.233.164.0/23 */
-    {0x40e9a500u, PROTO_GOOGLE, 24}, /* 64.233.165.0/24 */
-    {0x40e9a600u, PROTO_GOOGLE, 23}, /* 64.233.166.0/23 */
-    {0x40e9a700u, PROTO_GOOGLE, 24}, /* 64.233.167.0/24 */
-    {0x40e9a800u, PROTO_GOOGLE, 23}, /* 64.233.168.0/23 */
-    {0x40e9a900u, PROTO_GOOGLE, 24}, /* 64.233.169.0/24 */
-    {0x40e9aa00u, PROTO_GOOGLE, 23}, /* 64.233.170.0/23 */
-    {0x40e9ab00u, PROTO_GOOGLE, 24}, /* 64.233.171.0/24 */
-    {0x40e9ac00u, PROTO_GOOGLE, 23}, /* 64.233.172.0/23 */
-    {0x40e9ad00u, PROTO_GOOGLE, 24}, /* 64.233.173.0/24 */
-    {0x40e9ae00u, PROTO_GOOGLE, 23}, /* 64.233.174.0/23 */
-    {0x40e9af00u, PROTO_GOOGLE, 24}, /* 64.233.175.0/24 */
-    {0x40e9b000u, PROTO_GOOGLE, 23}, /* 64.233.176.0/23 */
-    {0x40e9b100u, PROTO_GOOGLE, 24}, /* 64.233.177.0/24 */
-    {0x40e9b200u, PROTO_GOOGLE, 23}, /* 64.233.178.0/23 */
-    {0x40e9b300u, PROTO_GOOGLE, 24}, /* 64.233.179.0/24 */
-    {0x40e9b400u, PROTO_GOOGLE, 23}, /* 64.233.180.0/23 */
-    {0x40e9b500u, PROTO_GOOGLE, 24}, /* 64.233.181.0/24 */
-    {0x40e9b600u, PROTO_GOOGLE, 23}, /* 64.233.182.0/23 */
-    {0x40e9b700u, PROTO_GOOGLE, 24}, /* 64.233.183.0/24 */
-    {0x40e9b800u, PROTO_GOOGLE, 23}, /* 64.233.184.0/23 */
-    {0x40e9b900u, PROTO_GOOGLE, 24}, /* 64.233.185.0/24 */
-    {0x40e9ba00u, PROTO_GOOGLE, 23}, /* 64.233.186.0/23 */
-    {0x40e9bb00u, PROTO_GOOGLE, 24}, /* 64.233.187.0/24 */
-    {0x40e9bc00u, PROTO_GOOGLE, 23}, /* 64.233.188.0/23 */
-    {0x40e9bd00u, PROTO_GOOGLE, 24}, /* 64.233.189.0/24 */
-    {0x40e9be00u, PROTO_GOOGLE, 23}, /* 64.233.190.0/23 */
-    {0x40e9bf00u, PROTO_GOOGLE, 24}, /* 64.233.191.0/24 */
     {0x40e9c000u, PROTO_UNKNOWN, 0},
+    {0x40ec0000u, PROTO_AZURE, 16}, /* 64.236.0.0/16 */
+    {0x40ed0000u, PROTO_UNKNOWN, 0},
+    {0x40fc4000u, PROTO_CLOUDFRONT, 18}, /* 64.252.64.0/18 */
+    {0x40fcc000u, PROTO_UNKNOWN, 0},
+    {0x41000000u, PROTO_AWS, 14}, /* 65.0.0.0/14 */
+    {0x41040000u, PROTO_AWS, 16}, /* 65.4.0.0/16 */
+    {0x41050000u, PROTO_UNKNOWN, 0},
+    {0x41080000u, PROTO_CLOUDFRONT, 16}, /* 65.8.0.0/16 */
+    {0x41090000u, PROTO_CLOUDFRONT, 17}, /* 65.9.0.0/17 */
+    {0x41098000u, PROTO_CLOUDFRONT, 18}, /* 65.9.128.0/18 */
+    {0x4109c000u, PROTO_UNKNOWN, 0},
     {0x4132d400u, PROTO_APPLE, 22}, /* 65.50.212.0/22 */
     {0x4132d800u, PROTO_UNKNOWN, 0},
+    {0x41340000u, PROTO_AZURE, 19}, /* 65.52.0.0/19 */
+    {0x41342000u, PROTO_AZURE, 21}, /* 65.52.32.0/21 */
+    {0x41342800u, PROTO_UNKNOWN, 0},
+    {0x41343000u, PROTO_AZURE, 20}, /* 65.52.48.0/20 */
+    {0x41345000u, PROTO_UNKNOWN, 0},
+    {0x41346800u, PROTO_AZURE, 24}, /* 65.52.104.0/24 */
+    {0x41346900u, PROTO_UNKNOWN, 0},
+    {0x41346a00u, PROTO_AZURE, 24}, /* 65.52.106.0/24 */
+    {0x41346b00u, PROTO_UNKNOWN, 0},
+    {0x41346c00u, PROTO_AZURE, 22}, /* 65.52.108.0/22 */
+    {0x41347000u, PROTO_AZURE, 20}, /* 65.52.112.0/20 */
+    {0x41348000u, PROTO_AZURE, 17}, /* 65.52.128.0/17 */
+    {0x41350000u, PROTO_UNKNOWN, 0},
+    {0x41361380u, PROTO_AZURE, 27}, /* 65.54.19.128/27 */
+    {0x413613a0u, PROTO_UNKNOWN, 0},
+    {0x41372080u, PROTO_AZURE, 28}, /* 65.55.32.128/28 */
+    {0x41372090u, PROTO_UNKNOWN, 0},
+    {0x413720c1u, PROTO_AZURE, 32}, /* 65.55.32.193/32 */
+    {0x413720c2u, PROTO_AZURE, 31}, /* 65.55.32.194/31 */
+    {0x413720c4u, PROTO_AZURE, 32}, /* 65.55.32.196/32 */
+    {0x413720c5u, PROTO_UNKNOWN, 0},
+    {0x413720d1u, PROTO_AZURE, 32}, /* 65.55.32.209/32 */
+    {0x413720d2u, PROTO_AZURE, 31}, /* 65.55.32.210/31 */
+    {0x413720d4u, PROTO_UNKNOWN, 0},
+    {0x41372c00u, PROTO_AZURE, 25}, /* 65.55.44.0/25 */
+    {0x41372c80u, PROTO_AZURE, 27}, /* 65.55.44.128/27 */
+    {0x41372ca0u, PROTO_UNKNOWN, 0},
+    {0x41373300u, PROTO_AZURE, 24}, /* 65.55.51.0/24 */
+    {0x41373400u, PROTO_UNKNOWN, 0},
+    {0x41373cb0u, PROTO_AZURE, 28}, /* 65.55.60.176/28 */
+    {0x41373cc0u, PROTO_UNKNOWN, 0},
+    {0x41376900u, PROTO_AZURE, 26}, /* 65.55.105.0/26 */
+    {0x41376940u, PROTO_UNKNOWN, 0},
+    {0x41376960u, PROTO_AZURE, 27}, /* 65.55.105.96/27 */
+    {0x41376980u, PROTO_UNKNOWN, 0},
+    {0x413769a0u, PROTO_AZURE, 27}, /* 65.55.105.160/27 */
+    {0x413769c0u, PROTO_AZURE, 26}, /* 65.55.105.192/26 */
+    {0x41376a40u, PROTO_AZURE, 27}, /* 65.55.106.64/27 */
+    {0x41376a60u, PROTO_UNKNOWN, 0},
+    {0x41376a80u, PROTO_AZURE, 25}, /* 65.55.106.128/25 */
+    {0x41376b00u, PROTO_AZURE, 28}, /* 65.55.107.0/28 */
+    {0x41376b10u, PROTO_UNKNOWN, 0},
+    {0x41376b30u, PROTO_AZURE, 28}, /* 65.55.107.48/28 */
+    {0x41376b40u, PROTO_AZURE, 26}, /* 65.55.107.64/26 */
+    {0x41376b80u, PROTO_UNKNOWN, 0},
+    {0x41376c00u, PROTO_AZURE, 23}, /* 65.55.108.0/23 */
+    {0x41376e00u, PROTO_AZURE, 24}, /* 65.55.110.0/24 */
+    {0x41376f00u, PROTO_UNKNOWN, 0},
+    {0x41377800u, PROTO_AZURE, 24}, /* 65.55.120.0/24 */
+    {0x41377900u, PROTO_UNKNOWN, 0},
+    {0x41379000u, PROTO_AZURE, 23}, /* 65.55.144.0/23 */
+    {0x41379200u, PROTO_AZURE, 24}, /* 65.55.146.0/24 */
+    {0x41379300u, PROTO_UNKNOWN, 0},
+    {0x4137cf00u, PROTO_AZURE, 24}, /* 65.55.207.0/24 */
+    {0x4137d000u, PROTO_UNKNOWN, 0},
+    {0x4137d100u, PROTO_AZURE, 24}, /* 65.55.209.0/24 */
+    {0x4137d300u, PROTO_AZURE, 26}, /* 65.55.211.0/26 */
+    {0x4137d340u, PROTO_UNKNOWN, 0},
+    {0x4137d400u, PROTO_AZURE, 27}, /* 65.55.212.0/27 */
+    {0x4137d420u, PROTO_UNKNOWN, 0},
+    {0x4137d480u, PROTO_AZURE, 25}, /* 65.55.212.128/25 */
+    {0x4137d500u, PROTO_AZURE, 27}, /* 65.55.213.0/27 */
+    {0x4137d520u, PROTO_UNKNOWN, 0},
+    {0x4137d540u, PROTO_AZURE, 26}, /* 65.55.213.64/26 */
+    {0x4137d5c0u, PROTO_UNKNOWN, 0},
+    {0x4137d900u, PROTO_AZURE, 24}, /* 65.55.217.0/24 */
+    {0x4137da00u, PROTO_AZURE, 23}, /* 65.55.218.0/23 */
+    {0x4137dc00u, PROTO_UNKNOWN, 0},
+    {0x4137fa00u, PROTO_AZURE, 24}, /* 65.55.250.0/24 */
+    {0x4137fb00u, PROTO_UNKNOWN, 0},
+    {0x4137fc00u, PROTO_AZURE, 24}, /* 65.55.252.0/24 */
+    {0x4137fd00u, PROTO_UNKNOWN, 0},
+    {0x41b00000u, PROTO_AWS, 14}, /* 65.176.0.0/14 */
+    {0x41b40000u, PROTO_UNKNOWN, 0},
     {0x42062000u, PROTO_YAHOO, 23}, /* 66.6.32.0/23 */
     {0x42062200u, PROTO_UNKNOWN, 0},
-    {0x42074000u, PROTO_AMAZON, 19}, /* 66.7.64.0/19 */
-    {0x42076000u, PROTO_UNKNOWN, 0},
+    {0x42070000u, PROTO_AWS, 21}, /* 66.7.0.0/21 */
+    {0x42070800u, PROTO_UNKNOWN, 0},
+    {0x42240000u, PROTO_AWS, 21}, /* 66.36.0.0/21 */
+    {0x42240800u, PROTO_AWS, 23}, /* 66.36.8.0/23 */
+    {0x42240a00u, PROTO_AWS, 24}, /* 66.36.10.0/24 */
+    {0x42240b00u, PROTO_UNKNOWN, 0},
+    {0x422f0000u, PROTO_AWS, 16}, /* 66.47.0.0/16 */
+    {0x42300000u, PROTO_UNKNOWN, 0},
     {0x425ee000u, PROTO_YAHOO, 20}, /* 66.94.224.0/20 */
     {0x425ef000u, PROTO_UNKNOWN, 0},
     {0x42660000u, PROTO_GOOGLE, 20}, /* 66.102.0.0/20 */
-    {0x42660100u, PROTO_GOOGLE, 24}, /* 66.102.1.0/24 */
-    {0x42660200u, PROTO_GOOGLE, 23}, /* 66.102.2.0/23 */
-    {0x42660300u, PROTO_GOOGLE, 24}, /* 66.102.3.0/24 */
-    {0x42660400u, PROTO_GOOGLE, 23}, /* 66.102.4.0/23 */
-    {0x42660500u, PROTO_GOOGLE, 24}, /* 66.102.5.0/24 */
-    {0x42660600u, PROTO_GOOGLE, 23}, /* 66.102.6.0/23 */
-    {0x42660700u, PROTO_GOOGLE, 24}, /* 66.102.7.0/24 */
-    {0x42660800u, PROTO_GOOGLE, 23}, /* 66.102.8.0/23 */
-    {0x42660900u, PROTO_GOOGLE, 24}, /* 66.102.9.0/24 */
-    {0x42660a00u, PROTO_GOOGLE, 23}, /* 66.102.10.0/23 */
-    {0x42660b00u, PROTO_GOOGLE, 24}, /* 66.102.11.0/24 */
-    {0x42660c00u, PROTO_GOOGLE, 23}, /* 66.102.12.0/23 */
-    {0x42660d00u, PROTO_GOOGLE, 24}, /* 66.102.13.0/24 */
-    {0x42660e00u, PROTO_GOOGLE, 23}, /* 66.102.14.0/23 */
-    {0x42660f00u, PROTO_GOOGLE, 24}, /* 66.102.15.0/24 */
     {0x42661000u, PROTO_UNKNOWN, 0},
     {0x4272a000u, PROTO_WEBEX, 20}, /* 66.114.160.0/20 */
     {0x4272a100u, PROTO_WEBEX, 24}, /* 66.114.161.0/24 */
@@ -1881,6 +4751,8 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x42a3a200u, PROTO_YAHOO, 23}, /* 66.163.162.0/23 */
     {0x42a3a400u, PROTO_YAHOO, 20}, /* 66.163.160.0/20 */
     {0x42a3b000u, PROTO_UNKNOWN, 0},
+    {0x42b66000u, PROTO_AWS, 20}, /* 66.182.96.0/20 */
+    {0x42b67000u, PROTO_UNKNOWN, 0},
     {0x42c44000u, PROTO_YAHOO, 21}, /* 66.196.64.0/21 */
     {0x42c44600u, PROTO_YAHOO, 23}, /* 66.196.70.0/23 */
     {0x42c44800u, PROTO_UNKNOWN, 0},
@@ -1905,38 +4777,7 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x42dca000u, PROTO_UNKNOWN, 0},
     {0x42e4a000u, PROTO_YAHOO, 20}, /* 66.228.160.0/20 */
     {0x42e4b000u, PROTO_UNKNOWN, 0},
-    {0x42f94000u, PROTO_GOOGLE, 20}, /* 66.249.64.0/20 */
-    {0x42f94100u, PROTO_GOOGLE, 24}, /* 66.249.65.0/24 */
-    {0x42f94200u, PROTO_GOOGLE, 23}, /* 66.249.66.0/23 */
-    {0x42f94300u, PROTO_GOOGLE, 24}, /* 66.249.67.0/24 */
-    {0x42f94400u, PROTO_GOOGLE, 23}, /* 66.249.68.0/23 */
-    {0x42f94500u, PROTO_GOOGLE, 24}, /* 66.249.69.0/24 */
-    {0x42f94600u, PROTO_GOOGLE, 23}, /* 66.249.70.0/23 */
-    {0x42f94700u, PROTO_GOOGLE, 24}, /* 66.249.71.0/24 */
-    {0x42f94800u, PROTO_GOOGLE, 23}, /* 66.249.72.0/23 */
-    {0x42f94900u, PROTO_GOOGLE, 24}, /* 66.249.73.0/24 */
-    {0x42f94a00u, PROTO_GOOGLE, 23}, /* 66.249.74.0/23 */
-    {0x42f94b00u, PROTO_GOOGLE, 24}, /* 66.249.75.0/24 */
-    {0x42f94c00u, PROTO_GOOGLE, 23}, /* 66.249.76.0/23 */
-    {0x42f94d00u, PROTO_GOOGLE, 24}, /* 66.249.77.0/24 */
-    {0x42f94e00u, PROTO_GOOGLE, 23}, /* 66.249.78.0/23 */
-    {0x42f94f00u, PROTO_GOOGLE, 24}, /* 66.249.79.0/24 */
-    {0x42f95000u, PROTO_GOOGLE, 20}, /* 66.249.80.0/20 */
-    {0x42f95100u, PROTO_GOOGLE, 24}, /* 66.249.81.0/24 */
-    {0x42f95200u, PROTO_GOOGLE, 23}, /* 66.249.82.0/23 */
-    {0x42f95300u, PROTO_GOOGLE, 24}, /* 66.249.83.0/24 */
-    {0x42f95400u, PROTO_GOOGLE, 23}, /* 66.249.84.0/23 */
-    {0x42f95500u, PROTO_GOOGLE, 24}, /* 66.249.85.0/24 */
-    {0x42f95600u, PROTO_GOOGLE, 23}, /* 66.249.86.0/23 */
-    {0x42f95700u, PROTO_GOOGLE, 24}, /* 66.249.87.0/24 */
-    {0x42f95800u, PROTO_GOOGLE, 23}, /* 66.249.88.0/23 */
-    {0x42f95900u, PROTO_GOOGLE, 24}, /* 66.249.89.0/24 */
-    {0x42f95a00u, PROTO_GOOGLE, 23}, /* 66.249.90.0/23 */
-    {0x42f95b00u, PROTO_GOOGLE, 24}, /* 66.249.91.0/24 */
-    {0x42f95c00u, PROTO_GOOGLE, 23}, /* 66.249.92.0/23 */
-    {0x42f95d00u, PROTO_GOOGLE, 24}, /* 66.249.93.0/24 */
-    {0x42f95e00u, PROTO_GOOGLE, 23}, /* 66.249.94.0/23 */
-    {0x42f95f00u, PROTO_GOOGLE, 24}, /* 66.249.95.0/24 */
+    {0x42f94000u, PROTO_GOOGLE, 19}, /* 66.249.64.0/19 */
     {0x42f96000u, PROTO_UNKNOWN, 0},
     {0x431c7000u, PROTO_YAHOO, 22}, /* 67.28.112.0/22 */
     {0x431c7400u, PROTO_UNKNOWN, 0},
@@ -1952,8 +4793,14 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x43c3f000u, PROTO_UNKNOWN, 0},
     {0x43c3fc00u, PROTO_YAHOO, 22}, /* 67.195.252.0/22 */
     {0x43c40000u, PROTO_UNKNOWN, 0},
-    {0x43ca0000u, PROTO_AMAZON, 18}, /* 67.202.0.0/18 */
+    {0x43ca0000u, PROTO_AWS, 18}, /* 67.202.0.0/18 */
     {0x43ca4000u, PROTO_UNKNOWN, 0},
+    {0x43dce000u, PROTO_AWS, 19}, /* 67.220.224.0/19 */
+    {0x43dd0000u, PROTO_UNKNOWN, 0},
+    {0x44427000u, PROTO_AWS, 20}, /* 68.66.112.0/20 */
+    {0x44428000u, PROTO_UNKNOWN, 0},
+    {0x444f0000u, PROTO_AWS, 18}, /* 68.79.0.0/18 */
+    {0x444f4000u, PROTO_UNKNOWN, 0},
     {0x448ee000u, PROTO_YAHOO, 21}, /* 68.142.224.0/21 */
     {0x448ee800u, PROTO_YAHOO, 22}, /* 68.142.232.0/22 */
     {0x448ef000u, PROTO_YAHOO, 21}, /* 68.142.240.0/21 */
@@ -1961,6 +4808,8 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x448ef900u, PROTO_UNKNOWN, 0},
     {0x448efc00u, PROTO_YAHOO, 24}, /* 68.142.252.0/24 */
     {0x448f0000u, PROTO_UNKNOWN, 0},
+    {0x449a0000u, PROTO_AZURE, 15}, /* 68.154.0.0/15 */
+    {0x449c0000u, PROTO_UNKNOWN, 0},
     {0x44b48000u, PROTO_YAHOO, 20}, /* 68.180.128.0/20 */
     {0x44b48100u, PROTO_YAHOO, 24}, /* 68.180.129.0/24 */
     {0x44b48400u, PROTO_YAHOO, 20}, /* 68.180.128.0/20 */
@@ -1976,6 +4825,12 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x44b4c000u, PROTO_YAHOO, 19}, /* 68.180.192.0/19 */
     {0x44b4e000u, PROTO_YAHOO, 20}, /* 68.180.224.0/20 */
     {0x44b50000u, PROTO_UNKNOWN, 0},
+    {0x44d20000u, PROTO_AZURE, 15}, /* 68.210.0.0/15 */
+    {0x44d40000u, PROTO_UNKNOWN, 0},
+    {0x44da0000u, PROTO_AZURE, 15}, /* 68.218.0.0/15 */
+    {0x44de0000u, PROTO_UNKNOWN, 0},
+    {0x45008800u, PROTO_AWS, 22}, /* 69.0.136.0/22 */
+    {0x45008c00u, PROTO_UNKNOWN, 0},
     {0x450c3800u, PROTO_TWITTER, 21}, /* 69.12.56.0/21 */
     {0x450c4000u, PROTO_UNKNOWN, 0},
     {0x45336100u, PROTO_APPLE, 24}, /* 69.51.97.0/24 */
@@ -1997,6 +4852,32 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x453fba00u, PROTO_FACEBOOK, 24}, /* 69.63.186.0/24 */
     {0x453fbb00u, PROTO_FACEBOOK, 21}, /* 69.63.184.0/21 */
     {0x453fc000u, PROTO_UNKNOWN, 0},
+    {0x456b03b0u, PROTO_AWS, 28}, /* 69.107.3.176/28 */
+    {0x456b03c0u, PROTO_UNKNOWN, 0},
+    {0x456b0670u, PROTO_AWS, 28}, /* 69.107.6.112/28 */
+    {0x456b0680u, PROTO_UNKNOWN, 0},
+    {0x456b06a0u, PROTO_AWS, 28}, /* 69.107.6.160/28 */
+    {0x456b06b0u, PROTO_UNKNOWN, 0},
+    {0x456b06c8u, PROTO_AWS, 29}, /* 69.107.6.200/29 */
+    {0x456b06d0u, PROTO_AWS, 28}, /* 69.107.6.208/28 */
+    {0x456b06e0u, PROTO_AWS, 29}, /* 69.107.6.224/29 */
+    {0x456b06e8u, PROTO_UNKNOWN, 0},
+    {0x456b0700u, PROTO_AWS, 28}, /* 69.107.7.0/28 */
+    {0x456b0710u, PROTO_AWS, 29}, /* 69.107.7.16/29 */
+    {0x456b0718u, PROTO_UNKNOWN, 0},
+    {0x456b0720u, PROTO_AWS, 27}, /* 69.107.7.32/27 */
+    {0x456b0740u, PROTO_AWS, 26}, /* 69.107.7.64/26 */
+    {0x456b0780u, PROTO_AWS, 28}, /* 69.107.7.128/28 */
+    {0x456b0790u, PROTO_UNKNOWN, 0},
+    {0x456b0980u, PROTO_AWS, 28}, /* 69.107.9.128/28 */
+    {0x456b0990u, PROTO_UNKNOWN, 0},
+    {0x456b09b0u, PROTO_AWS, 28}, /* 69.107.9.176/28 */
+    {0x456b09c0u, PROTO_AWS, 26}, /* 69.107.9.192/26 */
+    {0x456b0a00u, PROTO_AWS, 23}, /* 69.107.10.0/23 */
+    {0x456b0c00u, PROTO_AWS, 24}, /* 69.107.12.0/24 */
+    {0x456b0d00u, PROTO_AWS, 25}, /* 69.107.13.0/25 */
+    {0x456b0d80u, PROTO_AWS, 28}, /* 69.107.13.128/28 */
+    {0x456b0d90u, PROTO_UNKNOWN, 0},
     {0x45915400u, PROTO_APPLE, 23}, /* 69.145.84.0/23 */
     {0x45915600u, PROTO_UNKNOWN, 0},
     {0x45934000u, PROTO_YAHOO, 20}, /* 69.147.64.0/20 */
@@ -2025,85 +4906,49 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x45abfe00u, PROTO_FACEBOOK, 20}, /* 69.171.240.0/20 */
     {0x45abff00u, PROTO_FACEBOOK, 24}, /* 69.171.255.0/24 */
     {0x45ac0000u, PROTO_UNKNOWN, 0},
+    {0x45e6c000u, PROTO_AWS, 18}, /* 69.230.192.0/18 */
+    {0x45e70000u, PROTO_UNKNOWN, 0},
+    {0x45e78000u, PROTO_AWS, 18}, /* 69.231.128.0/18 */
+    {0x45e7c000u, PROTO_UNKNOWN, 0},
+    {0x45eac000u, PROTO_AWS, 18}, /* 69.234.192.0/18 */
+    {0x45eb0000u, PROTO_UNKNOWN, 0},
+    {0x45eb8000u, PROTO_AWS, 18}, /* 69.235.128.0/18 */
+    {0x45ebc000u, PROTO_UNKNOWN, 0},
     {0x46208000u, PROTO_GOOGLE, 19}, /* 70.32.128.0/19 */
-    {0x46209800u, PROTO_GOOGLE, 22}, /* 70.32.152.0/22 */
-    {0x46209c00u, PROTO_GOOGLE, 23}, /* 70.32.156.0/23 */
-    {0x46209e00u, PROTO_GOOGLE, 19}, /* 70.32.128.0/19 */
-    {0x46209f00u, PROTO_GOOGLE, 24}, /* 70.32.159.0/24 */
     {0x4620a000u, PROTO_UNKNOWN, 0},
+    {0x46250000u, PROTO_AZURE, 21}, /* 70.37.0.0/21 */
+    {0x46250800u, PROTO_AZURE, 22}, /* 70.37.8.0/22 */
+    {0x46250c00u, PROTO_AZURE, 32}, /* 70.37.12.0/32 */
+    {0x46250c01u, PROTO_UNKNOWN, 0},
+    {0x46251000u, PROTO_AZURE, 20}, /* 70.37.16.0/20 */
+    {0x46252000u, PROTO_AZURE, 19}, /* 70.37.32.0/19 */
+    {0x46254000u, PROTO_AZURE, 18}, /* 70.37.64.0/18 */
+    {0x46258000u, PROTO_UNKNOWN, 0},
+    {0x46259800u, PROTO_AZURE, 23}, /* 70.37.152.0/23 */
+    {0x46259a00u, PROTO_UNKNOWN, 0},
+    {0x4625a000u, PROTO_AZURE, 21}, /* 70.37.160.0/21 */
+    {0x4625a800u, PROTO_UNKNOWN, 0},
+    {0x46840000u, PROTO_CLOUDFRONT, 18}, /* 70.132.0.0/18 */
+    {0x46844000u, PROTO_UNKNOWN, 0},
+    {0x46980000u, PROTO_AZURE, 15}, /* 70.152.0.0/15 */
+    {0x469a0000u, PROTO_UNKNOWN, 0},
+    {0x469c0000u, PROTO_AZURE, 15}, /* 70.156.0.0/15 */
+    {0x469e0000u, PROTO_UNKNOWN, 0},
+    {0x46e0c000u, PROTO_AWS, 18}, /* 70.224.192.0/18 */
+    {0x46e10000u, PROTO_UNKNOWN, 0},
+    {0x46e84000u, PROTO_AWS, 18}, /* 70.232.64.0/18 */
+    {0x46e88000u, PROTO_UNKNOWN, 0},
+    {0x4783c000u, PROTO_AWS, 18}, /* 71.131.192.0/18 */
+    {0x47844000u, PROTO_UNKNOWN, 0},
+    {0x47884000u, PROTO_AWS, 18}, /* 71.136.64.0/18 */
+    {0x47888000u, PROTO_UNKNOWN, 0},
+    {0x47890000u, PROTO_AWS, 18}, /* 71.137.0.0/18 */
+    {0x47894000u, PROTO_UNKNOWN, 0},
+    {0x47980000u, PROTO_CLOUDFRONT, 17}, /* 71.152.0.0/17 */
+    {0x47988000u, PROTO_UNKNOWN, 0},
     {0x480ec000u, PROTO_GOOGLE, 18}, /* 72.14.192.0/18 */
-    {0x480ec100u, PROTO_GOOGLE, 24}, /* 72.14.193.0/24 */
-    {0x480ec200u, PROTO_GOOGLE, 23}, /* 72.14.194.0/23 */
-    {0x480ec300u, PROTO_GOOGLE, 24}, /* 72.14.195.0/24 */
-    {0x480ec400u, PROTO_GOOGLE, 23}, /* 72.14.196.0/23 */
-    {0x480ec500u, PROTO_GOOGLE, 24}, /* 72.14.197.0/24 */
-    {0x480ec600u, PROTO_GOOGLE, 23}, /* 72.14.198.0/23 */
-    {0x480ec700u, PROTO_GOOGLE, 24}, /* 72.14.199.0/24 */
-    {0x480ec800u, PROTO_GOOGLE, 23}, /* 72.14.200.0/23 */
-    {0x480ec900u, PROTO_GOOGLE, 24}, /* 72.14.201.0/24 */
-    {0x480eca00u, PROTO_GOOGLE, 23}, /* 72.14.202.0/23 */
-    {0x480ecb00u, PROTO_GOOGLE, 24}, /* 72.14.203.0/24 */
-    {0x480ecc00u, PROTO_GOOGLE, 23}, /* 72.14.204.0/23 */
-    {0x480ecd00u, PROTO_GOOGLE, 24}, /* 72.14.205.0/24 */
-    {0x480ece00u, PROTO_GOOGLE, 23}, /* 72.14.206.0/23 */
-    {0x480ecf00u, PROTO_GOOGLE, 24}, /* 72.14.207.0/24 */
-    {0x480ed000u, PROTO_GOOGLE, 23}, /* 72.14.208.0/23 */
-    {0x480ed100u, PROTO_GOOGLE, 24}, /* 72.14.209.0/24 */
-    {0x480ed200u, PROTO_GOOGLE, 23}, /* 72.14.210.0/23 */
-    {0x480ed300u, PROTO_GOOGLE, 24}, /* 72.14.211.0/24 */
-    {0x480ed400u, PROTO_GOOGLE, 23}, /* 72.14.212.0/23 */
-    {0x480ed500u, PROTO_GOOGLE, 24}, /* 72.14.213.0/24 */
-    {0x480ed600u, PROTO_GOOGLE, 23}, /* 72.14.214.0/23 */
-    {0x480ed700u, PROTO_GOOGLE, 24}, /* 72.14.215.0/24 */
-    {0x480ed800u, PROTO_GOOGLE, 23}, /* 72.14.216.0/23 */
-    {0x480ed900u, PROTO_GOOGLE, 24}, /* 72.14.217.0/24 */
-    {0x480eda00u, PROTO_GOOGLE, 23}, /* 72.14.218.0/23 */
-    {0x480edb00u, PROTO_GOOGLE, 24}, /* 72.14.219.0/24 */
-    {0x480edc00u, PROTO_GOOGLE, 23}, /* 72.14.220.0/23 */
-    {0x480edd00u, PROTO_GOOGLE, 24}, /* 72.14.221.0/24 */
-    {0x480ede00u, PROTO_GOOGLE, 23}, /* 72.14.222.0/23 */
-    {0x480edf00u, PROTO_GOOGLE, 24}, /* 72.14.223.0/24 */
-    {0x480ee000u, PROTO_GOOGLE, 23}, /* 72.14.224.0/23 */
-    {0x480ee100u, PROTO_GOOGLE, 24}, /* 72.14.225.0/24 */
-    {0x480ee200u, PROTO_GOOGLE, 23}, /* 72.14.226.0/23 */
-    {0x480ee300u, PROTO_GOOGLE, 24}, /* 72.14.227.0/24 */
-    {0x480ee400u, PROTO_GOOGLE, 23}, /* 72.14.228.0/23 */
-    {0x480ee500u, PROTO_GOOGLE, 24}, /* 72.14.229.0/24 */
-    {0x480ee600u, PROTO_GOOGLE, 23}, /* 72.14.230.0/23 */
-    {0x480ee700u, PROTO_GOOGLE, 24}, /* 72.14.231.0/24 */
-    {0x480ee800u, PROTO_GOOGLE, 23}, /* 72.14.232.0/23 */
-    {0x480ee900u, PROTO_GOOGLE, 24}, /* 72.14.233.0/24 */
-    {0x480eea00u, PROTO_GOOGLE, 23}, /* 72.14.234.0/23 */
-    {0x480eeb00u, PROTO_GOOGLE, 24}, /* 72.14.235.0/24 */
-    {0x480eec00u, PROTO_GOOGLE, 23}, /* 72.14.236.0/23 */
-    {0x480eed00u, PROTO_GOOGLE, 24}, /* 72.14.237.0/24 */
-    {0x480eee00u, PROTO_GOOGLE, 23}, /* 72.14.238.0/23 */
-    {0x480eef00u, PROTO_GOOGLE, 24}, /* 72.14.239.0/24 */
-    {0x480ef000u, PROTO_GOOGLE, 23}, /* 72.14.240.0/23 */
-    {0x480ef100u, PROTO_GOOGLE, 24}, /* 72.14.241.0/24 */
-    {0x480ef200u, PROTO_GOOGLE, 23}, /* 72.14.242.0/23 */
-    {0x480ef300u, PROTO_GOOGLE, 24}, /* 72.14.243.0/24 */
-    {0x480ef400u, PROTO_GOOGLE, 23}, /* 72.14.244.0/23 */
-    {0x480ef500u, PROTO_GOOGLE, 24}, /* 72.14.245.0/24 */
-    {0x480ef600u, PROTO_GOOGLE, 23}, /* 72.14.246.0/23 */
-    {0x480ef700u, PROTO_GOOGLE, 24}, /* 72.14.247.0/24 */
-    {0x480ef800u, PROTO_GOOGLE, 23}, /* 72.14.248.0/23 */
-    {0x480ef900u, PROTO_GOOGLE, 24}, /* 72.14.249.0/24 */
-    {0x480efa00u, PROTO_GOOGLE, 23}, /* 72.14.250.0/23 */
-    {0x480efb00u, PROTO_GOOGLE, 24}, /* 72.14.251.0/24 */
-    {0x480efc00u, PROTO_GOOGLE, 23}, /* 72.14.252.0/23 */
-    {0x480efd00u, PROTO_GOOGLE, 24}, /* 72.14.253.0/24 */
-    {0x480efe00u, PROTO_GOOGLE, 23}, /* 72.14.254.0/23 */
-    {0x480eff00u, PROTO_GOOGLE, 24}, /* 72.14.255.0/24 */
     {0x480f0000u, PROTO_UNKNOWN, 0},
-    {0x4815c000u, PROTO_AMAZON, 19}, /* 72.21.192.0/19 */
-    {0x4815c200u, PROTO_AMAZON, 24}, /* 72.21.194.0/24 */
-    {0x4815c300u, PROTO_AMAZON, 19}, /* 72.21.192.0/19 */
-    {0x4815c600u, PROTO_AWS, 23}, /* 72.21.198.0/23 */
-    {0x4815c800u, PROTO_AMAZON, 19}, /* 72.21.192.0/19 */
-    {0x4815d700u, PROTO_AMAZON, 24}, /* 72.21.215.0/24 */
-    {0x4815d800u, PROTO_AMAZON, 19}, /* 72.21.192.0/19 */
-    {0x4815dc00u, PROTO_AMAZON, 22}, /* 72.21.220.0/22 */
+    {0x4815c000u, PROTO_AWS, 19}, /* 72.21.192.0/19 */
     {0x4815e000u, PROTO_UNKNOWN, 0},
     {0x481e0000u, PROTO_YAHOO, 19}, /* 72.30.0.0/19 */
     {0x481e2000u, PROTO_UNKNOWN, 0},
@@ -2115,8 +4960,20 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x481ee800u, PROTO_UNKNOWN, 0},
     {0x481ef000u, PROTO_YAHOO, 20}, /* 72.30.240.0/20 */
     {0x481f0000u, PROTO_UNKNOWN, 0},
-    {0x482c2000u, PROTO_AMAZON, 19}, /* 72.44.32.0/19 */
+    {0x48290000u, PROTO_AWS, 20}, /* 72.41.0.0/20 */
+    {0x48291000u, PROTO_UNKNOWN, 0},
+    {0x482c2000u, PROTO_AWS, 19}, /* 72.44.32.0/19 */
     {0x482c4000u, PROTO_UNKNOWN, 0},
+    {0x48900000u, PROTO_AZURE, 14}, /* 72.144.0.0/14 */
+    {0x48940000u, PROTO_UNKNOWN, 0},
+    {0x48960000u, PROTO_AWS, 20}, /* 72.150.0.0/20 */
+    {0x48961000u, PROTO_AWS, 22}, /* 72.150.16.0/22 */
+    {0x48961400u, PROTO_AWS, 24}, /* 72.150.20.0/24 */
+    {0x48961500u, PROTO_UNKNOWN, 0},
+    {0x48980000u, PROTO_AZURE, 14}, /* 72.152.0.0/14 */
+    {0x489c0000u, PROTO_UNKNOWN, 0},
+    {0x48f20000u, PROTO_AWS, 15}, /* 72.242.0.0/15 */
+    {0x48f40000u, PROTO_UNKNOWN, 0},
     {0x4a060400u, PROTO_YAHOO, 22}, /* 74.6.4.0/22 */
     {0x4a060800u, PROTO_UNKNOWN, 0},
     {0x4a062000u, PROTO_YAHOO, 19}, /* 74.6.32.0/19 */
@@ -2129,283 +4986,63 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x4a06e000u, PROTO_YAHOO, 22}, /* 74.6.224.0/22 */
     {0x4a06e400u, PROTO_UNKNOWN, 0},
     {0x4a06f800u, PROTO_YAHOO, 21}, /* 74.6.248.0/21 */
-    {0x4a070000u, PROTO_UNKNOWN, 0},
+    {0x4a070000u, PROTO_AZURE, 16}, /* 74.7.0.0/16 */
+    {0x4a080000u, PROTO_UNKNOWN, 0},
     {0x4a721800u, PROTO_GOOGLE, 21}, /* 74.114.24.0/21 */
-    {0x4a721900u, PROTO_GOOGLE, 24}, /* 74.114.25.0/24 */
-    {0x4a721a00u, PROTO_GOOGLE, 23}, /* 74.114.26.0/23 */
-    {0x4a721b00u, PROTO_GOOGLE, 24}, /* 74.114.27.0/24 */
-    {0x4a721c00u, PROTO_GOOGLE, 23}, /* 74.114.28.0/23 */
-    {0x4a721d00u, PROTO_GOOGLE, 24}, /* 74.114.29.0/24 */
-    {0x4a721e00u, PROTO_GOOGLE, 23}, /* 74.114.30.0/23 */
-    {0x4a721f00u, PROTO_GOOGLE, 24}, /* 74.114.31.0/24 */
     {0x4a722000u, PROTO_UNKNOWN, 0},
     {0x4a774c00u, PROTO_FACEBOOK, 22}, /* 74.119.76.0/22 */
     {0x4a775000u, PROTO_UNKNOWN, 0},
     {0x4a7d0000u, PROTO_GOOGLE, 16}, /* 74.125.0.0/16 */
-    {0x4a7d0100u, PROTO_GOOGLE, 24}, /* 74.125.1.0/24 */
-    {0x4a7d0200u, PROTO_GOOGLE, 23}, /* 74.125.2.0/23 */
-    {0x4a7d0300u, PROTO_GOOGLE, 24}, /* 74.125.3.0/24 */
-    {0x4a7d0400u, PROTO_GOOGLE, 23}, /* 74.125.4.0/23 */
-    {0x4a7d0500u, PROTO_GOOGLE, 24}, /* 74.125.5.0/24 */
-    {0x4a7d0600u, PROTO_GOOGLE, 23}, /* 74.125.6.0/23 */
-    {0x4a7d0700u, PROTO_GOOGLE, 24}, /* 74.125.7.0/24 */
-    {0x4a7d0800u, PROTO_GOOGLE, 23}, /* 74.125.8.0/23 */
-    {0x4a7d0900u, PROTO_GOOGLE, 24}, /* 74.125.9.0/24 */
-    {0x4a7d0a00u, PROTO_GOOGLE, 23}, /* 74.125.10.0/23 */
-    {0x4a7d0b00u, PROTO_GOOGLE, 24}, /* 74.125.11.0/24 */
-    {0x4a7d0c00u, PROTO_GOOGLE, 23}, /* 74.125.12.0/23 */
-    {0x4a7d0d00u, PROTO_GOOGLE, 24}, /* 74.125.13.0/24 */
-    {0x4a7d0e00u, PROTO_GOOGLE, 23}, /* 74.125.14.0/23 */
-    {0x4a7d0f00u, PROTO_GOOGLE, 24}, /* 74.125.15.0/24 */
-    {0x4a7d1000u, PROTO_GOOGLE, 23}, /* 74.125.16.0/23 */
-    {0x4a7d1100u, PROTO_GOOGLE, 24}, /* 74.125.17.0/24 */
-    {0x4a7d1200u, PROTO_GOOGLE, 23}, /* 74.125.18.0/23 */
-    {0x4a7d1300u, PROTO_GOOGLE, 24}, /* 74.125.19.0/24 */
-    {0x4a7d1400u, PROTO_GOOGLE, 23}, /* 74.125.20.0/23 */
-    {0x4a7d1500u, PROTO_GOOGLE, 24}, /* 74.125.21.0/24 */
-    {0x4a7d1600u, PROTO_GOOGLE, 23}, /* 74.125.22.0/23 */
-    {0x4a7d1700u, PROTO_GOOGLE, 24}, /* 74.125.23.0/24 */
-    {0x4a7d1800u, PROTO_GOOGLE, 23}, /* 74.125.24.0/23 */
-    {0x4a7d1900u, PROTO_GOOGLE, 24}, /* 74.125.25.0/24 */
-    {0x4a7d1a00u, PROTO_GOOGLE, 23}, /* 74.125.26.0/23 */
-    {0x4a7d1b00u, PROTO_GOOGLE, 24}, /* 74.125.27.0/24 */
-    {0x4a7d1c00u, PROTO_GOOGLE, 23}, /* 74.125.28.0/23 */
-    {0x4a7d1d00u, PROTO_GOOGLE, 24}, /* 74.125.29.0/24 */
-    {0x4a7d1e00u, PROTO_GOOGLE, 23}, /* 74.125.30.0/23 */
-    {0x4a7d1f00u, PROTO_GOOGLE, 24}, /* 74.125.31.0/24 */
-    {0x4a7d2000u, PROTO_GOOGLE, 23}, /* 74.125.32.0/23 */
-    {0x4a7d2100u, PROTO_GOOGLE, 24}, /* 74.125.33.0/24 */
-    {0x4a7d2200u, PROTO_GOOGLE, 23}, /* 74.125.34.0/23 */
-    {0x4a7d2300u, PROTO_GOOGLE, 24}, /* 74.125.35.0/24 */
-    {0x4a7d2400u, PROTO_GOOGLE, 23}, /* 74.125.36.0/23 */
-    {0x4a7d2500u, PROTO_GOOGLE, 24}, /* 74.125.37.0/24 */
-    {0x4a7d2600u, PROTO_GOOGLE, 23}, /* 74.125.38.0/23 */
-    {0x4a7d2700u, PROTO_GOOGLE, 24}, /* 74.125.39.0/24 */
-    {0x4a7d2800u, PROTO_GOOGLE, 23}, /* 74.125.40.0/23 */
-    {0x4a7d2900u, PROTO_GOOGLE, 24}, /* 74.125.41.0/24 */
-    {0x4a7d2a00u, PROTO_GOOGLE, 23}, /* 74.125.42.0/23 */
-    {0x4a7d2b00u, PROTO_GOOGLE, 24}, /* 74.125.43.0/24 */
-    {0x4a7d2c00u, PROTO_GOOGLE, 23}, /* 74.125.44.0/23 */
-    {0x4a7d2d00u, PROTO_GOOGLE, 24}, /* 74.125.45.0/24 */
-    {0x4a7d2e00u, PROTO_GOOGLE, 23}, /* 74.125.46.0/23 */
-    {0x4a7d2f00u, PROTO_GOOGLE, 24}, /* 74.125.47.0/24 */
-    {0x4a7d3000u, PROTO_GOOGLE, 23}, /* 74.125.48.0/23 */
-    {0x4a7d3100u, PROTO_GOOGLE, 24}, /* 74.125.49.0/24 */
-    {0x4a7d3200u, PROTO_GOOGLE, 23}, /* 74.125.50.0/23 */
-    {0x4a7d3300u, PROTO_GOOGLE, 24}, /* 74.125.51.0/24 */
-    {0x4a7d3400u, PROTO_GOOGLE, 23}, /* 74.125.52.0/23 */
-    {0x4a7d3500u, PROTO_GOOGLE, 24}, /* 74.125.53.0/24 */
-    {0x4a7d3600u, PROTO_GOOGLE, 23}, /* 74.125.54.0/23 */
-    {0x4a7d3700u, PROTO_GOOGLE, 24}, /* 74.125.55.0/24 */
-    {0x4a7d3800u, PROTO_GOOGLE, 23}, /* 74.125.56.0/23 */
-    {0x4a7d3900u, PROTO_GOOGLE, 24}, /* 74.125.57.0/24 */
-    {0x4a7d39f0u, PROTO_GOOGLE, 29}, /* 74.125.57.240/29 */
-    {0x4a7d39f8u, PROTO_GOOGLE, 24}, /* 74.125.57.0/24 */
-    {0x4a7d3a00u, PROTO_GOOGLE, 23}, /* 74.125.58.0/23 */
-    {0x4a7d3b00u, PROTO_GOOGLE, 24}, /* 74.125.59.0/24 */
-    {0x4a7d3c00u, PROTO_GOOGLE, 23}, /* 74.125.60.0/23 */
-    {0x4a7d3d00u, PROTO_GOOGLE, 24}, /* 74.125.61.0/24 */
-    {0x4a7d3e00u, PROTO_GOOGLE, 23}, /* 74.125.62.0/23 */
-    {0x4a7d3f00u, PROTO_GOOGLE, 24}, /* 74.125.63.0/24 */
-    {0x4a7d4000u, PROTO_GOOGLE, 23}, /* 74.125.64.0/23 */
-    {0x4a7d4100u, PROTO_GOOGLE, 24}, /* 74.125.65.0/24 */
-    {0x4a7d4200u, PROTO_GOOGLE, 23}, /* 74.125.66.0/23 */
-    {0x4a7d4300u, PROTO_GOOGLE, 24}, /* 74.125.67.0/24 */
-    {0x4a7d4400u, PROTO_GOOGLE, 23}, /* 74.125.68.0/23 */
-    {0x4a7d4500u, PROTO_GOOGLE, 24}, /* 74.125.69.0/24 */
-    {0x4a7d4600u, PROTO_GOOGLE, 23}, /* 74.125.70.0/23 */
-    {0x4a7d4700u, PROTO_GOOGLE, 24}, /* 74.125.71.0/24 */
-    {0x4a7d4800u, PROTO_GOOGLE, 23}, /* 74.125.72.0/23 */
-    {0x4a7d4900u, PROTO_GOOGLE, 24}, /* 74.125.73.0/24 */
-    {0x4a7d4a00u, PROTO_GOOGLE, 23}, /* 74.125.74.0/23 */
-    {0x4a7d4b00u, PROTO_GOOGLE, 24}, /* 74.125.75.0/24 */
-    {0x4a7d4c00u, PROTO_GOOGLE, 23}, /* 74.125.76.0/23 */
-    {0x4a7d4d00u, PROTO_GOOGLE, 24}, /* 74.125.77.0/24 */
-    {0x4a7d4e00u, PROTO_GOOGLE, 23}, /* 74.125.78.0/23 */
-    {0x4a7d4f00u, PROTO_GOOGLE, 24}, /* 74.125.79.0/24 */
-    {0x4a7d5000u, PROTO_GOOGLE, 23}, /* 74.125.80.0/23 */
-    {0x4a7d5100u, PROTO_GOOGLE, 24}, /* 74.125.81.0/24 */
-    {0x4a7d5200u, PROTO_GOOGLE, 23}, /* 74.125.82.0/23 */
-    {0x4a7d5300u, PROTO_GOOGLE, 24}, /* 74.125.83.0/24 */
-    {0x4a7d5400u, PROTO_GOOGLE, 23}, /* 74.125.84.0/23 */
-    {0x4a7d5500u, PROTO_GOOGLE, 24}, /* 74.125.85.0/24 */
-    {0x4a7d5600u, PROTO_GOOGLE, 23}, /* 74.125.86.0/23 */
-    {0x4a7d5700u, PROTO_GOOGLE, 24}, /* 74.125.87.0/24 */
-    {0x4a7d5800u, PROTO_GOOGLE, 23}, /* 74.125.88.0/23 */
-    {0x4a7d5900u, PROTO_GOOGLE, 24}, /* 74.125.89.0/24 */
-    {0x4a7d5a00u, PROTO_GOOGLE, 23}, /* 74.125.90.0/23 */
-    {0x4a7d5b00u, PROTO_GOOGLE, 24}, /* 74.125.91.0/24 */
-    {0x4a7d5c00u, PROTO_GOOGLE, 23}, /* 74.125.92.0/23 */
-    {0x4a7d5d00u, PROTO_GOOGLE, 24}, /* 74.125.93.0/24 */
-    {0x4a7d5e00u, PROTO_GOOGLE, 23}, /* 74.125.94.0/23 */
-    {0x4a7d5f00u, PROTO_GOOGLE, 24}, /* 74.125.95.0/24 */
-    {0x4a7d6000u, PROTO_GOOGLE, 23}, /* 74.125.96.0/23 */
-    {0x4a7d6100u, PROTO_GOOGLE, 24}, /* 74.125.97.0/24 */
-    {0x4a7d6200u, PROTO_GOOGLE, 23}, /* 74.125.98.0/23 */
-    {0x4a7d6300u, PROTO_GOOGLE, 24}, /* 74.125.99.0/24 */
-    {0x4a7d6400u, PROTO_GOOGLE, 23}, /* 74.125.100.0/23 */
-    {0x4a7d6500u, PROTO_GOOGLE, 24}, /* 74.125.101.0/24 */
-    {0x4a7d6600u, PROTO_GOOGLE, 23}, /* 74.125.102.0/23 */
-    {0x4a7d6700u, PROTO_GOOGLE, 24}, /* 74.125.103.0/24 */
-    {0x4a7d6800u, PROTO_GOOGLE, 23}, /* 74.125.104.0/23 */
-    {0x4a7d6900u, PROTO_GOOGLE, 24}, /* 74.125.105.0/24 */
-    {0x4a7d6a00u, PROTO_GOOGLE, 23}, /* 74.125.106.0/23 */
-    {0x4a7d6b00u, PROTO_GOOGLE, 24}, /* 74.125.107.0/24 */
-    {0x4a7d6c00u, PROTO_GOOGLE, 23}, /* 74.125.108.0/23 */
-    {0x4a7d6d00u, PROTO_GOOGLE, 24}, /* 74.125.109.0/24 */
-    {0x4a7d6e00u, PROTO_GOOGLE, 23}, /* 74.125.110.0/23 */
-    {0x4a7d6f00u, PROTO_GOOGLE, 24}, /* 74.125.111.0/24 */
-    {0x4a7d7000u, PROTO_GOOGLE, 23}, /* 74.125.112.0/23 */
-    {0x4a7d7100u, PROTO_GOOGLE, 24}, /* 74.125.113.0/24 */
-    {0x4a7d7200u, PROTO_GOOGLE, 23}, /* 74.125.114.0/23 */
-    {0x4a7d7300u, PROTO_GOOGLE, 24}, /* 74.125.115.0/24 */
-    {0x4a7d7400u, PROTO_GOOGLE, 23}, /* 74.125.116.0/23 */
-    {0x4a7d7500u, PROTO_GOOGLE, 24}, /* 74.125.117.0/24 */
-    {0x4a7d7600u, PROTO_GOOGLE, 23}, /* 74.125.118.0/23 */
-    {0x4a7d7700u, PROTO_GOOGLE, 24}, /* 74.125.119.0/24 */
-    {0x4a7d7800u, PROTO_GOOGLE, 23}, /* 74.125.120.0/23 */
-    {0x4a7d7900u, PROTO_GOOGLE, 24}, /* 74.125.121.0/24 */
-    {0x4a7d7a00u, PROTO_GOOGLE, 23}, /* 74.125.122.0/23 */
-    {0x4a7d7b00u, PROTO_GOOGLE, 24}, /* 74.125.123.0/24 */
-    {0x4a7d7c00u, PROTO_GOOGLE, 23}, /* 74.125.124.0/23 */
-    {0x4a7d7d00u, PROTO_GOOGLE, 24}, /* 74.125.125.0/24 */
-    {0x4a7d7e00u, PROTO_GOOGLE, 23}, /* 74.125.126.0/23 */
-    {0x4a7d7f00u, PROTO_GOOGLE, 24}, /* 74.125.127.0/24 */
-    {0x4a7d8000u, PROTO_GOOGLE, 23}, /* 74.125.128.0/23 */
-    {0x4a7d8100u, PROTO_GOOGLE, 24}, /* 74.125.129.0/24 */
-    {0x4a7d8200u, PROTO_GOOGLE, 23}, /* 74.125.130.0/23 */
-    {0x4a7d8300u, PROTO_GOOGLE, 24}, /* 74.125.131.0/24 */
-    {0x4a7d8400u, PROTO_GOOGLE, 23}, /* 74.125.132.0/23 */
-    {0x4a7d8500u, PROTO_GOOGLE, 24}, /* 74.125.133.0/24 */
-    {0x4a7d8600u, PROTO_GOOGLE, 23}, /* 74.125.134.0/23 */
-    {0x4a7d8700u, PROTO_GOOGLE, 24}, /* 74.125.135.0/24 */
-    {0x4a7d8800u, PROTO_GOOGLE, 23}, /* 74.125.136.0/23 */
-    {0x4a7d8900u, PROTO_GOOGLE, 24}, /* 74.125.137.0/24 */
-    {0x4a7d8a00u, PROTO_GOOGLE, 23}, /* 74.125.138.0/23 */
-    {0x4a7d8b00u, PROTO_GOOGLE, 24}, /* 74.125.139.0/24 */
-    {0x4a7d8c00u, PROTO_GOOGLE, 23}, /* 74.125.140.0/23 */
-    {0x4a7d8d00u, PROTO_GOOGLE, 24}, /* 74.125.141.0/24 */
-    {0x4a7d8e00u, PROTO_GOOGLE, 23}, /* 74.125.142.0/23 */
-    {0x4a7d8f00u, PROTO_GOOGLE, 24}, /* 74.125.143.0/24 */
-    {0x4a7d9000u, PROTO_GOOGLE, 23}, /* 74.125.144.0/23 */
-    {0x4a7d9100u, PROTO_GOOGLE, 24}, /* 74.125.145.0/24 */
-    {0x4a7d9200u, PROTO_GOOGLE, 23}, /* 74.125.146.0/23 */
-    {0x4a7d9300u, PROTO_GOOGLE, 24}, /* 74.125.147.0/24 */
-    {0x4a7d9400u, PROTO_GOOGLE, 23}, /* 74.125.148.0/23 */
-    {0x4a7d9500u, PROTO_GOOGLE, 24}, /* 74.125.149.0/24 */
-    {0x4a7d9600u, PROTO_GOOGLE, 23}, /* 74.125.150.0/23 */
-    {0x4a7d9700u, PROTO_GOOGLE, 24}, /* 74.125.151.0/24 */
-    {0x4a7d9800u, PROTO_GOOGLE, 23}, /* 74.125.152.0/23 */
-    {0x4a7d9900u, PROTO_GOOGLE, 24}, /* 74.125.153.0/24 */
-    {0x4a7d9a00u, PROTO_GOOGLE, 23}, /* 74.125.154.0/23 */
-    {0x4a7d9b00u, PROTO_GOOGLE, 24}, /* 74.125.155.0/24 */
-    {0x4a7d9c00u, PROTO_GOOGLE, 23}, /* 74.125.156.0/23 */
-    {0x4a7d9d00u, PROTO_GOOGLE, 24}, /* 74.125.157.0/24 */
-    {0x4a7d9e00u, PROTO_GOOGLE, 23}, /* 74.125.158.0/23 */
-    {0x4a7d9f00u, PROTO_GOOGLE, 24}, /* 74.125.159.0/24 */
-    {0x4a7da000u, PROTO_GOOGLE, 23}, /* 74.125.160.0/23 */
-    {0x4a7da100u, PROTO_GOOGLE, 24}, /* 74.125.161.0/24 */
-    {0x4a7da200u, PROTO_GOOGLE, 23}, /* 74.125.162.0/23 */
-    {0x4a7da300u, PROTO_GOOGLE, 24}, /* 74.125.163.0/24 */
-    {0x4a7da400u, PROTO_GOOGLE, 23}, /* 74.125.164.0/23 */
-    {0x4a7da500u, PROTO_GOOGLE, 24}, /* 74.125.165.0/24 */
-    {0x4a7da600u, PROTO_GOOGLE, 23}, /* 74.125.166.0/23 */
-    {0x4a7da700u, PROTO_GOOGLE, 24}, /* 74.125.167.0/24 */
-    {0x4a7da800u, PROTO_GOOGLE, 23}, /* 74.125.168.0/23 */
-    {0x4a7da900u, PROTO_GOOGLE, 24}, /* 74.125.169.0/24 */
-    {0x4a7daa00u, PROTO_GOOGLE, 23}, /* 74.125.170.0/23 */
-    {0x4a7dab00u, PROTO_GOOGLE, 24}, /* 74.125.171.0/24 */
-    {0x4a7dac00u, PROTO_GOOGLE, 23}, /* 74.125.172.0/23 */
-    {0x4a7dad00u, PROTO_GOOGLE, 24}, /* 74.125.173.0/24 */
-    {0x4a7dae00u, PROTO_GOOGLE, 23}, /* 74.125.174.0/23 */
-    {0x4a7daf00u, PROTO_GOOGLE, 24}, /* 74.125.175.0/24 */
-    {0x4a7db000u, PROTO_GOOGLE, 23}, /* 74.125.176.0/23 */
-    {0x4a7db100u, PROTO_GOOGLE, 24}, /* 74.125.177.0/24 */
-    {0x4a7db200u, PROTO_GOOGLE, 23}, /* 74.125.178.0/23 */
-    {0x4a7db300u, PROTO_GOOGLE, 24}, /* 74.125.179.0/24 */
-    {0x4a7db400u, PROTO_GOOGLE, 23}, /* 74.125.180.0/23 */
-    {0x4a7db500u, PROTO_GOOGLE, 24}, /* 74.125.181.0/24 */
-    {0x4a7db600u, PROTO_GOOGLE, 23}, /* 74.125.182.0/23 */
-    {0x4a7db700u, PROTO_GOOGLE, 24}, /* 74.125.183.0/24 */
-    {0x4a7db800u, PROTO_GOOGLE, 23}, /* 74.125.184.0/23 */
-    {0x4a7db900u, PROTO_GOOGLE, 24}, /* 74.125.185.0/24 */
-    {0x4a7dba00u, PROTO_GOOGLE, 23}, /* 74.125.186.0/23 */
-    {0x4a7dbb00u, PROTO_GOOGLE, 24}, /* 74.125.187.0/24 */
-    {0x4a7dbc00u, PROTO_GOOGLE, 23}, /* 74.125.188.0/23 */
-    {0x4a7dbd00u, PROTO_GOOGLE, 24}, /* 74.125.189.0/24 */
-    {0x4a7dbe00u, PROTO_GOOGLE, 23}, /* 74.125.190.0/23 */
-    {0x4a7dbf00u, PROTO_GOOGLE, 24}, /* 74.125.191.0/24 */
-    {0x4a7dc000u, PROTO_GOOGLE, 23}, /* 74.125.192.0/23 */
-    {0x4a7dc100u, PROTO_GOOGLE, 24}, /* 74.125.193.0/24 */
-    {0x4a7dc200u, PROTO_GOOGLE, 23}, /* 74.125.194.0/23 */
-    {0x4a7dc300u, PROTO_GOOGLE, 24}, /* 74.125.195.0/24 */
-    {0x4a7dc400u, PROTO_GOOGLE, 23}, /* 74.125.196.0/23 */
-    {0x4a7dc500u, PROTO_GOOGLE, 24}, /* 74.125.197.0/24 */
-    {0x4a7dc600u, PROTO_GOOGLE, 23}, /* 74.125.198.0/23 */
-    {0x4a7dc700u, PROTO_GOOGLE, 24}, /* 74.125.199.0/24 */
-    {0x4a7dc800u, PROTO_GOOGLE, 23}, /* 74.125.200.0/23 */
-    {0x4a7dc900u, PROTO_GOOGLE, 24}, /* 74.125.201.0/24 */
-    {0x4a7dca00u, PROTO_GOOGLE, 23}, /* 74.125.202.0/23 */
-    {0x4a7dcb00u, PROTO_GOOGLE, 24}, /* 74.125.203.0/24 */
-    {0x4a7dcc00u, PROTO_GOOGLE, 23}, /* 74.125.204.0/23 */
-    {0x4a7dcd00u, PROTO_GOOGLE, 24}, /* 74.125.205.0/24 */
-    {0x4a7dce00u, PROTO_GOOGLE, 23}, /* 74.125.206.0/23 */
-    {0x4a7dcf00u, PROTO_GOOGLE, 24}, /* 74.125.207.0/24 */
-    {0x4a7dd000u, PROTO_GOOGLE, 23}, /* 74.125.208.0/23 */
-    {0x4a7dd100u, PROTO_GOOGLE, 24}, /* 74.125.209.0/24 */
-    {0x4a7dd200u, PROTO_GOOGLE, 23}, /* 74.125.210.0/23 */
-    {0x4a7dd300u, PROTO_GOOGLE, 24}, /* 74.125.211.0/24 */
-    {0x4a7dd400u, PROTO_GOOGLE, 23}, /* 74.125.212.0/23 */
-    {0x4a7dd500u, PROTO_GOOGLE, 24}, /* 74.125.213.0/24 */
-    {0x4a7dd600u, PROTO_GOOGLE, 23}, /* 74.125.214.0/23 */
-    {0x4a7dd700u, PROTO_GOOGLE, 24}, /* 74.125.215.0/24 */
-    {0x4a7dd800u, PROTO_GOOGLE, 23}, /* 74.125.216.0/23 */
-    {0x4a7dd900u, PROTO_GOOGLE, 24}, /* 74.125.217.0/24 */
-    {0x4a7dda00u, PROTO_GOOGLE, 23}, /* 74.125.218.0/23 */
-    {0x4a7ddb00u, PROTO_GOOGLE, 24}, /* 74.125.219.0/24 */
-    {0x4a7ddc00u, PROTO_GOOGLE, 23}, /* 74.125.220.0/23 */
-    {0x4a7ddd00u, PROTO_GOOGLE, 24}, /* 74.125.221.0/24 */
-    {0x4a7dde00u, PROTO_GOOGLE, 23}, /* 74.125.222.0/23 */
-    {0x4a7ddf00u, PROTO_GOOGLE, 24}, /* 74.125.223.0/24 */
-    {0x4a7de000u, PROTO_GOOGLE, 23}, /* 74.125.224.0/23 */
-    {0x4a7de100u, PROTO_GOOGLE, 24}, /* 74.125.225.0/24 */
-    {0x4a7de200u, PROTO_GOOGLE, 23}, /* 74.125.226.0/23 */
-    {0x4a7de300u, PROTO_GOOGLE, 24}, /* 74.125.227.0/24 */
-    {0x4a7de400u, PROTO_GOOGLE, 23}, /* 74.125.228.0/23 */
-    {0x4a7de500u, PROTO_GOOGLE, 24}, /* 74.125.229.0/24 */
-    {0x4a7de600u, PROTO_GOOGLE, 23}, /* 74.125.230.0/23 */
-    {0x4a7de700u, PROTO_GOOGLE, 24}, /* 74.125.231.0/24 */
-    {0x4a7de800u, PROTO_GOOGLE, 23}, /* 74.125.232.0/23 */
-    {0x4a7de900u, PROTO_GOOGLE, 24}, /* 74.125.233.0/24 */
-    {0x4a7dea00u, PROTO_GOOGLE, 23}, /* 74.125.234.0/23 */
-    {0x4a7deb00u, PROTO_GOOGLE, 24}, /* 74.125.235.0/24 */
-    {0x4a7dec00u, PROTO_GOOGLE, 23}, /* 74.125.236.0/23 */
-    {0x4a7ded00u, PROTO_GOOGLE, 24}, /* 74.125.237.0/24 */
-    {0x4a7dee00u, PROTO_GOOGLE, 23}, /* 74.125.238.0/23 */
-    {0x4a7def00u, PROTO_GOOGLE, 24}, /* 74.125.239.0/24 */
-    {0x4a7df000u, PROTO_GOOGLE, 23}, /* 74.125.240.0/23 */
-    {0x4a7df100u, PROTO_GOOGLE, 24}, /* 74.125.241.0/24 */
-    {0x4a7df200u, PROTO_GOOGLE, 23}, /* 74.125.242.0/23 */
-    {0x4a7df300u, PROTO_GOOGLE, 24}, /* 74.125.243.0/24 */
-    {0x4a7df400u, PROTO_GOOGLE, 23}, /* 74.125.244.0/23 */
-    {0x4a7df500u, PROTO_GOOGLE, 24}, /* 74.125.245.0/24 */
-    {0x4a7df600u, PROTO_GOOGLE, 23}, /* 74.125.246.0/23 */
-    {0x4a7df700u, PROTO_GOOGLE, 24}, /* 74.125.247.0/24 */
-    {0x4a7df800u, PROTO_GOOGLE, 23}, /* 74.125.248.0/23 */
-    {0x4a7df900u, PROTO_GOOGLE, 24}, /* 74.125.249.0/24 */
-    {0x4a7dfa00u, PROTO_GOOGLE, 23}, /* 74.125.250.0/23 */
-    {0x4a7dfb00u, PROTO_GOOGLE, 24}, /* 74.125.251.0/24 */
-    {0x4a7dfc00u, PROTO_GOOGLE, 23}, /* 74.125.252.0/23 */
-    {0x4a7dfd00u, PROTO_GOOGLE, 24}, /* 74.125.253.0/24 */
-    {0x4a7dfe00u, PROTO_GOOGLE, 23}, /* 74.125.254.0/23 */
-    {0x4a7dff00u, PROTO_GOOGLE, 24}, /* 74.125.255.0/24 */
     {0x4a7e0000u, PROTO_UNKNOWN, 0},
-    {0x4b658000u, PROTO_AMAZON, 17}, /* 75.101.128.0/17 */
+    {0x4a900000u, PROTO_AZURE, 12}, /* 74.144.0.0/12 */
+    {0x4aa00000u, PROTO_AZURE, 14}, /* 74.160.0.0/14 */
+    {0x4aa40000u, PROTO_UNKNOWN, 0},
+    {0x4ab00000u, PROTO_AZURE, 14}, /* 74.176.0.0/14 */
+    {0x4ab40000u, PROTO_UNKNOWN, 0},
+    {0x4ae00000u, PROTO_AZURE, 14}, /* 74.224.0.0/14 */
+    {0x4ae40000u, PROTO_UNKNOWN, 0},
+    {0x4aea0000u, PROTO_AZURE, 15}, /* 74.234.0.0/15 */
+    {0x4aec0000u, PROTO_UNKNOWN, 0},
+    {0x4af00000u, PROTO_AZURE, 14}, /* 74.240.0.0/14 */
+    {0x4af40000u, PROTO_UNKNOWN, 0},
+    {0x4af80000u, PROTO_AZURE, 15}, /* 74.248.0.0/15 */
+    {0x4afa0000u, PROTO_UNKNOWN, 0},
+    {0x4b020000u, PROTO_AWS, 17}, /* 75.2.0.0/17 */
+    {0x4b028000u, PROTO_AWS, 18}, /* 75.2.128.0/18 */
+    {0x4b02c000u, PROTO_UNKNOWN, 0},
+    {0x4b030000u, PROTO_AWS, 18}, /* 75.3.0.0/18 */
+    {0x4b034000u, PROTO_UNKNOWN, 0},
+    {0x4b038000u, PROTO_AWS, 18}, /* 75.3.128.0/18 */
+    {0x4b03c000u, PROTO_UNKNOWN, 0},
+    {0x4b16c000u, PROTO_AWS, 18}, /* 75.22.192.0/18 */
+    {0x4b170000u, PROTO_UNKNOWN, 0},
+    {0x4b2d8000u, PROTO_AWS, 18}, /* 75.45.128.0/18 */
+    {0x4b2dc000u, PROTO_UNKNOWN, 0},
+    {0x4b2f0000u, PROTO_AWS, 18}, /* 75.47.0.0/18 */
+    {0x4b2f4000u, PROTO_UNKNOWN, 0},
+    {0x4b4f0000u, PROTO_AWS, 16}, /* 75.79.0.0/16 */
+    {0x4b500000u, PROTO_UNKNOWN, 0},
+    {0x4b658000u, PROTO_AWS, 17}, /* 75.101.128.0/17 */
     {0x4b660000u, PROTO_UNKNOWN, 0},
     {0x4c0d0000u, PROTO_YAHOO, 17}, /* 76.13.0.0/17 */
     {0x4c0d1800u, PROTO_YAHOO, 21}, /* 76.13.24.0/21 */
     {0x4c0d2000u, PROTO_YAHOO, 17}, /* 76.13.0.0/17 */
     {0x4c0d8000u, PROTO_UNKNOWN, 0},
+    {0x4ca20000u, PROTO_AWS, 15}, /* 76.162.0.0/15 */
+    {0x4ca40000u, PROTO_UNKNOWN, 0},
+    {0x4cdf0000u, PROTO_AWS, 17}, /* 76.223.0.0/17 */
+    {0x4cdf8000u, PROTO_UNKNOWN, 0},
+    {0x4cdfa800u, PROTO_AWS, 23}, /* 76.223.168.0/23 */
+    {0x4cdfaa00u, PROTO_AWS, 28}, /* 76.223.170.0/28 */
+    {0x4cdfaa10u, PROTO_UNKNOWN, 0},
+    {0x4cdfaa20u, PROTO_AWS, 27}, /* 76.223.170.32/27 */
+    {0x4cdfaa40u, PROTO_AWS, 26}, /* 76.223.170.64/26 */
+    {0x4cdfaa80u, PROTO_AWS, 27}, /* 76.223.170.128/27 */
+    {0x4cdfaaa0u, PROTO_UNKNOWN, 0},
+    {0x4cdfac00u, PROTO_AWS, 22}, /* 76.223.172.0/22 */
+    {0x4cdfb000u, PROTO_UNKNOWN, 0},
+    {0x4d700000u, PROTO_AWS, 14}, /* 77.112.0.0/14 */
+    {0x4d740000u, PROTO_UNKNOWN, 0},
     {0x4deeb000u, PROTO_YAHOO, 21}, /* 77.238.176.0/21 */
     {0x4deeb400u, PROTO_YAHOO, 23}, /* 77.238.180.0/23 */
     {0x4deeb600u, PROTO_YAHOO, 24}, /* 77.238.182.0/24 */
@@ -2413,11 +5050,23 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x4deeba00u, PROTO_YAHOO, 23}, /* 77.238.186.0/23 */
     {0x4deebc00u, PROTO_YAHOO, 22}, /* 77.238.188.0/22 */
     {0x4deec000u, PROTO_UNKNOWN, 0},
-    {0x4f7d0000u, PROTO_AMAZON, 18}, /* 79.125.0.0/18 */
-    {0x4f7d4000u, PROTO_UNKNOWN, 0},
-    {0x57ee5000u, PROTO_AMAZON, 21}, /* 87.238.80.0/21 */
-    {0x57ee5200u, PROTO_AMAZON, 23}, /* 87.238.82.0/23 */
-    {0x57ee5600u, PROTO_AMAZON, 24}, /* 87.238.86.0/24 */
+    {0x4e0c0000u, PROTO_AWS, 14}, /* 78.12.0.0/14 */
+    {0x4e100000u, PROTO_UNKNOWN, 0},
+    {0x4f7d0000u, PROTO_AWS, 17}, /* 79.125.0.0/17 */
+    {0x4f7d8000u, PROTO_UNKNOWN, 0},
+    {0x507e0000u, PROTO_AWS, 20}, /* 80.126.0.0/20 */
+    {0x507e1000u, PROTO_UNKNOWN, 0},
+    {0x5376f000u, PROTO_AWS, 21}, /* 83.118.240.0/21 */
+    {0x5376f800u, PROTO_UNKNOWN, 0},
+    {0x53778000u, PROTO_AWS, 18}, /* 83.119.128.0/18 */
+    {0x5377c000u, PROTO_UNKNOWN, 0},
+    {0x53a00000u, PROTO_AWS, 14}, /* 83.160.0.0/14 */
+    {0x53a40000u, PROTO_UNKNOWN, 0},
+    {0x55d20000u, PROTO_AZURE, 15}, /* 85.210.0.0/15 */
+    {0x55d40000u, PROTO_UNKNOWN, 0},
+    {0x56700000u, PROTO_AWS, 15}, /* 86.112.0.0/15 */
+    {0x56720000u, PROTO_UNKNOWN, 0},
+    {0x57ee5000u, PROTO_AWS, 21}, /* 87.238.80.0/21 */
     {0x57ee5800u, PROTO_UNKNOWN, 0},
     {0x57f86000u, PROTO_YAHOO, 21}, /* 87.248.96.0/21 */
     {0x57f86800u, PROTO_YAHOO, 24}, /* 87.248.104.0/24 */
@@ -2429,26 +5078,65 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x57f87100u, PROTO_YAHOO, 24}, /* 87.248.113.0/24 */
     {0x57f87200u, PROTO_YAHOO, 23}, /* 87.248.114.0/23 */
     {0x57f87800u, PROTO_UNKNOWN, 0},
-    {0x59cfe000u, PROTO_GOOGLE, 21}, /* 89.207.224.0/21 */
-    {0x59cfe100u, PROTO_GOOGLE, 24}, /* 89.207.225.0/24 */
-    {0x59cfe200u, PROTO_GOOGLE, 23}, /* 89.207.226.0/23 */
-    {0x59cfe300u, PROTO_GOOGLE, 24}, /* 89.207.227.0/24 */
-    {0x59cfe400u, PROTO_GOOGLE, 23}, /* 89.207.228.0/23 */
-    {0x59cfe500u, PROTO_GOOGLE, 24}, /* 89.207.229.0/24 */
-    {0x59cfe600u, PROTO_GOOGLE, 23}, /* 89.207.230.0/23 */
-    {0x59cfe700u, PROTO_GOOGLE, 24}, /* 89.207.231.0/24 */
-    {0x59cfe800u, PROTO_UNKNOWN, 0},
+    {0x58680000u, PROTO_AWS, 13}, /* 88.104.0.0/13 */
+    {0x58700000u, PROTO_UNKNOWN, 0},
+    {0x59300000u, PROTO_AWS, 13}, /* 89.48.0.0/13 */
+    {0x59380000u, PROTO_UNKNOWN, 0},
+    {0x593c0000u, PROTO_AWS, 15}, /* 89.60.0.0/15 */
+    {0x593e0000u, PROTO_UNKNOWN, 0},
+    {0x5a620000u, PROTO_FASTLY, 17}, /* 90.98.0.0/17 */
+    {0x5a628000u, PROTO_FASTLY, 18}, /* 90.98.128.0/18 */
+    {0x5a62c000u, PROTO_UNKNOWN, 0},
     {0x5bbed800u, PROTO_SKYPE, 21}, /* 91.190.216.0/21 */
     {0x5bbeda00u, PROTO_SKYPE, 23}, /* 91.190.218.0/23 */
     {0x5bbedc00u, PROTO_SKYPE, 24}, /* 91.190.220.0/24 */
     {0x5bbedd00u, PROTO_SKYPE, 21}, /* 91.190.216.0/21 */
     {0x5bbee000u, PROTO_UNKNOWN, 0},
-    {0x607f0000u, PROTO_AMAZON, 18}, /* 96.127.0.0/18 */
-    {0x607f2000u, PROTO_AMAZON, 19}, /* 96.127.32.0/19 */
-    {0x607f4000u, PROTO_AMAZON, 18}, /* 96.127.64.0/18 */
+    {0x5d4d8000u, PROTO_AWS, 19}, /* 93.77.128.0/19 */
+    {0x5d4da000u, PROTO_UNKNOWN, 0},
+    {0x5e240000u, PROTO_AWS, 14}, /* 94.36.0.0/14 */
+    {0x5e280000u, PROTO_UNKNOWN, 0},
+    {0x5ef55800u, PROTO_AZURE, 21}, /* 94.245.88.0/21 */
+    {0x5ef56000u, PROTO_UNKNOWN, 0},
+    {0x5ef56800u, PROTO_AZURE, 21}, /* 94.245.104.0/21 */
+    {0x5ef57000u, PROTO_UNKNOWN, 0},
+    {0x5ef57560u, PROTO_AZURE, 27}, /* 94.245.117.96/27 */
+    {0x5ef57580u, PROTO_UNKNOWN, 0},
+    {0x5ef57600u, PROTO_AZURE, 25}, /* 94.245.118.0/25 */
+    {0x5ef57680u, PROTO_UNKNOWN, 0},
+    {0x5ef57880u, PROTO_AZURE, 27}, /* 94.245.120.128/27 */
+    {0x5ef578a0u, PROTO_UNKNOWN, 0},
+    {0x5ef57a00u, PROTO_AZURE, 24}, /* 94.245.122.0/24 */
+    {0x5ef57b00u, PROTO_UNKNOWN, 0},
+    {0x5ef57b90u, PROTO_AZURE, 28}, /* 94.245.123.144/28 */
+    {0x5ef57ba0u, PROTO_UNKNOWN, 0},
+    {0x5ef57bb0u, PROTO_AZURE, 28}, /* 94.245.123.176/28 */
+    {0x5ef57bc0u, PROTO_UNKNOWN, 0},
+    {0x5f280000u, PROTO_AWS, 15}, /* 95.40.0.0/15 */
+    {0x5f2a0000u, PROTO_UNKNOWN, 0},
+    {0x60000000u, PROTO_AWS, 18}, /* 96.0.0.0/18 */
+    {0x60004000u, PROTO_AWS, 19}, /* 96.0.64.0/19 */
+    {0x60006000u, PROTO_AWS, 21}, /* 96.0.96.0/21 */
+    {0x60006800u, PROTO_AWS, 22}, /* 96.0.104.0/22 */
+    {0x60006c00u, PROTO_AWS, 24}, /* 96.0.108.0/24 */
+    {0x60006d00u, PROTO_UNKNOWN, 0},
+    {0x60006e00u, PROTO_AWS, 23}, /* 96.0.110.0/23 */
+    {0x60007000u, PROTO_AWS, 20}, /* 96.0.112.0/20 */
+    {0x60008000u, PROTO_AWS, 19}, /* 96.0.128.0/19 */
+    {0x6000a000u, PROTO_AWS, 20}, /* 96.0.160.0/20 */
+    {0x6000b000u, PROTO_AWS, 21}, /* 96.0.176.0/21 */
+    {0x6000b800u, PROTO_AWS, 22}, /* 96.0.184.0/22 */
+    {0x6000bc00u, PROTO_UNKNOWN, 0},
+    {0x607f0000u, PROTO_AWS, 17}, /* 96.127.0.0/17 */
     {0x607f8000u, PROTO_UNKNOWN, 0},
-    {0x607fa000u, PROTO_AWS, 20}, /* 96.127.160.0/20 */
-    {0x607fb000u, PROTO_UNKNOWN, 0},
+    {0x62400000u, PROTO_AZURE, 14}, /* 98.64.0.0/14 */
+    {0x62440000u, PROTO_UNKNOWN, 0},
+    {0x62460000u, PROTO_AZURE, 15}, /* 98.70.0.0/15 */
+    {0x62480000u, PROTO_UNKNOWN, 0},
+    {0x62500000u, PROTO_AWS, 12}, /* 98.80.0.0/12 */
+    {0x62600000u, PROTO_UNKNOWN, 0},
+    {0x62820000u, PROTO_AWS, 15}, /* 98.130.0.0/15 */
+    {0x62840000u, PROTO_UNKNOWN, 0},
     {0x62880000u, PROTO_YAHOO, 14}, /* 98.136.0.0/14 */
     {0x62886c00u, PROTO_YAHOO, 22}, /* 98.136.108.0/22 */
     {0x62887000u, PROTO_YAHOO, 14}, /* 98.136.0.0/14 */
@@ -2490,13 +5178,93 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x628b7c00u, PROTO_YAHOO, 14}, /* 98.136.0.0/14 */
     {0x628b8000u, PROTO_YAHOO, 17}, /* 98.139.128.0/17 */
     {0x628c0000u, PROTO_UNKNOWN, 0},
-    {0x63c68000u, PROTO_GOOGLE, 17}, /* 99.198.128.0/17 */
-    {0x63c70000u, PROTO_UNKNOWN, 0},
+    {0x630a0000u, PROTO_AWS, 18}, /* 99.10.0.0/18 */
+    {0x630a4000u, PROTO_UNKNOWN, 0},
+    {0x634d0000u, PROTO_AWS, 18}, /* 99.77.0.0/18 */
+    {0x634d4000u, PROTO_UNKNOWN, 0},
+    {0x634d8000u, PROTO_AWS, 18}, /* 99.77.128.0/18 */
+    {0x634dc000u, PROTO_UNKNOWN, 0},
+    {0x634de800u, PROTO_AWS, 21}, /* 99.77.232.0/21 */
+    {0x634df800u, PROTO_AWS, 22}, /* 99.77.248.0/22 */
+    {0x634dfc00u, PROTO_AWS, 23}, /* 99.77.252.0/23 */
+    {0x634dfe00u, PROTO_AWS, 24}, /* 99.77.254.0/24 */
+    {0x634dff00u, PROTO_UNKNOWN, 0},
+    {0x634e8000u, PROTO_AWS, 19}, /* 99.78.128.0/19 */
+    {0x634ea000u, PROTO_AWS, 21}, /* 99.78.160.0/21 */
+    {0x634ea800u, PROTO_AWS, 22}, /* 99.78.168.0/22 */
+    {0x634eac00u, PROTO_AWS, 24}, /* 99.78.172.0/24 */
+    {0x634ead00u, PROTO_UNKNOWN, 0},
+    {0x634eb000u, PROTO_AWS, 20}, /* 99.78.176.0/20 */
+    {0x634ec000u, PROTO_AWS, 21}, /* 99.78.192.0/21 */
+    {0x634ec800u, PROTO_UNKNOWN, 0},
+    {0x634ed000u, PROTO_AWS, 21}, /* 99.78.208.0/21 */
+    {0x634ed800u, PROTO_AWS, 22}, /* 99.78.216.0/22 */
+    {0x634edc00u, PROTO_AWS, 26}, /* 99.78.220.0/26 */
+    {0x634edc40u, PROTO_UNKNOWN, 0},
+    {0x634edc41u, PROTO_AWS, 32}, /* 99.78.220.65/32 */
+    {0x634edc43u, PROTO_UNKNOWN, 0},
+    {0x634edc80u, PROTO_AWS, 26}, /* 99.78.220.128/26 */
+    {0x634edcc0u, PROTO_UNKNOWN, 0},
+    {0x634ee400u, PROTO_AWS, 22}, /* 99.78.228.0/22 */
+    {0x634ee800u, PROTO_AWS, 21}, /* 99.78.232.0/21 */
+    {0x634ef000u, PROTO_AWS, 20}, /* 99.78.240.0/20 */
+    {0x634f0000u, PROTO_AWS, 17}, /* 99.79.0.0/17 */
+    {0x634f8000u, PROTO_AWS, 19}, /* 99.79.128.0/19 */
+    {0x634fa000u, PROTO_AWS, 21}, /* 99.79.160.0/21 */
+    {0x634fa800u, PROTO_AWS, 24}, /* 99.79.168.0/24 */
+    {0x634fa900u, PROTO_CLOUDFRONT, 24}, /* 99.79.169.0/24 */
+    {0x634faa00u, PROTO_AWS, 23}, /* 99.79.170.0/23 */
+    {0x634fac00u, PROTO_AWS, 22}, /* 99.79.172.0/22 */
+    {0x634fb000u, PROTO_AWS, 20}, /* 99.79.176.0/20 */
+    {0x634fc000u, PROTO_AWS, 18}, /* 99.79.192.0/18 */
+    {0x63500000u, PROTO_AWS, 15}, /* 99.80.0.0/15 */
+    {0x63520000u, PROTO_AWS, 22}, /* 99.82.0.0/22 */
+    {0x63520400u, PROTO_UNKNOWN, 0},
+    {0x63520800u, PROTO_AWS, 21}, /* 99.82.8.0/21 */
+    {0x63521000u, PROTO_UNKNOWN, 0},
+    {0x63528000u, PROTO_AWS, 18}, /* 99.82.128.0/18 */
+    {0x6352c000u, PROTO_UNKNOWN, 0},
+    {0x63534000u, PROTO_AWS, 19}, /* 99.83.64.0/19 */
+    {0x63536000u, PROTO_AWS, 21}, /* 99.83.96.0/21 */
+    {0x63536800u, PROTO_AWS, 22}, /* 99.83.104.0/22 */
+    {0x63536c00u, PROTO_AWS, 23}, /* 99.83.108.0/23 */
+    {0x63536e00u, PROTO_UNKNOWN, 0},
+    {0x63537000u, PROTO_AWS, 21}, /* 99.83.112.0/21 */
+    {0x63537800u, PROTO_AWS, 22}, /* 99.83.120.0/22 */
+    {0x63537c00u, PROTO_UNKNOWN, 0},
+    {0x63538000u, PROTO_AWS, 17}, /* 99.83.128.0/17 */
+    {0x63540000u, PROTO_CLOUDFRONT, 16}, /* 99.84.0.0/16 */
+    {0x63550000u, PROTO_UNKNOWN, 0},
+    {0x63560000u, PROTO_CLOUDFRONT, 16}, /* 99.86.0.0/16 */
+    {0x63570000u, PROTO_AWS, 19}, /* 99.87.0.0/19 */
+    {0x63572000u, PROTO_AWS, 22}, /* 99.87.32.0/22 */
+    {0x63572400u, PROTO_UNKNOWN, 0},
+    {0x63960000u, PROTO_AWS, 17}, /* 99.150.0.0/17 */
+    {0x63968000u, PROTO_UNKNOWN, 0},
+    {0x63974000u, PROTO_AWS, 18}, /* 99.151.64.0/18 */
+    {0x63978000u, PROTO_AWS, 19}, /* 99.151.128.0/19 */
+    {0x6397a000u, PROTO_AWS, 20}, /* 99.151.160.0/20 */
+    {0x6397b000u, PROTO_UNKNOWN, 0},
+    {0x6397b800u, PROTO_AWS, 21}, /* 99.151.184.0/21 */
+    {0x6397c000u, PROTO_UNKNOWN, 0},
+    {0x63b54000u, PROTO_AWS, 18}, /* 99.181.64.0/18 */
+    {0x63b58000u, PROTO_UNKNOWN, 0},
+    {0x63c80000u, PROTO_AWS, 13}, /* 99.200.0.0/13 */
+    {0x63d00000u, PROTO_UNKNOWN, 0},
+    {0x64140000u, PROTO_AWS, 14}, /* 100.20.0.0/14 */
+    {0x64180000u, PROTO_AWS, 13}, /* 100.24.0.0/13 */
+    {0x64200000u, PROTO_UNKNOWN, 0},
+    {0x64300000u, PROTO_AWS, 12}, /* 100.48.0.0/12 */
+    {0x64400000u, PROTO_UNKNOWN, 0},
+    {0x66250000u, PROTO_AZURE, 16}, /* 102.37.0.0/16 */
+    {0x66260000u, PROTO_UNKNOWN, 0},
+    {0x66850000u, PROTO_AZURE, 16}, /* 102.133.0.0/16 */
+    {0x66860000u, PROTO_UNKNOWN, 0},
     {0x67024800u, PROTO_YAHOO, 22}, /* 103.2.72.0/22 */
     {0x67024c00u, PROTO_UNKNOWN, 0},
     {0x6702f400u, PROTO_YAHOO, 22}, /* 103.2.244.0/22 */
     {0x6702f800u, PROTO_UNKNOWN, 0},
-    {0x67040800u, PROTO_AMAZON, 21}, /* 103.4.8.0/21 */
+    {0x67040800u, PROTO_AWS, 21}, /* 103.4.8.0/21 */
     {0x67041000u, PROTO_UNKNOWN, 0},
     {0x67042000u, PROTO_YAHOO, 22}, /* 103.4.32.0/22 */
     {0x67042400u, PROTO_UNKNOWN, 0},
@@ -2506,23 +5274,29 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x67046400u, PROTO_UNKNOWN, 0},
     {0x67083000u, PROTO_YAHOO, 22}, /* 103.8.48.0/22 */
     {0x67083400u, PROTO_UNKNOWN, 0},
-    {0x6708ac00u, PROTO_AMAZON, 22}, /* 103.8.172.0/22 */
+    {0x6708ac00u, PROTO_AWS, 22}, /* 103.8.172.0/22 */
     {0x6708b000u, PROTO_UNKNOWN, 0},
+    {0x670dbc00u, PROTO_AWS, 23}, /* 103.13.188.0/23 */
+    {0x670dbe00u, PROTO_UNKNOWN, 0},
     {0x6715f400u, PROTO_CLOUDFLARE, 22}, /* 103.21.244.0/22 */
     {0x6715f800u, PROTO_UNKNOWN, 0},
     {0x6716c800u, PROTO_CLOUDFLARE, 22}, /* 103.22.200.0/22 */
     {0x6716cc00u, PROTO_UNKNOWN, 0},
+    {0x67199c00u, PROTO_AZURE, 24}, /* 103.25.156.0/24 */
+    {0x67199d00u, PROTO_UNKNOWN, 0},
     {0x671b9400u, PROTO_KAKAO, 24}, /* 103.27.148.0/24 */
     {0x671b9600u, PROTO_UNKNOWN, 0},
     {0x671f0400u, PROTO_CLOUDFLARE, 22}, /* 103.31.4.0/22 */
     {0x671f0800u, PROTO_UNKNOWN, 0},
+    {0x67246000u, PROTO_AZURE, 24}, /* 103.36.96.0/24 */
+    {0x67246100u, PROTO_UNKNOWN, 0},
     {0x67254000u, PROTO_YAHOO, 22}, /* 103.37.64.0/22 */
     {0x67254400u, PROTO_UNKNOWN, 0},
     {0x67286e00u, PROTO_YAHOO, 23}, /* 103.40.110.0/23 */
     {0x67286f00u, PROTO_YAHOO, 24}, /* 103.40.111.0/24 */
     {0x67287000u, PROTO_UNKNOWN, 0},
-    {0x673e4000u, PROTO_GOOGLE, 24}, /* 103.62.64.0/24 */
-    {0x673e4400u, PROTO_UNKNOWN, 0},
+    {0x67353000u, PROTO_AWS, 22}, /* 103.53.48.0/22 */
+    {0x67353400u, PROTO_UNKNOWN, 0},
     {0x674f6400u, PROTO_APPLE, 24}, /* 103.79.100.0/24 */
     {0x674f6800u, PROTO_UNKNOWN, 0},
     {0x6757cc00u, PROTO_NETFLIX, 22}, /* 103.87.204.0/22 */
@@ -2534,1969 +5308,258 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x67f18400u, PROTO_UNKNOWN, 0},
     {0x67f19800u, PROTO_YAHOO, 24}, /* 103.241.152.0/24 */
     {0x67f19b00u, PROTO_UNKNOWN, 0},
+    {0x67f43200u, PROTO_FASTLY, 24}, /* 103.244.50.0/24 */
+    {0x67f43300u, PROTO_UNKNOWN, 0},
+    {0x67f5de00u, PROTO_FASTLY, 23}, /* 103.245.222.0/23 */
+    {0x67f5e000u, PROTO_FASTLY, 24}, /* 103.245.224.0/24 */
+    {0x67f5e100u, PROTO_UNKNOWN, 0},
     {0x67f63800u, PROTO_KAKAO, 22}, /* 103.246.56.0/22 */
     {0x67f63900u, PROTO_KAKAO, 24}, /* 103.246.57.0/24 */
     {0x67f63c00u, PROTO_UNKNOWN, 0},
-    {0x67f69400u, PROTO_AMAZON, 23}, /* 103.246.148.0/23 */
+    {0x67f69400u, PROTO_AWS, 22}, /* 103.246.148.0/22 */
     {0x67f69800u, PROTO_UNKNOWN, 0},
     {0x67fc7000u, PROTO_TWITTER, 23}, /* 103.252.112.0/23 */
     {0x67fc7400u, PROTO_UNKNOWN, 0},
-    {0x68100000u, PROTO_CLOUDFLARE, 20}, /* 104.16.0.0/20 */
-    {0x68101000u, PROTO_UNKNOWN, 0},
-    {0x682c0000u, PROTO_AZURE, 22}, /* 104.44.0.0/22 */
-    {0x682c0400u, PROTO_UNKNOWN, 0},
-    {0x68840000u, PROTO_GOOGLE, 16}, /* 104.132.0.0/16 */
-    {0x68840100u, PROTO_GOOGLE, 24}, /* 104.132.1.0/24 */
-    {0x68840200u, PROTO_GOOGLE, 23}, /* 104.132.2.0/23 */
-    {0x68840300u, PROTO_GOOGLE, 24}, /* 104.132.3.0/24 */
-    {0x68840400u, PROTO_GOOGLE, 23}, /* 104.132.4.0/23 */
-    {0x68840500u, PROTO_GOOGLE, 24}, /* 104.132.5.0/24 */
-    {0x68840600u, PROTO_GOOGLE, 23}, /* 104.132.6.0/23 */
-    {0x68840700u, PROTO_GOOGLE, 24}, /* 104.132.7.0/24 */
-    {0x68840800u, PROTO_GOOGLE, 23}, /* 104.132.8.0/23 */
-    {0x68840900u, PROTO_GOOGLE, 24}, /* 104.132.9.0/24 */
-    {0x68840a00u, PROTO_GOOGLE, 23}, /* 104.132.10.0/23 */
-    {0x68840b00u, PROTO_GOOGLE, 24}, /* 104.132.11.0/24 */
-    {0x68840c00u, PROTO_GOOGLE, 23}, /* 104.132.12.0/23 */
-    {0x68840d00u, PROTO_GOOGLE, 24}, /* 104.132.13.0/24 */
-    {0x68840e00u, PROTO_GOOGLE, 23}, /* 104.132.14.0/23 */
-    {0x68840f00u, PROTO_GOOGLE, 24}, /* 104.132.15.0/24 */
-    {0x68841000u, PROTO_GOOGLE, 23}, /* 104.132.16.0/23 */
-    {0x68841100u, PROTO_GOOGLE, 24}, /* 104.132.17.0/24 */
-    {0x68841200u, PROTO_GOOGLE, 23}, /* 104.132.18.0/23 */
-    {0x68841300u, PROTO_GOOGLE, 24}, /* 104.132.19.0/24 */
-    {0x68841400u, PROTO_GOOGLE, 23}, /* 104.132.20.0/23 */
-    {0x68841500u, PROTO_GOOGLE, 24}, /* 104.132.21.0/24 */
-    {0x68841600u, PROTO_GOOGLE, 23}, /* 104.132.22.0/23 */
-    {0x68841700u, PROTO_GOOGLE, 24}, /* 104.132.23.0/24 */
-    {0x68841800u, PROTO_GOOGLE, 23}, /* 104.132.24.0/23 */
-    {0x68841900u, PROTO_GOOGLE, 24}, /* 104.132.25.0/24 */
-    {0x68841a00u, PROTO_GOOGLE, 23}, /* 104.132.26.0/23 */
-    {0x68841b00u, PROTO_GOOGLE, 24}, /* 104.132.27.0/24 */
-    {0x68841c00u, PROTO_GOOGLE, 23}, /* 104.132.28.0/23 */
-    {0x68841d00u, PROTO_GOOGLE, 24}, /* 104.132.29.0/24 */
-    {0x68841e00u, PROTO_GOOGLE, 23}, /* 104.132.30.0/23 */
-    {0x68841f00u, PROTO_GOOGLE, 24}, /* 104.132.31.0/24 */
-    {0x68842000u, PROTO_GOOGLE, 23}, /* 104.132.32.0/23 */
-    {0x68842100u, PROTO_GOOGLE, 24}, /* 104.132.33.0/24 */
-    {0x68842200u, PROTO_GOOGLE, 23}, /* 104.132.34.0/23 */
-    {0x68842300u, PROTO_GOOGLE, 24}, /* 104.132.35.0/24 */
-    {0x68842400u, PROTO_GOOGLE, 23}, /* 104.132.36.0/23 */
-    {0x68842500u, PROTO_GOOGLE, 24}, /* 104.132.37.0/24 */
-    {0x68842600u, PROTO_GOOGLE, 23}, /* 104.132.38.0/23 */
-    {0x68842700u, PROTO_GOOGLE, 24}, /* 104.132.39.0/24 */
-    {0x68842800u, PROTO_GOOGLE, 23}, /* 104.132.40.0/23 */
-    {0x68842900u, PROTO_GOOGLE, 24}, /* 104.132.41.0/24 */
-    {0x68842a00u, PROTO_GOOGLE, 23}, /* 104.132.42.0/23 */
-    {0x68842b00u, PROTO_GOOGLE, 24}, /* 104.132.43.0/24 */
-    {0x68842c00u, PROTO_GOOGLE, 23}, /* 104.132.44.0/23 */
-    {0x68842d00u, PROTO_GOOGLE, 24}, /* 104.132.45.0/24 */
-    {0x68842e00u, PROTO_GOOGLE, 23}, /* 104.132.46.0/23 */
-    {0x68842f00u, PROTO_GOOGLE, 24}, /* 104.132.47.0/24 */
-    {0x68843000u, PROTO_GOOGLE, 23}, /* 104.132.48.0/23 */
-    {0x68843100u, PROTO_GOOGLE, 24}, /* 104.132.49.0/24 */
-    {0x68843200u, PROTO_GOOGLE, 23}, /* 104.132.50.0/23 */
-    {0x68843300u, PROTO_GOOGLE, 24}, /* 104.132.51.0/24 */
-    {0x68843400u, PROTO_GOOGLE, 23}, /* 104.132.52.0/23 */
-    {0x68843500u, PROTO_GOOGLE, 24}, /* 104.132.53.0/24 */
-    {0x68843600u, PROTO_GOOGLE, 23}, /* 104.132.54.0/23 */
-    {0x68843700u, PROTO_GOOGLE, 24}, /* 104.132.55.0/24 */
-    {0x68843800u, PROTO_GOOGLE, 23}, /* 104.132.56.0/23 */
-    {0x68843900u, PROTO_GOOGLE, 24}, /* 104.132.57.0/24 */
-    {0x68843a00u, PROTO_GOOGLE, 23}, /* 104.132.58.0/23 */
-    {0x68843b00u, PROTO_GOOGLE, 24}, /* 104.132.59.0/24 */
-    {0x68843c00u, PROTO_GOOGLE, 23}, /* 104.132.60.0/23 */
-    {0x68843d00u, PROTO_GOOGLE, 24}, /* 104.132.61.0/24 */
-    {0x68843e00u, PROTO_GOOGLE, 23}, /* 104.132.62.0/23 */
-    {0x68843f00u, PROTO_GOOGLE, 24}, /* 104.132.63.0/24 */
-    {0x68844000u, PROTO_GOOGLE, 23}, /* 104.132.64.0/23 */
-    {0x68844100u, PROTO_GOOGLE, 24}, /* 104.132.65.0/24 */
-    {0x68844200u, PROTO_GOOGLE, 23}, /* 104.132.66.0/23 */
-    {0x68844300u, PROTO_GOOGLE, 24}, /* 104.132.67.0/24 */
-    {0x68844400u, PROTO_GOOGLE, 23}, /* 104.132.68.0/23 */
-    {0x68844500u, PROTO_GOOGLE, 24}, /* 104.132.69.0/24 */
-    {0x68844600u, PROTO_GOOGLE, 23}, /* 104.132.70.0/23 */
-    {0x68844700u, PROTO_GOOGLE, 24}, /* 104.132.71.0/24 */
-    {0x68844800u, PROTO_GOOGLE, 23}, /* 104.132.72.0/23 */
-    {0x68844900u, PROTO_GOOGLE, 24}, /* 104.132.73.0/24 */
-    {0x68844a00u, PROTO_GOOGLE, 23}, /* 104.132.74.0/23 */
-    {0x68844b00u, PROTO_GOOGLE, 24}, /* 104.132.75.0/24 */
-    {0x68844c00u, PROTO_GOOGLE, 23}, /* 104.132.76.0/23 */
-    {0x68844d00u, PROTO_GOOGLE, 24}, /* 104.132.77.0/24 */
-    {0x68844e00u, PROTO_GOOGLE, 23}, /* 104.132.78.0/23 */
-    {0x68844f00u, PROTO_GOOGLE, 24}, /* 104.132.79.0/24 */
-    {0x68845000u, PROTO_GOOGLE, 23}, /* 104.132.80.0/23 */
-    {0x68845100u, PROTO_GOOGLE, 24}, /* 104.132.81.0/24 */
-    {0x68845200u, PROTO_GOOGLE, 23}, /* 104.132.82.0/23 */
-    {0x68845300u, PROTO_GOOGLE, 24}, /* 104.132.83.0/24 */
-    {0x68845400u, PROTO_GOOGLE, 23}, /* 104.132.84.0/23 */
-    {0x68845500u, PROTO_GOOGLE, 24}, /* 104.132.85.0/24 */
-    {0x68845600u, PROTO_GOOGLE, 23}, /* 104.132.86.0/23 */
-    {0x68845700u, PROTO_GOOGLE, 24}, /* 104.132.87.0/24 */
-    {0x68845800u, PROTO_GOOGLE, 23}, /* 104.132.88.0/23 */
-    {0x68845900u, PROTO_GOOGLE, 24}, /* 104.132.89.0/24 */
-    {0x68845a00u, PROTO_GOOGLE, 23}, /* 104.132.90.0/23 */
-    {0x68845b00u, PROTO_GOOGLE, 24}, /* 104.132.91.0/24 */
-    {0x68845c00u, PROTO_GOOGLE, 23}, /* 104.132.92.0/23 */
-    {0x68845d00u, PROTO_GOOGLE, 24}, /* 104.132.93.0/24 */
-    {0x68845e00u, PROTO_GOOGLE, 23}, /* 104.132.94.0/23 */
-    {0x68845f00u, PROTO_GOOGLE, 24}, /* 104.132.95.0/24 */
-    {0x68846000u, PROTO_GOOGLE, 23}, /* 104.132.96.0/23 */
-    {0x68846100u, PROTO_GOOGLE, 24}, /* 104.132.97.0/24 */
-    {0x68846200u, PROTO_GOOGLE, 23}, /* 104.132.98.0/23 */
-    {0x68846300u, PROTO_GOOGLE, 24}, /* 104.132.99.0/24 */
-    {0x68846400u, PROTO_GOOGLE, 23}, /* 104.132.100.0/23 */
-    {0x68846500u, PROTO_GOOGLE, 24}, /* 104.132.101.0/24 */
-    {0x68846600u, PROTO_GOOGLE, 23}, /* 104.132.102.0/23 */
-    {0x68846700u, PROTO_GOOGLE, 24}, /* 104.132.103.0/24 */
-    {0x68846800u, PROTO_GOOGLE, 23}, /* 104.132.104.0/23 */
-    {0x68846900u, PROTO_GOOGLE, 24}, /* 104.132.105.0/24 */
-    {0x68846a00u, PROTO_GOOGLE, 23}, /* 104.132.106.0/23 */
-    {0x68846b00u, PROTO_GOOGLE, 24}, /* 104.132.107.0/24 */
-    {0x68846c00u, PROTO_GOOGLE, 23}, /* 104.132.108.0/23 */
-    {0x68846d00u, PROTO_GOOGLE, 24}, /* 104.132.109.0/24 */
-    {0x68846e00u, PROTO_GOOGLE, 23}, /* 104.132.110.0/23 */
-    {0x68846f00u, PROTO_GOOGLE, 24}, /* 104.132.111.0/24 */
-    {0x68847000u, PROTO_GOOGLE, 23}, /* 104.132.112.0/23 */
-    {0x68847100u, PROTO_GOOGLE, 24}, /* 104.132.113.0/24 */
-    {0x68847200u, PROTO_GOOGLE, 23}, /* 104.132.114.0/23 */
-    {0x68847300u, PROTO_GOOGLE, 24}, /* 104.132.115.0/24 */
-    {0x68847400u, PROTO_GOOGLE, 23}, /* 104.132.116.0/23 */
-    {0x68847500u, PROTO_GOOGLE, 24}, /* 104.132.117.0/24 */
-    {0x68847600u, PROTO_GOOGLE, 23}, /* 104.132.118.0/23 */
-    {0x68847700u, PROTO_GOOGLE, 24}, /* 104.132.119.0/24 */
-    {0x68847800u, PROTO_GOOGLE, 23}, /* 104.132.120.0/23 */
-    {0x68847900u, PROTO_GOOGLE, 24}, /* 104.132.121.0/24 */
-    {0x68847a00u, PROTO_GOOGLE, 23}, /* 104.132.122.0/23 */
-    {0x68847b00u, PROTO_GOOGLE, 24}, /* 104.132.123.0/24 */
-    {0x68847c00u, PROTO_GOOGLE, 23}, /* 104.132.124.0/23 */
-    {0x68847d00u, PROTO_GOOGLE, 24}, /* 104.132.125.0/24 */
-    {0x68847e00u, PROTO_GOOGLE, 23}, /* 104.132.126.0/23 */
-    {0x68847f00u, PROTO_GOOGLE, 24}, /* 104.132.127.0/24 */
-    {0x68848000u, PROTO_GOOGLE, 23}, /* 104.132.128.0/23 */
-    {0x68848100u, PROTO_GOOGLE, 24}, /* 104.132.129.0/24 */
-    {0x68848200u, PROTO_GOOGLE, 23}, /* 104.132.130.0/23 */
-    {0x68848300u, PROTO_GOOGLE, 24}, /* 104.132.131.0/24 */
-    {0x68848400u, PROTO_GOOGLE, 23}, /* 104.132.132.0/23 */
-    {0x68848500u, PROTO_GOOGLE, 24}, /* 104.132.133.0/24 */
-    {0x68848600u, PROTO_GOOGLE, 23}, /* 104.132.134.0/23 */
-    {0x68848700u, PROTO_GOOGLE, 24}, /* 104.132.135.0/24 */
-    {0x68848800u, PROTO_GOOGLE, 23}, /* 104.132.136.0/23 */
-    {0x68848900u, PROTO_GOOGLE, 24}, /* 104.132.137.0/24 */
-    {0x68848a00u, PROTO_GOOGLE, 23}, /* 104.132.138.0/23 */
-    {0x68848b00u, PROTO_GOOGLE, 24}, /* 104.132.139.0/24 */
-    {0x68848c00u, PROTO_GOOGLE, 23}, /* 104.132.140.0/23 */
-    {0x68848d00u, PROTO_GOOGLE, 24}, /* 104.132.141.0/24 */
-    {0x68848e00u, PROTO_GOOGLE, 23}, /* 104.132.142.0/23 */
-    {0x68848f00u, PROTO_GOOGLE, 24}, /* 104.132.143.0/24 */
-    {0x68849000u, PROTO_GOOGLE, 23}, /* 104.132.144.0/23 */
-    {0x68849100u, PROTO_GOOGLE, 24}, /* 104.132.145.0/24 */
-    {0x68849200u, PROTO_GOOGLE, 23}, /* 104.132.146.0/23 */
-    {0x68849300u, PROTO_GOOGLE, 24}, /* 104.132.147.0/24 */
-    {0x68849400u, PROTO_GOOGLE, 23}, /* 104.132.148.0/23 */
-    {0x68849500u, PROTO_GOOGLE, 24}, /* 104.132.149.0/24 */
-    {0x68849600u, PROTO_GOOGLE, 23}, /* 104.132.150.0/23 */
-    {0x68849700u, PROTO_GOOGLE, 24}, /* 104.132.151.0/24 */
-    {0x68849800u, PROTO_GOOGLE, 23}, /* 104.132.152.0/23 */
-    {0x68849900u, PROTO_GOOGLE, 24}, /* 104.132.153.0/24 */
-    {0x68849a00u, PROTO_GOOGLE, 23}, /* 104.132.154.0/23 */
-    {0x68849b00u, PROTO_GOOGLE, 24}, /* 104.132.155.0/24 */
-    {0x68849c00u, PROTO_GOOGLE, 23}, /* 104.132.156.0/23 */
-    {0x68849d00u, PROTO_GOOGLE, 24}, /* 104.132.157.0/24 */
-    {0x68849e00u, PROTO_GOOGLE, 23}, /* 104.132.158.0/23 */
-    {0x68849f00u, PROTO_GOOGLE, 24}, /* 104.132.159.0/24 */
-    {0x6884a000u, PROTO_GOOGLE, 23}, /* 104.132.160.0/23 */
-    {0x6884a100u, PROTO_GOOGLE, 24}, /* 104.132.161.0/24 */
-    {0x6884a200u, PROTO_GOOGLE, 23}, /* 104.132.162.0/23 */
-    {0x6884a300u, PROTO_GOOGLE, 24}, /* 104.132.163.0/24 */
-    {0x6884a400u, PROTO_GOOGLE, 23}, /* 104.132.164.0/23 */
-    {0x6884a500u, PROTO_GOOGLE, 24}, /* 104.132.165.0/24 */
-    {0x6884a600u, PROTO_GOOGLE, 23}, /* 104.132.166.0/23 */
-    {0x6884a700u, PROTO_GOOGLE, 24}, /* 104.132.167.0/24 */
-    {0x6884a800u, PROTO_GOOGLE, 23}, /* 104.132.168.0/23 */
-    {0x6884a900u, PROTO_GOOGLE, 24}, /* 104.132.169.0/24 */
-    {0x6884aa00u, PROTO_GOOGLE, 23}, /* 104.132.170.0/23 */
-    {0x6884ab00u, PROTO_GOOGLE, 24}, /* 104.132.171.0/24 */
-    {0x6884ac00u, PROTO_GOOGLE, 23}, /* 104.132.172.0/23 */
-    {0x6884ad00u, PROTO_GOOGLE, 24}, /* 104.132.173.0/24 */
-    {0x6884ae00u, PROTO_GOOGLE, 23}, /* 104.132.174.0/23 */
-    {0x6884af00u, PROTO_GOOGLE, 24}, /* 104.132.175.0/24 */
-    {0x6884b000u, PROTO_GOOGLE, 23}, /* 104.132.176.0/23 */
-    {0x6884b100u, PROTO_GOOGLE, 24}, /* 104.132.177.0/24 */
-    {0x6884b200u, PROTO_GOOGLE, 23}, /* 104.132.178.0/23 */
-    {0x6884b300u, PROTO_GOOGLE, 24}, /* 104.132.179.0/24 */
-    {0x6884b400u, PROTO_GOOGLE, 23}, /* 104.132.180.0/23 */
-    {0x6884b500u, PROTO_GOOGLE, 24}, /* 104.132.181.0/24 */
-    {0x6884b600u, PROTO_GOOGLE, 23}, /* 104.132.182.0/23 */
-    {0x6884b700u, PROTO_GOOGLE, 24}, /* 104.132.183.0/24 */
-    {0x6884b800u, PROTO_GOOGLE, 23}, /* 104.132.184.0/23 */
-    {0x6884b900u, PROTO_GOOGLE, 24}, /* 104.132.185.0/24 */
-    {0x6884ba00u, PROTO_GOOGLE, 23}, /* 104.132.186.0/23 */
-    {0x6884bb00u, PROTO_GOOGLE, 24}, /* 104.132.187.0/24 */
-    {0x6884bc00u, PROTO_GOOGLE, 23}, /* 104.132.188.0/23 */
-    {0x6884bd00u, PROTO_GOOGLE, 24}, /* 104.132.189.0/24 */
-    {0x6884be00u, PROTO_GOOGLE, 23}, /* 104.132.190.0/23 */
-    {0x6884bf00u, PROTO_GOOGLE, 24}, /* 104.132.191.0/24 */
-    {0x6884c000u, PROTO_GOOGLE, 23}, /* 104.132.192.0/23 */
-    {0x6884c100u, PROTO_GOOGLE, 24}, /* 104.132.193.0/24 */
-    {0x6884c200u, PROTO_GOOGLE, 23}, /* 104.132.194.0/23 */
-    {0x6884c300u, PROTO_GOOGLE, 24}, /* 104.132.195.0/24 */
-    {0x6884c400u, PROTO_GOOGLE, 23}, /* 104.132.196.0/23 */
-    {0x6884c500u, PROTO_GOOGLE, 24}, /* 104.132.197.0/24 */
-    {0x6884c600u, PROTO_GOOGLE, 23}, /* 104.132.198.0/23 */
-    {0x6884c700u, PROTO_GOOGLE, 24}, /* 104.132.199.0/24 */
-    {0x6884c800u, PROTO_GOOGLE, 23}, /* 104.132.200.0/23 */
-    {0x6884c900u, PROTO_GOOGLE, 24}, /* 104.132.201.0/24 */
-    {0x6884ca00u, PROTO_GOOGLE, 23}, /* 104.132.202.0/23 */
-    {0x6884cb00u, PROTO_GOOGLE, 24}, /* 104.132.203.0/24 */
-    {0x6884cc00u, PROTO_GOOGLE, 23}, /* 104.132.204.0/23 */
-    {0x6884cd00u, PROTO_GOOGLE, 24}, /* 104.132.205.0/24 */
-    {0x6884ce00u, PROTO_GOOGLE, 23}, /* 104.132.206.0/23 */
-    {0x6884cf00u, PROTO_GOOGLE, 24}, /* 104.132.207.0/24 */
-    {0x6884d000u, PROTO_GOOGLE, 23}, /* 104.132.208.0/23 */
-    {0x6884d100u, PROTO_GOOGLE, 24}, /* 104.132.209.0/24 */
-    {0x6884d200u, PROTO_GOOGLE, 23}, /* 104.132.210.0/23 */
-    {0x6884d300u, PROTO_GOOGLE, 24}, /* 104.132.211.0/24 */
-    {0x6884d400u, PROTO_GOOGLE, 23}, /* 104.132.212.0/23 */
-    {0x6884d500u, PROTO_GOOGLE, 24}, /* 104.132.213.0/24 */
-    {0x6884d600u, PROTO_GOOGLE, 23}, /* 104.132.214.0/23 */
-    {0x6884d700u, PROTO_GOOGLE, 24}, /* 104.132.215.0/24 */
-    {0x6884d800u, PROTO_GOOGLE, 23}, /* 104.132.216.0/23 */
-    {0x6884d900u, PROTO_GOOGLE, 24}, /* 104.132.217.0/24 */
-    {0x6884da00u, PROTO_GOOGLE, 23}, /* 104.132.218.0/23 */
-    {0x6884db00u, PROTO_GOOGLE, 24}, /* 104.132.219.0/24 */
-    {0x6884dc00u, PROTO_GOOGLE, 23}, /* 104.132.220.0/23 */
-    {0x6884dd00u, PROTO_GOOGLE, 24}, /* 104.132.221.0/24 */
-    {0x6884de00u, PROTO_GOOGLE, 23}, /* 104.132.222.0/23 */
-    {0x6884df00u, PROTO_GOOGLE, 24}, /* 104.132.223.0/24 */
-    {0x6884e000u, PROTO_GOOGLE, 23}, /* 104.132.224.0/23 */
-    {0x6884e100u, PROTO_GOOGLE, 24}, /* 104.132.225.0/24 */
-    {0x6884e200u, PROTO_GOOGLE, 23}, /* 104.132.226.0/23 */
-    {0x6884e300u, PROTO_GOOGLE, 24}, /* 104.132.227.0/24 */
-    {0x6884e400u, PROTO_GOOGLE, 23}, /* 104.132.228.0/23 */
-    {0x6884e500u, PROTO_GOOGLE, 24}, /* 104.132.229.0/24 */
-    {0x6884e600u, PROTO_GOOGLE, 23}, /* 104.132.230.0/23 */
-    {0x6884e700u, PROTO_GOOGLE, 24}, /* 104.132.231.0/24 */
-    {0x6884e800u, PROTO_GOOGLE, 23}, /* 104.132.232.0/23 */
-    {0x6884e900u, PROTO_GOOGLE, 24}, /* 104.132.233.0/24 */
-    {0x6884ea00u, PROTO_GOOGLE, 23}, /* 104.132.234.0/23 */
-    {0x6884eb00u, PROTO_GOOGLE, 24}, /* 104.132.235.0/24 */
-    {0x6884ec00u, PROTO_GOOGLE, 23}, /* 104.132.236.0/23 */
-    {0x6884ed00u, PROTO_GOOGLE, 24}, /* 104.132.237.0/24 */
-    {0x6884ee00u, PROTO_GOOGLE, 23}, /* 104.132.238.0/23 */
-    {0x6884ef00u, PROTO_GOOGLE, 24}, /* 104.132.239.0/24 */
-    {0x6884f000u, PROTO_GOOGLE, 23}, /* 104.132.240.0/23 */
-    {0x6884f100u, PROTO_GOOGLE, 24}, /* 104.132.241.0/24 */
-    {0x6884f200u, PROTO_GOOGLE, 23}, /* 104.132.242.0/23 */
-    {0x6884f300u, PROTO_GOOGLE, 24}, /* 104.132.243.0/24 */
-    {0x6884f400u, PROTO_GOOGLE, 23}, /* 104.132.244.0/23 */
-    {0x6884f500u, PROTO_GOOGLE, 24}, /* 104.132.245.0/24 */
-    {0x6884f600u, PROTO_GOOGLE, 23}, /* 104.132.246.0/23 */
-    {0x6884f700u, PROTO_GOOGLE, 24}, /* 104.132.247.0/24 */
-    {0x6884f800u, PROTO_GOOGLE, 23}, /* 104.132.248.0/23 */
-    {0x6884f900u, PROTO_GOOGLE, 24}, /* 104.132.249.0/24 */
-    {0x6884fa00u, PROTO_GOOGLE, 23}, /* 104.132.250.0/23 */
-    {0x6884fb00u, PROTO_GOOGLE, 24}, /* 104.132.251.0/24 */
-    {0x6884fc00u, PROTO_GOOGLE, 23}, /* 104.132.252.0/23 */
-    {0x6884fd00u, PROTO_GOOGLE, 24}, /* 104.132.253.0/24 */
-    {0x6884fe00u, PROTO_GOOGLE, 23}, /* 104.132.254.0/23 */
-    {0x6884ff00u, PROTO_GOOGLE, 24}, /* 104.132.255.0/24 */
-    {0x68850000u, PROTO_GOOGLE, 17}, /* 104.133.0.0/17 */
-    {0x68850100u, PROTO_GOOGLE, 24}, /* 104.133.1.0/24 */
-    {0x68850200u, PROTO_GOOGLE, 23}, /* 104.133.2.0/23 */
-    {0x68850300u, PROTO_GOOGLE, 24}, /* 104.133.3.0/24 */
-    {0x68850400u, PROTO_GOOGLE, 23}, /* 104.133.4.0/23 */
-    {0x68850500u, PROTO_GOOGLE, 24}, /* 104.133.5.0/24 */
-    {0x68850600u, PROTO_GOOGLE, 23}, /* 104.133.6.0/23 */
-    {0x68850700u, PROTO_GOOGLE, 24}, /* 104.133.7.0/24 */
-    {0x68850800u, PROTO_GOOGLE, 23}, /* 104.133.8.0/23 */
-    {0x68850900u, PROTO_GOOGLE, 24}, /* 104.133.9.0/24 */
-    {0x68850a00u, PROTO_GOOGLE, 23}, /* 104.133.10.0/23 */
-    {0x68850b00u, PROTO_GOOGLE, 24}, /* 104.133.11.0/24 */
-    {0x68850c00u, PROTO_GOOGLE, 23}, /* 104.133.12.0/23 */
-    {0x68850d00u, PROTO_GOOGLE, 24}, /* 104.133.13.0/24 */
-    {0x68850e00u, PROTO_GOOGLE, 23}, /* 104.133.14.0/23 */
-    {0x68850f00u, PROTO_GOOGLE, 24}, /* 104.133.15.0/24 */
-    {0x68851000u, PROTO_GOOGLE, 23}, /* 104.133.16.0/23 */
-    {0x68851100u, PROTO_GOOGLE, 24}, /* 104.133.17.0/24 */
-    {0x68851200u, PROTO_GOOGLE, 23}, /* 104.133.18.0/23 */
-    {0x68851300u, PROTO_GOOGLE, 24}, /* 104.133.19.0/24 */
-    {0x68851400u, PROTO_GOOGLE, 23}, /* 104.133.20.0/23 */
-    {0x68851500u, PROTO_GOOGLE, 24}, /* 104.133.21.0/24 */
-    {0x68851600u, PROTO_GOOGLE, 23}, /* 104.133.22.0/23 */
-    {0x68851700u, PROTO_GOOGLE, 24}, /* 104.133.23.0/24 */
-    {0x68851800u, PROTO_GOOGLE, 23}, /* 104.133.24.0/23 */
-    {0x68851900u, PROTO_GOOGLE, 24}, /* 104.133.25.0/24 */
-    {0x68851a00u, PROTO_GOOGLE, 23}, /* 104.133.26.0/23 */
-    {0x68851b00u, PROTO_GOOGLE, 24}, /* 104.133.27.0/24 */
-    {0x68851c00u, PROTO_GOOGLE, 23}, /* 104.133.28.0/23 */
-    {0x68851d00u, PROTO_GOOGLE, 24}, /* 104.133.29.0/24 */
-    {0x68851e00u, PROTO_GOOGLE, 23}, /* 104.133.30.0/23 */
-    {0x68851f00u, PROTO_GOOGLE, 24}, /* 104.133.31.0/24 */
-    {0x68852000u, PROTO_GOOGLE, 23}, /* 104.133.32.0/23 */
-    {0x68852100u, PROTO_GOOGLE, 24}, /* 104.133.33.0/24 */
-    {0x68852200u, PROTO_GOOGLE, 23}, /* 104.133.34.0/23 */
-    {0x68852300u, PROTO_GOOGLE, 24}, /* 104.133.35.0/24 */
-    {0x68852400u, PROTO_GOOGLE, 23}, /* 104.133.36.0/23 */
-    {0x68852500u, PROTO_GOOGLE, 24}, /* 104.133.37.0/24 */
-    {0x68852600u, PROTO_GOOGLE, 23}, /* 104.133.38.0/23 */
-    {0x68852700u, PROTO_GOOGLE, 24}, /* 104.133.39.0/24 */
-    {0x68852800u, PROTO_GOOGLE, 23}, /* 104.133.40.0/23 */
-    {0x68852900u, PROTO_GOOGLE, 24}, /* 104.133.41.0/24 */
-    {0x68852a00u, PROTO_GOOGLE, 23}, /* 104.133.42.0/23 */
-    {0x68852b00u, PROTO_GOOGLE, 24}, /* 104.133.43.0/24 */
-    {0x68852c00u, PROTO_GOOGLE, 23}, /* 104.133.44.0/23 */
-    {0x68852d00u, PROTO_GOOGLE, 24}, /* 104.133.45.0/24 */
-    {0x68852e00u, PROTO_GOOGLE, 23}, /* 104.133.46.0/23 */
-    {0x68852f00u, PROTO_GOOGLE, 24}, /* 104.133.47.0/24 */
-    {0x68853000u, PROTO_GOOGLE, 23}, /* 104.133.48.0/23 */
-    {0x68853100u, PROTO_GOOGLE, 24}, /* 104.133.49.0/24 */
-    {0x68853200u, PROTO_GOOGLE, 23}, /* 104.133.50.0/23 */
-    {0x68853300u, PROTO_GOOGLE, 24}, /* 104.133.51.0/24 */
-    {0x68853400u, PROTO_GOOGLE, 23}, /* 104.133.52.0/23 */
-    {0x68853500u, PROTO_GOOGLE, 24}, /* 104.133.53.0/24 */
-    {0x68853600u, PROTO_GOOGLE, 23}, /* 104.133.54.0/23 */
-    {0x68853700u, PROTO_GOOGLE, 24}, /* 104.133.55.0/24 */
-    {0x68853800u, PROTO_GOOGLE, 23}, /* 104.133.56.0/23 */
-    {0x68853900u, PROTO_GOOGLE, 24}, /* 104.133.57.0/24 */
-    {0x68853a00u, PROTO_GOOGLE, 23}, /* 104.133.58.0/23 */
-    {0x68853b00u, PROTO_GOOGLE, 24}, /* 104.133.59.0/24 */
-    {0x68853c00u, PROTO_GOOGLE, 23}, /* 104.133.60.0/23 */
-    {0x68853d00u, PROTO_GOOGLE, 24}, /* 104.133.61.0/24 */
-    {0x68853e00u, PROTO_GOOGLE, 23}, /* 104.133.62.0/23 */
-    {0x68853f00u, PROTO_GOOGLE, 24}, /* 104.133.63.0/24 */
-    {0x68854000u, PROTO_GOOGLE, 23}, /* 104.133.64.0/23 */
-    {0x68854100u, PROTO_GOOGLE, 24}, /* 104.133.65.0/24 */
-    {0x68854200u, PROTO_GOOGLE, 23}, /* 104.133.66.0/23 */
-    {0x68854300u, PROTO_GOOGLE, 24}, /* 104.133.67.0/24 */
-    {0x68854400u, PROTO_GOOGLE, 23}, /* 104.133.68.0/23 */
-    {0x68854500u, PROTO_GOOGLE, 24}, /* 104.133.69.0/24 */
-    {0x68854600u, PROTO_GOOGLE, 23}, /* 104.133.70.0/23 */
-    {0x68854700u, PROTO_GOOGLE, 24}, /* 104.133.71.0/24 */
-    {0x68854800u, PROTO_GOOGLE, 23}, /* 104.133.72.0/23 */
-    {0x68854900u, PROTO_GOOGLE, 24}, /* 104.133.73.0/24 */
-    {0x68854a00u, PROTO_GOOGLE, 23}, /* 104.133.74.0/23 */
-    {0x68854b00u, PROTO_GOOGLE, 24}, /* 104.133.75.0/24 */
-    {0x68854c00u, PROTO_GOOGLE, 23}, /* 104.133.76.0/23 */
-    {0x68854d00u, PROTO_GOOGLE, 24}, /* 104.133.77.0/24 */
-    {0x68854e00u, PROTO_GOOGLE, 23}, /* 104.133.78.0/23 */
-    {0x68854f00u, PROTO_GOOGLE, 24}, /* 104.133.79.0/24 */
-    {0x68855000u, PROTO_GOOGLE, 23}, /* 104.133.80.0/23 */
-    {0x68855100u, PROTO_GOOGLE, 24}, /* 104.133.81.0/24 */
-    {0x68855200u, PROTO_GOOGLE, 23}, /* 104.133.82.0/23 */
-    {0x68855300u, PROTO_GOOGLE, 24}, /* 104.133.83.0/24 */
-    {0x68855400u, PROTO_GOOGLE, 23}, /* 104.133.84.0/23 */
-    {0x68855500u, PROTO_GOOGLE, 24}, /* 104.133.85.0/24 */
-    {0x68855600u, PROTO_GOOGLE, 23}, /* 104.133.86.0/23 */
-    {0x68855700u, PROTO_GOOGLE, 24}, /* 104.133.87.0/24 */
-    {0x68855800u, PROTO_GOOGLE, 23}, /* 104.133.88.0/23 */
-    {0x68855900u, PROTO_GOOGLE, 24}, /* 104.133.89.0/24 */
-    {0x68855a00u, PROTO_GOOGLE, 23}, /* 104.133.90.0/23 */
-    {0x68855b00u, PROTO_GOOGLE, 24}, /* 104.133.91.0/24 */
-    {0x68855c00u, PROTO_GOOGLE, 23}, /* 104.133.92.0/23 */
-    {0x68855d00u, PROTO_GOOGLE, 24}, /* 104.133.93.0/24 */
-    {0x68855e00u, PROTO_GOOGLE, 23}, /* 104.133.94.0/23 */
-    {0x68855f00u, PROTO_GOOGLE, 24}, /* 104.133.95.0/24 */
-    {0x68856000u, PROTO_GOOGLE, 23}, /* 104.133.96.0/23 */
-    {0x68856100u, PROTO_GOOGLE, 24}, /* 104.133.97.0/24 */
-    {0x68856200u, PROTO_GOOGLE, 23}, /* 104.133.98.0/23 */
-    {0x68856300u, PROTO_GOOGLE, 24}, /* 104.133.99.0/24 */
-    {0x68856400u, PROTO_GOOGLE, 23}, /* 104.133.100.0/23 */
-    {0x68856500u, PROTO_GOOGLE, 24}, /* 104.133.101.0/24 */
-    {0x68856600u, PROTO_GOOGLE, 23}, /* 104.133.102.0/23 */
-    {0x68856700u, PROTO_GOOGLE, 24}, /* 104.133.103.0/24 */
-    {0x68856800u, PROTO_GOOGLE, 23}, /* 104.133.104.0/23 */
-    {0x68856900u, PROTO_GOOGLE, 24}, /* 104.133.105.0/24 */
-    {0x68856a00u, PROTO_GOOGLE, 23}, /* 104.133.106.0/23 */
-    {0x68856b00u, PROTO_GOOGLE, 24}, /* 104.133.107.0/24 */
-    {0x68856c00u, PROTO_GOOGLE, 23}, /* 104.133.108.0/23 */
-    {0x68856d00u, PROTO_GOOGLE, 24}, /* 104.133.109.0/24 */
-    {0x68856e00u, PROTO_GOOGLE, 23}, /* 104.133.110.0/23 */
-    {0x68856f00u, PROTO_GOOGLE, 24}, /* 104.133.111.0/24 */
-    {0x68857000u, PROTO_GOOGLE, 23}, /* 104.133.112.0/23 */
-    {0x68857100u, PROTO_GOOGLE, 24}, /* 104.133.113.0/24 */
-    {0x68857200u, PROTO_GOOGLE, 23}, /* 104.133.114.0/23 */
-    {0x68857300u, PROTO_GOOGLE, 24}, /* 104.133.115.0/24 */
-    {0x68857400u, PROTO_GOOGLE, 23}, /* 104.133.116.0/23 */
-    {0x68857500u, PROTO_GOOGLE, 24}, /* 104.133.117.0/24 */
-    {0x68857600u, PROTO_GOOGLE, 23}, /* 104.133.118.0/23 */
-    {0x68857700u, PROTO_GOOGLE, 24}, /* 104.133.119.0/24 */
-    {0x68857800u, PROTO_GOOGLE, 23}, /* 104.133.120.0/23 */
-    {0x68857900u, PROTO_GOOGLE, 24}, /* 104.133.121.0/24 */
-    {0x68857a00u, PROTO_GOOGLE, 23}, /* 104.133.122.0/23 */
-    {0x68857b00u, PROTO_GOOGLE, 24}, /* 104.133.123.0/24 */
-    {0x68857c00u, PROTO_GOOGLE, 23}, /* 104.133.124.0/23 */
-    {0x68857d00u, PROTO_GOOGLE, 24}, /* 104.133.125.0/24 */
-    {0x68857e00u, PROTO_GOOGLE, 23}, /* 104.133.126.0/23 */
-    {0x68857f00u, PROTO_GOOGLE, 24}, /* 104.133.127.0/24 */
-    {0x68858000u, PROTO_GOOGLE, 23}, /* 104.133.128.0/23 */
-    {0x68858100u, PROTO_GOOGLE, 24}, /* 104.133.129.0/24 */
-    {0x68858200u, PROTO_GOOGLE, 23}, /* 104.133.130.0/23 */
-    {0x68858300u, PROTO_GOOGLE, 24}, /* 104.133.131.0/24 */
-    {0x68858400u, PROTO_GOOGLE, 23}, /* 104.133.132.0/23 */
-    {0x68858500u, PROTO_GOOGLE, 24}, /* 104.133.133.0/24 */
-    {0x68858600u, PROTO_GOOGLE, 23}, /* 104.133.134.0/23 */
-    {0x68858700u, PROTO_GOOGLE, 24}, /* 104.133.135.0/24 */
-    {0x68858800u, PROTO_GOOGLE, 23}, /* 104.133.136.0/23 */
-    {0x68858900u, PROTO_GOOGLE, 24}, /* 104.133.137.0/24 */
-    {0x68858a00u, PROTO_GOOGLE, 23}, /* 104.133.138.0/23 */
-    {0x68858b00u, PROTO_GOOGLE, 24}, /* 104.133.139.0/24 */
-    {0x68858c00u, PROTO_GOOGLE, 23}, /* 104.133.140.0/23 */
-    {0x68858d00u, PROTO_GOOGLE, 24}, /* 104.133.141.0/24 */
-    {0x68858e00u, PROTO_GOOGLE, 23}, /* 104.133.142.0/23 */
-    {0x68858f00u, PROTO_GOOGLE, 24}, /* 104.133.143.0/24 */
-    {0x68859000u, PROTO_GOOGLE, 23}, /* 104.133.144.0/23 */
-    {0x68859100u, PROTO_GOOGLE, 24}, /* 104.133.145.0/24 */
-    {0x68859200u, PROTO_GOOGLE, 23}, /* 104.133.146.0/23 */
-    {0x68859300u, PROTO_GOOGLE, 24}, /* 104.133.147.0/24 */
-    {0x68859400u, PROTO_GOOGLE, 23}, /* 104.133.148.0/23 */
-    {0x68859500u, PROTO_GOOGLE, 24}, /* 104.133.149.0/24 */
-    {0x68859600u, PROTO_GOOGLE, 23}, /* 104.133.150.0/23 */
-    {0x68859700u, PROTO_GOOGLE, 24}, /* 104.133.151.0/24 */
-    {0x68859800u, PROTO_GOOGLE, 23}, /* 104.133.152.0/23 */
-    {0x68859900u, PROTO_GOOGLE, 24}, /* 104.133.153.0/24 */
-    {0x68859a00u, PROTO_GOOGLE, 23}, /* 104.133.154.0/23 */
-    {0x68859b00u, PROTO_GOOGLE, 24}, /* 104.133.155.0/24 */
-    {0x68859c00u, PROTO_GOOGLE, 23}, /* 104.133.156.0/23 */
-    {0x68859d00u, PROTO_GOOGLE, 24}, /* 104.133.157.0/24 */
-    {0x68859e00u, PROTO_GOOGLE, 23}, /* 104.133.158.0/23 */
-    {0x68859f00u, PROTO_GOOGLE, 24}, /* 104.133.159.0/24 */
-    {0x6885a000u, PROTO_GOOGLE, 23}, /* 104.133.160.0/23 */
-    {0x6885a100u, PROTO_GOOGLE, 24}, /* 104.133.161.0/24 */
-    {0x6885a200u, PROTO_GOOGLE, 23}, /* 104.133.162.0/23 */
-    {0x6885a300u, PROTO_GOOGLE, 24}, /* 104.133.163.0/24 */
-    {0x6885a400u, PROTO_GOOGLE, 23}, /* 104.133.164.0/23 */
-    {0x6885a500u, PROTO_GOOGLE, 24}, /* 104.133.165.0/24 */
-    {0x6885a600u, PROTO_GOOGLE, 23}, /* 104.133.166.0/23 */
-    {0x6885a700u, PROTO_GOOGLE, 24}, /* 104.133.167.0/24 */
-    {0x6885a800u, PROTO_GOOGLE, 23}, /* 104.133.168.0/23 */
-    {0x6885a900u, PROTO_GOOGLE, 24}, /* 104.133.169.0/24 */
-    {0x6885aa00u, PROTO_GOOGLE, 23}, /* 104.133.170.0/23 */
-    {0x6885ab00u, PROTO_GOOGLE, 24}, /* 104.133.171.0/24 */
-    {0x6885ac00u, PROTO_GOOGLE, 23}, /* 104.133.172.0/23 */
-    {0x6885ad00u, PROTO_GOOGLE, 24}, /* 104.133.173.0/24 */
-    {0x6885ae00u, PROTO_GOOGLE, 23}, /* 104.133.174.0/23 */
-    {0x6885af00u, PROTO_GOOGLE, 24}, /* 104.133.175.0/24 */
-    {0x6885b000u, PROTO_GOOGLE, 23}, /* 104.133.176.0/23 */
-    {0x6885b100u, PROTO_GOOGLE, 24}, /* 104.133.177.0/24 */
-    {0x6885b200u, PROTO_GOOGLE, 23}, /* 104.133.178.0/23 */
-    {0x6885b300u, PROTO_GOOGLE, 24}, /* 104.133.179.0/24 */
-    {0x6885b400u, PROTO_GOOGLE, 23}, /* 104.133.180.0/23 */
-    {0x6885b500u, PROTO_GOOGLE, 24}, /* 104.133.181.0/24 */
-    {0x6885b600u, PROTO_GOOGLE, 23}, /* 104.133.182.0/23 */
-    {0x6885b700u, PROTO_GOOGLE, 24}, /* 104.133.183.0/24 */
-    {0x6885b800u, PROTO_GOOGLE, 23}, /* 104.133.184.0/23 */
-    {0x6885b900u, PROTO_GOOGLE, 24}, /* 104.133.185.0/24 */
-    {0x6885ba00u, PROTO_GOOGLE, 23}, /* 104.133.186.0/23 */
-    {0x6885bb00u, PROTO_GOOGLE, 24}, /* 104.133.187.0/24 */
-    {0x6885bc00u, PROTO_GOOGLE, 23}, /* 104.133.188.0/23 */
-    {0x6885bd00u, PROTO_GOOGLE, 24}, /* 104.133.189.0/24 */
-    {0x6885be00u, PROTO_GOOGLE, 23}, /* 104.133.190.0/23 */
-    {0x6885bf00u, PROTO_GOOGLE, 24}, /* 104.133.191.0/24 */
-    {0x6885c000u, PROTO_GOOGLE, 23}, /* 104.133.192.0/23 */
-    {0x6885c100u, PROTO_GOOGLE, 24}, /* 104.133.193.0/24 */
-    {0x6885c200u, PROTO_GOOGLE, 23}, /* 104.133.194.0/23 */
-    {0x6885c300u, PROTO_GOOGLE, 24}, /* 104.133.195.0/24 */
-    {0x6885c400u, PROTO_GOOGLE, 23}, /* 104.133.196.0/23 */
-    {0x6885c500u, PROTO_GOOGLE, 24}, /* 104.133.197.0/24 */
-    {0x6885c600u, PROTO_GOOGLE, 23}, /* 104.133.198.0/23 */
-    {0x6885c700u, PROTO_GOOGLE, 24}, /* 104.133.199.0/24 */
-    {0x6885c800u, PROTO_GOOGLE, 23}, /* 104.133.200.0/23 */
-    {0x6885c900u, PROTO_GOOGLE, 24}, /* 104.133.201.0/24 */
-    {0x6885ca00u, PROTO_GOOGLE, 23}, /* 104.133.202.0/23 */
-    {0x6885cb00u, PROTO_GOOGLE, 24}, /* 104.133.203.0/24 */
-    {0x6885cc00u, PROTO_GOOGLE, 23}, /* 104.133.204.0/23 */
-    {0x6885cd00u, PROTO_GOOGLE, 24}, /* 104.133.205.0/24 */
-    {0x6885ce00u, PROTO_GOOGLE, 23}, /* 104.133.206.0/23 */
-    {0x6885cf00u, PROTO_GOOGLE, 24}, /* 104.133.207.0/24 */
-    {0x6885d000u, PROTO_GOOGLE, 23}, /* 104.133.208.0/23 */
-    {0x6885d100u, PROTO_GOOGLE, 24}, /* 104.133.209.0/24 */
-    {0x6885d200u, PROTO_GOOGLE, 23}, /* 104.133.210.0/23 */
-    {0x6885d300u, PROTO_GOOGLE, 24}, /* 104.133.211.0/24 */
-    {0x6885d400u, PROTO_GOOGLE, 23}, /* 104.133.212.0/23 */
-    {0x6885d500u, PROTO_GOOGLE, 24}, /* 104.133.213.0/24 */
-    {0x6885d600u, PROTO_GOOGLE, 23}, /* 104.133.214.0/23 */
-    {0x6885d700u, PROTO_GOOGLE, 24}, /* 104.133.215.0/24 */
-    {0x6885d800u, PROTO_GOOGLE, 23}, /* 104.133.216.0/23 */
-    {0x6885d900u, PROTO_GOOGLE, 24}, /* 104.133.217.0/24 */
-    {0x6885da00u, PROTO_GOOGLE, 23}, /* 104.133.218.0/23 */
-    {0x6885db00u, PROTO_GOOGLE, 24}, /* 104.133.219.0/24 */
-    {0x6885dc00u, PROTO_GOOGLE, 23}, /* 104.133.220.0/23 */
-    {0x6885dd00u, PROTO_GOOGLE, 24}, /* 104.133.221.0/24 */
-    {0x6885de00u, PROTO_GOOGLE, 23}, /* 104.133.222.0/23 */
-    {0x6885df00u, PROTO_GOOGLE, 24}, /* 104.133.223.0/24 */
-    {0x6885e000u, PROTO_GOOGLE, 23}, /* 104.133.224.0/23 */
-    {0x6885e100u, PROTO_GOOGLE, 24}, /* 104.133.225.0/24 */
-    {0x6885e200u, PROTO_GOOGLE, 23}, /* 104.133.226.0/23 */
-    {0x6885e300u, PROTO_GOOGLE, 24}, /* 104.133.227.0/24 */
-    {0x6885e400u, PROTO_GOOGLE, 23}, /* 104.133.228.0/23 */
-    {0x6885e500u, PROTO_GOOGLE, 24}, /* 104.133.229.0/24 */
-    {0x6885e600u, PROTO_GOOGLE, 23}, /* 104.133.230.0/23 */
-    {0x6885e700u, PROTO_GOOGLE, 24}, /* 104.133.231.0/24 */
-    {0x6885e800u, PROTO_GOOGLE, 23}, /* 104.133.232.0/23 */
-    {0x6885e900u, PROTO_GOOGLE, 24}, /* 104.133.233.0/24 */
-    {0x6885ea00u, PROTO_GOOGLE, 23}, /* 104.133.234.0/23 */
-    {0x6885eb00u, PROTO_GOOGLE, 24}, /* 104.133.235.0/24 */
-    {0x6885ec00u, PROTO_GOOGLE, 23}, /* 104.133.236.0/23 */
-    {0x6885ed00u, PROTO_GOOGLE, 24}, /* 104.133.237.0/24 */
-    {0x6885ee00u, PROTO_GOOGLE, 23}, /* 104.133.238.0/23 */
-    {0x6885ef00u, PROTO_GOOGLE, 24}, /* 104.133.239.0/24 */
-    {0x6885f000u, PROTO_GOOGLE, 23}, /* 104.133.240.0/23 */
-    {0x6885f100u, PROTO_GOOGLE, 24}, /* 104.133.241.0/24 */
-    {0x6885f200u, PROTO_GOOGLE, 23}, /* 104.133.242.0/23 */
-    {0x6885f300u, PROTO_GOOGLE, 24}, /* 104.133.243.0/24 */
-    {0x6885f400u, PROTO_GOOGLE, 23}, /* 104.133.244.0/23 */
-    {0x6885f500u, PROTO_GOOGLE, 24}, /* 104.133.245.0/24 */
-    {0x6885f600u, PROTO_GOOGLE, 23}, /* 104.133.246.0/23 */
-    {0x6885f700u, PROTO_GOOGLE, 24}, /* 104.133.247.0/24 */
-    {0x6885f800u, PROTO_GOOGLE, 23}, /* 104.133.248.0/23 */
-    {0x6885f900u, PROTO_GOOGLE, 24}, /* 104.133.249.0/24 */
-    {0x6885fa00u, PROTO_GOOGLE, 23}, /* 104.133.250.0/23 */
-    {0x6885fb00u, PROTO_GOOGLE, 24}, /* 104.133.251.0/24 */
-    {0x6885fc00u, PROTO_GOOGLE, 23}, /* 104.133.252.0/23 */
-    {0x6885fd00u, PROTO_GOOGLE, 24}, /* 104.133.253.0/24 */
-    {0x6885fe00u, PROTO_GOOGLE, 23}, /* 104.133.254.0/23 */
-    {0x6885ff00u, PROTO_GOOGLE, 24}, /* 104.133.255.0/24 */
-    {0x68860000u, PROTO_GOOGLE, 23}, /* 104.134.0.0/23 */
-    {0x68860100u, PROTO_GOOGLE, 24}, /* 104.134.1.0/24 */
-    {0x68860200u, PROTO_GOOGLE, 23}, /* 104.134.2.0/23 */
-    {0x68860300u, PROTO_GOOGLE, 24}, /* 104.134.3.0/24 */
-    {0x68860400u, PROTO_GOOGLE, 23}, /* 104.134.4.0/23 */
-    {0x68860500u, PROTO_GOOGLE, 24}, /* 104.134.5.0/24 */
-    {0x68860600u, PROTO_GOOGLE, 23}, /* 104.134.6.0/23 */
-    {0x68860700u, PROTO_GOOGLE, 24}, /* 104.134.7.0/24 */
-    {0x68860800u, PROTO_GOOGLE, 23}, /* 104.134.8.0/23 */
-    {0x68860900u, PROTO_GOOGLE, 24}, /* 104.134.9.0/24 */
-    {0x68860a00u, PROTO_GOOGLE, 23}, /* 104.134.10.0/23 */
-    {0x68860b00u, PROTO_GOOGLE, 24}, /* 104.134.11.0/24 */
-    {0x68860c00u, PROTO_GOOGLE, 23}, /* 104.134.12.0/23 */
-    {0x68860d00u, PROTO_GOOGLE, 24}, /* 104.134.13.0/24 */
-    {0x68860e00u, PROTO_GOOGLE, 23}, /* 104.134.14.0/23 */
-    {0x68860f00u, PROTO_GOOGLE, 24}, /* 104.134.15.0/24 */
-    {0x68861000u, PROTO_GOOGLE, 23}, /* 104.134.16.0/23 */
-    {0x68861100u, PROTO_GOOGLE, 24}, /* 104.134.17.0/24 */
-    {0x68861200u, PROTO_GOOGLE, 23}, /* 104.134.18.0/23 */
-    {0x68861300u, PROTO_GOOGLE, 24}, /* 104.134.19.0/24 */
-    {0x68861400u, PROTO_GOOGLE, 23}, /* 104.134.20.0/23 */
-    {0x68861500u, PROTO_GOOGLE, 24}, /* 104.134.21.0/24 */
-    {0x68861600u, PROTO_GOOGLE, 23}, /* 104.134.22.0/23 */
-    {0x68861700u, PROTO_GOOGLE, 24}, /* 104.134.23.0/24 */
-    {0x68861800u, PROTO_GOOGLE, 23}, /* 104.134.24.0/23 */
-    {0x68861900u, PROTO_GOOGLE, 24}, /* 104.134.25.0/24 */
-    {0x68861a00u, PROTO_GOOGLE, 23}, /* 104.134.26.0/23 */
-    {0x68861b00u, PROTO_GOOGLE, 24}, /* 104.134.27.0/24 */
-    {0x68861c00u, PROTO_GOOGLE, 23}, /* 104.134.28.0/23 */
-    {0x68861d00u, PROTO_GOOGLE, 24}, /* 104.134.29.0/24 */
-    {0x68861e00u, PROTO_GOOGLE, 23}, /* 104.134.30.0/23 */
-    {0x68861f00u, PROTO_GOOGLE, 24}, /* 104.134.31.0/24 */
-    {0x68862000u, PROTO_GOOGLE, 23}, /* 104.134.32.0/23 */
-    {0x68862100u, PROTO_GOOGLE, 24}, /* 104.134.33.0/24 */
-    {0x68862200u, PROTO_GOOGLE, 23}, /* 104.134.34.0/23 */
-    {0x68862300u, PROTO_GOOGLE, 24}, /* 104.134.35.0/24 */
-    {0x68862400u, PROTO_GOOGLE, 23}, /* 104.134.36.0/23 */
-    {0x68862500u, PROTO_GOOGLE, 24}, /* 104.134.37.0/24 */
-    {0x68862600u, PROTO_GOOGLE, 23}, /* 104.134.38.0/23 */
-    {0x68862700u, PROTO_GOOGLE, 24}, /* 104.134.39.0/24 */
-    {0x68862800u, PROTO_GOOGLE, 23}, /* 104.134.40.0/23 */
-    {0x68862900u, PROTO_GOOGLE, 24}, /* 104.134.41.0/24 */
-    {0x68862a00u, PROTO_GOOGLE, 23}, /* 104.134.42.0/23 */
-    {0x68862b00u, PROTO_GOOGLE, 24}, /* 104.134.43.0/24 */
-    {0x68862c00u, PROTO_GOOGLE, 23}, /* 104.134.44.0/23 */
-    {0x68862d00u, PROTO_GOOGLE, 24}, /* 104.134.45.0/24 */
-    {0x68862e00u, PROTO_GOOGLE, 23}, /* 104.134.46.0/23 */
-    {0x68862f00u, PROTO_GOOGLE, 24}, /* 104.134.47.0/24 */
-    {0x68863000u, PROTO_GOOGLE, 23}, /* 104.134.48.0/23 */
-    {0x68863100u, PROTO_GOOGLE, 24}, /* 104.134.49.0/24 */
-    {0x68863200u, PROTO_GOOGLE, 23}, /* 104.134.50.0/23 */
-    {0x68863300u, PROTO_GOOGLE, 24}, /* 104.134.51.0/24 */
-    {0x68863400u, PROTO_GOOGLE, 23}, /* 104.134.52.0/23 */
-    {0x68863500u, PROTO_GOOGLE, 24}, /* 104.134.53.0/24 */
-    {0x68863600u, PROTO_GOOGLE, 23}, /* 104.134.54.0/23 */
-    {0x68863700u, PROTO_GOOGLE, 24}, /* 104.134.55.0/24 */
-    {0x68863800u, PROTO_GOOGLE, 23}, /* 104.134.56.0/23 */
-    {0x68863900u, PROTO_GOOGLE, 24}, /* 104.134.57.0/24 */
-    {0x68863a00u, PROTO_GOOGLE, 23}, /* 104.134.58.0/23 */
-    {0x68863b00u, PROTO_GOOGLE, 24}, /* 104.134.59.0/24 */
-    {0x68863c00u, PROTO_GOOGLE, 23}, /* 104.134.60.0/23 */
-    {0x68863d00u, PROTO_GOOGLE, 24}, /* 104.134.61.0/24 */
-    {0x68863e00u, PROTO_GOOGLE, 23}, /* 104.134.62.0/23 */
-    {0x68863f00u, PROTO_GOOGLE, 24}, /* 104.134.63.0/24 */
-    {0x68864000u, PROTO_GOOGLE, 23}, /* 104.134.64.0/23 */
-    {0x68864100u, PROTO_GOOGLE, 24}, /* 104.134.65.0/24 */
-    {0x68864200u, PROTO_GOOGLE, 23}, /* 104.134.66.0/23 */
-    {0x68864300u, PROTO_GOOGLE, 24}, /* 104.134.67.0/24 */
-    {0x68864400u, PROTO_GOOGLE, 23}, /* 104.134.68.0/23 */
-    {0x68864500u, PROTO_GOOGLE, 24}, /* 104.134.69.0/24 */
-    {0x68864600u, PROTO_GOOGLE, 23}, /* 104.134.70.0/23 */
-    {0x68864700u, PROTO_GOOGLE, 24}, /* 104.134.71.0/24 */
-    {0x68864800u, PROTO_GOOGLE, 23}, /* 104.134.72.0/23 */
-    {0x68864900u, PROTO_GOOGLE, 24}, /* 104.134.73.0/24 */
-    {0x68864a00u, PROTO_GOOGLE, 23}, /* 104.134.74.0/23 */
-    {0x68864b00u, PROTO_GOOGLE, 24}, /* 104.134.75.0/24 */
-    {0x68864c00u, PROTO_GOOGLE, 23}, /* 104.134.76.0/23 */
-    {0x68864d00u, PROTO_GOOGLE, 24}, /* 104.134.77.0/24 */
-    {0x68864e00u, PROTO_GOOGLE, 23}, /* 104.134.78.0/23 */
-    {0x68864f00u, PROTO_GOOGLE, 24}, /* 104.134.79.0/24 */
-    {0x68865000u, PROTO_GOOGLE, 23}, /* 104.134.80.0/23 */
-    {0x68865100u, PROTO_GOOGLE, 24}, /* 104.134.81.0/24 */
-    {0x68865200u, PROTO_GOOGLE, 23}, /* 104.134.82.0/23 */
-    {0x68865300u, PROTO_GOOGLE, 24}, /* 104.134.83.0/24 */
-    {0x68865400u, PROTO_GOOGLE, 23}, /* 104.134.84.0/23 */
-    {0x68865500u, PROTO_GOOGLE, 24}, /* 104.134.85.0/24 */
-    {0x68865600u, PROTO_GOOGLE, 23}, /* 104.134.86.0/23 */
-    {0x68865700u, PROTO_GOOGLE, 24}, /* 104.134.87.0/24 */
-    {0x68865800u, PROTO_GOOGLE, 23}, /* 104.134.88.0/23 */
-    {0x68865900u, PROTO_GOOGLE, 24}, /* 104.134.89.0/24 */
-    {0x68865a00u, PROTO_GOOGLE, 23}, /* 104.134.90.0/23 */
-    {0x68865b00u, PROTO_GOOGLE, 24}, /* 104.134.91.0/24 */
-    {0x68865c00u, PROTO_GOOGLE, 23}, /* 104.134.92.0/23 */
-    {0x68865d00u, PROTO_GOOGLE, 24}, /* 104.134.93.0/24 */
-    {0x68865e00u, PROTO_GOOGLE, 23}, /* 104.134.94.0/23 */
-    {0x68865f00u, PROTO_GOOGLE, 24}, /* 104.134.95.0/24 */
-    {0x68866000u, PROTO_GOOGLE, 23}, /* 104.134.96.0/23 */
-    {0x68866100u, PROTO_GOOGLE, 24}, /* 104.134.97.0/24 */
-    {0x68866200u, PROTO_GOOGLE, 23}, /* 104.134.98.0/23 */
-    {0x68866300u, PROTO_GOOGLE, 24}, /* 104.134.99.0/24 */
-    {0x68866400u, PROTO_GOOGLE, 23}, /* 104.134.100.0/23 */
-    {0x68866500u, PROTO_GOOGLE, 24}, /* 104.134.101.0/24 */
-    {0x68866600u, PROTO_GOOGLE, 23}, /* 104.134.102.0/23 */
-    {0x68866700u, PROTO_GOOGLE, 24}, /* 104.134.103.0/24 */
-    {0x68866800u, PROTO_GOOGLE, 23}, /* 104.134.104.0/23 */
-    {0x68866900u, PROTO_GOOGLE, 24}, /* 104.134.105.0/24 */
-    {0x68866a00u, PROTO_GOOGLE, 23}, /* 104.134.106.0/23 */
-    {0x68866b00u, PROTO_GOOGLE, 24}, /* 104.134.107.0/24 */
-    {0x68866c00u, PROTO_GOOGLE, 23}, /* 104.134.108.0/23 */
-    {0x68866d00u, PROTO_GOOGLE, 24}, /* 104.134.109.0/24 */
-    {0x68866e00u, PROTO_GOOGLE, 23}, /* 104.134.110.0/23 */
-    {0x68866f00u, PROTO_GOOGLE, 24}, /* 104.134.111.0/24 */
-    {0x68867000u, PROTO_GOOGLE, 23}, /* 104.134.112.0/23 */
-    {0x68867100u, PROTO_GOOGLE, 24}, /* 104.134.113.0/24 */
-    {0x68867200u, PROTO_GOOGLE, 23}, /* 104.134.114.0/23 */
-    {0x68867300u, PROTO_GOOGLE, 24}, /* 104.134.115.0/24 */
-    {0x68867400u, PROTO_GOOGLE, 23}, /* 104.134.116.0/23 */
-    {0x68867500u, PROTO_GOOGLE, 24}, /* 104.134.117.0/24 */
-    {0x68867600u, PROTO_GOOGLE, 23}, /* 104.134.118.0/23 */
-    {0x68867700u, PROTO_GOOGLE, 24}, /* 104.134.119.0/24 */
-    {0x68867800u, PROTO_GOOGLE, 23}, /* 104.134.120.0/23 */
-    {0x68867900u, PROTO_GOOGLE, 24}, /* 104.134.121.0/24 */
-    {0x68867a00u, PROTO_GOOGLE, 23}, /* 104.134.122.0/23 */
-    {0x68867b00u, PROTO_GOOGLE, 24}, /* 104.134.123.0/24 */
-    {0x68867c00u, PROTO_GOOGLE, 23}, /* 104.134.124.0/23 */
-    {0x68867d00u, PROTO_GOOGLE, 24}, /* 104.134.125.0/24 */
-    {0x68867e00u, PROTO_GOOGLE, 23}, /* 104.134.126.0/23 */
-    {0x68867f00u, PROTO_GOOGLE, 24}, /* 104.134.127.0/24 */
-    {0x68868000u, PROTO_GOOGLE, 17}, /* 104.134.128.0/17 */
-    {0x68868100u, PROTO_GOOGLE, 24}, /* 104.134.129.0/24 */
-    {0x68868200u, PROTO_GOOGLE, 23}, /* 104.134.130.0/23 */
-    {0x68868300u, PROTO_GOOGLE, 24}, /* 104.134.131.0/24 */
-    {0x68868400u, PROTO_GOOGLE, 23}, /* 104.134.132.0/23 */
-    {0x68868500u, PROTO_GOOGLE, 24}, /* 104.134.133.0/24 */
-    {0x68868600u, PROTO_GOOGLE, 23}, /* 104.134.134.0/23 */
-    {0x68868700u, PROTO_GOOGLE, 24}, /* 104.134.135.0/24 */
-    {0x68868800u, PROTO_GOOGLE, 23}, /* 104.134.136.0/23 */
-    {0x68868900u, PROTO_GOOGLE, 24}, /* 104.134.137.0/24 */
-    {0x68868a00u, PROTO_GOOGLE, 23}, /* 104.134.138.0/23 */
-    {0x68868b00u, PROTO_GOOGLE, 24}, /* 104.134.139.0/24 */
-    {0x68868c00u, PROTO_GOOGLE, 23}, /* 104.134.140.0/23 */
-    {0x68868d00u, PROTO_GOOGLE, 24}, /* 104.134.141.0/24 */
-    {0x68868e00u, PROTO_GOOGLE, 23}, /* 104.134.142.0/23 */
-    {0x68868f00u, PROTO_GOOGLE, 24}, /* 104.134.143.0/24 */
-    {0x68869000u, PROTO_GOOGLE, 23}, /* 104.134.144.0/23 */
-    {0x68869100u, PROTO_GOOGLE, 24}, /* 104.134.145.0/24 */
-    {0x68869200u, PROTO_GOOGLE, 23}, /* 104.134.146.0/23 */
-    {0x68869300u, PROTO_GOOGLE, 24}, /* 104.134.147.0/24 */
-    {0x68869400u, PROTO_GOOGLE, 23}, /* 104.134.148.0/23 */
-    {0x68869500u, PROTO_GOOGLE, 24}, /* 104.134.149.0/24 */
-    {0x68869600u, PROTO_GOOGLE, 23}, /* 104.134.150.0/23 */
-    {0x68869700u, PROTO_GOOGLE, 24}, /* 104.134.151.0/24 */
-    {0x68869800u, PROTO_GOOGLE, 23}, /* 104.134.152.0/23 */
-    {0x68869900u, PROTO_GOOGLE, 24}, /* 104.134.153.0/24 */
-    {0x68869a00u, PROTO_GOOGLE, 23}, /* 104.134.154.0/23 */
-    {0x68869b00u, PROTO_GOOGLE, 24}, /* 104.134.155.0/24 */
-    {0x68869c00u, PROTO_GOOGLE, 23}, /* 104.134.156.0/23 */
-    {0x68869d00u, PROTO_GOOGLE, 24}, /* 104.134.157.0/24 */
-    {0x68869e00u, PROTO_GOOGLE, 23}, /* 104.134.158.0/23 */
-    {0x68869f00u, PROTO_GOOGLE, 24}, /* 104.134.159.0/24 */
-    {0x6886a000u, PROTO_GOOGLE, 23}, /* 104.134.160.0/23 */
-    {0x6886a100u, PROTO_GOOGLE, 24}, /* 104.134.161.0/24 */
-    {0x6886a200u, PROTO_GOOGLE, 23}, /* 104.134.162.0/23 */
-    {0x6886a300u, PROTO_GOOGLE, 24}, /* 104.134.163.0/24 */
-    {0x6886a400u, PROTO_GOOGLE, 23}, /* 104.134.164.0/23 */
-    {0x6886a500u, PROTO_GOOGLE, 24}, /* 104.134.165.0/24 */
-    {0x6886a600u, PROTO_GOOGLE, 23}, /* 104.134.166.0/23 */
-    {0x6886a700u, PROTO_GOOGLE, 24}, /* 104.134.167.0/24 */
-    {0x6886a800u, PROTO_GOOGLE, 23}, /* 104.134.168.0/23 */
-    {0x6886a900u, PROTO_GOOGLE, 24}, /* 104.134.169.0/24 */
-    {0x6886aa00u, PROTO_GOOGLE, 23}, /* 104.134.170.0/23 */
-    {0x6886ab00u, PROTO_GOOGLE, 24}, /* 104.134.171.0/24 */
-    {0x6886ac00u, PROTO_GOOGLE, 23}, /* 104.134.172.0/23 */
-    {0x6886ad00u, PROTO_GOOGLE, 24}, /* 104.134.173.0/24 */
-    {0x6886ae00u, PROTO_GOOGLE, 23}, /* 104.134.174.0/23 */
-    {0x6886af00u, PROTO_GOOGLE, 24}, /* 104.134.175.0/24 */
-    {0x6886b000u, PROTO_GOOGLE, 23}, /* 104.134.176.0/23 */
-    {0x6886b100u, PROTO_GOOGLE, 24}, /* 104.134.177.0/24 */
-    {0x6886b200u, PROTO_GOOGLE, 23}, /* 104.134.178.0/23 */
-    {0x6886b300u, PROTO_GOOGLE, 24}, /* 104.134.179.0/24 */
-    {0x6886b400u, PROTO_GOOGLE, 23}, /* 104.134.180.0/23 */
-    {0x6886b500u, PROTO_GOOGLE, 24}, /* 104.134.181.0/24 */
-    {0x6886b600u, PROTO_GOOGLE, 23}, /* 104.134.182.0/23 */
-    {0x6886b700u, PROTO_GOOGLE, 24}, /* 104.134.183.0/24 */
-    {0x6886b800u, PROTO_GOOGLE, 23}, /* 104.134.184.0/23 */
-    {0x6886b900u, PROTO_GOOGLE, 24}, /* 104.134.185.0/24 */
-    {0x6886ba00u, PROTO_GOOGLE, 23}, /* 104.134.186.0/23 */
-    {0x6886bb00u, PROTO_GOOGLE, 24}, /* 104.134.187.0/24 */
-    {0x6886bc00u, PROTO_GOOGLE, 23}, /* 104.134.188.0/23 */
-    {0x6886bd00u, PROTO_GOOGLE, 24}, /* 104.134.189.0/24 */
-    {0x6886be00u, PROTO_GOOGLE, 23}, /* 104.134.190.0/23 */
-    {0x6886bf00u, PROTO_GOOGLE, 24}, /* 104.134.191.0/24 */
-    {0x6886c000u, PROTO_GOOGLE, 23}, /* 104.134.192.0/23 */
-    {0x6886c100u, PROTO_GOOGLE, 24}, /* 104.134.193.0/24 */
-    {0x6886c200u, PROTO_GOOGLE, 23}, /* 104.134.194.0/23 */
-    {0x6886c300u, PROTO_GOOGLE, 24}, /* 104.134.195.0/24 */
-    {0x6886c400u, PROTO_GOOGLE, 23}, /* 104.134.196.0/23 */
-    {0x6886c500u, PROTO_GOOGLE, 24}, /* 104.134.197.0/24 */
-    {0x6886c600u, PROTO_GOOGLE, 23}, /* 104.134.198.0/23 */
-    {0x6886c700u, PROTO_GOOGLE, 24}, /* 104.134.199.0/24 */
-    {0x6886c800u, PROTO_GOOGLE, 23}, /* 104.134.200.0/23 */
-    {0x6886c900u, PROTO_GOOGLE, 24}, /* 104.134.201.0/24 */
-    {0x6886ca00u, PROTO_GOOGLE, 23}, /* 104.134.202.0/23 */
-    {0x6886cb00u, PROTO_GOOGLE, 24}, /* 104.134.203.0/24 */
-    {0x6886cc00u, PROTO_GOOGLE, 23}, /* 104.134.204.0/23 */
-    {0x6886cd00u, PROTO_GOOGLE, 24}, /* 104.134.205.0/24 */
-    {0x6886ce00u, PROTO_GOOGLE, 23}, /* 104.134.206.0/23 */
-    {0x6886cf00u, PROTO_GOOGLE, 24}, /* 104.134.207.0/24 */
-    {0x6886d000u, PROTO_GOOGLE, 23}, /* 104.134.208.0/23 */
-    {0x6886d100u, PROTO_GOOGLE, 24}, /* 104.134.209.0/24 */
-    {0x6886d200u, PROTO_GOOGLE, 23}, /* 104.134.210.0/23 */
-    {0x6886d300u, PROTO_GOOGLE, 24}, /* 104.134.211.0/24 */
-    {0x6886d400u, PROTO_GOOGLE, 23}, /* 104.134.212.0/23 */
-    {0x6886d500u, PROTO_GOOGLE, 24}, /* 104.134.213.0/24 */
-    {0x6886d600u, PROTO_GOOGLE, 23}, /* 104.134.214.0/23 */
-    {0x6886d700u, PROTO_GOOGLE, 24}, /* 104.134.215.0/24 */
-    {0x6886d800u, PROTO_GOOGLE, 23}, /* 104.134.216.0/23 */
-    {0x6886d900u, PROTO_GOOGLE, 24}, /* 104.134.217.0/24 */
-    {0x6886da00u, PROTO_GOOGLE, 23}, /* 104.134.218.0/23 */
-    {0x6886db00u, PROTO_GOOGLE, 24}, /* 104.134.219.0/24 */
-    {0x6886dc00u, PROTO_GOOGLE, 23}, /* 104.134.220.0/23 */
-    {0x6886dd00u, PROTO_GOOGLE, 24}, /* 104.134.221.0/24 */
-    {0x6886de00u, PROTO_GOOGLE, 23}, /* 104.134.222.0/23 */
-    {0x6886df00u, PROTO_GOOGLE, 24}, /* 104.134.223.0/24 */
-    {0x6886e000u, PROTO_GOOGLE, 23}, /* 104.134.224.0/23 */
-    {0x6886e100u, PROTO_GOOGLE, 24}, /* 104.134.225.0/24 */
-    {0x6886e200u, PROTO_GOOGLE, 23}, /* 104.134.226.0/23 */
-    {0x6886e300u, PROTO_GOOGLE, 24}, /* 104.134.227.0/24 */
-    {0x6886e400u, PROTO_GOOGLE, 23}, /* 104.134.228.0/23 */
-    {0x6886e500u, PROTO_GOOGLE, 24}, /* 104.134.229.0/24 */
-    {0x6886e600u, PROTO_GOOGLE, 23}, /* 104.134.230.0/23 */
-    {0x6886e700u, PROTO_GOOGLE, 24}, /* 104.134.231.0/24 */
-    {0x6886e800u, PROTO_GOOGLE, 23}, /* 104.134.232.0/23 */
-    {0x6886e900u, PROTO_GOOGLE, 24}, /* 104.134.233.0/24 */
-    {0x6886ea00u, PROTO_GOOGLE, 23}, /* 104.134.234.0/23 */
-    {0x6886eb00u, PROTO_GOOGLE, 24}, /* 104.134.235.0/24 */
-    {0x6886ec00u, PROTO_GOOGLE, 23}, /* 104.134.236.0/23 */
-    {0x6886ed00u, PROTO_GOOGLE, 24}, /* 104.134.237.0/24 */
-    {0x6886ee00u, PROTO_GOOGLE, 23}, /* 104.134.238.0/23 */
-    {0x6886ef00u, PROTO_GOOGLE, 24}, /* 104.134.239.0/24 */
-    {0x6886f000u, PROTO_GOOGLE, 23}, /* 104.134.240.0/23 */
-    {0x6886f100u, PROTO_GOOGLE, 24}, /* 104.134.241.0/24 */
-    {0x6886f200u, PROTO_GOOGLE, 23}, /* 104.134.242.0/23 */
-    {0x6886f300u, PROTO_GOOGLE, 24}, /* 104.134.243.0/24 */
-    {0x6886f400u, PROTO_GOOGLE, 23}, /* 104.134.244.0/23 */
-    {0x6886f500u, PROTO_GOOGLE, 24}, /* 104.134.245.0/24 */
-    {0x6886f600u, PROTO_GOOGLE, 23}, /* 104.134.246.0/23 */
-    {0x6886f700u, PROTO_GOOGLE, 24}, /* 104.134.247.0/24 */
-    {0x6886f800u, PROTO_GOOGLE, 23}, /* 104.134.248.0/23 */
-    {0x6886f900u, PROTO_GOOGLE, 24}, /* 104.134.249.0/24 */
-    {0x6886fa00u, PROTO_GOOGLE, 23}, /* 104.134.250.0/23 */
-    {0x6886fb00u, PROTO_GOOGLE, 24}, /* 104.134.251.0/24 */
-    {0x6886fc00u, PROTO_GOOGLE, 23}, /* 104.134.252.0/23 */
-    {0x6886fd00u, PROTO_GOOGLE, 24}, /* 104.134.253.0/24 */
-    {0x6886fe00u, PROTO_GOOGLE, 23}, /* 104.134.254.0/23 */
-    {0x6886ff00u, PROTO_GOOGLE, 24}, /* 104.134.255.0/24 */
-    {0x68870000u, PROTO_GOOGLE, 23}, /* 104.135.0.0/23 */
-    {0x68870100u, PROTO_GOOGLE, 24}, /* 104.135.1.0/24 */
-    {0x68870200u, PROTO_GOOGLE, 23}, /* 104.135.2.0/23 */
-    {0x68870300u, PROTO_GOOGLE, 24}, /* 104.135.3.0/24 */
-    {0x68870400u, PROTO_GOOGLE, 23}, /* 104.135.4.0/23 */
-    {0x68870500u, PROTO_GOOGLE, 24}, /* 104.135.5.0/24 */
-    {0x68870600u, PROTO_GOOGLE, 23}, /* 104.135.6.0/23 */
-    {0x68870700u, PROTO_GOOGLE, 24}, /* 104.135.7.0/24 */
-    {0x68870800u, PROTO_GOOGLE, 23}, /* 104.135.8.0/23 */
-    {0x68870900u, PROTO_GOOGLE, 24}, /* 104.135.9.0/24 */
-    {0x68870a00u, PROTO_GOOGLE, 23}, /* 104.135.10.0/23 */
-    {0x68870b00u, PROTO_GOOGLE, 24}, /* 104.135.11.0/24 */
-    {0x68870c00u, PROTO_GOOGLE, 23}, /* 104.135.12.0/23 */
-    {0x68870d00u, PROTO_GOOGLE, 24}, /* 104.135.13.0/24 */
-    {0x68870e00u, PROTO_GOOGLE, 23}, /* 104.135.14.0/23 */
-    {0x68870f00u, PROTO_GOOGLE, 24}, /* 104.135.15.0/24 */
-    {0x68871000u, PROTO_GOOGLE, 23}, /* 104.135.16.0/23 */
-    {0x68871100u, PROTO_GOOGLE, 24}, /* 104.135.17.0/24 */
-    {0x68871200u, PROTO_GOOGLE, 23}, /* 104.135.18.0/23 */
-    {0x68871300u, PROTO_GOOGLE, 24}, /* 104.135.19.0/24 */
-    {0x68871400u, PROTO_GOOGLE, 23}, /* 104.135.20.0/23 */
-    {0x68871500u, PROTO_GOOGLE, 24}, /* 104.135.21.0/24 */
-    {0x68871600u, PROTO_GOOGLE, 23}, /* 104.135.22.0/23 */
-    {0x68871700u, PROTO_GOOGLE, 24}, /* 104.135.23.0/24 */
-    {0x68871800u, PROTO_GOOGLE, 23}, /* 104.135.24.0/23 */
-    {0x68871900u, PROTO_GOOGLE, 24}, /* 104.135.25.0/24 */
-    {0x68871a00u, PROTO_GOOGLE, 23}, /* 104.135.26.0/23 */
-    {0x68871b00u, PROTO_GOOGLE, 24}, /* 104.135.27.0/24 */
-    {0x68871c00u, PROTO_GOOGLE, 23}, /* 104.135.28.0/23 */
-    {0x68871d00u, PROTO_GOOGLE, 24}, /* 104.135.29.0/24 */
-    {0x68871e00u, PROTO_GOOGLE, 23}, /* 104.135.30.0/23 */
-    {0x68871f00u, PROTO_GOOGLE, 24}, /* 104.135.31.0/24 */
-    {0x68872000u, PROTO_GOOGLE, 23}, /* 104.135.32.0/23 */
-    {0x68872100u, PROTO_GOOGLE, 24}, /* 104.135.33.0/24 */
-    {0x68872200u, PROTO_GOOGLE, 23}, /* 104.135.34.0/23 */
-    {0x68872300u, PROTO_GOOGLE, 24}, /* 104.135.35.0/24 */
-    {0x68872400u, PROTO_GOOGLE, 23}, /* 104.135.36.0/23 */
-    {0x68872500u, PROTO_GOOGLE, 24}, /* 104.135.37.0/24 */
-    {0x68872600u, PROTO_GOOGLE, 23}, /* 104.135.38.0/23 */
-    {0x68872700u, PROTO_GOOGLE, 24}, /* 104.135.39.0/24 */
-    {0x68872800u, PROTO_GOOGLE, 23}, /* 104.135.40.0/23 */
-    {0x68872900u, PROTO_GOOGLE, 24}, /* 104.135.41.0/24 */
-    {0x68872a00u, PROTO_GOOGLE, 23}, /* 104.135.42.0/23 */
-    {0x68872b00u, PROTO_GOOGLE, 24}, /* 104.135.43.0/24 */
-    {0x68872c00u, PROTO_GOOGLE, 23}, /* 104.135.44.0/23 */
-    {0x68872d00u, PROTO_GOOGLE, 24}, /* 104.135.45.0/24 */
-    {0x68872e00u, PROTO_GOOGLE, 23}, /* 104.135.46.0/23 */
-    {0x68872f00u, PROTO_GOOGLE, 24}, /* 104.135.47.0/24 */
-    {0x68873000u, PROTO_GOOGLE, 23}, /* 104.135.48.0/23 */
-    {0x68873100u, PROTO_GOOGLE, 24}, /* 104.135.49.0/24 */
-    {0x68873200u, PROTO_GOOGLE, 23}, /* 104.135.50.0/23 */
-    {0x68873300u, PROTO_GOOGLE, 24}, /* 104.135.51.0/24 */
-    {0x68873400u, PROTO_GOOGLE, 23}, /* 104.135.52.0/23 */
-    {0x68873500u, PROTO_GOOGLE, 24}, /* 104.135.53.0/24 */
-    {0x68873600u, PROTO_GOOGLE, 23}, /* 104.135.54.0/23 */
-    {0x68873700u, PROTO_GOOGLE, 24}, /* 104.135.55.0/24 */
-    {0x68873800u, PROTO_GOOGLE, 23}, /* 104.135.56.0/23 */
-    {0x68873900u, PROTO_GOOGLE, 24}, /* 104.135.57.0/24 */
-    {0x68873a00u, PROTO_GOOGLE, 23}, /* 104.135.58.0/23 */
-    {0x68873b00u, PROTO_GOOGLE, 24}, /* 104.135.59.0/24 */
-    {0x68873c00u, PROTO_GOOGLE, 23}, /* 104.135.60.0/23 */
-    {0x68873d00u, PROTO_GOOGLE, 24}, /* 104.135.61.0/24 */
-    {0x68873e00u, PROTO_GOOGLE, 23}, /* 104.135.62.0/23 */
-    {0x68873f00u, PROTO_GOOGLE, 24}, /* 104.135.63.0/24 */
-    {0x68874000u, PROTO_GOOGLE, 23}, /* 104.135.64.0/23 */
-    {0x68874100u, PROTO_GOOGLE, 24}, /* 104.135.65.0/24 */
-    {0x68874200u, PROTO_GOOGLE, 23}, /* 104.135.66.0/23 */
-    {0x68874300u, PROTO_GOOGLE, 24}, /* 104.135.67.0/24 */
-    {0x68874400u, PROTO_GOOGLE, 23}, /* 104.135.68.0/23 */
-    {0x68874500u, PROTO_GOOGLE, 24}, /* 104.135.69.0/24 */
-    {0x68874600u, PROTO_GOOGLE, 23}, /* 104.135.70.0/23 */
-    {0x68874700u, PROTO_GOOGLE, 24}, /* 104.135.71.0/24 */
-    {0x68874800u, PROTO_GOOGLE, 23}, /* 104.135.72.0/23 */
-    {0x68874900u, PROTO_GOOGLE, 24}, /* 104.135.73.0/24 */
-    {0x68874a00u, PROTO_GOOGLE, 23}, /* 104.135.74.0/23 */
-    {0x68874b00u, PROTO_GOOGLE, 24}, /* 104.135.75.0/24 */
-    {0x68874c00u, PROTO_GOOGLE, 23}, /* 104.135.76.0/23 */
-    {0x68874d00u, PROTO_GOOGLE, 24}, /* 104.135.77.0/24 */
-    {0x68874e00u, PROTO_GOOGLE, 23}, /* 104.135.78.0/23 */
-    {0x68874f00u, PROTO_GOOGLE, 24}, /* 104.135.79.0/24 */
-    {0x68875000u, PROTO_GOOGLE, 23}, /* 104.135.80.0/23 */
-    {0x68875100u, PROTO_GOOGLE, 24}, /* 104.135.81.0/24 */
-    {0x68875200u, PROTO_GOOGLE, 23}, /* 104.135.82.0/23 */
-    {0x68875300u, PROTO_GOOGLE, 24}, /* 104.135.83.0/24 */
-    {0x68875400u, PROTO_GOOGLE, 23}, /* 104.135.84.0/23 */
-    {0x68875500u, PROTO_GOOGLE, 24}, /* 104.135.85.0/24 */
-    {0x68875600u, PROTO_GOOGLE, 23}, /* 104.135.86.0/23 */
-    {0x68875700u, PROTO_GOOGLE, 24}, /* 104.135.87.0/24 */
-    {0x68875800u, PROTO_GOOGLE, 23}, /* 104.135.88.0/23 */
-    {0x68875900u, PROTO_GOOGLE, 24}, /* 104.135.89.0/24 */
-    {0x68875a00u, PROTO_GOOGLE, 23}, /* 104.135.90.0/23 */
-    {0x68875b00u, PROTO_GOOGLE, 24}, /* 104.135.91.0/24 */
-    {0x68875c00u, PROTO_GOOGLE, 23}, /* 104.135.92.0/23 */
-    {0x68875d00u, PROTO_GOOGLE, 24}, /* 104.135.93.0/24 */
-    {0x68875e00u, PROTO_GOOGLE, 23}, /* 104.135.94.0/23 */
-    {0x68875f00u, PROTO_GOOGLE, 24}, /* 104.135.95.0/24 */
-    {0x68876000u, PROTO_GOOGLE, 23}, /* 104.135.96.0/23 */
-    {0x68876100u, PROTO_GOOGLE, 24}, /* 104.135.97.0/24 */
-    {0x68876200u, PROTO_GOOGLE, 23}, /* 104.135.98.0/23 */
-    {0x68876300u, PROTO_GOOGLE, 24}, /* 104.135.99.0/24 */
-    {0x68876400u, PROTO_GOOGLE, 23}, /* 104.135.100.0/23 */
-    {0x68876500u, PROTO_GOOGLE, 24}, /* 104.135.101.0/24 */
-    {0x68876600u, PROTO_GOOGLE, 23}, /* 104.135.102.0/23 */
-    {0x68876700u, PROTO_GOOGLE, 24}, /* 104.135.103.0/24 */
-    {0x68876800u, PROTO_GOOGLE, 23}, /* 104.135.104.0/23 */
-    {0x68876900u, PROTO_GOOGLE, 24}, /* 104.135.105.0/24 */
-    {0x68876a00u, PROTO_GOOGLE, 23}, /* 104.135.106.0/23 */
-    {0x68876b00u, PROTO_GOOGLE, 24}, /* 104.135.107.0/24 */
-    {0x68876c00u, PROTO_GOOGLE, 23}, /* 104.135.108.0/23 */
-    {0x68876d00u, PROTO_GOOGLE, 24}, /* 104.135.109.0/24 */
-    {0x68876e00u, PROTO_GOOGLE, 23}, /* 104.135.110.0/23 */
-    {0x68876f00u, PROTO_GOOGLE, 24}, /* 104.135.111.0/24 */
-    {0x68877000u, PROTO_GOOGLE, 23}, /* 104.135.112.0/23 */
-    {0x68877100u, PROTO_GOOGLE, 24}, /* 104.135.113.0/24 */
-    {0x68877200u, PROTO_GOOGLE, 23}, /* 104.135.114.0/23 */
-    {0x68877300u, PROTO_GOOGLE, 24}, /* 104.135.115.0/24 */
-    {0x68877400u, PROTO_GOOGLE, 23}, /* 104.135.116.0/23 */
-    {0x68877500u, PROTO_GOOGLE, 24}, /* 104.135.117.0/24 */
-    {0x68877600u, PROTO_GOOGLE, 23}, /* 104.135.118.0/23 */
-    {0x68877700u, PROTO_GOOGLE, 24}, /* 104.135.119.0/24 */
-    {0x68877800u, PROTO_GOOGLE, 23}, /* 104.135.120.0/23 */
-    {0x68877900u, PROTO_GOOGLE, 24}, /* 104.135.121.0/24 */
-    {0x68877a00u, PROTO_GOOGLE, 23}, /* 104.135.122.0/23 */
-    {0x68877b00u, PROTO_GOOGLE, 24}, /* 104.135.123.0/24 */
-    {0x68877c00u, PROTO_GOOGLE, 23}, /* 104.135.124.0/23 */
-    {0x68877d00u, PROTO_GOOGLE, 24}, /* 104.135.125.0/24 */
-    {0x68877e00u, PROTO_GOOGLE, 23}, /* 104.135.126.0/23 */
-    {0x68877f00u, PROTO_GOOGLE, 24}, /* 104.135.127.0/24 */
-    {0x68878000u, PROTO_GOOGLE, 23}, /* 104.135.128.0/23 */
-    {0x68878100u, PROTO_GOOGLE, 24}, /* 104.135.129.0/24 */
-    {0x68878200u, PROTO_GOOGLE, 23}, /* 104.135.130.0/23 */
-    {0x68878300u, PROTO_GOOGLE, 24}, /* 104.135.131.0/24 */
-    {0x68878400u, PROTO_GOOGLE, 23}, /* 104.135.132.0/23 */
-    {0x68878500u, PROTO_GOOGLE, 24}, /* 104.135.133.0/24 */
-    {0x68878600u, PROTO_GOOGLE, 23}, /* 104.135.134.0/23 */
-    {0x68878700u, PROTO_GOOGLE, 24}, /* 104.135.135.0/24 */
-    {0x68878800u, PROTO_GOOGLE, 23}, /* 104.135.136.0/23 */
-    {0x68878900u, PROTO_GOOGLE, 24}, /* 104.135.137.0/24 */
-    {0x68878a00u, PROTO_GOOGLE, 23}, /* 104.135.138.0/23 */
-    {0x68878b00u, PROTO_GOOGLE, 24}, /* 104.135.139.0/24 */
-    {0x68878c00u, PROTO_GOOGLE, 23}, /* 104.135.140.0/23 */
-    {0x68878d00u, PROTO_GOOGLE, 24}, /* 104.135.141.0/24 */
-    {0x68878e00u, PROTO_GOOGLE, 23}, /* 104.135.142.0/23 */
-    {0x68878f00u, PROTO_GOOGLE, 24}, /* 104.135.143.0/24 */
-    {0x68879000u, PROTO_GOOGLE, 23}, /* 104.135.144.0/23 */
-    {0x68879100u, PROTO_GOOGLE, 24}, /* 104.135.145.0/24 */
-    {0x68879200u, PROTO_GOOGLE, 23}, /* 104.135.146.0/23 */
-    {0x68879300u, PROTO_GOOGLE, 24}, /* 104.135.147.0/24 */
-    {0x68879400u, PROTO_GOOGLE, 23}, /* 104.135.148.0/23 */
-    {0x68879500u, PROTO_GOOGLE, 24}, /* 104.135.149.0/24 */
-    {0x68879600u, PROTO_GOOGLE, 23}, /* 104.135.150.0/23 */
-    {0x68879700u, PROTO_GOOGLE, 24}, /* 104.135.151.0/24 */
-    {0x68879800u, PROTO_GOOGLE, 23}, /* 104.135.152.0/23 */
-    {0x68879900u, PROTO_GOOGLE, 24}, /* 104.135.153.0/24 */
-    {0x68879a00u, PROTO_GOOGLE, 23}, /* 104.135.154.0/23 */
-    {0x68879b00u, PROTO_GOOGLE, 24}, /* 104.135.155.0/24 */
-    {0x68879c00u, PROTO_GOOGLE, 23}, /* 104.135.156.0/23 */
-    {0x68879d00u, PROTO_GOOGLE, 24}, /* 104.135.157.0/24 */
-    {0x68879e00u, PROTO_GOOGLE, 23}, /* 104.135.158.0/23 */
-    {0x68879f00u, PROTO_GOOGLE, 24}, /* 104.135.159.0/24 */
-    {0x6887a000u, PROTO_GOOGLE, 23}, /* 104.135.160.0/23 */
-    {0x6887a100u, PROTO_GOOGLE, 24}, /* 104.135.161.0/24 */
-    {0x6887a200u, PROTO_GOOGLE, 23}, /* 104.135.162.0/23 */
-    {0x6887a300u, PROTO_GOOGLE, 24}, /* 104.135.163.0/24 */
-    {0x6887a400u, PROTO_GOOGLE, 23}, /* 104.135.164.0/23 */
-    {0x6887a500u, PROTO_GOOGLE, 24}, /* 104.135.165.0/24 */
-    {0x6887a600u, PROTO_GOOGLE, 23}, /* 104.135.166.0/23 */
-    {0x6887a700u, PROTO_GOOGLE, 24}, /* 104.135.167.0/24 */
-    {0x6887a800u, PROTO_GOOGLE, 23}, /* 104.135.168.0/23 */
-    {0x6887a900u, PROTO_GOOGLE, 24}, /* 104.135.169.0/24 */
-    {0x6887aa00u, PROTO_GOOGLE, 23}, /* 104.135.170.0/23 */
-    {0x6887ab00u, PROTO_GOOGLE, 24}, /* 104.135.171.0/24 */
-    {0x6887ac00u, PROTO_GOOGLE, 23}, /* 104.135.172.0/23 */
-    {0x6887ad00u, PROTO_GOOGLE, 24}, /* 104.135.173.0/24 */
-    {0x6887ae00u, PROTO_GOOGLE, 23}, /* 104.135.174.0/23 */
-    {0x6887af00u, PROTO_GOOGLE, 24}, /* 104.135.175.0/24 */
-    {0x6887b000u, PROTO_GOOGLE, 23}, /* 104.135.176.0/23 */
-    {0x6887b100u, PROTO_GOOGLE, 24}, /* 104.135.177.0/24 */
-    {0x6887b200u, PROTO_GOOGLE, 23}, /* 104.135.178.0/23 */
-    {0x6887b300u, PROTO_GOOGLE, 24}, /* 104.135.179.0/24 */
-    {0x6887b400u, PROTO_GOOGLE, 23}, /* 104.135.180.0/23 */
-    {0x6887b500u, PROTO_GOOGLE, 24}, /* 104.135.181.0/24 */
-    {0x6887b600u, PROTO_GOOGLE, 23}, /* 104.135.182.0/23 */
-    {0x6887b700u, PROTO_GOOGLE, 24}, /* 104.135.183.0/24 */
-    {0x6887b800u, PROTO_GOOGLE, 23}, /* 104.135.184.0/23 */
-    {0x6887b900u, PROTO_GOOGLE, 24}, /* 104.135.185.0/24 */
-    {0x6887ba00u, PROTO_GOOGLE, 23}, /* 104.135.186.0/23 */
-    {0x6887bb00u, PROTO_GOOGLE, 24}, /* 104.135.187.0/24 */
-    {0x6887bc00u, PROTO_GOOGLE, 23}, /* 104.135.188.0/23 */
-    {0x6887bd00u, PROTO_GOOGLE, 24}, /* 104.135.189.0/24 */
-    {0x6887be00u, PROTO_GOOGLE, 23}, /* 104.135.190.0/23 */
-    {0x6887bf00u, PROTO_GOOGLE, 24}, /* 104.135.191.0/24 */
-    {0x6887c000u, PROTO_GOOGLE, 23}, /* 104.135.192.0/23 */
-    {0x6887c100u, PROTO_GOOGLE, 24}, /* 104.135.193.0/24 */
-    {0x6887c200u, PROTO_GOOGLE, 23}, /* 104.135.194.0/23 */
-    {0x6887c300u, PROTO_GOOGLE, 24}, /* 104.135.195.0/24 */
-    {0x6887c400u, PROTO_GOOGLE, 23}, /* 104.135.196.0/23 */
-    {0x6887c500u, PROTO_GOOGLE, 24}, /* 104.135.197.0/24 */
-    {0x6887c600u, PROTO_GOOGLE, 23}, /* 104.135.198.0/23 */
-    {0x6887c700u, PROTO_GOOGLE, 24}, /* 104.135.199.0/24 */
-    {0x6887c800u, PROTO_GOOGLE, 23}, /* 104.135.200.0/23 */
-    {0x6887c900u, PROTO_GOOGLE, 24}, /* 104.135.201.0/24 */
-    {0x6887ca00u, PROTO_GOOGLE, 23}, /* 104.135.202.0/23 */
-    {0x6887cb00u, PROTO_GOOGLE, 24}, /* 104.135.203.0/24 */
-    {0x6887cc00u, PROTO_GOOGLE, 23}, /* 104.135.204.0/23 */
-    {0x6887cd00u, PROTO_GOOGLE, 24}, /* 104.135.205.0/24 */
-    {0x6887ce00u, PROTO_GOOGLE, 23}, /* 104.135.206.0/23 */
-    {0x6887cf00u, PROTO_GOOGLE, 24}, /* 104.135.207.0/24 */
-    {0x6887d000u, PROTO_GOOGLE, 23}, /* 104.135.208.0/23 */
-    {0x6887d100u, PROTO_GOOGLE, 24}, /* 104.135.209.0/24 */
-    {0x6887d200u, PROTO_GOOGLE, 23}, /* 104.135.210.0/23 */
-    {0x6887d300u, PROTO_GOOGLE, 24}, /* 104.135.211.0/24 */
-    {0x6887d400u, PROTO_GOOGLE, 23}, /* 104.135.212.0/23 */
-    {0x6887d500u, PROTO_GOOGLE, 24}, /* 104.135.213.0/24 */
-    {0x6887d600u, PROTO_GOOGLE, 23}, /* 104.135.214.0/23 */
-    {0x6887d700u, PROTO_GOOGLE, 24}, /* 104.135.215.0/24 */
-    {0x6887d800u, PROTO_GOOGLE, 23}, /* 104.135.216.0/23 */
-    {0x6887d900u, PROTO_GOOGLE, 24}, /* 104.135.217.0/24 */
-    {0x6887da00u, PROTO_GOOGLE, 23}, /* 104.135.218.0/23 */
-    {0x6887db00u, PROTO_GOOGLE, 24}, /* 104.135.219.0/24 */
-    {0x6887dc00u, PROTO_GOOGLE, 23}, /* 104.135.220.0/23 */
-    {0x6887dd00u, PROTO_GOOGLE, 24}, /* 104.135.221.0/24 */
-    {0x6887de00u, PROTO_GOOGLE, 23}, /* 104.135.222.0/23 */
-    {0x6887df00u, PROTO_GOOGLE, 24}, /* 104.135.223.0/24 */
-    {0x6887e000u, PROTO_GOOGLE, 23}, /* 104.135.224.0/23 */
-    {0x6887e100u, PROTO_GOOGLE, 24}, /* 104.135.225.0/24 */
-    {0x6887e200u, PROTO_GOOGLE, 23}, /* 104.135.226.0/23 */
-    {0x6887e300u, PROTO_GOOGLE, 24}, /* 104.135.227.0/24 */
-    {0x6887e400u, PROTO_GOOGLE, 23}, /* 104.135.228.0/23 */
-    {0x6887e500u, PROTO_GOOGLE, 24}, /* 104.135.229.0/24 */
-    {0x6887e600u, PROTO_GOOGLE, 23}, /* 104.135.230.0/23 */
-    {0x6887e700u, PROTO_GOOGLE, 24}, /* 104.135.231.0/24 */
-    {0x6887e800u, PROTO_GOOGLE, 23}, /* 104.135.232.0/23 */
-    {0x6887e900u, PROTO_GOOGLE, 24}, /* 104.135.233.0/24 */
-    {0x6887ea00u, PROTO_GOOGLE, 23}, /* 104.135.234.0/23 */
-    {0x6887eb00u, PROTO_GOOGLE, 24}, /* 104.135.235.0/24 */
-    {0x6887ec00u, PROTO_GOOGLE, 23}, /* 104.135.236.0/23 */
-    {0x6887ed00u, PROTO_GOOGLE, 24}, /* 104.135.237.0/24 */
-    {0x6887ee00u, PROTO_GOOGLE, 23}, /* 104.135.238.0/23 */
-    {0x6887ef00u, PROTO_GOOGLE, 24}, /* 104.135.239.0/24 */
-    {0x6887f000u, PROTO_GOOGLE, 23}, /* 104.135.240.0/23 */
-    {0x6887f100u, PROTO_GOOGLE, 24}, /* 104.135.241.0/24 */
-    {0x6887f200u, PROTO_GOOGLE, 23}, /* 104.135.242.0/23 */
-    {0x6887f300u, PROTO_GOOGLE, 24}, /* 104.135.243.0/24 */
-    {0x6887f400u, PROTO_GOOGLE, 23}, /* 104.135.244.0/23 */
-    {0x6887f500u, PROTO_GOOGLE, 24}, /* 104.135.245.0/24 */
-    {0x6887f600u, PROTO_GOOGLE, 23}, /* 104.135.246.0/23 */
-    {0x6887f700u, PROTO_GOOGLE, 24}, /* 104.135.247.0/24 */
-    {0x6887f800u, PROTO_GOOGLE, 23}, /* 104.135.248.0/23 */
-    {0x6887f900u, PROTO_GOOGLE, 24}, /* 104.135.249.0/24 */
-    {0x6887fa00u, PROTO_GOOGLE, 23}, /* 104.135.250.0/23 */
-    {0x6887fb00u, PROTO_GOOGLE, 24}, /* 104.135.251.0/24 */
-    {0x6887fc00u, PROTO_GOOGLE, 23}, /* 104.135.252.0/23 */
-    {0x6887fd00u, PROTO_GOOGLE, 24}, /* 104.135.253.0/24 */
-    {0x6887fe00u, PROTO_GOOGLE, 23}, /* 104.135.254.0/23 */
-    {0x6887ff00u, PROTO_GOOGLE, 24}, /* 104.135.255.0/24 */
-    {0x68880000u, PROTO_UNKNOWN, 0},
+    {0x67ff8c00u, PROTO_AZURE, 23}, /* 103.255.140.0/23 */
+    {0x67ff8e00u, PROTO_UNKNOWN, 0},
+    {0x68100000u, PROTO_CLOUDFLARE, 13}, /* 104.16.0.0/13 */
+    {0x68180000u, PROTO_CLOUDFLARE, 14}, /* 104.24.0.0/14 */
+    {0x681c0000u, PROTO_UNKNOWN, 0},
+    {0x68280000u, PROTO_AZURE, 14}, /* 104.40.0.0/14 */
+    {0x682c0000u, PROTO_UNKNOWN, 0},
+    {0x682c5800u, PROTO_AZURE, 21}, /* 104.44.88.0/21 */
+    {0x682c6000u, PROTO_UNKNOWN, 0},
+    {0x682c8000u, PROTO_AZURE, 18}, /* 104.44.128.0/18 */
+    {0x682cc000u, PROTO_UNKNOWN, 0},
+    {0x682d0000u, PROTO_AZURE, 16}, /* 104.45.0.0/16 */
+    {0x682e0000u, PROTO_AZURE, 20}, /* 104.46.0.0/20 */
+    {0x682e1000u, PROTO_AZURE, 26}, /* 104.46.16.0/26 */
+    {0x682e1040u, PROTO_UNKNOWN, 0},
+    {0x682e1800u, PROTO_AZURE, 21}, /* 104.46.24.0/21 */
+    {0x682e2000u, PROTO_AZURE, 19}, /* 104.46.32.0/19 */
+    {0x682e4000u, PROTO_AZURE, 18}, /* 104.46.64.0/18 */
+    {0x682e8000u, PROTO_UNKNOWN, 0},
+    {0x682ea000u, PROTO_AZURE, 19}, /* 104.46.160.0/19 */
+    {0x682ee000u, PROTO_AZURE, 20}, /* 104.46.224.0/20 */
+    {0x682ef000u, PROTO_UNKNOWN, 0},
+    {0x682f8000u, PROTO_AZURE, 18}, /* 104.47.128.0/18 */
+    {0x682fc000u, PROTO_UNKNOWN, 0},
+    {0x682fc800u, PROTO_AZURE, 21}, /* 104.47.200.0/21 */
+    {0x682fd800u, PROTO_UNKNOWN, 0},
+    {0x682fd840u, PROTO_AZURE, 26}, /* 104.47.216.64/26 */
+    {0x682fd880u, PROTO_UNKNOWN, 0},
+    {0x682fda00u, PROTO_AZURE, 23}, /* 104.47.218.0/23 */
+    {0x682fdc00u, PROTO_AZURE, 22}, /* 104.47.220.0/22 */
+    {0x682fe000u, PROTO_AZURE, 20}, /* 104.47.224.0/20 */
+    {0x682ff000u, PROTO_UNKNOWN, 0},
+    {0x682ff800u, PROTO_AZURE, 21}, /* 104.47.248.0/21 */
+    {0x68300000u, PROTO_UNKNOWN, 0},
     {0x68911000u, PROTO_YAHOO, 20}, /* 104.145.16.0/20 */
     {0x68912000u, PROTO_UNKNOWN, 0},
-    {0x689a0000u, PROTO_GOOGLE, 23}, /* 104.154.0.0/23 */
-    {0x689a0100u, PROTO_GOOGLE, 24}, /* 104.154.1.0/24 */
-    {0x689a0200u, PROTO_GOOGLE, 23}, /* 104.154.2.0/23 */
-    {0x689a0300u, PROTO_GOOGLE, 24}, /* 104.154.3.0/24 */
-    {0x689a0400u, PROTO_GOOGLE, 23}, /* 104.154.4.0/23 */
-    {0x689a0500u, PROTO_GOOGLE, 24}, /* 104.154.5.0/24 */
-    {0x689a0600u, PROTO_GOOGLE, 23}, /* 104.154.6.0/23 */
-    {0x689a0700u, PROTO_GOOGLE, 24}, /* 104.154.7.0/24 */
-    {0x689a0800u, PROTO_GOOGLE, 23}, /* 104.154.8.0/23 */
-    {0x689a0900u, PROTO_GOOGLE, 24}, /* 104.154.9.0/24 */
-    {0x689a0a00u, PROTO_GOOGLE, 23}, /* 104.154.10.0/23 */
-    {0x689a0b00u, PROTO_GOOGLE, 24}, /* 104.154.11.0/24 */
-    {0x689a0c00u, PROTO_GOOGLE, 23}, /* 104.154.12.0/23 */
-    {0x689a0d00u, PROTO_GOOGLE, 24}, /* 104.154.13.0/24 */
-    {0x689a0e00u, PROTO_GOOGLE, 23}, /* 104.154.14.0/23 */
-    {0x689a0f00u, PROTO_GOOGLE, 24}, /* 104.154.15.0/24 */
-    {0x689a1000u, PROTO_GOOGLE, 23}, /* 104.154.16.0/23 */
-    {0x689a1100u, PROTO_GOOGLE, 24}, /* 104.154.17.0/24 */
-    {0x689a1200u, PROTO_GOOGLE, 23}, /* 104.154.18.0/23 */
-    {0x689a1300u, PROTO_GOOGLE, 24}, /* 104.154.19.0/24 */
-    {0x689a1400u, PROTO_GOOGLE, 23}, /* 104.154.20.0/23 */
-    {0x689a1500u, PROTO_GOOGLE, 24}, /* 104.154.21.0/24 */
-    {0x689a1600u, PROTO_GOOGLE, 23}, /* 104.154.22.0/23 */
-    {0x689a1700u, PROTO_GOOGLE, 24}, /* 104.154.23.0/24 */
-    {0x689a1800u, PROTO_GOOGLE, 23}, /* 104.154.24.0/23 */
-    {0x689a1900u, PROTO_GOOGLE, 24}, /* 104.154.25.0/24 */
-    {0x689a1a00u, PROTO_GOOGLE, 23}, /* 104.154.26.0/23 */
-    {0x689a1b00u, PROTO_GOOGLE, 24}, /* 104.154.27.0/24 */
-    {0x689a1c00u, PROTO_GOOGLE, 23}, /* 104.154.28.0/23 */
-    {0x689a1d00u, PROTO_GOOGLE, 24}, /* 104.154.29.0/24 */
-    {0x689a1e00u, PROTO_GOOGLE, 23}, /* 104.154.30.0/23 */
-    {0x689a1f00u, PROTO_GOOGLE, 24}, /* 104.154.31.0/24 */
-    {0x689a2000u, PROTO_GOOGLE, 23}, /* 104.154.32.0/23 */
-    {0x689a2100u, PROTO_GOOGLE, 24}, /* 104.154.33.0/24 */
-    {0x689a2200u, PROTO_GOOGLE, 23}, /* 104.154.34.0/23 */
-    {0x689a2300u, PROTO_GOOGLE, 24}, /* 104.154.35.0/24 */
-    {0x689a2400u, PROTO_GOOGLE, 23}, /* 104.154.36.0/23 */
-    {0x689a2500u, PROTO_GOOGLE, 24}, /* 104.154.37.0/24 */
-    {0x689a2600u, PROTO_GOOGLE, 23}, /* 104.154.38.0/23 */
-    {0x689a2700u, PROTO_GOOGLE, 24}, /* 104.154.39.0/24 */
-    {0x689a2800u, PROTO_GOOGLE, 23}, /* 104.154.40.0/23 */
-    {0x689a2900u, PROTO_GOOGLE, 24}, /* 104.154.41.0/24 */
-    {0x689a2a00u, PROTO_GOOGLE, 23}, /* 104.154.42.0/23 */
-    {0x689a2b00u, PROTO_GOOGLE, 24}, /* 104.154.43.0/24 */
-    {0x689a2c00u, PROTO_GOOGLE, 23}, /* 104.154.44.0/23 */
-    {0x689a2d00u, PROTO_GOOGLE, 24}, /* 104.154.45.0/24 */
-    {0x689a2e00u, PROTO_GOOGLE, 23}, /* 104.154.46.0/23 */
-    {0x689a2f00u, PROTO_GOOGLE, 24}, /* 104.154.47.0/24 */
-    {0x689a3000u, PROTO_GOOGLE, 23}, /* 104.154.48.0/23 */
-    {0x689a3100u, PROTO_GOOGLE, 24}, /* 104.154.49.0/24 */
-    {0x689a3200u, PROTO_GOOGLE, 23}, /* 104.154.50.0/23 */
-    {0x689a3300u, PROTO_GOOGLE, 24}, /* 104.154.51.0/24 */
-    {0x689a3400u, PROTO_GOOGLE, 23}, /* 104.154.52.0/23 */
-    {0x689a3500u, PROTO_GOOGLE, 24}, /* 104.154.53.0/24 */
-    {0x689a3600u, PROTO_GOOGLE, 23}, /* 104.154.54.0/23 */
-    {0x689a3700u, PROTO_GOOGLE, 24}, /* 104.154.55.0/24 */
-    {0x689a3800u, PROTO_GOOGLE, 23}, /* 104.154.56.0/23 */
-    {0x689a3900u, PROTO_GOOGLE, 24}, /* 104.154.57.0/24 */
-    {0x689a3a00u, PROTO_GOOGLE, 23}, /* 104.154.58.0/23 */
-    {0x689a3b00u, PROTO_GOOGLE, 24}, /* 104.154.59.0/24 */
-    {0x689a3c00u, PROTO_GOOGLE, 23}, /* 104.154.60.0/23 */
-    {0x689a3d00u, PROTO_GOOGLE, 24}, /* 104.154.61.0/24 */
-    {0x689a3e00u, PROTO_GOOGLE, 23}, /* 104.154.62.0/23 */
-    {0x689a3f00u, PROTO_GOOGLE, 24}, /* 104.154.63.0/24 */
-    {0x689a4000u, PROTO_GOOGLE, 23}, /* 104.154.64.0/23 */
-    {0x689a4100u, PROTO_GOOGLE, 24}, /* 104.154.65.0/24 */
-    {0x689a4200u, PROTO_GOOGLE, 23}, /* 104.154.66.0/23 */
-    {0x689a4300u, PROTO_GOOGLE, 24}, /* 104.154.67.0/24 */
-    {0x689a4400u, PROTO_GOOGLE, 23}, /* 104.154.68.0/23 */
-    {0x689a4500u, PROTO_GOOGLE, 24}, /* 104.154.69.0/24 */
-    {0x689a4600u, PROTO_GOOGLE, 23}, /* 104.154.70.0/23 */
-    {0x689a4700u, PROTO_GOOGLE, 24}, /* 104.154.71.0/24 */
-    {0x689a4800u, PROTO_GOOGLE, 23}, /* 104.154.72.0/23 */
-    {0x689a4900u, PROTO_GOOGLE, 24}, /* 104.154.73.0/24 */
-    {0x689a4a00u, PROTO_GOOGLE, 23}, /* 104.154.74.0/23 */
-    {0x689a4b00u, PROTO_GOOGLE, 24}, /* 104.154.75.0/24 */
-    {0x689a4c00u, PROTO_GOOGLE, 23}, /* 104.154.76.0/23 */
-    {0x689a4d00u, PROTO_GOOGLE, 24}, /* 104.154.77.0/24 */
-    {0x689a4e00u, PROTO_GOOGLE, 23}, /* 104.154.78.0/23 */
-    {0x689a4f00u, PROTO_GOOGLE, 24}, /* 104.154.79.0/24 */
-    {0x689a5000u, PROTO_GOOGLE, 23}, /* 104.154.80.0/23 */
-    {0x689a5100u, PROTO_GOOGLE, 24}, /* 104.154.81.0/24 */
-    {0x689a5200u, PROTO_GOOGLE, 23}, /* 104.154.82.0/23 */
-    {0x689a5300u, PROTO_GOOGLE, 24}, /* 104.154.83.0/24 */
-    {0x689a5400u, PROTO_GOOGLE, 23}, /* 104.154.84.0/23 */
-    {0x689a5500u, PROTO_GOOGLE, 24}, /* 104.154.85.0/24 */
-    {0x689a5600u, PROTO_GOOGLE, 23}, /* 104.154.86.0/23 */
-    {0x689a5700u, PROTO_GOOGLE, 24}, /* 104.154.87.0/24 */
-    {0x689a5800u, PROTO_GOOGLE, 23}, /* 104.154.88.0/23 */
-    {0x689a5900u, PROTO_GOOGLE, 24}, /* 104.154.89.0/24 */
-    {0x689a5a00u, PROTO_GOOGLE, 23}, /* 104.154.90.0/23 */
-    {0x689a5b00u, PROTO_GOOGLE, 24}, /* 104.154.91.0/24 */
-    {0x689a5c00u, PROTO_GOOGLE, 23}, /* 104.154.92.0/23 */
-    {0x689a5d00u, PROTO_GOOGLE, 24}, /* 104.154.93.0/24 */
-    {0x689a5e00u, PROTO_GOOGLE, 23}, /* 104.154.94.0/23 */
-    {0x689a5f00u, PROTO_GOOGLE, 24}, /* 104.154.95.0/24 */
-    {0x689a6000u, PROTO_GOOGLE, 23}, /* 104.154.96.0/23 */
-    {0x689a6100u, PROTO_GOOGLE, 24}, /* 104.154.97.0/24 */
-    {0x689a6200u, PROTO_GOOGLE, 23}, /* 104.154.98.0/23 */
-    {0x689a6300u, PROTO_GOOGLE, 24}, /* 104.154.99.0/24 */
-    {0x689a6400u, PROTO_GOOGLE, 23}, /* 104.154.100.0/23 */
-    {0x689a6500u, PROTO_GOOGLE, 24}, /* 104.154.101.0/24 */
-    {0x689a6600u, PROTO_GOOGLE, 23}, /* 104.154.102.0/23 */
-    {0x689a6700u, PROTO_GOOGLE, 24}, /* 104.154.103.0/24 */
-    {0x689a6800u, PROTO_GOOGLE, 23}, /* 104.154.104.0/23 */
-    {0x689a6900u, PROTO_GOOGLE, 24}, /* 104.154.105.0/24 */
-    {0x689a6a00u, PROTO_GOOGLE, 23}, /* 104.154.106.0/23 */
-    {0x689a6b00u, PROTO_GOOGLE, 24}, /* 104.154.107.0/24 */
-    {0x689a6c00u, PROTO_GOOGLE, 23}, /* 104.154.108.0/23 */
-    {0x689a6d00u, PROTO_GOOGLE, 24}, /* 104.154.109.0/24 */
-    {0x689a6e00u, PROTO_GOOGLE, 23}, /* 104.154.110.0/23 */
-    {0x689a6f00u, PROTO_GOOGLE, 24}, /* 104.154.111.0/24 */
-    {0x689a7000u, PROTO_GOOGLE, 23}, /* 104.154.112.0/23 */
-    {0x689a7100u, PROTO_GOOGLE, 24}, /* 104.154.113.0/24 */
-    {0x689a7200u, PROTO_GOOGLE, 23}, /* 104.154.114.0/23 */
-    {0x689a7300u, PROTO_GOOGLE, 24}, /* 104.154.115.0/24 */
-    {0x689a7400u, PROTO_GOOGLE, 23}, /* 104.154.116.0/23 */
-    {0x689a7500u, PROTO_GOOGLE, 24}, /* 104.154.117.0/24 */
-    {0x689a7600u, PROTO_GOOGLE, 23}, /* 104.154.118.0/23 */
-    {0x689a7700u, PROTO_GOOGLE, 24}, /* 104.154.119.0/24 */
-    {0x689a7800u, PROTO_GOOGLE, 23}, /* 104.154.120.0/23 */
-    {0x689a7900u, PROTO_GOOGLE, 24}, /* 104.154.121.0/24 */
+    {0x68997000u, PROTO_AWS, 22}, /* 104.153.112.0/22 */
+    {0x68997400u, PROTO_AWS, 24}, /* 104.153.116.0/24 */
+    {0x68997500u, PROTO_UNKNOWN, 0},
+    {0x68997600u, PROTO_AWS, 24}, /* 104.153.118.0/24 */
+    {0x68997700u, PROTO_UNKNOWN, 0},
+    {0x689a0000u, PROTO_GOOGLE, 20}, /* 104.154.0.0/20 */
+    {0x689a1000u, PROTO_GOOGLE_CLOUD, 20}, /* 104.154.16.0/20 */
+    {0x689a2000u, PROTO_GOOGLE_CLOUD, 19}, /* 104.154.32.0/19 */
+    {0x689a6000u, PROTO_GOOGLE_CLOUD, 20}, /* 104.154.96.0/20 */
+    {0x689a7000u, PROTO_GOOGLE, 24}, /* 104.154.112.0/24 */
+    {0x689a7100u, PROTO_GOOGLE_CLOUD, 24}, /* 104.154.113.0/24 */
+    {0x689a7200u, PROTO_GOOGLE_CLOUD, 23}, /* 104.154.114.0/23 */
+    {0x689a7400u, PROTO_GOOGLE_CLOUD, 22}, /* 104.154.116.0/22 */
+    {0x689a7800u, PROTO_GOOGLE_CLOUD, 23}, /* 104.154.120.0/23 */
     {0x689a7a00u, PROTO_GOOGLE, 23}, /* 104.154.122.0/23 */
-    {0x689a7b00u, PROTO_GOOGLE, 24}, /* 104.154.123.0/24 */
-    {0x689a7c00u, PROTO_GOOGLE, 23}, /* 104.154.124.0/23 */
-    {0x689a7d00u, PROTO_GOOGLE, 24}, /* 104.154.125.0/24 */
-    {0x689a7e00u, PROTO_GOOGLE, 23}, /* 104.154.126.0/23 */
-    {0x689a7f00u, PROTO_GOOGLE, 24}, /* 104.154.127.0/24 */
-    {0x689a8000u, PROTO_GOOGLE, 23}, /* 104.154.128.0/23 */
-    {0x689a8100u, PROTO_GOOGLE, 24}, /* 104.154.129.0/24 */
-    {0x689a8200u, PROTO_GOOGLE, 23}, /* 104.154.130.0/23 */
-    {0x689a8300u, PROTO_GOOGLE, 24}, /* 104.154.131.0/24 */
-    {0x689a8400u, PROTO_GOOGLE, 23}, /* 104.154.132.0/23 */
-    {0x689a8500u, PROTO_GOOGLE, 24}, /* 104.154.133.0/24 */
-    {0x689a8600u, PROTO_GOOGLE, 23}, /* 104.154.134.0/23 */
-    {0x689a8700u, PROTO_GOOGLE, 24}, /* 104.154.135.0/24 */
-    {0x689a8800u, PROTO_GOOGLE, 23}, /* 104.154.136.0/23 */
-    {0x689a8900u, PROTO_GOOGLE, 24}, /* 104.154.137.0/24 */
-    {0x689a8a00u, PROTO_GOOGLE, 23}, /* 104.154.138.0/23 */
-    {0x689a8b00u, PROTO_GOOGLE, 24}, /* 104.154.139.0/24 */
-    {0x689a8c00u, PROTO_GOOGLE, 23}, /* 104.154.140.0/23 */
-    {0x689a8d00u, PROTO_GOOGLE, 24}, /* 104.154.141.0/24 */
-    {0x689a8e00u, PROTO_GOOGLE, 23}, /* 104.154.142.0/23 */
-    {0x689a8f00u, PROTO_GOOGLE, 24}, /* 104.154.143.0/24 */
-    {0x689a9000u, PROTO_GOOGLE, 23}, /* 104.154.144.0/23 */
-    {0x689a9100u, PROTO_GOOGLE, 24}, /* 104.154.145.0/24 */
-    {0x689a9200u, PROTO_GOOGLE, 23}, /* 104.154.146.0/23 */
-    {0x689a9300u, PROTO_GOOGLE, 24}, /* 104.154.147.0/24 */
-    {0x689a9400u, PROTO_GOOGLE, 23}, /* 104.154.148.0/23 */
-    {0x689a9500u, PROTO_GOOGLE, 24}, /* 104.154.149.0/24 */
-    {0x689a9600u, PROTO_GOOGLE, 23}, /* 104.154.150.0/23 */
-    {0x689a9700u, PROTO_GOOGLE, 24}, /* 104.154.151.0/24 */
-    {0x689a9800u, PROTO_GOOGLE, 23}, /* 104.154.152.0/23 */
-    {0x689a9900u, PROTO_GOOGLE, 24}, /* 104.154.153.0/24 */
-    {0x689a9a00u, PROTO_GOOGLE, 23}, /* 104.154.154.0/23 */
-    {0x689a9b00u, PROTO_GOOGLE, 24}, /* 104.154.155.0/24 */
-    {0x689a9c00u, PROTO_GOOGLE, 23}, /* 104.154.156.0/23 */
-    {0x689a9d00u, PROTO_GOOGLE, 24}, /* 104.154.157.0/24 */
-    {0x689a9e00u, PROTO_GOOGLE, 23}, /* 104.154.158.0/23 */
-    {0x689a9f00u, PROTO_GOOGLE, 24}, /* 104.154.159.0/24 */
-    {0x689aa000u, PROTO_GOOGLE, 23}, /* 104.154.160.0/23 */
-    {0x689aa100u, PROTO_GOOGLE, 24}, /* 104.154.161.0/24 */
-    {0x689aa200u, PROTO_GOOGLE, 23}, /* 104.154.162.0/23 */
-    {0x689aa300u, PROTO_GOOGLE, 24}, /* 104.154.163.0/24 */
-    {0x689aa400u, PROTO_GOOGLE, 23}, /* 104.154.164.0/23 */
-    {0x689aa500u, PROTO_GOOGLE, 24}, /* 104.154.165.0/24 */
-    {0x689aa600u, PROTO_GOOGLE, 23}, /* 104.154.166.0/23 */
-    {0x689aa700u, PROTO_GOOGLE, 24}, /* 104.154.167.0/24 */
-    {0x689aa800u, PROTO_GOOGLE, 23}, /* 104.154.168.0/23 */
-    {0x689aa900u, PROTO_GOOGLE, 24}, /* 104.154.169.0/24 */
-    {0x689aaa00u, PROTO_GOOGLE, 23}, /* 104.154.170.0/23 */
-    {0x689aab00u, PROTO_GOOGLE, 24}, /* 104.154.171.0/24 */
-    {0x689aac00u, PROTO_GOOGLE, 23}, /* 104.154.172.0/23 */
-    {0x689aad00u, PROTO_GOOGLE, 24}, /* 104.154.173.0/24 */
-    {0x689aae00u, PROTO_GOOGLE, 23}, /* 104.154.174.0/23 */
-    {0x689aaf00u, PROTO_GOOGLE, 24}, /* 104.154.175.0/24 */
-    {0x689ab000u, PROTO_GOOGLE, 23}, /* 104.154.176.0/23 */
-    {0x689ab100u, PROTO_GOOGLE, 24}, /* 104.154.177.0/24 */
-    {0x689ab200u, PROTO_GOOGLE, 23}, /* 104.154.178.0/23 */
-    {0x689ab300u, PROTO_GOOGLE, 24}, /* 104.154.179.0/24 */
-    {0x689ab400u, PROTO_GOOGLE, 23}, /* 104.154.180.0/23 */
-    {0x689ab500u, PROTO_GOOGLE, 24}, /* 104.154.181.0/24 */
-    {0x689ab600u, PROTO_GOOGLE, 23}, /* 104.154.182.0/23 */
-    {0x689ab700u, PROTO_GOOGLE, 24}, /* 104.154.183.0/24 */
-    {0x689ab800u, PROTO_GOOGLE, 23}, /* 104.154.184.0/23 */
-    {0x689ab900u, PROTO_GOOGLE, 24}, /* 104.154.185.0/24 */
-    {0x689aba00u, PROTO_GOOGLE, 23}, /* 104.154.186.0/23 */
-    {0x689abb00u, PROTO_GOOGLE, 24}, /* 104.154.187.0/24 */
-    {0x689abc00u, PROTO_GOOGLE, 23}, /* 104.154.188.0/23 */
-    {0x689abd00u, PROTO_GOOGLE, 24}, /* 104.154.189.0/24 */
-    {0x689abe00u, PROTO_GOOGLE, 23}, /* 104.154.190.0/23 */
-    {0x689abf00u, PROTO_GOOGLE, 24}, /* 104.154.191.0/24 */
-    {0x689ac000u, PROTO_GOOGLE, 23}, /* 104.154.192.0/23 */
-    {0x689ac100u, PROTO_GOOGLE, 24}, /* 104.154.193.0/24 */
-    {0x689ac200u, PROTO_GOOGLE, 23}, /* 104.154.194.0/23 */
-    {0x689ac300u, PROTO_GOOGLE, 24}, /* 104.154.195.0/24 */
-    {0x689ac400u, PROTO_GOOGLE, 23}, /* 104.154.196.0/23 */
-    {0x689ac500u, PROTO_GOOGLE, 24}, /* 104.154.197.0/24 */
-    {0x689ac600u, PROTO_GOOGLE, 23}, /* 104.154.198.0/23 */
-    {0x689ac700u, PROTO_GOOGLE, 24}, /* 104.154.199.0/24 */
-    {0x689ac800u, PROTO_GOOGLE, 23}, /* 104.154.200.0/23 */
-    {0x689ac900u, PROTO_GOOGLE, 24}, /* 104.154.201.0/24 */
-    {0x689aca00u, PROTO_GOOGLE, 23}, /* 104.154.202.0/23 */
-    {0x689acb00u, PROTO_GOOGLE, 24}, /* 104.154.203.0/24 */
-    {0x689acc00u, PROTO_GOOGLE, 23}, /* 104.154.204.0/23 */
-    {0x689acd00u, PROTO_GOOGLE, 24}, /* 104.154.205.0/24 */
-    {0x689ace00u, PROTO_GOOGLE, 23}, /* 104.154.206.0/23 */
-    {0x689acf00u, PROTO_GOOGLE, 24}, /* 104.154.207.0/24 */
-    {0x689ad000u, PROTO_GOOGLE, 23}, /* 104.154.208.0/23 */
-    {0x689ad100u, PROTO_GOOGLE, 24}, /* 104.154.209.0/24 */
-    {0x689ad200u, PROTO_GOOGLE, 23}, /* 104.154.210.0/23 */
-    {0x689ad300u, PROTO_GOOGLE, 24}, /* 104.154.211.0/24 */
-    {0x689ad400u, PROTO_GOOGLE, 23}, /* 104.154.212.0/23 */
-    {0x689ad500u, PROTO_GOOGLE, 24}, /* 104.154.213.0/24 */
-    {0x689ad600u, PROTO_GOOGLE, 23}, /* 104.154.214.0/23 */
-    {0x689ad700u, PROTO_GOOGLE, 24}, /* 104.154.215.0/24 */
-    {0x689ad800u, PROTO_GOOGLE, 23}, /* 104.154.216.0/23 */
-    {0x689ad900u, PROTO_GOOGLE, 24}, /* 104.154.217.0/24 */
-    {0x689ada00u, PROTO_GOOGLE, 23}, /* 104.154.218.0/23 */
-    {0x689adb00u, PROTO_GOOGLE, 24}, /* 104.154.219.0/24 */
-    {0x689adc00u, PROTO_GOOGLE, 23}, /* 104.154.220.0/23 */
-    {0x689add00u, PROTO_GOOGLE, 24}, /* 104.154.221.0/24 */
-    {0x689ade00u, PROTO_GOOGLE, 23}, /* 104.154.222.0/23 */
-    {0x689adf00u, PROTO_GOOGLE, 24}, /* 104.154.223.0/24 */
-    {0x689ae000u, PROTO_GOOGLE, 23}, /* 104.154.224.0/23 */
-    {0x689ae100u, PROTO_GOOGLE, 24}, /* 104.154.225.0/24 */
-    {0x689ae200u, PROTO_GOOGLE, 23}, /* 104.154.226.0/23 */
-    {0x689ae300u, PROTO_GOOGLE, 24}, /* 104.154.227.0/24 */
-    {0x689ae400u, PROTO_GOOGLE, 23}, /* 104.154.228.0/23 */
-    {0x689ae500u, PROTO_GOOGLE, 24}, /* 104.154.229.0/24 */
-    {0x689ae600u, PROTO_GOOGLE, 23}, /* 104.154.230.0/23 */
-    {0x689ae700u, PROTO_GOOGLE, 24}, /* 104.154.231.0/24 */
-    {0x689ae800u, PROTO_GOOGLE, 23}, /* 104.154.232.0/23 */
-    {0x689ae900u, PROTO_GOOGLE, 24}, /* 104.154.233.0/24 */
-    {0x689aea00u, PROTO_GOOGLE, 23}, /* 104.154.234.0/23 */
-    {0x689aeb00u, PROTO_GOOGLE, 24}, /* 104.154.235.0/24 */
-    {0x689aec00u, PROTO_GOOGLE, 23}, /* 104.154.236.0/23 */
-    {0x689aed00u, PROTO_GOOGLE, 24}, /* 104.154.237.0/24 */
-    {0x689aee00u, PROTO_GOOGLE, 23}, /* 104.154.238.0/23 */
-    {0x689aef00u, PROTO_GOOGLE, 24}, /* 104.154.239.0/24 */
-    {0x689af000u, PROTO_GOOGLE, 23}, /* 104.154.240.0/23 */
-    {0x689af100u, PROTO_GOOGLE, 24}, /* 104.154.241.0/24 */
-    {0x689af200u, PROTO_GOOGLE, 23}, /* 104.154.242.0/23 */
-    {0x689af300u, PROTO_GOOGLE, 24}, /* 104.154.243.0/24 */
-    {0x689af400u, PROTO_GOOGLE, 23}, /* 104.154.244.0/23 */
-    {0x689af500u, PROTO_GOOGLE, 24}, /* 104.154.245.0/24 */
-    {0x689af600u, PROTO_GOOGLE, 23}, /* 104.154.246.0/23 */
-    {0x689af700u, PROTO_GOOGLE, 24}, /* 104.154.247.0/24 */
-    {0x689af800u, PROTO_GOOGLE, 23}, /* 104.154.248.0/23 */
-    {0x689af900u, PROTO_GOOGLE, 24}, /* 104.154.249.0/24 */
-    {0x689afa00u, PROTO_GOOGLE, 23}, /* 104.154.250.0/23 */
-    {0x689afb00u, PROTO_GOOGLE, 24}, /* 104.154.251.0/24 */
-    {0x689afc00u, PROTO_GOOGLE, 23}, /* 104.154.252.0/23 */
-    {0x689afd00u, PROTO_GOOGLE, 24}, /* 104.154.253.0/24 */
-    {0x689afe00u, PROTO_GOOGLE, 23}, /* 104.154.254.0/23 */
-    {0x689aff00u, PROTO_GOOGLE, 24}, /* 104.154.255.0/24 */
-    {0x689b0000u, PROTO_GOOGLE, 23}, /* 104.155.0.0/23 */
-    {0x689b0100u, PROTO_GOOGLE, 24}, /* 104.155.1.0/24 */
-    {0x689b0200u, PROTO_GOOGLE, 23}, /* 104.155.2.0/23 */
-    {0x689b0300u, PROTO_GOOGLE, 24}, /* 104.155.3.0/24 */
-    {0x689b0400u, PROTO_GOOGLE, 23}, /* 104.155.4.0/23 */
-    {0x689b0500u, PROTO_GOOGLE, 24}, /* 104.155.5.0/24 */
-    {0x689b0600u, PROTO_GOOGLE, 23}, /* 104.155.6.0/23 */
-    {0x689b0700u, PROTO_GOOGLE, 24}, /* 104.155.7.0/24 */
-    {0x689b0800u, PROTO_GOOGLE, 23}, /* 104.155.8.0/23 */
-    {0x689b0900u, PROTO_GOOGLE, 24}, /* 104.155.9.0/24 */
-    {0x689b0a00u, PROTO_GOOGLE, 23}, /* 104.155.10.0/23 */
-    {0x689b0b00u, PROTO_GOOGLE, 24}, /* 104.155.11.0/24 */
-    {0x689b0c00u, PROTO_GOOGLE, 23}, /* 104.155.12.0/23 */
-    {0x689b0d00u, PROTO_GOOGLE, 24}, /* 104.155.13.0/24 */
-    {0x689b0e00u, PROTO_GOOGLE, 23}, /* 104.155.14.0/23 */
-    {0x689b0f00u, PROTO_GOOGLE, 24}, /* 104.155.15.0/24 */
-    {0x689b1000u, PROTO_GOOGLE, 23}, /* 104.155.16.0/23 */
-    {0x689b1100u, PROTO_GOOGLE, 24}, /* 104.155.17.0/24 */
-    {0x689b1200u, PROTO_GOOGLE, 23}, /* 104.155.18.0/23 */
-    {0x689b1300u, PROTO_GOOGLE, 24}, /* 104.155.19.0/24 */
-    {0x689b1400u, PROTO_GOOGLE, 23}, /* 104.155.20.0/23 */
-    {0x689b1500u, PROTO_GOOGLE, 24}, /* 104.155.21.0/24 */
-    {0x689b1600u, PROTO_GOOGLE, 23}, /* 104.155.22.0/23 */
-    {0x689b1700u, PROTO_GOOGLE, 24}, /* 104.155.23.0/24 */
-    {0x689b1800u, PROTO_GOOGLE, 23}, /* 104.155.24.0/23 */
-    {0x689b1900u, PROTO_GOOGLE, 24}, /* 104.155.25.0/24 */
-    {0x689b1a00u, PROTO_GOOGLE, 23}, /* 104.155.26.0/23 */
-    {0x689b1b00u, PROTO_GOOGLE, 24}, /* 104.155.27.0/24 */
-    {0x689b1c00u, PROTO_GOOGLE, 23}, /* 104.155.28.0/23 */
-    {0x689b1d00u, PROTO_GOOGLE, 24}, /* 104.155.29.0/24 */
-    {0x689b1e00u, PROTO_GOOGLE, 23}, /* 104.155.30.0/23 */
-    {0x689b1f00u, PROTO_GOOGLE, 24}, /* 104.155.31.0/24 */
-    {0x689b2000u, PROTO_GOOGLE, 23}, /* 104.155.32.0/23 */
-    {0x689b2100u, PROTO_GOOGLE, 24}, /* 104.155.33.0/24 */
-    {0x689b2200u, PROTO_GOOGLE, 23}, /* 104.155.34.0/23 */
-    {0x689b2300u, PROTO_GOOGLE, 24}, /* 104.155.35.0/24 */
-    {0x689b2400u, PROTO_GOOGLE, 23}, /* 104.155.36.0/23 */
-    {0x689b2500u, PROTO_GOOGLE, 24}, /* 104.155.37.0/24 */
-    {0x689b2600u, PROTO_GOOGLE, 23}, /* 104.155.38.0/23 */
-    {0x689b2700u, PROTO_GOOGLE, 24}, /* 104.155.39.0/24 */
-    {0x689b2800u, PROTO_GOOGLE, 23}, /* 104.155.40.0/23 */
-    {0x689b2900u, PROTO_GOOGLE, 24}, /* 104.155.41.0/24 */
-    {0x689b2a00u, PROTO_GOOGLE, 23}, /* 104.155.42.0/23 */
-    {0x689b2b00u, PROTO_GOOGLE, 24}, /* 104.155.43.0/24 */
-    {0x689b2c00u, PROTO_GOOGLE, 23}, /* 104.155.44.0/23 */
-    {0x689b2d00u, PROTO_GOOGLE, 24}, /* 104.155.45.0/24 */
-    {0x689b2e00u, PROTO_GOOGLE, 23}, /* 104.155.46.0/23 */
-    {0x689b2f00u, PROTO_GOOGLE, 24}, /* 104.155.47.0/24 */
-    {0x689b3000u, PROTO_GOOGLE, 23}, /* 104.155.48.0/23 */
-    {0x689b3100u, PROTO_GOOGLE, 24}, /* 104.155.49.0/24 */
-    {0x689b3200u, PROTO_GOOGLE, 23}, /* 104.155.50.0/23 */
-    {0x689b3300u, PROTO_GOOGLE, 24}, /* 104.155.51.0/24 */
-    {0x689b3400u, PROTO_GOOGLE, 23}, /* 104.155.52.0/23 */
-    {0x689b3500u, PROTO_GOOGLE, 24}, /* 104.155.53.0/24 */
-    {0x689b3600u, PROTO_GOOGLE, 23}, /* 104.155.54.0/23 */
-    {0x689b3700u, PROTO_GOOGLE, 24}, /* 104.155.55.0/24 */
-    {0x689b3800u, PROTO_GOOGLE, 23}, /* 104.155.56.0/23 */
-    {0x689b3900u, PROTO_GOOGLE, 24}, /* 104.155.57.0/24 */
-    {0x689b3a00u, PROTO_GOOGLE, 23}, /* 104.155.58.0/23 */
-    {0x689b3b00u, PROTO_GOOGLE, 24}, /* 104.155.59.0/24 */
-    {0x689b3c00u, PROTO_GOOGLE, 23}, /* 104.155.60.0/23 */
-    {0x689b3d00u, PROTO_GOOGLE, 24}, /* 104.155.61.0/24 */
-    {0x689b3e00u, PROTO_GOOGLE, 23}, /* 104.155.62.0/23 */
-    {0x689b3f00u, PROTO_GOOGLE, 24}, /* 104.155.63.0/24 */
-    {0x689b4000u, PROTO_GOOGLE, 23}, /* 104.155.64.0/23 */
-    {0x689b4100u, PROTO_GOOGLE, 24}, /* 104.155.65.0/24 */
-    {0x689b4200u, PROTO_GOOGLE, 23}, /* 104.155.66.0/23 */
-    {0x689b4300u, PROTO_GOOGLE, 24}, /* 104.155.67.0/24 */
-    {0x689b4400u, PROTO_GOOGLE, 23}, /* 104.155.68.0/23 */
-    {0x689b4500u, PROTO_GOOGLE, 24}, /* 104.155.69.0/24 */
-    {0x689b4600u, PROTO_GOOGLE, 23}, /* 104.155.70.0/23 */
-    {0x689b4700u, PROTO_GOOGLE, 24}, /* 104.155.71.0/24 */
-    {0x689b4800u, PROTO_GOOGLE, 23}, /* 104.155.72.0/23 */
-    {0x689b4900u, PROTO_GOOGLE, 24}, /* 104.155.73.0/24 */
-    {0x689b4a00u, PROTO_GOOGLE, 23}, /* 104.155.74.0/23 */
-    {0x689b4b00u, PROTO_GOOGLE, 24}, /* 104.155.75.0/24 */
-    {0x689b4c00u, PROTO_GOOGLE, 23}, /* 104.155.76.0/23 */
-    {0x689b4d00u, PROTO_GOOGLE, 24}, /* 104.155.77.0/24 */
-    {0x689b4e00u, PROTO_GOOGLE, 23}, /* 104.155.78.0/23 */
-    {0x689b4f00u, PROTO_GOOGLE, 24}, /* 104.155.79.0/24 */
-    {0x689b5000u, PROTO_GOOGLE, 23}, /* 104.155.80.0/23 */
-    {0x689b5100u, PROTO_GOOGLE, 24}, /* 104.155.81.0/24 */
-    {0x689b5200u, PROTO_GOOGLE, 23}, /* 104.155.82.0/23 */
-    {0x689b5300u, PROTO_GOOGLE, 24}, /* 104.155.83.0/24 */
-    {0x689b5400u, PROTO_GOOGLE, 23}, /* 104.155.84.0/23 */
-    {0x689b5500u, PROTO_GOOGLE, 24}, /* 104.155.85.0/24 */
-    {0x689b5600u, PROTO_GOOGLE, 23}, /* 104.155.86.0/23 */
-    {0x689b5700u, PROTO_GOOGLE, 24}, /* 104.155.87.0/24 */
-    {0x689b5800u, PROTO_GOOGLE, 23}, /* 104.155.88.0/23 */
-    {0x689b5900u, PROTO_GOOGLE, 24}, /* 104.155.89.0/24 */
-    {0x689b5a00u, PROTO_GOOGLE, 23}, /* 104.155.90.0/23 */
-    {0x689b5b00u, PROTO_GOOGLE, 24}, /* 104.155.91.0/24 */
-    {0x689b5c00u, PROTO_GOOGLE, 23}, /* 104.155.92.0/23 */
-    {0x689b5d00u, PROTO_GOOGLE, 24}, /* 104.155.93.0/24 */
-    {0x689b5e00u, PROTO_GOOGLE, 23}, /* 104.155.94.0/23 */
-    {0x689b5f00u, PROTO_GOOGLE, 24}, /* 104.155.95.0/24 */
-    {0x689b6000u, PROTO_GOOGLE, 23}, /* 104.155.96.0/23 */
-    {0x689b6100u, PROTO_GOOGLE, 24}, /* 104.155.97.0/24 */
-    {0x689b6200u, PROTO_GOOGLE, 23}, /* 104.155.98.0/23 */
-    {0x689b6300u, PROTO_GOOGLE, 24}, /* 104.155.99.0/24 */
-    {0x689b6400u, PROTO_GOOGLE, 23}, /* 104.155.100.0/23 */
-    {0x689b6500u, PROTO_GOOGLE, 24}, /* 104.155.101.0/24 */
-    {0x689b6600u, PROTO_GOOGLE, 23}, /* 104.155.102.0/23 */
-    {0x689b6700u, PROTO_GOOGLE, 24}, /* 104.155.103.0/24 */
-    {0x689b6800u, PROTO_GOOGLE, 23}, /* 104.155.104.0/23 */
-    {0x689b6900u, PROTO_GOOGLE, 24}, /* 104.155.105.0/24 */
-    {0x689b6a00u, PROTO_GOOGLE, 23}, /* 104.155.106.0/23 */
-    {0x689b6b00u, PROTO_GOOGLE, 24}, /* 104.155.107.0/24 */
-    {0x689b6c00u, PROTO_GOOGLE, 23}, /* 104.155.108.0/23 */
-    {0x689b6d00u, PROTO_GOOGLE, 24}, /* 104.155.109.0/24 */
-    {0x689b6e00u, PROTO_GOOGLE, 23}, /* 104.155.110.0/23 */
-    {0x689b6f00u, PROTO_GOOGLE, 24}, /* 104.155.111.0/24 */
-    {0x689b7000u, PROTO_GOOGLE, 23}, /* 104.155.112.0/23 */
-    {0x689b7100u, PROTO_GOOGLE, 24}, /* 104.155.113.0/24 */
-    {0x689b7200u, PROTO_GOOGLE, 23}, /* 104.155.114.0/23 */
-    {0x689b7300u, PROTO_GOOGLE, 24}, /* 104.155.115.0/24 */
-    {0x689b7400u, PROTO_GOOGLE, 23}, /* 104.155.116.0/23 */
-    {0x689b7500u, PROTO_GOOGLE, 24}, /* 104.155.117.0/24 */
-    {0x689b7600u, PROTO_GOOGLE, 23}, /* 104.155.118.0/23 */
-    {0x689b7700u, PROTO_GOOGLE, 24}, /* 104.155.119.0/24 */
-    {0x689b7800u, PROTO_GOOGLE, 23}, /* 104.155.120.0/23 */
-    {0x689b7900u, PROTO_GOOGLE, 24}, /* 104.155.121.0/24 */
-    {0x689b7a00u, PROTO_GOOGLE, 23}, /* 104.155.122.0/23 */
-    {0x689b7b00u, PROTO_GOOGLE, 24}, /* 104.155.123.0/24 */
-    {0x689b7c00u, PROTO_GOOGLE, 23}, /* 104.155.124.0/23 */
-    {0x689b7d00u, PROTO_GOOGLE, 24}, /* 104.155.125.0/24 */
-    {0x689b7e00u, PROTO_GOOGLE, 23}, /* 104.155.126.0/23 */
-    {0x689b7f00u, PROTO_GOOGLE, 24}, /* 104.155.127.0/24 */
-    {0x689b8000u, PROTO_GOOGLE, 23}, /* 104.155.128.0/23 */
-    {0x689b8100u, PROTO_GOOGLE, 24}, /* 104.155.129.0/24 */
-    {0x689b8200u, PROTO_GOOGLE, 23}, /* 104.155.130.0/23 */
-    {0x689b8300u, PROTO_GOOGLE, 24}, /* 104.155.131.0/24 */
-    {0x689b8400u, PROTO_GOOGLE, 23}, /* 104.155.132.0/23 */
-    {0x689b8500u, PROTO_GOOGLE, 24}, /* 104.155.133.0/24 */
-    {0x689b8600u, PROTO_GOOGLE, 23}, /* 104.155.134.0/23 */
-    {0x689b8700u, PROTO_GOOGLE, 24}, /* 104.155.135.0/24 */
-    {0x689b8800u, PROTO_GOOGLE, 23}, /* 104.155.136.0/23 */
-    {0x689b8900u, PROTO_GOOGLE, 24}, /* 104.155.137.0/24 */
-    {0x689b8a00u, PROTO_GOOGLE, 23}, /* 104.155.138.0/23 */
-    {0x689b8b00u, PROTO_GOOGLE, 24}, /* 104.155.139.0/24 */
-    {0x689b8c00u, PROTO_GOOGLE, 23}, /* 104.155.140.0/23 */
-    {0x689b8d00u, PROTO_GOOGLE, 24}, /* 104.155.141.0/24 */
-    {0x689b8e00u, PROTO_GOOGLE, 23}, /* 104.155.142.0/23 */
-    {0x689b8f00u, PROTO_GOOGLE, 24}, /* 104.155.143.0/24 */
-    {0x689b9000u, PROTO_GOOGLE, 23}, /* 104.155.144.0/23 */
-    {0x689b9100u, PROTO_GOOGLE, 24}, /* 104.155.145.0/24 */
-    {0x689b9200u, PROTO_GOOGLE, 23}, /* 104.155.146.0/23 */
-    {0x689b9300u, PROTO_GOOGLE, 24}, /* 104.155.147.0/24 */
-    {0x689b9400u, PROTO_GOOGLE, 23}, /* 104.155.148.0/23 */
-    {0x689b9500u, PROTO_GOOGLE, 24}, /* 104.155.149.0/24 */
-    {0x689b9600u, PROTO_GOOGLE, 23}, /* 104.155.150.0/23 */
-    {0x689b9700u, PROTO_GOOGLE, 24}, /* 104.155.151.0/24 */
-    {0x689b9800u, PROTO_GOOGLE, 23}, /* 104.155.152.0/23 */
-    {0x689b9900u, PROTO_GOOGLE, 24}, /* 104.155.153.0/24 */
-    {0x689b9a00u, PROTO_GOOGLE, 23}, /* 104.155.154.0/23 */
-    {0x689b9b00u, PROTO_GOOGLE, 24}, /* 104.155.155.0/24 */
-    {0x689b9c00u, PROTO_GOOGLE, 23}, /* 104.155.156.0/23 */
-    {0x689b9d00u, PROTO_GOOGLE, 24}, /* 104.155.157.0/24 */
-    {0x689b9e00u, PROTO_GOOGLE, 23}, /* 104.155.158.0/23 */
-    {0x689b9f00u, PROTO_GOOGLE, 24}, /* 104.155.159.0/24 */
-    {0x689ba000u, PROTO_GOOGLE, 23}, /* 104.155.160.0/23 */
-    {0x689ba100u, PROTO_GOOGLE, 24}, /* 104.155.161.0/24 */
-    {0x689ba200u, PROTO_GOOGLE, 23}, /* 104.155.162.0/23 */
-    {0x689ba300u, PROTO_GOOGLE, 24}, /* 104.155.163.0/24 */
-    {0x689ba400u, PROTO_GOOGLE, 23}, /* 104.155.164.0/23 */
-    {0x689ba500u, PROTO_GOOGLE, 24}, /* 104.155.165.0/24 */
-    {0x689ba600u, PROTO_GOOGLE, 23}, /* 104.155.166.0/23 */
-    {0x689ba700u, PROTO_GOOGLE, 24}, /* 104.155.167.0/24 */
-    {0x689ba800u, PROTO_GOOGLE, 23}, /* 104.155.168.0/23 */
-    {0x689ba900u, PROTO_GOOGLE, 24}, /* 104.155.169.0/24 */
-    {0x689baa00u, PROTO_GOOGLE, 23}, /* 104.155.170.0/23 */
-    {0x689bab00u, PROTO_GOOGLE, 24}, /* 104.155.171.0/24 */
-    {0x689bac00u, PROTO_GOOGLE, 23}, /* 104.155.172.0/23 */
-    {0x689bad00u, PROTO_GOOGLE, 24}, /* 104.155.173.0/24 */
-    {0x689bae00u, PROTO_GOOGLE, 23}, /* 104.155.174.0/23 */
-    {0x689baf00u, PROTO_GOOGLE, 24}, /* 104.155.175.0/24 */
-    {0x689bb000u, PROTO_GOOGLE, 23}, /* 104.155.176.0/23 */
-    {0x689bb100u, PROTO_GOOGLE, 24}, /* 104.155.177.0/24 */
-    {0x689bb200u, PROTO_GOOGLE, 23}, /* 104.155.178.0/23 */
-    {0x689bb300u, PROTO_GOOGLE, 24}, /* 104.155.179.0/24 */
-    {0x689bb400u, PROTO_GOOGLE, 23}, /* 104.155.180.0/23 */
-    {0x689bb500u, PROTO_GOOGLE, 24}, /* 104.155.181.0/24 */
-    {0x689bb600u, PROTO_GOOGLE, 23}, /* 104.155.182.0/23 */
-    {0x689bb700u, PROTO_GOOGLE, 24}, /* 104.155.183.0/24 */
-    {0x689bb800u, PROTO_GOOGLE, 23}, /* 104.155.184.0/23 */
-    {0x689bb900u, PROTO_GOOGLE, 24}, /* 104.155.185.0/24 */
-    {0x689bba00u, PROTO_GOOGLE, 23}, /* 104.155.186.0/23 */
-    {0x689bbb00u, PROTO_GOOGLE, 24}, /* 104.155.187.0/24 */
-    {0x689bbc00u, PROTO_GOOGLE, 23}, /* 104.155.188.0/23 */
-    {0x689bbd00u, PROTO_GOOGLE, 24}, /* 104.155.189.0/24 */
-    {0x689bbe00u, PROTO_GOOGLE, 23}, /* 104.155.190.0/23 */
-    {0x689bbf00u, PROTO_GOOGLE, 24}, /* 104.155.191.0/24 */
-    {0x689bc000u, PROTO_GOOGLE, 23}, /* 104.155.192.0/23 */
-    {0x689bc100u, PROTO_GOOGLE, 24}, /* 104.155.193.0/24 */
-    {0x689bc200u, PROTO_GOOGLE, 23}, /* 104.155.194.0/23 */
-    {0x689bc300u, PROTO_GOOGLE, 24}, /* 104.155.195.0/24 */
-    {0x689bc400u, PROTO_GOOGLE, 23}, /* 104.155.196.0/23 */
-    {0x689bc500u, PROTO_GOOGLE, 24}, /* 104.155.197.0/24 */
-    {0x689bc600u, PROTO_GOOGLE, 23}, /* 104.155.198.0/23 */
-    {0x689bc700u, PROTO_GOOGLE, 24}, /* 104.155.199.0/24 */
-    {0x689bc800u, PROTO_GOOGLE, 23}, /* 104.155.200.0/23 */
-    {0x689bc900u, PROTO_GOOGLE, 24}, /* 104.155.201.0/24 */
-    {0x689bca00u, PROTO_GOOGLE, 23}, /* 104.155.202.0/23 */
-    {0x689bcb00u, PROTO_GOOGLE, 24}, /* 104.155.203.0/24 */
-    {0x689bcc00u, PROTO_GOOGLE, 23}, /* 104.155.204.0/23 */
-    {0x689bcd00u, PROTO_GOOGLE, 24}, /* 104.155.205.0/24 */
-    {0x689bce00u, PROTO_GOOGLE, 23}, /* 104.155.206.0/23 */
-    {0x689bcf00u, PROTO_GOOGLE, 24}, /* 104.155.207.0/24 */
-    {0x689bd000u, PROTO_GOOGLE, 23}, /* 104.155.208.0/23 */
-    {0x689bd100u, PROTO_GOOGLE, 24}, /* 104.155.209.0/24 */
-    {0x689bd200u, PROTO_GOOGLE, 23}, /* 104.155.210.0/23 */
-    {0x689bd300u, PROTO_GOOGLE, 24}, /* 104.155.211.0/24 */
-    {0x689bd400u, PROTO_GOOGLE, 23}, /* 104.155.212.0/23 */
-    {0x689bd500u, PROTO_GOOGLE, 24}, /* 104.155.213.0/24 */
-    {0x689bd600u, PROTO_GOOGLE, 23}, /* 104.155.214.0/23 */
-    {0x689bd700u, PROTO_GOOGLE, 24}, /* 104.155.215.0/24 */
-    {0x689bd800u, PROTO_GOOGLE, 23}, /* 104.155.216.0/23 */
-    {0x689bd900u, PROTO_GOOGLE, 24}, /* 104.155.217.0/24 */
-    {0x689bda00u, PROTO_GOOGLE, 23}, /* 104.155.218.0/23 */
-    {0x689bdb00u, PROTO_GOOGLE, 24}, /* 104.155.219.0/24 */
-    {0x689bdc00u, PROTO_GOOGLE, 23}, /* 104.155.220.0/23 */
-    {0x689bdd00u, PROTO_GOOGLE, 24}, /* 104.155.221.0/24 */
-    {0x689bde00u, PROTO_GOOGLE, 23}, /* 104.155.222.0/23 */
-    {0x689bdf00u, PROTO_GOOGLE, 24}, /* 104.155.223.0/24 */
-    {0x689be000u, PROTO_GOOGLE, 23}, /* 104.155.224.0/23 */
-    {0x689be100u, PROTO_GOOGLE, 24}, /* 104.155.225.0/24 */
-    {0x689be200u, PROTO_GOOGLE, 23}, /* 104.155.226.0/23 */
-    {0x689be300u, PROTO_GOOGLE, 24}, /* 104.155.227.0/24 */
-    {0x689be400u, PROTO_GOOGLE, 23}, /* 104.155.228.0/23 */
-    {0x689be500u, PROTO_GOOGLE, 24}, /* 104.155.229.0/24 */
-    {0x689be600u, PROTO_GOOGLE, 23}, /* 104.155.230.0/23 */
-    {0x689be700u, PROTO_GOOGLE, 24}, /* 104.155.231.0/24 */
-    {0x689be800u, PROTO_GOOGLE, 23}, /* 104.155.232.0/23 */
-    {0x689be900u, PROTO_GOOGLE, 24}, /* 104.155.233.0/24 */
-    {0x689bea00u, PROTO_GOOGLE, 23}, /* 104.155.234.0/23 */
-    {0x689beb00u, PROTO_GOOGLE, 24}, /* 104.155.235.0/24 */
-    {0x689bec00u, PROTO_GOOGLE, 23}, /* 104.155.236.0/23 */
-    {0x689bed00u, PROTO_GOOGLE, 24}, /* 104.155.237.0/24 */
-    {0x689bee00u, PROTO_GOOGLE, 23}, /* 104.155.238.0/23 */
-    {0x689bef00u, PROTO_GOOGLE, 24}, /* 104.155.239.0/24 */
-    {0x689bf000u, PROTO_GOOGLE, 23}, /* 104.155.240.0/23 */
-    {0x689bf100u, PROTO_GOOGLE, 24}, /* 104.155.241.0/24 */
-    {0x689bf200u, PROTO_GOOGLE, 23}, /* 104.155.242.0/23 */
-    {0x689bf300u, PROTO_GOOGLE, 24}, /* 104.155.243.0/24 */
-    {0x689bf400u, PROTO_GOOGLE, 23}, /* 104.155.244.0/23 */
-    {0x689bf500u, PROTO_GOOGLE, 24}, /* 104.155.245.0/24 */
-    {0x689bf600u, PROTO_GOOGLE, 23}, /* 104.155.246.0/23 */
-    {0x689bf700u, PROTO_GOOGLE, 24}, /* 104.155.247.0/24 */
-    {0x689bf800u, PROTO_GOOGLE, 23}, /* 104.155.248.0/23 */
-    {0x689bf900u, PROTO_GOOGLE, 24}, /* 104.155.249.0/24 */
-    {0x689bfa00u, PROTO_GOOGLE, 23}, /* 104.155.250.0/23 */
-    {0x689bfb00u, PROTO_GOOGLE, 24}, /* 104.155.251.0/24 */
-    {0x689bfc00u, PROTO_GOOGLE, 23}, /* 104.155.252.0/23 */
-    {0x689bfd00u, PROTO_GOOGLE, 24}, /* 104.155.253.0/24 */
-    {0x689bfe00u, PROTO_GOOGLE, 23}, /* 104.155.254.0/23 */
-    {0x689bff00u, PROTO_GOOGLE, 24}, /* 104.155.255.0/24 */
+    {0x689a7c00u, PROTO_GOOGLE, 22}, /* 104.154.124.0/22 */
+    {0x689a8000u, PROTO_GOOGLE_CLOUD, 17}, /* 104.154.128.0/17 */
+    {0x689b8000u, PROTO_GOOGLE_CLOUD, 18}, /* 104.155.128.0/18 */
+    {0x689bc000u, PROTO_GOOGLE_CLOUD, 19}, /* 104.155.192.0/19 */
+    {0x689be000u, PROTO_GOOGLE_CLOUD, 20}, /* 104.155.224.0/20 */
+    {0x689bf000u, PROTO_GOOGLE, 20}, /* 104.155.240.0/20 */
     {0x689c0000u, PROTO_UNKNOWN, 0},
-    {0x68c40000u, PROTO_GOOGLE, 14}, /* 104.196.0.0/14 */
-    {0x68c41000u, PROTO_GOOGLE, 20}, /* 104.196.16.0/20 */
-    {0x68c42000u, PROTO_GOOGLE, 19}, /* 104.196.32.0/19 */
-    {0x68c43000u, PROTO_GOOGLE, 20}, /* 104.196.48.0/20 */
-    {0x68c44000u, PROTO_GOOGLE, 19}, /* 104.196.64.0/19 */
+    {0x689c5000u, PROTO_FASTLY, 20}, /* 104.156.80.0/20 */
+    {0x689c6000u, PROTO_UNKNOWN, 0},
+    {0x68c40000u, PROTO_GOOGLE_CLOUD, 18}, /* 104.196.0.0/18 */
+    {0x68c44000u, PROTO_GOOGLE, 24}, /* 104.196.64.0/24 */
+    {0x68c44100u, PROTO_GOOGLE_CLOUD, 24}, /* 104.196.65.0/24 */
+    {0x68c44200u, PROTO_GOOGLE_CLOUD, 23}, /* 104.196.66.0/23 */
+    {0x68c44400u, PROTO_GOOGLE_CLOUD, 22}, /* 104.196.68.0/22 */
+    {0x68c44800u, PROTO_GOOGLE, 21}, /* 104.196.72.0/21 */
     {0x68c45000u, PROTO_GOOGLE, 20}, /* 104.196.80.0/20 */
-    {0x68c46000u, PROTO_GOOGLE, 19}, /* 104.196.96.0/19 */
-    {0x68c47000u, PROTO_GOOGLE, 20}, /* 104.196.112.0/20 */
-    {0x68c48000u, PROTO_GOOGLE, 19}, /* 104.196.128.0/19 */
-    {0x68c49000u, PROTO_GOOGLE, 20}, /* 104.196.144.0/20 */
-    {0x68c4a000u, PROTO_GOOGLE, 19}, /* 104.196.160.0/19 */
-    {0x68c4b000u, PROTO_GOOGLE, 20}, /* 104.196.176.0/20 */
-    {0x68c4c000u, PROTO_GOOGLE, 19}, /* 104.196.192.0/19 */
-    {0x68c4d000u, PROTO_GOOGLE, 20}, /* 104.196.208.0/20 */
-    {0x68c4e000u, PROTO_GOOGLE, 19}, /* 104.196.224.0/19 */
-    {0x68c4f000u, PROTO_GOOGLE, 20}, /* 104.196.240.0/20 */
-    {0x68c50000u, PROTO_GOOGLE, 19}, /* 104.197.0.0/19 */
-    {0x68c51000u, PROTO_GOOGLE, 20}, /* 104.197.16.0/20 */
-    {0x68c52000u, PROTO_GOOGLE, 19}, /* 104.197.32.0/19 */
-    {0x68c53000u, PROTO_GOOGLE, 20}, /* 104.197.48.0/20 */
-    {0x68c54000u, PROTO_GOOGLE, 19}, /* 104.197.64.0/19 */
-    {0x68c55000u, PROTO_GOOGLE, 20}, /* 104.197.80.0/20 */
-    {0x68c56000u, PROTO_GOOGLE, 19}, /* 104.197.96.0/19 */
-    {0x68c57000u, PROTO_GOOGLE, 20}, /* 104.197.112.0/20 */
-    {0x68c58000u, PROTO_GOOGLE, 19}, /* 104.197.128.0/19 */
-    {0x68c59000u, PROTO_GOOGLE, 20}, /* 104.197.144.0/20 */
-    {0x68c5a000u, PROTO_GOOGLE, 19}, /* 104.197.160.0/19 */
-    {0x68c5b000u, PROTO_GOOGLE, 20}, /* 104.197.176.0/20 */
-    {0x68c5c000u, PROTO_GOOGLE, 19}, /* 104.197.192.0/19 */
-    {0x68c5d000u, PROTO_GOOGLE, 20}, /* 104.197.208.0/20 */
-    {0x68c5e000u, PROTO_GOOGLE, 19}, /* 104.197.224.0/19 */
-    {0x68c5f000u, PROTO_GOOGLE, 20}, /* 104.197.240.0/20 */
-    {0x68c60000u, PROTO_GOOGLE, 19}, /* 104.198.0.0/19 */
-    {0x68c61000u, PROTO_GOOGLE, 20}, /* 104.198.16.0/20 */
-    {0x68c62000u, PROTO_GOOGLE, 19}, /* 104.198.32.0/19 */
-    {0x68c63000u, PROTO_GOOGLE, 20}, /* 104.198.48.0/20 */
-    {0x68c64000u, PROTO_GOOGLE, 19}, /* 104.198.64.0/19 */
-    {0x68c65000u, PROTO_GOOGLE, 20}, /* 104.198.80.0/20 */
-    {0x68c66000u, PROTO_GOOGLE, 19}, /* 104.198.96.0/19 */
-    {0x68c67000u, PROTO_GOOGLE, 20}, /* 104.198.112.0/20 */
-    {0x68c68000u, PROTO_GOOGLE, 19}, /* 104.198.128.0/19 */
-    {0x68c69000u, PROTO_GOOGLE, 20}, /* 104.198.144.0/20 */
-    {0x68c6a000u, PROTO_GOOGLE, 19}, /* 104.198.160.0/19 */
-    {0x68c6b000u, PROTO_GOOGLE, 20}, /* 104.198.176.0/20 */
-    {0x68c6c000u, PROTO_GOOGLE, 19}, /* 104.198.192.0/19 */
-    {0x68c6d000u, PROTO_GOOGLE, 20}, /* 104.198.208.0/20 */
-    {0x68c6e000u, PROTO_GOOGLE, 19}, /* 104.198.224.0/19 */
-    {0x68c6f000u, PROTO_GOOGLE, 20}, /* 104.198.240.0/20 */
-    {0x68c70000u, PROTO_GOOGLE, 19}, /* 104.199.0.0/19 */
-    {0x68c71000u, PROTO_GOOGLE, 20}, /* 104.199.16.0/20 */
-    {0x68c72000u, PROTO_GOOGLE, 19}, /* 104.199.32.0/19 */
-    {0x68c73000u, PROTO_GOOGLE, 20}, /* 104.199.48.0/20 */
-    {0x68c74000u, PROTO_GOOGLE, 19}, /* 104.199.64.0/19 */
-    {0x68c75000u, PROTO_GOOGLE, 20}, /* 104.199.80.0/20 */
-    {0x68c76000u, PROTO_GOOGLE, 19}, /* 104.199.96.0/19 */
-    {0x68c77000u, PROTO_GOOGLE, 20}, /* 104.199.112.0/20 */
-    {0x68c78000u, PROTO_GOOGLE, 19}, /* 104.199.128.0/19 */
-    {0x68c79000u, PROTO_GOOGLE, 20}, /* 104.199.144.0/20 */
-    {0x68c7a000u, PROTO_GOOGLE, 19}, /* 104.199.160.0/19 */
-    {0x68c7b000u, PROTO_GOOGLE, 20}, /* 104.199.176.0/20 */
-    {0x68c7c000u, PROTO_GOOGLE, 19}, /* 104.199.192.0/19 */
-    {0x68c7d000u, PROTO_GOOGLE, 20}, /* 104.199.208.0/20 */
-    {0x68c7e000u, PROTO_GOOGLE, 19}, /* 104.199.224.0/19 */
-    {0x68c7f000u, PROTO_GOOGLE, 20}, /* 104.199.240.0/20 */
+    {0x68c46000u, PROTO_GOOGLE_CLOUD, 19}, /* 104.196.96.0/19 */
+    {0x68c48000u, PROTO_GOOGLE_CLOUD, 17}, /* 104.196.128.0/17 */
+    {0x68c50000u, PROTO_GOOGLE_CLOUD, 16}, /* 104.197.0.0/16 */
+    {0x68c70000u, PROTO_GOOGLE_CLOUD, 18}, /* 104.199.0.0/18 */
+    {0x68c74000u, PROTO_GOOGLE, 23}, /* 104.199.64.0/23 */
+    {0x68c74200u, PROTO_GOOGLE_CLOUD, 23}, /* 104.199.66.0/23 */
+    {0x68c74400u, PROTO_GOOGLE_CLOUD, 22}, /* 104.199.68.0/22 */
+    {0x68c74800u, PROTO_GOOGLE_CLOUD, 21}, /* 104.199.72.0/21 */
+    {0x68c75000u, PROTO_GOOGLE_CLOUD, 20}, /* 104.199.80.0/20 */
+    {0x68c76000u, PROTO_GOOGLE_CLOUD, 19}, /* 104.199.96.0/19 */
+    {0x68c78000u, PROTO_GOOGLE_CLOUD, 18}, /* 104.199.128.0/18 */
+    {0x68c7c000u, PROTO_GOOGLE_CLOUD, 19}, /* 104.199.192.0/19 */
+    {0x68c7e000u, PROTO_GOOGLE_CLOUD, 20}, /* 104.199.224.0/20 */
+    {0x68c7f000u, PROTO_GOOGLE, 23}, /* 104.199.240.0/23 */
+    {0x68c7f200u, PROTO_GOOGLE_CLOUD, 23}, /* 104.199.242.0/23 */
+    {0x68c7f400u, PROTO_GOOGLE_CLOUD, 22}, /* 104.199.244.0/22 */
+    {0x68c7f800u, PROTO_GOOGLE_CLOUD, 21}, /* 104.199.248.0/21 */
     {0x68c80000u, PROTO_UNKNOWN, 0},
+    {0x68d00000u, PROTO_AZURE, 16}, /* 104.208.0.0/16 */
+    {0x68d10000u, PROTO_AZURE, 18}, /* 104.209.0.0/18 */
+    {0x68d14000u, PROTO_AZURE, 19}, /* 104.209.64.0/19 */
+    {0x68d16000u, PROTO_UNKNOWN, 0},
+    {0x68d18000u, PROTO_AZURE, 17}, /* 104.209.128.0/17 */
+    {0x68d20000u, PROTO_AZURE, 20}, /* 104.210.0.0/20 */
+    {0x68d21000u, PROTO_UNKNOWN, 0},
+    {0x68d22000u, PROTO_AZURE, 19}, /* 104.210.32.0/19 */
+    {0x68d24000u, PROTO_AZURE, 18}, /* 104.210.64.0/18 */
+    {0x68d28000u, PROTO_AZURE, 19}, /* 104.210.128.0/19 */
+    {0x68d2a000u, PROTO_UNKNOWN, 0},
+    {0x68d2b000u, PROTO_AZURE, 20}, /* 104.210.176.0/20 */
+    {0x68d2c000u, PROTO_AZURE, 19}, /* 104.210.192.0/19 */
+    {0x68d2e000u, PROTO_UNKNOWN, 0},
+    {0x68d30000u, PROTO_AZURE, 16}, /* 104.211.0.0/16 */
+    {0x68d40000u, PROTO_UNKNOWN, 0},
+    {0x68d60000u, PROTO_AZURE, 15}, /* 104.214.0.0/15 */
+    {0x68d80000u, PROTO_AWS, 15}, /* 104.216.0.0/15 */
+    {0x68da0000u, PROTO_UNKNOWN, 0},
     {0x68eda000u, PROTO_GOOGLE, 19}, /* 104.237.160.0/19 */
-    {0x68eda100u, PROTO_GOOGLE, 24}, /* 104.237.161.0/24 */
-    {0x68eda600u, PROTO_GOOGLE, 23}, /* 104.237.166.0/23 */
-    {0x68eda700u, PROTO_GOOGLE, 24}, /* 104.237.167.0/24 */
-    {0x68eda800u, PROTO_GOOGLE, 23}, /* 104.237.168.0/23 */
-    {0x68eda900u, PROTO_GOOGLE, 24}, /* 104.237.169.0/24 */
-    {0x68edaa00u, PROTO_GOOGLE, 23}, /* 104.237.170.0/23 */
-    {0x68edab00u, PROTO_GOOGLE, 24}, /* 104.237.171.0/24 */
-    {0x68edb000u, PROTO_GOOGLE, 23}, /* 104.237.176.0/23 */
-    {0x68edb100u, PROTO_GOOGLE, 24}, /* 104.237.177.0/24 */
-    {0x68edb200u, PROTO_GOOGLE, 23}, /* 104.237.178.0/23 */
-    {0x68edb300u, PROTO_GOOGLE, 24}, /* 104.237.179.0/24 */
-    {0x68edb400u, PROTO_GOOGLE, 23}, /* 104.237.180.0/23 */
-    {0x68edb500u, PROTO_GOOGLE, 24}, /* 104.237.181.0/24 */
-    {0x68edb600u, PROTO_GOOGLE, 23}, /* 104.237.182.0/23 */
-    {0x68edb700u, PROTO_GOOGLE, 24}, /* 104.237.183.0/24 */
-    {0x68edb800u, PROTO_GOOGLE, 23}, /* 104.237.184.0/23 */
-    {0x68edb900u, PROTO_GOOGLE, 24}, /* 104.237.185.0/24 */
-    {0x68edba00u, PROTO_GOOGLE, 23}, /* 104.237.186.0/23 */
-    {0x68edbb00u, PROTO_GOOGLE, 24}, /* 104.237.187.0/24 */
     {0x68edc000u, PROTO_UNKNOWN, 0},
-    {0x68f40000u, PROTO_CLOUDFLARE, 18}, /* 104.244.0.0/18 */
     {0x68f42800u, PROTO_TWITTER, 24}, /* 104.244.40.0/24 */
-    {0x68f43000u, PROTO_CLOUDFLARE, 18}, /* 104.244.0.0/18 */
-    {0x68f44000u, PROTO_UNKNOWN, 0},
-    {0x6b140000u, PROTO_AMAZON, 14}, /* 107.20.0.0/14 */
-    {0x6b150000u, PROTO_AMAZON, 18}, /* 107.21.0.0/18 */
-    {0x6b158000u, PROTO_AMAZON, 17}, /* 107.21.128.0/17 */
-    {0x6b160000u, PROTO_AMAZON, 16}, /* 107.22.0.0/16 */
-    {0x6b170000u, PROTO_AMAZON, 17}, /* 107.23.0.0/17 */
+    {0x68f43000u, PROTO_UNKNOWN, 0},
+    {0x68ff3800u, PROTO_AWS, 32}, /* 104.255.56.0/32 */
+    {0x68ff3801u, PROTO_UNKNOWN, 0},
+    {0x68ff3803u, PROTO_AWS, 32}, /* 104.255.56.3/32 */
+    {0x68ff3804u, PROTO_UNKNOWN, 0},
+    {0x68ff380bu, PROTO_AWS, 32}, /* 104.255.56.11/32 */
+    {0x68ff380du, PROTO_UNKNOWN, 0},
+    {0x68ff380fu, PROTO_AWS, 32}, /* 104.255.56.15/32 */
+    {0x68ff3810u, PROTO_AWS, 30}, /* 104.255.56.16/30 */
+    {0x68ff3814u, PROTO_AWS, 32}, /* 104.255.56.20/32 */
+    {0x68ff3815u, PROTO_UNKNOWN, 0},
+    {0x68ff3817u, PROTO_AWS, 32}, /* 104.255.56.23/32 */
+    {0x68ff3818u, PROTO_AWS, 30}, /* 104.255.56.24/30 */
+    {0x68ff381cu, PROTO_AWS, 31}, /* 104.255.56.28/31 */
+    {0x68ff381eu, PROTO_UNKNOWN, 0},
+    {0x68ff3831u, PROTO_AWS, 32}, /* 104.255.56.49/32 */
+    {0x68ff3832u, PROTO_AWS, 31}, /* 104.255.56.50/31 */
+    {0x68ff3834u, PROTO_AWS, 32}, /* 104.255.56.52/32 */
+    {0x68ff3835u, PROTO_UNKNOWN, 0},
+    {0x68ff3837u, PROTO_AWS, 32}, /* 104.255.56.55/32 */
+    {0x68ff3838u, PROTO_AWS, 31}, /* 104.255.56.56/31 */
+    {0x68ff383au, PROTO_UNKNOWN, 0},
+    {0x68ff383cu, PROTO_AWS, 32}, /* 104.255.56.60/32 */
+    {0x68ff383du, PROTO_UNKNOWN, 0},
+    {0x68ff383fu, PROTO_AWS, 32}, /* 104.255.56.63/32 */
+    {0x68ff3840u, PROTO_AWS, 29}, /* 104.255.56.64/29 */
+    {0x68ff3848u, PROTO_AWS, 32}, /* 104.255.56.72/32 */
+    {0x68ff3849u, PROTO_UNKNOWN, 0},
+    {0x68ff3900u, PROTO_AWS, 32}, /* 104.255.57.0/32 */
+    {0x68ff3901u, PROTO_UNKNOWN, 0},
+    {0x68ff3929u, PROTO_AWS, 32}, /* 104.255.57.41/32 */
+    {0x68ff392au, PROTO_UNKNOWN, 0},
+    {0x68ff3962u, PROTO_AWS, 32}, /* 104.255.57.98/32 */
+    {0x68ff3963u, PROTO_UNKNOWN, 0},
+    {0x68ff3964u, PROTO_AWS, 30}, /* 104.255.57.100/30 */
+    {0x68ff3968u, PROTO_UNKNOWN, 0},
+    {0x68ff39a4u, PROTO_AWS, 30}, /* 104.255.57.164/30 */
+    {0x68ff39a8u, PROTO_AWS, 29}, /* 104.255.57.168/29 */
+    {0x68ff39b0u, PROTO_AWS, 30}, /* 104.255.57.176/30 */
+    {0x68ff39b4u, PROTO_UNKNOWN, 0},
+    {0x68ff39b6u, PROTO_AWS, 31}, /* 104.255.57.182/31 */
+    {0x68ff39b8u, PROTO_UNKNOWN, 0},
+    {0x68ff3a00u, PROTO_AWS, 32}, /* 104.255.58.0/32 */
+    {0x68ff3a01u, PROTO_UNKNOWN, 0},
+    {0x68ff3a2bu, PROTO_AWS, 32}, /* 104.255.58.43/32 */
+    {0x68ff3a2du, PROTO_UNKNOWN, 0},
+    {0x68ff3a3fu, PROTO_AWS, 32}, /* 104.255.58.63/32 */
+    {0x68ff3a40u, PROTO_UNKNOWN, 0},
+    {0x68ff3a54u, PROTO_AWS, 32}, /* 104.255.58.84/32 */
+    {0x68ff3a55u, PROTO_UNKNOWN, 0},
+    {0x68ff3a5bu, PROTO_AWS, 32}, /* 104.255.58.91/32 */
+    {0x68ff3a5cu, PROTO_UNKNOWN, 0},
+    {0x68ff3aecu, PROTO_AWS, 30}, /* 104.255.58.236/30 */
+    {0x68ff3af0u, PROTO_UNKNOWN, 0},
+    {0x68ff3b51u, PROTO_AWS, 32}, /* 104.255.59.81/32 */
+    {0x68ff3b52u, PROTO_AWS, 31}, /* 104.255.59.82/31 */
+    {0x68ff3b54u, PROTO_UNKNOWN, 0},
+    {0x68ff3b55u, PROTO_AWS, 32}, /* 104.255.59.85/32 */
+    {0x68ff3b56u, PROTO_AWS, 31}, /* 104.255.59.86/31 */
+    {0x68ff3b58u, PROTO_AWS, 32}, /* 104.255.59.88/32 */
+    {0x68ff3b59u, PROTO_UNKNOWN, 0},
+    {0x68ff3b5bu, PROTO_AWS, 32}, /* 104.255.59.91/32 */
+    {0x68ff3b5cu, PROTO_UNKNOWN, 0},
+    {0x68ff3b65u, PROTO_AWS, 32}, /* 104.255.59.101/32 */
+    {0x68ff3b66u, PROTO_AWS, 31}, /* 104.255.59.102/31 */
+    {0x68ff3b6au, PROTO_AWS, 32}, /* 104.255.59.106/32 */
+    {0x68ff3b6bu, PROTO_UNKNOWN, 0},
+    {0x68ff3b72u, PROTO_AWS, 31}, /* 104.255.59.114/31 */
+    {0x68ff3b74u, PROTO_UNKNOWN, 0},
+    {0x68ff3b76u, PROTO_AWS, 31}, /* 104.255.59.118/31 */
+    {0x68ff3b78u, PROTO_UNKNOWN, 0},
+    {0x68ff3b7au, PROTO_AWS, 31}, /* 104.255.59.122/31 */
+    {0x68ff3b7cu, PROTO_AWS, 30}, /* 104.255.59.124/30 */
+    {0x68ff3b80u, PROTO_UNKNOWN, 0},
+    {0x68ff3b82u, PROTO_AWS, 31}, /* 104.255.59.130/31 */
+    {0x68ff3b84u, PROTO_AWS, 30}, /* 104.255.59.132/30 */
+    {0x68ff3b8cu, PROTO_UNKNOWN, 0},
+    {0x68ff3bc4u, PROTO_AWS, 30}, /* 104.255.59.196/30 */
+    {0x68ff3bc8u, PROTO_AWS, 31}, /* 104.255.59.200/31 */
+    {0x68ff3bcau, PROTO_UNKNOWN, 0},
+    {0x68ff3bceu, PROTO_AWS, 31}, /* 104.255.59.206/31 */
+    {0x68ff3bd0u, PROTO_AWS, 29}, /* 104.255.59.208/29 */
+    {0x68ff3bd8u, PROTO_AWS, 31}, /* 104.255.59.216/31 */
+    {0x68ff3bdau, PROTO_UNKNOWN, 0},
+    {0x68ff3beeu, PROTO_AWS, 31}, /* 104.255.59.238/31 */
+    {0x68ff3bf0u, PROTO_AWS, 30}, /* 104.255.59.240/30 */
+    {0x68ff3bf4u, PROTO_UNKNOWN, 0},
+    {0x68ff3d00u, PROTO_AWS, 31}, /* 104.255.61.0/31 */
+    {0x68ff3d02u, PROTO_UNKNOWN, 0},
+    {0x6b140000u, PROTO_AWS, 14}, /* 107.20.0.0/14 */
     {0x6b180000u, PROTO_UNKNOWN, 0},
-    {0x6ba7a000u, PROTO_GOOGLE, 23}, /* 107.167.160.0/23 */
-    {0x6ba7a100u, PROTO_GOOGLE, 24}, /* 107.167.161.0/24 */
-    {0x6ba7a200u, PROTO_GOOGLE, 23}, /* 107.167.162.0/23 */
-    {0x6ba7a300u, PROTO_GOOGLE, 24}, /* 107.167.163.0/24 */
-    {0x6ba7a400u, PROTO_GOOGLE, 23}, /* 107.167.164.0/23 */
-    {0x6ba7a500u, PROTO_GOOGLE, 24}, /* 107.167.165.0/24 */
-    {0x6ba7a600u, PROTO_GOOGLE, 23}, /* 107.167.166.0/23 */
-    {0x6ba7a700u, PROTO_GOOGLE, 24}, /* 107.167.167.0/24 */
-    {0x6ba7a800u, PROTO_GOOGLE, 23}, /* 107.167.168.0/23 */
-    {0x6ba7a900u, PROTO_GOOGLE, 24}, /* 107.167.169.0/24 */
-    {0x6ba7aa00u, PROTO_GOOGLE, 23}, /* 107.167.170.0/23 */
-    {0x6ba7ab00u, PROTO_GOOGLE, 24}, /* 107.167.171.0/24 */
-    {0x6ba7ac00u, PROTO_GOOGLE, 23}, /* 107.167.172.0/23 */
-    {0x6ba7ad00u, PROTO_GOOGLE, 24}, /* 107.167.173.0/24 */
-    {0x6ba7ae00u, PROTO_GOOGLE, 23}, /* 107.167.174.0/23 */
-    {0x6ba7af00u, PROTO_GOOGLE, 24}, /* 107.167.175.0/24 */
-    {0x6ba7b000u, PROTO_GOOGLE, 23}, /* 107.167.176.0/23 */
-    {0x6ba7b100u, PROTO_GOOGLE, 24}, /* 107.167.177.0/24 */
-    {0x6ba7b200u, PROTO_GOOGLE, 23}, /* 107.167.178.0/23 */
-    {0x6ba7b300u, PROTO_GOOGLE, 24}, /* 107.167.179.0/24 */
-    {0x6ba7b400u, PROTO_GOOGLE, 23}, /* 107.167.180.0/23 */
-    {0x6ba7b500u, PROTO_GOOGLE, 24}, /* 107.167.181.0/24 */
-    {0x6ba7b600u, PROTO_GOOGLE, 23}, /* 107.167.182.0/23 */
-    {0x6ba7b700u, PROTO_GOOGLE, 24}, /* 107.167.183.0/24 */
-    {0x6ba7b800u, PROTO_GOOGLE, 23}, /* 107.167.184.0/23 */
-    {0x6ba7b900u, PROTO_GOOGLE, 24}, /* 107.167.185.0/24 */
-    {0x6ba7ba00u, PROTO_GOOGLE, 23}, /* 107.167.186.0/23 */
-    {0x6ba7bb00u, PROTO_GOOGLE, 24}, /* 107.167.187.0/24 */
-    {0x6ba7bc00u, PROTO_GOOGLE, 23}, /* 107.167.188.0/23 */
-    {0x6ba7bd00u, PROTO_GOOGLE, 24}, /* 107.167.189.0/24 */
-    {0x6ba7be00u, PROTO_GOOGLE, 23}, /* 107.167.190.0/23 */
-    {0x6ba7bf00u, PROTO_GOOGLE, 24}, /* 107.167.191.0/24 */
+    {0x6ba7a000u, PROTO_GOOGLE_CLOUD, 19}, /* 107.167.160.0/19 */
     {0x6ba7c000u, PROTO_UNKNOWN, 0},
-    {0x6bb2c000u, PROTO_GOOGLE, 23}, /* 107.178.192.0/23 */
-    {0x6bb2c100u, PROTO_GOOGLE, 24}, /* 107.178.193.0/24 */
-    {0x6bb2c200u, PROTO_GOOGLE, 23}, /* 107.178.194.0/23 */
-    {0x6bb2c300u, PROTO_GOOGLE, 24}, /* 107.178.195.0/24 */
-    {0x6bb2c400u, PROTO_GOOGLE, 23}, /* 107.178.196.0/23 */
-    {0x6bb2c500u, PROTO_GOOGLE, 24}, /* 107.178.197.0/24 */
-    {0x6bb2c600u, PROTO_GOOGLE, 23}, /* 107.178.198.0/23 */
-    {0x6bb2c700u, PROTO_GOOGLE, 24}, /* 107.178.199.0/24 */
-    {0x6bb2c800u, PROTO_GOOGLE, 23}, /* 107.178.200.0/23 */
-    {0x6bb2c900u, PROTO_GOOGLE, 24}, /* 107.178.201.0/24 */
-    {0x6bb2ca00u, PROTO_GOOGLE, 23}, /* 107.178.202.0/23 */
-    {0x6bb2cb00u, PROTO_GOOGLE, 24}, /* 107.178.203.0/24 */
-    {0x6bb2cc00u, PROTO_GOOGLE, 23}, /* 107.178.204.0/23 */
-    {0x6bb2cd00u, PROTO_GOOGLE, 24}, /* 107.178.205.0/24 */
-    {0x6bb2ce00u, PROTO_GOOGLE, 23}, /* 107.178.206.0/23 */
-    {0x6bb2cf00u, PROTO_GOOGLE, 24}, /* 107.178.207.0/24 */
-    {0x6bb2d000u, PROTO_GOOGLE, 23}, /* 107.178.208.0/23 */
-    {0x6bb2d100u, PROTO_GOOGLE, 24}, /* 107.178.209.0/24 */
-    {0x6bb2d200u, PROTO_GOOGLE, 23}, /* 107.178.210.0/23 */
-    {0x6bb2d300u, PROTO_GOOGLE, 24}, /* 107.178.211.0/24 */
-    {0x6bb2d400u, PROTO_GOOGLE, 23}, /* 107.178.212.0/23 */
-    {0x6bb2d500u, PROTO_GOOGLE, 24}, /* 107.178.213.0/24 */
-    {0x6bb2d600u, PROTO_GOOGLE, 23}, /* 107.178.214.0/23 */
-    {0x6bb2d700u, PROTO_GOOGLE, 24}, /* 107.178.215.0/24 */
-    {0x6bb2d800u, PROTO_GOOGLE, 23}, /* 107.178.216.0/23 */
-    {0x6bb2d900u, PROTO_GOOGLE, 24}, /* 107.178.217.0/24 */
-    {0x6bb2da00u, PROTO_GOOGLE, 23}, /* 107.178.218.0/23 */
-    {0x6bb2db00u, PROTO_GOOGLE, 24}, /* 107.178.219.0/24 */
-    {0x6bb2dc00u, PROTO_GOOGLE, 23}, /* 107.178.220.0/23 */
-    {0x6bb2dd00u, PROTO_GOOGLE, 24}, /* 107.178.221.0/24 */
-    {0x6bb2de00u, PROTO_GOOGLE, 23}, /* 107.178.222.0/23 */
-    {0x6bb2df00u, PROTO_GOOGLE, 24}, /* 107.178.223.0/24 */
-    {0x6bb2e000u, PROTO_GOOGLE, 23}, /* 107.178.224.0/23 */
-    {0x6bb2e100u, PROTO_GOOGLE, 24}, /* 107.178.225.0/24 */
-    {0x6bb2e200u, PROTO_GOOGLE, 23}, /* 107.178.226.0/23 */
-    {0x6bb2e300u, PROTO_GOOGLE, 24}, /* 107.178.227.0/24 */
-    {0x6bb2e400u, PROTO_GOOGLE, 23}, /* 107.178.228.0/23 */
-    {0x6bb2e500u, PROTO_GOOGLE, 24}, /* 107.178.229.0/24 */
-    {0x6bb2e600u, PROTO_GOOGLE, 23}, /* 107.178.230.0/23 */
-    {0x6bb2e700u, PROTO_GOOGLE, 24}, /* 107.178.231.0/24 */
-    {0x6bb2e800u, PROTO_GOOGLE, 23}, /* 107.178.232.0/23 */
-    {0x6bb2e900u, PROTO_GOOGLE, 24}, /* 107.178.233.0/24 */
-    {0x6bb2ea00u, PROTO_GOOGLE, 23}, /* 107.178.234.0/23 */
-    {0x6bb2eb00u, PROTO_GOOGLE, 24}, /* 107.178.235.0/24 */
-    {0x6bb2ec00u, PROTO_GOOGLE, 23}, /* 107.178.236.0/23 */
-    {0x6bb2ed00u, PROTO_GOOGLE, 24}, /* 107.178.237.0/24 */
-    {0x6bb2ee00u, PROTO_GOOGLE, 23}, /* 107.178.238.0/23 */
-    {0x6bb2ef00u, PROTO_GOOGLE, 24}, /* 107.178.239.0/24 */
-    {0x6bb2f000u, PROTO_GOOGLE, 23}, /* 107.178.240.0/23 */
-    {0x6bb2f100u, PROTO_GOOGLE, 24}, /* 107.178.241.0/24 */
-    {0x6bb2f200u, PROTO_GOOGLE, 23}, /* 107.178.242.0/23 */
-    {0x6bb2f300u, PROTO_GOOGLE, 24}, /* 107.178.243.0/24 */
-    {0x6bb2f400u, PROTO_GOOGLE, 23}, /* 107.178.244.0/23 */
-    {0x6bb2f500u, PROTO_GOOGLE, 24}, /* 107.178.245.0/24 */
-    {0x6bb2f600u, PROTO_GOOGLE, 23}, /* 107.178.246.0/23 */
-    {0x6bb2f700u, PROTO_GOOGLE, 24}, /* 107.178.247.0/24 */
-    {0x6bb2f800u, PROTO_GOOGLE, 23}, /* 107.178.248.0/23 */
-    {0x6bb2f900u, PROTO_GOOGLE, 24}, /* 107.178.249.0/24 */
-    {0x6bb2fa00u, PROTO_GOOGLE, 23}, /* 107.178.250.0/23 */
-    {0x6bb2fb00u, PROTO_GOOGLE, 24}, /* 107.178.251.0/24 */
-    {0x6bb2fc00u, PROTO_GOOGLE, 23}, /* 107.178.252.0/23 */
-    {0x6bb2fd00u, PROTO_GOOGLE, 24}, /* 107.178.253.0/24 */
-    {0x6bb2fe00u, PROTO_GOOGLE, 23}, /* 107.178.254.0/23 */
-    {0x6bb2ff00u, PROTO_GOOGLE, 24}, /* 107.178.255.0/24 */
+    {0x6bb00000u, PROTO_AWS, 15}, /* 107.176.0.0/15 */
+    {0x6bb20000u, PROTO_UNKNOWN, 0},
+    {0x6bb2c000u, PROTO_GOOGLE, 20}, /* 107.178.192.0/20 */
+    {0x6bb2d000u, PROTO_GOOGLE_CLOUD, 20}, /* 107.178.208.0/20 */
+    {0x6bb2e000u, PROTO_GOOGLE, 20}, /* 107.178.224.0/20 */
+    {0x6bb2f000u, PROTO_GOOGLE_CLOUD, 20}, /* 107.178.240.0/20 */
     {0x6bb30000u, PROTO_UNKNOWN, 0},
-    {0x6bbc8000u, PROTO_GOOGLE, 17}, /* 107.188.128.0/17 */
-    {0x6bbd0000u, PROTO_UNKNOWN, 0},
-    {0x6c3b5000u, PROTO_GOOGLE, 20}, /* 108.59.80.0/20 */
-    {0x6c3b5100u, PROTO_GOOGLE, 24}, /* 108.59.81.0/24 */
-    {0x6c3b5200u, PROTO_GOOGLE, 23}, /* 108.59.82.0/23 */
-    {0x6c3b5300u, PROTO_GOOGLE, 24}, /* 108.59.83.0/24 */
-    {0x6c3b5400u, PROTO_GOOGLE, 23}, /* 108.59.84.0/23 */
-    {0x6c3b5500u, PROTO_GOOGLE, 24}, /* 108.59.85.0/24 */
-    {0x6c3b5600u, PROTO_GOOGLE, 23}, /* 108.59.86.0/23 */
-    {0x6c3b5700u, PROTO_GOOGLE, 24}, /* 108.59.87.0/24 */
-    {0x6c3b5800u, PROTO_GOOGLE, 23}, /* 108.59.88.0/23 */
-    {0x6c3b5900u, PROTO_GOOGLE, 24}, /* 108.59.89.0/24 */
-    {0x6c3b5a00u, PROTO_GOOGLE, 23}, /* 108.59.90.0/23 */
-    {0x6c3b5b00u, PROTO_GOOGLE, 24}, /* 108.59.91.0/24 */
-    {0x6c3b5c00u, PROTO_GOOGLE, 23}, /* 108.59.92.0/23 */
-    {0x6c3b5d00u, PROTO_GOOGLE, 24}, /* 108.59.93.0/24 */
-    {0x6c3b5e00u, PROTO_GOOGLE, 23}, /* 108.59.94.0/23 */
-    {0x6c3b5f00u, PROTO_GOOGLE, 24}, /* 108.59.95.0/24 */
+    {0x6c3b5000u, PROTO_GOOGLE_CLOUD, 20}, /* 108.59.80.0/20 */
     {0x6c3b6000u, PROTO_UNKNOWN, 0},
+    {0x6c800000u, PROTO_AWS, 13}, /* 108.128.0.0/13 */
+    {0x6c880000u, PROTO_AWS, 15}, /* 108.136.0.0/15 */
+    {0x6c8a0000u, PROTO_CLOUDFRONT, 15}, /* 108.138.0.0/15 */
+    {0x6c8c0000u, PROTO_AZURE, 14}, /* 108.140.0.0/14 */
+    {0x6c900000u, PROTO_UNKNOWN, 0},
+    {0x6c9c0000u, PROTO_CLOUDFRONT, 14}, /* 108.156.0.0/14 */
+    {0x6ca00000u, PROTO_UNKNOWN, 0},
     {0x6ca2c000u, PROTO_CLOUDFLARE, 18}, /* 108.162.192.0/18 */
     {0x6ca30000u, PROTO_UNKNOWN, 0},
+    {0x6ca6e000u, PROTO_AWS, 19}, /* 108.166.224.0/19 */
+    {0x6ca70000u, PROTO_UNKNOWN, 0},
     {0x6caac000u, PROTO_GOOGLE, 18}, /* 108.170.192.0/18 */
-    {0x6caac100u, PROTO_GOOGLE, 24}, /* 108.170.193.0/24 */
-    {0x6caac200u, PROTO_GOOGLE, 23}, /* 108.170.194.0/23 */
-    {0x6caac300u, PROTO_GOOGLE, 24}, /* 108.170.195.0/24 */
-    {0x6caac400u, PROTO_GOOGLE, 23}, /* 108.170.196.0/23 */
-    {0x6caac500u, PROTO_GOOGLE, 24}, /* 108.170.197.0/24 */
-    {0x6caac600u, PROTO_GOOGLE, 23}, /* 108.170.198.0/23 */
-    {0x6caac700u, PROTO_GOOGLE, 24}, /* 108.170.199.0/24 */
-    {0x6caac800u, PROTO_GOOGLE, 23}, /* 108.170.200.0/23 */
-    {0x6caac900u, PROTO_GOOGLE, 24}, /* 108.170.201.0/24 */
-    {0x6caaca00u, PROTO_GOOGLE, 23}, /* 108.170.202.0/23 */
-    {0x6caacb00u, PROTO_GOOGLE, 24}, /* 108.170.203.0/24 */
-    {0x6caacc00u, PROTO_GOOGLE, 23}, /* 108.170.204.0/23 */
-    {0x6caacd00u, PROTO_GOOGLE, 24}, /* 108.170.205.0/24 */
-    {0x6caace00u, PROTO_GOOGLE, 23}, /* 108.170.206.0/23 */
-    {0x6caacf00u, PROTO_GOOGLE, 24}, /* 108.170.207.0/24 */
-    {0x6caad000u, PROTO_GOOGLE, 23}, /* 108.170.208.0/23 */
-    {0x6caad100u, PROTO_GOOGLE, 24}, /* 108.170.209.0/24 */
-    {0x6caad200u, PROTO_GOOGLE, 23}, /* 108.170.210.0/23 */
-    {0x6caad300u, PROTO_GOOGLE, 24}, /* 108.170.211.0/24 */
-    {0x6caad400u, PROTO_GOOGLE, 23}, /* 108.170.212.0/23 */
-    {0x6caad500u, PROTO_GOOGLE, 24}, /* 108.170.213.0/24 */
-    {0x6caad600u, PROTO_GOOGLE, 23}, /* 108.170.214.0/23 */
-    {0x6caad700u, PROTO_GOOGLE, 24}, /* 108.170.215.0/24 */
-    {0x6caad800u, PROTO_GOOGLE, 23}, /* 108.170.216.0/23 */
-    {0x6caad900u, PROTO_GOOGLE, 24}, /* 108.170.217.0/24 */
-    {0x6caada00u, PROTO_GOOGLE, 23}, /* 108.170.218.0/23 */
-    {0x6caadb00u, PROTO_GOOGLE, 24}, /* 108.170.219.0/24 */
-    {0x6caadc00u, PROTO_GOOGLE, 23}, /* 108.170.220.0/23 */
-    {0x6caadd00u, PROTO_GOOGLE, 24}, /* 108.170.221.0/24 */
-    {0x6caae000u, PROTO_GOOGLE, 23}, /* 108.170.224.0/23 */
-    {0x6caae100u, PROTO_GOOGLE, 24}, /* 108.170.225.0/24 */
-    {0x6caae200u, PROTO_GOOGLE, 23}, /* 108.170.226.0/23 */
-    {0x6caae300u, PROTO_GOOGLE, 24}, /* 108.170.227.0/24 */
-    {0x6caae400u, PROTO_GOOGLE, 23}, /* 108.170.228.0/23 */
-    {0x6caae500u, PROTO_GOOGLE, 24}, /* 108.170.229.0/24 */
-    {0x6caae600u, PROTO_GOOGLE, 23}, /* 108.170.230.0/23 */
-    {0x6caae700u, PROTO_GOOGLE, 24}, /* 108.170.231.0/24 */
-    {0x6caae800u, PROTO_GOOGLE, 23}, /* 108.170.232.0/23 */
-    {0x6caae900u, PROTO_GOOGLE, 24}, /* 108.170.233.0/24 */
-    {0x6caaea00u, PROTO_GOOGLE, 23}, /* 108.170.234.0/23 */
-    {0x6caaeb00u, PROTO_GOOGLE, 24}, /* 108.170.235.0/24 */
-    {0x6caaec00u, PROTO_GOOGLE, 23}, /* 108.170.236.0/23 */
-    {0x6caaed00u, PROTO_GOOGLE, 24}, /* 108.170.237.0/24 */
-    {0x6caaee00u, PROTO_GOOGLE, 23}, /* 108.170.238.0/23 */
-    {0x6caaef00u, PROTO_GOOGLE, 24}, /* 108.170.239.0/24 */
-    {0x6caaf000u, PROTO_GOOGLE, 23}, /* 108.170.240.0/23 */
-    {0x6caaf100u, PROTO_GOOGLE, 24}, /* 108.170.241.0/24 */
-    {0x6caaf200u, PROTO_GOOGLE, 23}, /* 108.170.242.0/23 */
-    {0x6caaf300u, PROTO_GOOGLE, 24}, /* 108.170.243.0/24 */
-    {0x6caaf400u, PROTO_GOOGLE, 23}, /* 108.170.244.0/23 */
-    {0x6caaf500u, PROTO_GOOGLE, 24}, /* 108.170.245.0/24 */
-    {0x6caaf600u, PROTO_GOOGLE, 23}, /* 108.170.246.0/23 */
-    {0x6caaf700u, PROTO_GOOGLE, 24}, /* 108.170.247.0/24 */
-    {0x6caaf800u, PROTO_GOOGLE, 23}, /* 108.170.248.0/23 */
-    {0x6caaf900u, PROTO_GOOGLE, 24}, /* 108.170.249.0/24 */
-    {0x6caafa00u, PROTO_GOOGLE, 23}, /* 108.170.250.0/23 */
-    {0x6caafb00u, PROTO_GOOGLE, 24}, /* 108.170.251.0/24 */
-    {0x6caafc00u, PROTO_GOOGLE, 23}, /* 108.170.252.0/23 */
-    {0x6caafd00u, PROTO_GOOGLE, 24}, /* 108.170.253.0/24 */
-    {0x6caafe00u, PROTO_GOOGLE, 23}, /* 108.170.254.0/23 */
-    {0x6caaff00u, PROTO_GOOGLE, 24}, /* 108.170.255.0/24 */
     {0x6cab0000u, PROTO_UNKNOWN, 0},
     {0x6caf2000u, PROTO_NETFLIX, 20}, /* 108.175.32.0/20 */
     {0x6caf2f00u, PROTO_NETFLIX, 24}, /* 108.175.47.0/24 */
-    {0x6caf3000u, PROTO_UNKNOWN, 0},
+    {0x6caf3000u, PROTO_AWS, 20}, /* 108.175.48.0/20 */
+    {0x6caf4000u, PROTO_UNKNOWN, 0},
     {0x6cb10000u, PROTO_GOOGLE, 17}, /* 108.177.0.0/17 */
-    {0x6cb10100u, PROTO_GOOGLE, 24}, /* 108.177.1.0/24 */
-    {0x6cb10200u, PROTO_GOOGLE, 23}, /* 108.177.2.0/23 */
-    {0x6cb10300u, PROTO_GOOGLE, 24}, /* 108.177.3.0/24 */
-    {0x6cb10400u, PROTO_GOOGLE, 23}, /* 108.177.4.0/23 */
-    {0x6cb10500u, PROTO_GOOGLE, 24}, /* 108.177.5.0/24 */
-    {0x6cb10600u, PROTO_GOOGLE, 23}, /* 108.177.6.0/23 */
-    {0x6cb10700u, PROTO_GOOGLE, 24}, /* 108.177.7.0/24 */
-    {0x6cb10800u, PROTO_GOOGLE, 23}, /* 108.177.8.0/23 */
-    {0x6cb10900u, PROTO_GOOGLE, 24}, /* 108.177.9.0/24 */
-    {0x6cb10a00u, PROTO_GOOGLE, 23}, /* 108.177.10.0/23 */
-    {0x6cb10b00u, PROTO_GOOGLE, 24}, /* 108.177.11.0/24 */
-    {0x6cb10c00u, PROTO_GOOGLE, 23}, /* 108.177.12.0/23 */
-    {0x6cb10d00u, PROTO_GOOGLE, 24}, /* 108.177.13.0/24 */
-    {0x6cb10e00u, PROTO_GOOGLE, 23}, /* 108.177.14.0/23 */
-    {0x6cb10f00u, PROTO_GOOGLE, 24}, /* 108.177.15.0/24 */
-    {0x6cb11000u, PROTO_GOOGLE, 23}, /* 108.177.16.0/23 */
-    {0x6cb11100u, PROTO_GOOGLE, 24}, /* 108.177.17.0/24 */
-    {0x6cb11200u, PROTO_GOOGLE, 23}, /* 108.177.18.0/23 */
-    {0x6cb11300u, PROTO_GOOGLE, 24}, /* 108.177.19.0/24 */
-    {0x6cb11400u, PROTO_GOOGLE, 23}, /* 108.177.20.0/23 */
-    {0x6cb11500u, PROTO_GOOGLE, 24}, /* 108.177.21.0/24 */
-    {0x6cb11600u, PROTO_GOOGLE, 23}, /* 108.177.22.0/23 */
-    {0x6cb11700u, PROTO_GOOGLE, 24}, /* 108.177.23.0/24 */
-    {0x6cb11800u, PROTO_GOOGLE, 23}, /* 108.177.24.0/23 */
-    {0x6cb11900u, PROTO_GOOGLE, 24}, /* 108.177.25.0/24 */
-    {0x6cb11a00u, PROTO_GOOGLE, 23}, /* 108.177.26.0/23 */
-    {0x6cb11b00u, PROTO_GOOGLE, 24}, /* 108.177.27.0/24 */
-    {0x6cb11c00u, PROTO_GOOGLE, 23}, /* 108.177.28.0/23 */
-    {0x6cb11d00u, PROTO_GOOGLE, 24}, /* 108.177.29.0/24 */
-    {0x6cb11e00u, PROTO_GOOGLE, 23}, /* 108.177.30.0/23 */
-    {0x6cb11f00u, PROTO_GOOGLE, 24}, /* 108.177.31.0/24 */
-    {0x6cb12000u, PROTO_GOOGLE, 23}, /* 108.177.32.0/23 */
-    {0x6cb12100u, PROTO_GOOGLE, 24}, /* 108.177.33.0/24 */
-    {0x6cb12200u, PROTO_GOOGLE, 23}, /* 108.177.34.0/23 */
-    {0x6cb12300u, PROTO_GOOGLE, 24}, /* 108.177.35.0/24 */
-    {0x6cb12400u, PROTO_GOOGLE, 23}, /* 108.177.36.0/23 */
-    {0x6cb12500u, PROTO_GOOGLE, 24}, /* 108.177.37.0/24 */
-    {0x6cb12600u, PROTO_GOOGLE, 23}, /* 108.177.38.0/23 */
-    {0x6cb12700u, PROTO_GOOGLE, 24}, /* 108.177.39.0/24 */
-    {0x6cb12800u, PROTO_GOOGLE, 23}, /* 108.177.40.0/23 */
-    {0x6cb12900u, PROTO_GOOGLE, 24}, /* 108.177.41.0/24 */
-    {0x6cb12a00u, PROTO_GOOGLE, 23}, /* 108.177.42.0/23 */
-    {0x6cb12b00u, PROTO_GOOGLE, 24}, /* 108.177.43.0/24 */
-    {0x6cb12c00u, PROTO_GOOGLE, 23}, /* 108.177.44.0/23 */
-    {0x6cb12d00u, PROTO_GOOGLE, 24}, /* 108.177.45.0/24 */
-    {0x6cb12e00u, PROTO_GOOGLE, 23}, /* 108.177.46.0/23 */
-    {0x6cb12f00u, PROTO_GOOGLE, 24}, /* 108.177.47.0/24 */
-    {0x6cb13000u, PROTO_GOOGLE, 23}, /* 108.177.48.0/23 */
-    {0x6cb13100u, PROTO_GOOGLE, 24}, /* 108.177.49.0/24 */
-    {0x6cb13200u, PROTO_GOOGLE, 23}, /* 108.177.50.0/23 */
-    {0x6cb13300u, PROTO_GOOGLE, 24}, /* 108.177.51.0/24 */
-    {0x6cb13400u, PROTO_GOOGLE, 23}, /* 108.177.52.0/23 */
-    {0x6cb13500u, PROTO_GOOGLE, 24}, /* 108.177.53.0/24 */
-    {0x6cb13600u, PROTO_GOOGLE, 23}, /* 108.177.54.0/23 */
-    {0x6cb13700u, PROTO_GOOGLE, 24}, /* 108.177.55.0/24 */
-    {0x6cb13800u, PROTO_GOOGLE, 23}, /* 108.177.56.0/23 */
-    {0x6cb13900u, PROTO_GOOGLE, 24}, /* 108.177.57.0/24 */
-    {0x6cb13a00u, PROTO_GOOGLE, 23}, /* 108.177.58.0/23 */
-    {0x6cb13b00u, PROTO_GOOGLE, 24}, /* 108.177.59.0/24 */
-    {0x6cb13c00u, PROTO_GOOGLE, 23}, /* 108.177.60.0/23 */
-    {0x6cb13d00u, PROTO_GOOGLE, 24}, /* 108.177.61.0/24 */
-    {0x6cb13e00u, PROTO_GOOGLE, 23}, /* 108.177.62.0/23 */
-    {0x6cb13f00u, PROTO_GOOGLE, 24}, /* 108.177.63.0/24 */
-    {0x6cb14000u, PROTO_GOOGLE, 23}, /* 108.177.64.0/23 */
-    {0x6cb14100u, PROTO_GOOGLE, 24}, /* 108.177.65.0/24 */
-    {0x6cb14200u, PROTO_GOOGLE, 23}, /* 108.177.66.0/23 */
-    {0x6cb14300u, PROTO_GOOGLE, 24}, /* 108.177.67.0/24 */
-    {0x6cb14400u, PROTO_GOOGLE, 23}, /* 108.177.68.0/23 */
-    {0x6cb14500u, PROTO_GOOGLE, 24}, /* 108.177.69.0/24 */
-    {0x6cb14600u, PROTO_GOOGLE, 23}, /* 108.177.70.0/23 */
-    {0x6cb14700u, PROTO_GOOGLE, 24}, /* 108.177.71.0/24 */
-    {0x6cb14800u, PROTO_GOOGLE, 23}, /* 108.177.72.0/23 */
-    {0x6cb14900u, PROTO_GOOGLE, 24}, /* 108.177.73.0/24 */
-    {0x6cb14a00u, PROTO_GOOGLE, 23}, /* 108.177.74.0/23 */
-    {0x6cb14b00u, PROTO_GOOGLE, 24}, /* 108.177.75.0/24 */
-    {0x6cb14c00u, PROTO_GOOGLE, 23}, /* 108.177.76.0/23 */
-    {0x6cb14d00u, PROTO_GOOGLE, 24}, /* 108.177.77.0/24 */
-    {0x6cb14e00u, PROTO_GOOGLE, 23}, /* 108.177.78.0/23 */
-    {0x6cb14f00u, PROTO_GOOGLE, 24}, /* 108.177.79.0/24 */
-    {0x6cb15000u, PROTO_GOOGLE, 23}, /* 108.177.80.0/23 */
-    {0x6cb15100u, PROTO_GOOGLE, 24}, /* 108.177.81.0/24 */
-    {0x6cb15200u, PROTO_GOOGLE, 23}, /* 108.177.82.0/23 */
-    {0x6cb15300u, PROTO_GOOGLE, 24}, /* 108.177.83.0/24 */
-    {0x6cb15400u, PROTO_GOOGLE, 23}, /* 108.177.84.0/23 */
-    {0x6cb15500u, PROTO_GOOGLE, 24}, /* 108.177.85.0/24 */
-    {0x6cb15600u, PROTO_GOOGLE, 23}, /* 108.177.86.0/23 */
-    {0x6cb15700u, PROTO_GOOGLE, 24}, /* 108.177.87.0/24 */
-    {0x6cb15800u, PROTO_GOOGLE, 23}, /* 108.177.88.0/23 */
-    {0x6cb15900u, PROTO_GOOGLE, 24}, /* 108.177.89.0/24 */
-    {0x6cb15a00u, PROTO_GOOGLE, 23}, /* 108.177.90.0/23 */
-    {0x6cb15b00u, PROTO_GOOGLE, 24}, /* 108.177.91.0/24 */
-    {0x6cb15c00u, PROTO_GOOGLE, 23}, /* 108.177.92.0/23 */
-    {0x6cb15d00u, PROTO_GOOGLE, 24}, /* 108.177.93.0/24 */
-    {0x6cb15e00u, PROTO_GOOGLE, 23}, /* 108.177.94.0/23 */
-    {0x6cb15f00u, PROTO_GOOGLE, 24}, /* 108.177.95.0/24 */
-    {0x6cb16000u, PROTO_GOOGLE, 23}, /* 108.177.96.0/23 */
-    {0x6cb16100u, PROTO_GOOGLE, 24}, /* 108.177.97.0/24 */
-    {0x6cb16200u, PROTO_GOOGLE, 23}, /* 108.177.98.0/23 */
-    {0x6cb16300u, PROTO_GOOGLE, 24}, /* 108.177.99.0/24 */
-    {0x6cb16400u, PROTO_GOOGLE, 23}, /* 108.177.100.0/23 */
-    {0x6cb16500u, PROTO_GOOGLE, 24}, /* 108.177.101.0/24 */
-    {0x6cb16600u, PROTO_GOOGLE, 23}, /* 108.177.102.0/23 */
-    {0x6cb16700u, PROTO_GOOGLE, 24}, /* 108.177.103.0/24 */
-    {0x6cb16800u, PROTO_GOOGLE, 23}, /* 108.177.104.0/23 */
-    {0x6cb16900u, PROTO_GOOGLE, 24}, /* 108.177.105.0/24 */
-    {0x6cb16a00u, PROTO_GOOGLE, 23}, /* 108.177.106.0/23 */
-    {0x6cb16b00u, PROTO_GOOGLE, 24}, /* 108.177.107.0/24 */
-    {0x6cb16c00u, PROTO_GOOGLE, 23}, /* 108.177.108.0/23 */
-    {0x6cb16d00u, PROTO_GOOGLE, 24}, /* 108.177.109.0/24 */
-    {0x6cb16e00u, PROTO_GOOGLE, 23}, /* 108.177.110.0/23 */
-    {0x6cb16f00u, PROTO_GOOGLE, 24}, /* 108.177.111.0/24 */
-    {0x6cb17000u, PROTO_GOOGLE, 23}, /* 108.177.112.0/23 */
-    {0x6cb17100u, PROTO_GOOGLE, 24}, /* 108.177.113.0/24 */
-    {0x6cb17200u, PROTO_GOOGLE, 23}, /* 108.177.114.0/23 */
-    {0x6cb17300u, PROTO_GOOGLE, 24}, /* 108.177.115.0/24 */
-    {0x6cb17400u, PROTO_GOOGLE, 23}, /* 108.177.116.0/23 */
-    {0x6cb17500u, PROTO_GOOGLE, 24}, /* 108.177.117.0/24 */
-    {0x6cb17600u, PROTO_GOOGLE, 23}, /* 108.177.118.0/23 */
-    {0x6cb17700u, PROTO_GOOGLE, 24}, /* 108.177.119.0/24 */
-    {0x6cb17800u, PROTO_GOOGLE, 23}, /* 108.177.120.0/23 */
-    {0x6cb17900u, PROTO_GOOGLE, 24}, /* 108.177.121.0/24 */
-    {0x6cb17a00u, PROTO_GOOGLE, 23}, /* 108.177.122.0/23 */
-    {0x6cb17b00u, PROTO_GOOGLE, 24}, /* 108.177.123.0/24 */
-    {0x6cb17c00u, PROTO_GOOGLE, 23}, /* 108.177.124.0/23 */
-    {0x6cb17d00u, PROTO_GOOGLE, 24}, /* 108.177.125.0/24 */
-    {0x6cb17e00u, PROTO_GOOGLE, 23}, /* 108.177.126.0/23 */
-    {0x6cb17f00u, PROTO_GOOGLE, 24}, /* 108.177.127.0/24 */
     {0x6cb18000u, PROTO_UNKNOWN, 0},
     {0x6e4c8c00u, PROTO_KAKAO, 22}, /* 110.76.140.0/22 */
     {0x6e4c9000u, PROTO_UNKNOWN, 0},
+    {0x6eee0200u, PROTO_AWS, 23}, /* 110.238.2.0/23 */
+    {0x6eee0400u, PROTO_UNKNOWN, 0},
+    {0x6f0dab80u, PROTO_CLOUDFRONT, 25}, /* 111.13.171.128/25 */
+    {0x6f0dac00u, PROTO_UNKNOWN, 0},
+    {0x6f0db920u, PROTO_CLOUDFRONT, 27}, /* 111.13.185.32/27 */
+    {0x6f0db960u, PROTO_UNKNOWN, 0},
+    {0x6fdd1c00u, PROTO_AZURE, 22}, /* 111.221.28.0/22 */
+    {0x6fdd2000u, PROTO_UNKNOWN, 0},
+    {0x6fdd5000u, PROTO_AZURE, 20}, /* 111.221.80.0/20 */
+    {0x6fdd7000u, PROTO_UNKNOWN, 0},
     {0x711d8000u, PROTO_KAKAO, 19}, /* 113.29.128.0/19 */
     {0x711d8100u, PROTO_KAKAO, 24}, /* 113.29.129.0/24 */
     {0x711d8400u, PROTO_KAKAO, 19}, /* 113.29.128.0/19 */
@@ -4510,9 +5573,6 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x711dc000u, PROTO_UNKNOWN, 0},
     {0x713d6a00u, PROTO_KAKAO, 24}, /* 113.61.106.0/24 */
     {0x713d6c00u, PROTO_UNKNOWN, 0},
-    {0x71c56800u, PROTO_GOOGLE, 22}, /* 113.197.104.0/22 */
-    {0x71c56900u, PROTO_GOOGLE, 24}, /* 113.197.105.0/24 */
-    {0x71c56c00u, PROTO_UNKNOWN, 0},
     {0x721dc000u, PROTO_WEBEX, 19}, /* 114.29.192.0/19 */
     {0x721dc100u, PROTO_WEBEX, 24}, /* 114.29.193.0/24 */
     {0x721dc800u, PROTO_WEBEX, 23}, /* 114.29.200.0/23 */
@@ -4528,19 +5588,50 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x726e4000u, PROTO_UNKNOWN, 0},
     {0x726f4000u, PROTO_YAHOO, 18}, /* 114.111.64.0/18 */
     {0x726f8000u, PROTO_UNKNOWN, 0},
+    {0x7481e200u, PROTO_CLOUDFRONT, 25}, /* 116.129.226.0/25 */
+    {0x7481e280u, PROTO_CLOUDFRONT, 26}, /* 116.129.226.128/26 */
+    {0x7481e2c0u, PROTO_UNKNOWN, 0},
     {0x7568bc00u, PROTO_YAHOO, 24}, /* 117.104.188.0/24 */
     {0x7568be00u, PROTO_UNKNOWN, 0},
     {0x7697e000u, PROTO_YAHOO, 19}, /* 118.151.224.0/19 */
     {0x76980000u, PROTO_UNKNOWN, 0},
+    {0x76c16140u, PROTO_CLOUDFRONT, 26}, /* 118.193.97.64/26 */
+    {0x76c16180u, PROTO_CLOUDFRONT, 25}, /* 118.193.97.128/25 */
+    {0x76c16200u, PROTO_UNKNOWN, 0},
+    {0x7793b600u, PROTO_CLOUDFRONT, 25}, /* 119.147.182.0/25 */
+    {0x7793b680u, PROTO_CLOUDFRONT, 26}, /* 119.147.182.128/26 */
+    {0x7793b6c0u, PROTO_UNKNOWN, 0},
     {0x77a10c00u, PROTO_YAHOO, 24}, /* 119.161.12.0/24 */
     {0x77a10d00u, PROTO_UNKNOWN, 0},
     {0x77a10e00u, PROTO_YAHOO, 23}, /* 119.161.14.0/23 */
     {0x77a11000u, PROTO_UNKNOWN, 0},
     {0x77ebc000u, PROTO_KAKAO, 20}, /* 119.235.192.0/20 */
     {0x77ebd000u, PROTO_UNKNOWN, 0},
+    {0x78340c40u, PROTO_CLOUDFRONT, 26}, /* 120.52.12.64/26 */
+    {0x78340c80u, PROTO_UNKNOWN, 0},
+    {0x78341660u, PROTO_CLOUDFRONT, 27}, /* 120.52.22.96/27 */
+    {0x78341680u, PROTO_UNKNOWN, 0},
+    {0x78342780u, PROTO_CLOUDFRONT, 27}, /* 120.52.39.128/27 */
+    {0x783427a0u, PROTO_UNKNOWN, 0},
+    {0x783499c0u, PROTO_CLOUDFRONT, 26}, /* 120.52.153.192/26 */
+    {0x78349a00u, PROTO_UNKNOWN, 0},
+    {0x78e8ec00u, PROTO_CLOUDFRONT, 25}, /* 120.232.236.0/25 */
+    {0x78e8ec80u, PROTO_CLOUDFRONT, 26}, /* 120.232.236.128/26 */
+    {0x78e8ecc0u, PROTO_UNKNOWN, 0},
+    {0x78fdf0c0u, PROTO_CLOUDFRONT, 26}, /* 120.253.240.192/26 */
+    {0x78fdf100u, PROTO_UNKNOWN, 0},
+    {0x78fdf1a0u, PROTO_CLOUDFRONT, 27}, /* 120.253.241.160/27 */
+    {0x78fdf1c0u, PROTO_UNKNOWN, 0},
+    {0x78fdf580u, PROTO_CLOUDFRONT, 26}, /* 120.253.245.128/26 */
+    {0x78fdf5c0u, PROTO_CLOUDFRONT, 27}, /* 120.253.245.192/27 */
+    {0x78fdf5e0u, PROTO_UNKNOWN, 0},
+    {0x795b6200u, PROTO_AWS, 23}, /* 121.91.98.0/23 */
+    {0x795b6400u, PROTO_UNKNOWN, 0},
     {0x79643800u, PROTO_YAHOO, 21}, /* 121.100.56.0/21 */
     {0x79644000u, PROTO_UNKNOWN, 0},
-    {0x7af8c000u, PROTO_AMAZON, 18}, /* 122.248.192.0/18 */
+    {0x7ac83d00u, PROTO_AWS, 24}, /* 122.200.61.0/24 */
+    {0x7ac83e00u, PROTO_UNKNOWN, 0},
+    {0x7af8c000u, PROTO_AWS, 18}, /* 122.248.192.0/18 */
     {0x7af90000u, PROTO_UNKNOWN, 0},
     {0x7c538000u, PROTO_YAHOO, 17}, /* 124.83.128.0/17 */
     {0x7c540000u, PROTO_UNKNOWN, 0},
@@ -4548,925 +5639,370 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x7c6c4e00u, PROTO_UNKNOWN, 0},
     {0x7c932000u, PROTO_YAHOO, 19}, /* 124.147.32.0/19 */
     {0x7c934000u, PROTO_UNKNOWN, 0},
+    {0x80180000u, PROTO_AZURE, 16}, /* 128.24.0.0/16 */
+    {0x80190000u, PROTO_UNKNOWN, 0},
+    {0x80550000u, PROTO_AZURE, 16}, /* 128.85.0.0/16 */
+    {0x80560000u, PROTO_UNKNOWN, 0},
+    {0x80cb0000u, PROTO_AZURE, 16}, /* 128.203.0.0/16 */
+    {0x80cc0000u, PROTO_UNKNOWN, 0},
+    {0x80fb0000u, PROTO_AZURE, 16}, /* 128.251.0.0/16 */
+    {0x80fc0000u, PROTO_UNKNOWN, 0},
     {0x81860000u, PROTO_FACEBOOK, 16}, /* 129.134.0.0/16 */
     {0x81870000u, PROTO_UNKNOWN, 0},
-    {0x82d30000u, PROTO_GOOGLE, 23}, /* 130.211.0.0/23 */
-    {0x82d30100u, PROTO_GOOGLE, 24}, /* 130.211.1.0/24 */
-    {0x82d30200u, PROTO_GOOGLE, 23}, /* 130.211.2.0/23 */
-    {0x82d30300u, PROTO_GOOGLE, 24}, /* 130.211.3.0/24 */
-    {0x82d30400u, PROTO_GOOGLE, 23}, /* 130.211.4.0/23 */
-    {0x82d30500u, PROTO_GOOGLE, 24}, /* 130.211.5.0/24 */
-    {0x82d30600u, PROTO_GOOGLE, 23}, /* 130.211.6.0/23 */
-    {0x82d30700u, PROTO_GOOGLE, 24}, /* 130.211.7.0/24 */
-    {0x82d30800u, PROTO_GOOGLE, 23}, /* 130.211.8.0/23 */
-    {0x82d30900u, PROTO_GOOGLE, 24}, /* 130.211.9.0/24 */
-    {0x82d30a00u, PROTO_GOOGLE, 23}, /* 130.211.10.0/23 */
-    {0x82d30b00u, PROTO_GOOGLE, 24}, /* 130.211.11.0/24 */
-    {0x82d30c00u, PROTO_GOOGLE, 23}, /* 130.211.12.0/23 */
-    {0x82d30d00u, PROTO_GOOGLE, 24}, /* 130.211.13.0/24 */
-    {0x82d30e00u, PROTO_GOOGLE, 23}, /* 130.211.14.0/23 */
-    {0x82d30f00u, PROTO_GOOGLE, 24}, /* 130.211.15.0/24 */
-    {0x82d31000u, PROTO_GOOGLE, 23}, /* 130.211.16.0/23 */
-    {0x82d31100u, PROTO_GOOGLE, 24}, /* 130.211.17.0/24 */
-    {0x82d31200u, PROTO_GOOGLE, 23}, /* 130.211.18.0/23 */
-    {0x82d31300u, PROTO_GOOGLE, 24}, /* 130.211.19.0/24 */
-    {0x82d31400u, PROTO_GOOGLE, 23}, /* 130.211.20.0/23 */
-    {0x82d31500u, PROTO_GOOGLE, 24}, /* 130.211.21.0/24 */
-    {0x82d31600u, PROTO_GOOGLE, 23}, /* 130.211.22.0/23 */
-    {0x82d31700u, PROTO_GOOGLE, 24}, /* 130.211.23.0/24 */
-    {0x82d31800u, PROTO_GOOGLE, 23}, /* 130.211.24.0/23 */
-    {0x82d31900u, PROTO_GOOGLE, 24}, /* 130.211.25.0/24 */
-    {0x82d31a00u, PROTO_GOOGLE, 23}, /* 130.211.26.0/23 */
-    {0x82d31b00u, PROTO_GOOGLE, 24}, /* 130.211.27.0/24 */
-    {0x82d31c00u, PROTO_GOOGLE, 23}, /* 130.211.28.0/23 */
-    {0x82d31d00u, PROTO_GOOGLE, 24}, /* 130.211.29.0/24 */
-    {0x82d31e00u, PROTO_GOOGLE, 23}, /* 130.211.30.0/23 */
-    {0x82d31f00u, PROTO_GOOGLE, 24}, /* 130.211.31.0/24 */
-    {0x82d32000u, PROTO_GOOGLE, 23}, /* 130.211.32.0/23 */
-    {0x82d32100u, PROTO_GOOGLE, 24}, /* 130.211.33.0/24 */
-    {0x82d32200u, PROTO_GOOGLE, 23}, /* 130.211.34.0/23 */
-    {0x82d32300u, PROTO_GOOGLE, 24}, /* 130.211.35.0/24 */
-    {0x82d32400u, PROTO_GOOGLE, 23}, /* 130.211.36.0/23 */
-    {0x82d32500u, PROTO_GOOGLE, 24}, /* 130.211.37.0/24 */
-    {0x82d32600u, PROTO_GOOGLE, 23}, /* 130.211.38.0/23 */
-    {0x82d32700u, PROTO_GOOGLE, 24}, /* 130.211.39.0/24 */
-    {0x82d32800u, PROTO_GOOGLE, 23}, /* 130.211.40.0/23 */
-    {0x82d32900u, PROTO_GOOGLE, 24}, /* 130.211.41.0/24 */
-    {0x82d32a00u, PROTO_GOOGLE, 23}, /* 130.211.42.0/23 */
-    {0x82d32b00u, PROTO_GOOGLE, 24}, /* 130.211.43.0/24 */
-    {0x82d32c00u, PROTO_GOOGLE, 23}, /* 130.211.44.0/23 */
-    {0x82d32d00u, PROTO_GOOGLE, 24}, /* 130.211.45.0/24 */
-    {0x82d32e00u, PROTO_GOOGLE, 23}, /* 130.211.46.0/23 */
-    {0x82d32f00u, PROTO_GOOGLE, 24}, /* 130.211.47.0/24 */
-    {0x82d33000u, PROTO_GOOGLE, 23}, /* 130.211.48.0/23 */
-    {0x82d33100u, PROTO_GOOGLE, 24}, /* 130.211.49.0/24 */
-    {0x82d33200u, PROTO_GOOGLE, 23}, /* 130.211.50.0/23 */
-    {0x82d33300u, PROTO_GOOGLE, 24}, /* 130.211.51.0/24 */
-    {0x82d33400u, PROTO_GOOGLE, 23}, /* 130.211.52.0/23 */
-    {0x82d33500u, PROTO_GOOGLE, 24}, /* 130.211.53.0/24 */
-    {0x82d33600u, PROTO_GOOGLE, 23}, /* 130.211.54.0/23 */
-    {0x82d33700u, PROTO_GOOGLE, 24}, /* 130.211.55.0/24 */
-    {0x82d33800u, PROTO_GOOGLE, 23}, /* 130.211.56.0/23 */
-    {0x82d33900u, PROTO_GOOGLE, 24}, /* 130.211.57.0/24 */
-    {0x82d33a00u, PROTO_GOOGLE, 23}, /* 130.211.58.0/23 */
-    {0x82d33b00u, PROTO_GOOGLE, 24}, /* 130.211.59.0/24 */
-    {0x82d33c00u, PROTO_GOOGLE, 23}, /* 130.211.60.0/23 */
-    {0x82d33d00u, PROTO_GOOGLE, 24}, /* 130.211.61.0/24 */
-    {0x82d33e00u, PROTO_GOOGLE, 23}, /* 130.211.62.0/23 */
-    {0x82d33f00u, PROTO_GOOGLE, 24}, /* 130.211.63.0/24 */
-    {0x82d34000u, PROTO_GOOGLE, 23}, /* 130.211.64.0/23 */
-    {0x82d34100u, PROTO_GOOGLE, 24}, /* 130.211.65.0/24 */
-    {0x82d34200u, PROTO_GOOGLE, 23}, /* 130.211.66.0/23 */
-    {0x82d34300u, PROTO_GOOGLE, 24}, /* 130.211.67.0/24 */
-    {0x82d34400u, PROTO_GOOGLE, 23}, /* 130.211.68.0/23 */
-    {0x82d34500u, PROTO_GOOGLE, 24}, /* 130.211.69.0/24 */
-    {0x82d34600u, PROTO_GOOGLE, 23}, /* 130.211.70.0/23 */
-    {0x82d34700u, PROTO_GOOGLE, 24}, /* 130.211.71.0/24 */
-    {0x82d34800u, PROTO_GOOGLE, 23}, /* 130.211.72.0/23 */
-    {0x82d34900u, PROTO_GOOGLE, 24}, /* 130.211.73.0/24 */
-    {0x82d34a00u, PROTO_GOOGLE, 23}, /* 130.211.74.0/23 */
-    {0x82d34b00u, PROTO_GOOGLE, 24}, /* 130.211.75.0/24 */
-    {0x82d34c00u, PROTO_GOOGLE, 23}, /* 130.211.76.0/23 */
-    {0x82d34d00u, PROTO_GOOGLE, 24}, /* 130.211.77.0/24 */
-    {0x82d34e00u, PROTO_GOOGLE, 23}, /* 130.211.78.0/23 */
-    {0x82d34f00u, PROTO_GOOGLE, 24}, /* 130.211.79.0/24 */
-    {0x82d35000u, PROTO_GOOGLE, 23}, /* 130.211.80.0/23 */
-    {0x82d35100u, PROTO_GOOGLE, 24}, /* 130.211.81.0/24 */
-    {0x82d35200u, PROTO_GOOGLE, 23}, /* 130.211.82.0/23 */
-    {0x82d35300u, PROTO_GOOGLE, 24}, /* 130.211.83.0/24 */
-    {0x82d35400u, PROTO_GOOGLE, 23}, /* 130.211.84.0/23 */
-    {0x82d35500u, PROTO_GOOGLE, 24}, /* 130.211.85.0/24 */
-    {0x82d35600u, PROTO_GOOGLE, 23}, /* 130.211.86.0/23 */
-    {0x82d35700u, PROTO_GOOGLE, 24}, /* 130.211.87.0/24 */
-    {0x82d35800u, PROTO_GOOGLE, 23}, /* 130.211.88.0/23 */
-    {0x82d35900u, PROTO_GOOGLE, 24}, /* 130.211.89.0/24 */
-    {0x82d35a00u, PROTO_GOOGLE, 23}, /* 130.211.90.0/23 */
-    {0x82d35b00u, PROTO_GOOGLE, 24}, /* 130.211.91.0/24 */
-    {0x82d35c00u, PROTO_GOOGLE, 23}, /* 130.211.92.0/23 */
-    {0x82d35d00u, PROTO_GOOGLE, 24}, /* 130.211.93.0/24 */
-    {0x82d35e00u, PROTO_GOOGLE, 23}, /* 130.211.94.0/23 */
-    {0x82d35f00u, PROTO_GOOGLE, 24}, /* 130.211.95.0/24 */
-    {0x82d36000u, PROTO_GOOGLE, 23}, /* 130.211.96.0/23 */
-    {0x82d36100u, PROTO_GOOGLE, 24}, /* 130.211.97.0/24 */
-    {0x82d36200u, PROTO_GOOGLE, 23}, /* 130.211.98.0/23 */
-    {0x82d36300u, PROTO_GOOGLE, 24}, /* 130.211.99.0/24 */
-    {0x82d36400u, PROTO_GOOGLE, 23}, /* 130.211.100.0/23 */
-    {0x82d36500u, PROTO_GOOGLE, 24}, /* 130.211.101.0/24 */
-    {0x82d36600u, PROTO_GOOGLE, 23}, /* 130.211.102.0/23 */
-    {0x82d36700u, PROTO_GOOGLE, 24}, /* 130.211.103.0/24 */
-    {0x82d36800u, PROTO_GOOGLE, 23}, /* 130.211.104.0/23 */
-    {0x82d36900u, PROTO_GOOGLE, 24}, /* 130.211.105.0/24 */
-    {0x82d36a00u, PROTO_GOOGLE, 23}, /* 130.211.106.0/23 */
-    {0x82d36b00u, PROTO_GOOGLE, 24}, /* 130.211.107.0/24 */
-    {0x82d36c00u, PROTO_GOOGLE, 23}, /* 130.211.108.0/23 */
-    {0x82d36d00u, PROTO_GOOGLE, 24}, /* 130.211.109.0/24 */
-    {0x82d36e00u, PROTO_GOOGLE, 23}, /* 130.211.110.0/23 */
-    {0x82d36f00u, PROTO_GOOGLE, 24}, /* 130.211.111.0/24 */
-    {0x82d37000u, PROTO_GOOGLE, 23}, /* 130.211.112.0/23 */
-    {0x82d37100u, PROTO_GOOGLE, 24}, /* 130.211.113.0/24 */
-    {0x82d37200u, PROTO_GOOGLE, 23}, /* 130.211.114.0/23 */
-    {0x82d37300u, PROTO_GOOGLE, 24}, /* 130.211.115.0/24 */
-    {0x82d37400u, PROTO_GOOGLE, 23}, /* 130.211.116.0/23 */
-    {0x82d37500u, PROTO_GOOGLE, 24}, /* 130.211.117.0/24 */
-    {0x82d37600u, PROTO_GOOGLE, 23}, /* 130.211.118.0/23 */
-    {0x82d37700u, PROTO_GOOGLE, 24}, /* 130.211.119.0/24 */
-    {0x82d37800u, PROTO_GOOGLE, 23}, /* 130.211.120.0/23 */
-    {0x82d37900u, PROTO_GOOGLE, 24}, /* 130.211.121.0/24 */
-    {0x82d37a00u, PROTO_GOOGLE, 23}, /* 130.211.122.0/23 */
-    {0x82d37b00u, PROTO_GOOGLE, 24}, /* 130.211.123.0/24 */
-    {0x82d37c00u, PROTO_GOOGLE, 23}, /* 130.211.124.0/23 */
-    {0x82d37d00u, PROTO_GOOGLE, 24}, /* 130.211.125.0/24 */
-    {0x82d37e00u, PROTO_GOOGLE, 23}, /* 130.211.126.0/23 */
-    {0x82d37f00u, PROTO_GOOGLE, 24}, /* 130.211.127.0/24 */
-    {0x82d38000u, PROTO_GOOGLE, 23}, /* 130.211.128.0/23 */
-    {0x82d38100u, PROTO_GOOGLE, 24}, /* 130.211.129.0/24 */
-    {0x82d38200u, PROTO_GOOGLE, 23}, /* 130.211.130.0/23 */
-    {0x82d38300u, PROTO_GOOGLE, 24}, /* 130.211.131.0/24 */
-    {0x82d38400u, PROTO_GOOGLE, 23}, /* 130.211.132.0/23 */
-    {0x82d38500u, PROTO_GOOGLE, 24}, /* 130.211.133.0/24 */
-    {0x82d38600u, PROTO_GOOGLE, 23}, /* 130.211.134.0/23 */
-    {0x82d38700u, PROTO_GOOGLE, 24}, /* 130.211.135.0/24 */
-    {0x82d38800u, PROTO_GOOGLE, 23}, /* 130.211.136.0/23 */
-    {0x82d38900u, PROTO_GOOGLE, 24}, /* 130.211.137.0/24 */
-    {0x82d38a00u, PROTO_GOOGLE, 23}, /* 130.211.138.0/23 */
-    {0x82d38b00u, PROTO_GOOGLE, 24}, /* 130.211.139.0/24 */
-    {0x82d38c00u, PROTO_GOOGLE, 23}, /* 130.211.140.0/23 */
-    {0x82d38d00u, PROTO_GOOGLE, 24}, /* 130.211.141.0/24 */
-    {0x82d38e00u, PROTO_GOOGLE, 23}, /* 130.211.142.0/23 */
-    {0x82d38f00u, PROTO_GOOGLE, 24}, /* 130.211.143.0/24 */
-    {0x82d39000u, PROTO_GOOGLE, 23}, /* 130.211.144.0/23 */
-    {0x82d39100u, PROTO_GOOGLE, 24}, /* 130.211.145.0/24 */
-    {0x82d39200u, PROTO_GOOGLE, 23}, /* 130.211.146.0/23 */
-    {0x82d39300u, PROTO_GOOGLE, 24}, /* 130.211.147.0/24 */
-    {0x82d39400u, PROTO_GOOGLE, 23}, /* 130.211.148.0/23 */
-    {0x82d39500u, PROTO_GOOGLE, 24}, /* 130.211.149.0/24 */
-    {0x82d39600u, PROTO_GOOGLE, 23}, /* 130.211.150.0/23 */
-    {0x82d39700u, PROTO_GOOGLE, 24}, /* 130.211.151.0/24 */
-    {0x82d39800u, PROTO_GOOGLE, 23}, /* 130.211.152.0/23 */
-    {0x82d39900u, PROTO_GOOGLE, 24}, /* 130.211.153.0/24 */
-    {0x82d39a00u, PROTO_GOOGLE, 23}, /* 130.211.154.0/23 */
-    {0x82d39b00u, PROTO_GOOGLE, 24}, /* 130.211.155.0/24 */
-    {0x82d39c00u, PROTO_GOOGLE, 23}, /* 130.211.156.0/23 */
-    {0x82d39d00u, PROTO_GOOGLE, 24}, /* 130.211.157.0/24 */
-    {0x82d39e00u, PROTO_GOOGLE, 23}, /* 130.211.158.0/23 */
-    {0x82d39f00u, PROTO_GOOGLE, 24}, /* 130.211.159.0/24 */
-    {0x82d3a000u, PROTO_GOOGLE, 23}, /* 130.211.160.0/23 */
-    {0x82d3a100u, PROTO_GOOGLE, 24}, /* 130.211.161.0/24 */
-    {0x82d3a200u, PROTO_GOOGLE, 23}, /* 130.211.162.0/23 */
-    {0x82d3a300u, PROTO_GOOGLE, 24}, /* 130.211.163.0/24 */
-    {0x82d3a400u, PROTO_GOOGLE, 23}, /* 130.211.164.0/23 */
-    {0x82d3a500u, PROTO_GOOGLE, 24}, /* 130.211.165.0/24 */
-    {0x82d3a600u, PROTO_GOOGLE, 23}, /* 130.211.166.0/23 */
-    {0x82d3a700u, PROTO_GOOGLE, 24}, /* 130.211.167.0/24 */
-    {0x82d3a800u, PROTO_GOOGLE, 23}, /* 130.211.168.0/23 */
-    {0x82d3a900u, PROTO_GOOGLE, 24}, /* 130.211.169.0/24 */
-    {0x82d3aa00u, PROTO_GOOGLE, 23}, /* 130.211.170.0/23 */
-    {0x82d3ab00u, PROTO_GOOGLE, 24}, /* 130.211.171.0/24 */
-    {0x82d3ac00u, PROTO_GOOGLE, 23}, /* 130.211.172.0/23 */
-    {0x82d3ad00u, PROTO_GOOGLE, 24}, /* 130.211.173.0/24 */
-    {0x82d3ae00u, PROTO_GOOGLE, 23}, /* 130.211.174.0/23 */
-    {0x82d3af00u, PROTO_GOOGLE, 24}, /* 130.211.175.0/24 */
-    {0x82d3b000u, PROTO_GOOGLE, 23}, /* 130.211.176.0/23 */
-    {0x82d3b100u, PROTO_GOOGLE, 24}, /* 130.211.177.0/24 */
-    {0x82d3b200u, PROTO_GOOGLE, 23}, /* 130.211.178.0/23 */
-    {0x82d3b300u, PROTO_GOOGLE, 24}, /* 130.211.179.0/24 */
-    {0x82d3b400u, PROTO_GOOGLE, 23}, /* 130.211.180.0/23 */
-    {0x82d3b500u, PROTO_GOOGLE, 24}, /* 130.211.181.0/24 */
-    {0x82d3b600u, PROTO_GOOGLE, 23}, /* 130.211.182.0/23 */
-    {0x82d3b700u, PROTO_GOOGLE, 24}, /* 130.211.183.0/24 */
-    {0x82d3b800u, PROTO_GOOGLE, 23}, /* 130.211.184.0/23 */
-    {0x82d3b900u, PROTO_GOOGLE, 24}, /* 130.211.185.0/24 */
-    {0x82d3ba00u, PROTO_GOOGLE, 23}, /* 130.211.186.0/23 */
-    {0x82d3bb00u, PROTO_GOOGLE, 24}, /* 130.211.187.0/24 */
-    {0x82d3bc00u, PROTO_GOOGLE, 23}, /* 130.211.188.0/23 */
-    {0x82d3bd00u, PROTO_GOOGLE, 24}, /* 130.211.189.0/24 */
-    {0x82d3be00u, PROTO_GOOGLE, 23}, /* 130.211.190.0/23 */
-    {0x82d3bf00u, PROTO_GOOGLE, 24}, /* 130.211.191.0/24 */
-    {0x82d3c000u, PROTO_GOOGLE, 23}, /* 130.211.192.0/23 */
-    {0x82d3c100u, PROTO_GOOGLE, 24}, /* 130.211.193.0/24 */
-    {0x82d3c200u, PROTO_GOOGLE, 23}, /* 130.211.194.0/23 */
-    {0x82d3c300u, PROTO_GOOGLE, 24}, /* 130.211.195.0/24 */
-    {0x82d3c400u, PROTO_GOOGLE, 23}, /* 130.211.196.0/23 */
-    {0x82d3c500u, PROTO_GOOGLE, 24}, /* 130.211.197.0/24 */
-    {0x82d3c600u, PROTO_GOOGLE, 23}, /* 130.211.198.0/23 */
-    {0x82d3c700u, PROTO_GOOGLE, 24}, /* 130.211.199.0/24 */
-    {0x82d3c800u, PROTO_GOOGLE, 23}, /* 130.211.200.0/23 */
-    {0x82d3c900u, PROTO_GOOGLE, 24}, /* 130.211.201.0/24 */
-    {0x82d3ca00u, PROTO_GOOGLE, 23}, /* 130.211.202.0/23 */
-    {0x82d3cb00u, PROTO_GOOGLE, 24}, /* 130.211.203.0/24 */
-    {0x82d3cc00u, PROTO_GOOGLE, 23}, /* 130.211.204.0/23 */
-    {0x82d3cd00u, PROTO_GOOGLE, 24}, /* 130.211.205.0/24 */
-    {0x82d3ce00u, PROTO_GOOGLE, 23}, /* 130.211.206.0/23 */
-    {0x82d3cf00u, PROTO_GOOGLE, 24}, /* 130.211.207.0/24 */
-    {0x82d3d000u, PROTO_GOOGLE, 23}, /* 130.211.208.0/23 */
-    {0x82d3d100u, PROTO_GOOGLE, 24}, /* 130.211.209.0/24 */
-    {0x82d3d200u, PROTO_GOOGLE, 23}, /* 130.211.210.0/23 */
-    {0x82d3d300u, PROTO_GOOGLE, 24}, /* 130.211.211.0/24 */
-    {0x82d3d400u, PROTO_GOOGLE, 23}, /* 130.211.212.0/23 */
-    {0x82d3d500u, PROTO_GOOGLE, 24}, /* 130.211.213.0/24 */
-    {0x82d3d600u, PROTO_GOOGLE, 23}, /* 130.211.214.0/23 */
-    {0x82d3d700u, PROTO_GOOGLE, 24}, /* 130.211.215.0/24 */
-    {0x82d3d800u, PROTO_GOOGLE, 23}, /* 130.211.216.0/23 */
-    {0x82d3d900u, PROTO_GOOGLE, 24}, /* 130.211.217.0/24 */
-    {0x82d3da00u, PROTO_GOOGLE, 23}, /* 130.211.218.0/23 */
-    {0x82d3db00u, PROTO_GOOGLE, 24}, /* 130.211.219.0/24 */
-    {0x82d3dc00u, PROTO_GOOGLE, 23}, /* 130.211.220.0/23 */
-    {0x82d3dd00u, PROTO_GOOGLE, 24}, /* 130.211.221.0/24 */
-    {0x82d3de00u, PROTO_GOOGLE, 23}, /* 130.211.222.0/23 */
-    {0x82d3df00u, PROTO_GOOGLE, 24}, /* 130.211.223.0/24 */
-    {0x82d3e000u, PROTO_GOOGLE, 23}, /* 130.211.224.0/23 */
-    {0x82d3e100u, PROTO_GOOGLE, 24}, /* 130.211.225.0/24 */
-    {0x82d3e200u, PROTO_GOOGLE, 23}, /* 130.211.226.0/23 */
-    {0x82d3e300u, PROTO_GOOGLE, 24}, /* 130.211.227.0/24 */
-    {0x82d3e400u, PROTO_GOOGLE, 23}, /* 130.211.228.0/23 */
-    {0x82d3e500u, PROTO_GOOGLE, 24}, /* 130.211.229.0/24 */
-    {0x82d3e600u, PROTO_GOOGLE, 23}, /* 130.211.230.0/23 */
-    {0x82d3e700u, PROTO_GOOGLE, 24}, /* 130.211.231.0/24 */
-    {0x82d3e800u, PROTO_GOOGLE, 23}, /* 130.211.232.0/23 */
-    {0x82d3e900u, PROTO_GOOGLE, 24}, /* 130.211.233.0/24 */
-    {0x82d3ea00u, PROTO_GOOGLE, 23}, /* 130.211.234.0/23 */
-    {0x82d3eb00u, PROTO_GOOGLE, 24}, /* 130.211.235.0/24 */
-    {0x82d3ec00u, PROTO_GOOGLE, 23}, /* 130.211.236.0/23 */
-    {0x82d3ed00u, PROTO_GOOGLE, 24}, /* 130.211.237.0/24 */
-    {0x82d3ee00u, PROTO_GOOGLE, 23}, /* 130.211.238.0/23 */
-    {0x82d3ef00u, PROTO_GOOGLE, 24}, /* 130.211.239.0/24 */
-    {0x82d3f000u, PROTO_GOOGLE, 23}, /* 130.211.240.0/23 */
-    {0x82d3f100u, PROTO_GOOGLE, 24}, /* 130.211.241.0/24 */
-    {0x82d3f200u, PROTO_GOOGLE, 23}, /* 130.211.242.0/23 */
-    {0x82d3f300u, PROTO_GOOGLE, 24}, /* 130.211.243.0/24 */
-    {0x82d3f400u, PROTO_GOOGLE, 23}, /* 130.211.244.0/23 */
-    {0x82d3f500u, PROTO_GOOGLE, 24}, /* 130.211.245.0/24 */
-    {0x82d3f600u, PROTO_GOOGLE, 23}, /* 130.211.246.0/23 */
-    {0x82d3f700u, PROTO_GOOGLE, 24}, /* 130.211.247.0/24 */
-    {0x82d3f800u, PROTO_GOOGLE, 23}, /* 130.211.248.0/23 */
-    {0x82d3f900u, PROTO_GOOGLE, 24}, /* 130.211.249.0/24 */
-    {0x82d3fa00u, PROTO_GOOGLE, 23}, /* 130.211.250.0/23 */
-    {0x82d3fb00u, PROTO_GOOGLE, 24}, /* 130.211.251.0/24 */
-    {0x82d3fc00u, PROTO_GOOGLE, 23}, /* 130.211.252.0/23 */
-    {0x82d3fd00u, PROTO_GOOGLE, 24}, /* 130.211.253.0/24 */
-    {0x82d3fe00u, PROTO_GOOGLE, 23}, /* 130.211.254.0/23 */
-    {0x82d3ff00u, PROTO_GOOGLE, 24}, /* 130.211.255.0/24 */
+    {0x82210000u, PROTO_AZURE, 16}, /* 130.33.0.0/16 */
+    {0x82220000u, PROTO_UNKNOWN, 0},
+    {0x826b0000u, PROTO_AZURE, 16}, /* 130.107.0.0/16 */
+    {0x826c0000u, PROTO_UNKNOWN, 0},
+    {0x82830000u, PROTO_AZURE, 16}, /* 130.131.0.0/16 */
+    {0x82840000u, PROTO_UNKNOWN, 0},
+    {0x82b00000u, PROTO_CLOUDFRONT, 17}, /* 130.176.0.0/17 */
+    {0x82b08000u, PROTO_CLOUDFRONT, 18}, /* 130.176.128.0/18 */
+    {0x82b0c000u, PROTO_CLOUDFRONT, 19}, /* 130.176.192.0/19 */
+    {0x82b0e000u, PROTO_CLOUDFRONT, 20}, /* 130.176.224.0/20 */
+    {0x82b0f000u, PROTO_UNKNOWN, 0},
+    {0x82b0fe00u, PROTO_AWS, 23}, /* 130.176.254.0/23 */
+    {0x82b10000u, PROTO_UNKNOWN, 0},
+    {0x82d30000u, PROTO_GOOGLE, 22}, /* 130.211.0.0/22 */
+    {0x82d30400u, PROTO_GOOGLE_CLOUD, 22}, /* 130.211.4.0/22 */
+    {0x82d30800u, PROTO_GOOGLE_CLOUD, 21}, /* 130.211.8.0/21 */
+    {0x82d31000u, PROTO_GOOGLE_CLOUD, 20}, /* 130.211.16.0/20 */
+    {0x82d32000u, PROTO_GOOGLE_CLOUD, 19}, /* 130.211.32.0/19 */
+    {0x82d34000u, PROTO_GOOGLE_CLOUD, 18}, /* 130.211.64.0/18 */
+    {0x82d38000u, PROTO_GOOGLE_CLOUD, 17}, /* 130.211.128.0/17 */
     {0x82d40000u, PROTO_UNKNOWN, 0},
-    {0x83004800u, PROTO_CLOUDFLARE, 21}, /* 131.0.72.0/21 */
-    {0x83005000u, PROTO_UNKNOWN, 0},
-    {0x88160000u, PROTO_GOOGLE, 24}, /* 136.22.0.0/24 */
-    {0x881600c0u, PROTO_GOOGLE, 26}, /* 136.22.0.192/26 */
-    {0x88160100u, PROTO_GOOGLE, 24}, /* 136.22.1.0/24 */
-    {0x881601c0u, PROTO_GOOGLE, 26}, /* 136.22.1.192/26 */
-    {0x88160200u, PROTO_UNKNOWN, 0},
-    {0x88164000u, PROTO_GOOGLE, 18}, /* 136.22.64.0/18 */
-    {0x88168000u, PROTO_UNKNOWN, 0},
-    {0x88200000u, PROTO_GOOGLE, 11}, /* 136.32.0.0/11 */
-    {0x88400000u, PROTO_UNKNOWN, 0},
+    {0x82d50000u, PROTO_AZURE, 16}, /* 130.213.0.0/16 */
+    {0x82d60000u, PROTO_UNKNOWN, 0},
+    {0x83004800u, PROTO_CLOUDFLARE, 22}, /* 131.0.72.0/22 */
+    {0x83004c00u, PROTO_UNKNOWN, 0},
+    {0x83910000u, PROTO_AZURE, 16}, /* 131.145.0.0/16 */
+    {0x83920000u, PROTO_UNKNOWN, 0},
+    {0x83a30000u, PROTO_AZURE, 16}, /* 131.163.0.0/16 */
+    {0x83a40000u, PROTO_UNKNOWN, 0},
+    {0x83bd0000u, PROTO_AZURE, 16}, /* 131.189.0.0/16 */
+    {0x83be0000u, PROTO_UNKNOWN, 0},
+    {0x83fd0c00u, PROTO_AZURE, 22}, /* 131.253.12.0/22 */
+    {0x83fd1000u, PROTO_UNKNOWN, 0},
+    {0x83fd1800u, PROTO_AZURE, 28}, /* 131.253.24.0/28 */
+    {0x83fd1810u, PROTO_UNKNOWN, 0},
+    {0x83fd18a0u, PROTO_AZURE, 27}, /* 131.253.24.160/27 */
+    {0x83fd18c0u, PROTO_AZURE, 26}, /* 131.253.24.192/26 */
+    {0x83fd1900u, PROTO_AZURE, 24}, /* 131.253.25.0/24 */
+    {0x83fd1a00u, PROTO_UNKNOWN, 0},
+    {0x83fd1b00u, PROTO_AZURE, 24}, /* 131.253.27.0/24 */
+    {0x83fd1c00u, PROTO_UNKNOWN, 0},
+    {0x83fd22e0u, PROTO_AZURE, 27}, /* 131.253.34.224/27 */
+    {0x83fd2300u, PROTO_UNKNOWN, 0},
+    {0x83fd2380u, PROTO_AZURE, 25}, /* 131.253.35.128/25 */
+    {0x83fd2400u, PROTO_UNKNOWN, 0},
+    {0x83fd2480u, PROTO_AZURE, 26}, /* 131.253.36.128/26 */
+    {0x83fd24c0u, PROTO_UNKNOWN, 0},
+    {0x83fd24e0u, PROTO_AZURE, 27}, /* 131.253.36.224/27 */
+    {0x83fd2500u, PROTO_UNKNOWN, 0},
+    {0x83fd2600u, PROTO_AZURE, 26}, /* 131.253.38.0/26 */
+    {0x83fd2640u, PROTO_UNKNOWN, 0},
+    {0x83fd2680u, PROTO_AZURE, 26}, /* 131.253.38.128/26 */
+    {0x83fd26c0u, PROTO_UNKNOWN, 0},
+    {0x83fd26e0u, PROTO_AZURE, 27}, /* 131.253.38.224/27 */
+    {0x83fd2700u, PROTO_UNKNOWN, 0},
+    {0x83fd2800u, PROTO_AZURE, 23}, /* 131.253.40.0/23 */
+    {0x83fd2a00u, PROTO_UNKNOWN, 0},
+    {0x84a40000u, PROTO_AZURE, 16}, /* 132.164.0.0/16 */
+    {0x84a50000u, PROTO_UNKNOWN, 0},
+    {0x84c40000u, PROTO_AZURE, 16}, /* 132.196.0.0/16 */
+    {0x84c50000u, PROTO_UNKNOWN, 0},
+    {0x84dc0000u, PROTO_AZURE, 16}, /* 132.220.0.0/16 */
+    {0x84dd0000u, PROTO_UNKNOWN, 0},
+    {0x84f5e600u, PROTO_AZURE, 23}, /* 132.245.230.0/23 */
+    {0x84f5e800u, PROTO_UNKNOWN, 0},
+    {0x86210000u, PROTO_AZURE, 16}, /* 134.33.0.0/16 */
+    {0x86220000u, PROTO_UNKNOWN, 0},
+    {0x86700000u, PROTO_AZURE, 16}, /* 134.112.0.0/16 */
+    {0x86710000u, PROTO_UNKNOWN, 0},
+    {0x868a0000u, PROTO_AZURE, 16}, /* 134.138.0.0/16 */
+    {0x868b0000u, PROTO_UNKNOWN, 0},
+    {0x86950000u, PROTO_AZURE, 16}, /* 134.149.0.0/16 */
+    {0x86960000u, PROTO_UNKNOWN, 0},
+    {0x86aab000u, PROTO_AZURE, 22}, /* 134.170.176.0/22 */
+    {0x86aab400u, PROTO_UNKNOWN, 0},
+    {0x86aac000u, PROTO_AZURE, 21}, /* 134.170.192.0/21 */
+    {0x86aac800u, PROTO_UNKNOWN, 0},
+    {0x86aadc00u, PROTO_AZURE, 22}, /* 134.170.220.0/22 */
+    {0x86aae000u, PROTO_UNKNOWN, 0},
+    {0x870d0000u, PROTO_AZURE, 16}, /* 135.13.0.0/16 */
+    {0x870e0000u, PROTO_UNKNOWN, 0},
+    {0x87120000u, PROTO_AZURE, 16}, /* 135.18.0.0/16 */
+    {0x87130000u, PROTO_UNKNOWN, 0},
+    {0x87740000u, PROTO_AZURE, 16}, /* 135.116.0.0/16 */
+    {0x87750000u, PROTO_UNKNOWN, 0},
+    {0x87770000u, PROTO_AZURE, 16}, /* 135.119.0.0/16 */
+    {0x87780000u, PROTO_UNKNOWN, 0},
+    {0x87820000u, PROTO_AZURE, 16}, /* 135.130.0.0/16 */
+    {0x87830000u, PROTO_UNKNOWN, 0},
+    {0x87950000u, PROTO_AZURE, 16}, /* 135.149.0.0/16 */
+    {0x87960000u, PROTO_UNKNOWN, 0},
+    {0x87ab0000u, PROTO_AZURE, 16}, /* 135.171.0.0/16 */
+    {0x87ac0000u, PROTO_UNKNOWN, 0},
+    {0x87dc0000u, PROTO_AZURE, 16}, /* 135.220.0.0/16 */
+    {0x87dd0000u, PROTO_UNKNOWN, 0},
+    {0x87de0000u, PROTO_AZURE, 16}, /* 135.222.0.0/16 */
+    {0x87df0000u, PROTO_UNKNOWN, 0},
+    {0x87e00000u, PROTO_AZURE, 15}, /* 135.224.0.0/15 */
+    {0x87e20000u, PROTO_UNKNOWN, 0},
+    {0x87e80000u, PROTO_AZURE, 14}, /* 135.232.0.0/14 */
+    {0x87ec0000u, PROTO_AZURE, 15}, /* 135.236.0.0/15 */
+    {0x87ee0000u, PROTO_UNKNOWN, 0},
+    {0x88080000u, PROTO_AWS, 15}, /* 136.8.0.0/15 */
+    {0x880a0000u, PROTO_UNKNOWN, 0},
+    {0x88120000u, PROTO_AWS, 21}, /* 136.18.0.0/21 */
+    {0x88120800u, PROTO_UNKNOWN, 0},
+    {0x88121200u, PROTO_AWS, 23}, /* 136.18.18.0/23 */
+    {0x88121400u, PROTO_AWS, 22}, /* 136.18.20.0/22 */
+    {0x88121800u, PROTO_UNKNOWN, 0},
+    {0x88122000u, PROTO_AWS, 23}, /* 136.18.32.0/23 */
+    {0x88122200u, PROTO_AWS, 24}, /* 136.18.34.0/24 */
+    {0x88122300u, PROTO_UNKNOWN, 0},
+    {0x88123800u, PROTO_AWS, 21}, /* 136.18.56.0/21 */
+    {0x88124000u, PROTO_UNKNOWN, 0},
+    {0x88128000u, PROTO_AWS, 19}, /* 136.18.128.0/19 */
+    {0x8812a000u, PROTO_AWS, 22}, /* 136.18.160.0/22 */
+    {0x8812a400u, PROTO_AWS, 23}, /* 136.18.164.0/23 */
+    {0x8812a600u, PROTO_UNKNOWN, 0},
+    {0x8812a800u, PROTO_AWS, 21}, /* 136.18.168.0/21 */
+    {0x8812b000u, PROTO_UNKNOWN, 0},
+    {0x8812fe00u, PROTO_AWS, 23}, /* 136.18.254.0/23 */
+    {0x88130000u, PROTO_UNKNOWN, 0},
+    {0x88160200u, PROTO_GOOGLE, 23}, /* 136.22.2.0/23 */
+    {0x88160600u, PROTO_UNKNOWN, 0},
+    {0x88160800u, PROTO_GOOGLE, 21}, /* 136.22.8.0/21 */
+    {0x88161000u, PROTO_GOOGLE, 20}, /* 136.22.16.0/20 */
+    {0x88162000u, PROTO_UNKNOWN, 0},
+    {0x8816a000u, PROTO_GOOGLE, 20}, /* 136.22.160.0/20 */
+    {0x8816b000u, PROTO_GOOGLE, 21}, /* 136.22.176.0/21 */
+    {0x8816b800u, PROTO_GOOGLE, 23}, /* 136.22.184.0/23 */
+    {0x8816ba00u, PROTO_GOOGLE, 24}, /* 136.22.186.0/24 */
+    {0x8816bb00u, PROTO_UNKNOWN, 0},
+    {0x88170000u, PROTO_GOOGLE, 18}, /* 136.23.0.0/18 */
+    {0x88174000u, PROTO_GOOGLE_CLOUD, 18}, /* 136.23.64.0/18 */
+    {0x88178000u, PROTO_UNKNOWN, 0},
+    {0x88400000u, PROTO_GOOGLE_CLOUD, 13}, /* 136.64.0.0/13 */
+    {0x88480000u, PROTO_GOOGLE_CLOUD, 14}, /* 136.72.0.0/14 */
+    {0x884c0000u, PROTO_GOOGLE, 16}, /* 136.76.0.0/16 */
+    {0x884d0000u, PROTO_GOOGLE_CLOUD, 16}, /* 136.77.0.0/16 */
+    {0x884e0000u, PROTO_GOOGLE, 16}, /* 136.78.0.0/16 */
+    {0x884f0000u, PROTO_GOOGLE_CLOUD, 16}, /* 136.79.0.0/16 */
+    {0x88500000u, PROTO_GOOGLE_CLOUD, 12}, /* 136.80.0.0/12 */
+    {0x88600000u, PROTO_UNKNOWN, 0},
+    {0x886b0000u, PROTO_GOOGLE_CLOUD, 16}, /* 136.107.0.0/16 */
+    {0x886c0000u, PROTO_GOOGLE_CLOUD, 14}, /* 136.108.0.0/14 */
+    {0x88700000u, PROTO_GOOGLE_CLOUD, 13}, /* 136.112.0.0/13 */
+    {0x88780000u, PROTO_GOOGLE, 22}, /* 136.120.0.0/22 */
+    {0x88780400u, PROTO_UNKNOWN, 0},
+    {0x88790800u, PROTO_GOOGLE, 21}, /* 136.121.8.0/21 */
+    {0x88791000u, PROTO_UNKNOWN, 0},
+    {0x887c0000u, PROTO_GOOGLE, 15}, /* 136.124.0.0/15 */
+    {0x887e0000u, PROTO_UNKNOWN, 0},
+    {0x89740000u, PROTO_AZURE, 18}, /* 137.116.0.0/18 */
+    {0x89744000u, PROTO_AZURE, 19}, /* 137.116.64.0/19 */
+    {0x89746000u, PROTO_AZURE, 22}, /* 137.116.96.0/22 */
+    {0x89746400u, PROTO_UNKNOWN, 0},
+    {0x89747000u, PROTO_AZURE, 20}, /* 137.116.112.0/20 */
+    {0x89748000u, PROTO_AZURE, 17}, /* 137.116.128.0/17 */
+    {0x89750000u, PROTO_AZURE, 16}, /* 137.117.0.0/16 */
+    {0x89760000u, PROTO_UNKNOWN, 0},
+    {0x89870000u, PROTO_AZURE, 16}, /* 137.135.0.0/16 */
+    {0x89880000u, PROTO_UNKNOWN, 0},
+    {0x8a5b0000u, PROTO_AZURE, 16}, /* 138.91.0.0/16 */
+    {0x8a5c0000u, PROTO_UNKNOWN, 0},
+    {0x8b381000u, PROTO_AWS, 20}, /* 139.56.16.0/20 */
+    {0x8b382000u, PROTO_AWS, 23}, /* 139.56.32.0/23 */
+    {0x8b382200u, PROTO_AWS, 24}, /* 139.56.34.0/24 */
+    {0x8b382300u, PROTO_UNKNOWN, 0},
     {0x8b960000u, PROTO_KAKAO, 21}, /* 139.150.0.0/21 */
     {0x8b960100u, PROTO_KAKAO, 24}, /* 139.150.1.0/24 */
     {0x8b960400u, PROTO_KAKAO, 22}, /* 139.150.4.0/22 */
     {0x8b960500u, PROTO_KAKAO, 24}, /* 139.150.5.0/24 */
     {0x8b960800u, PROTO_UNKNOWN, 0},
+    {0x8cb30000u, PROTO_AWS, 16}, /* 140.179.0.0/16 */
+    {0x8cb40000u, PROTO_UNKNOWN, 0},
+    {0x8cf84000u, PROTO_FASTLY, 18}, /* 140.248.64.0/18 */
+    {0x8cf88000u, PROTO_FASTLY, 17}, /* 140.248.128.0/17 */
+    {0x8cf90000u, PROTO_UNKNOWN, 0},
     {0x8d654000u, PROTO_CLOUDFLARE, 18}, /* 141.101.64.0/18 */
     {0x8d658000u, PROTO_UNKNOWN, 0},
+    {0x8de60000u, PROTO_AWS, 15}, /* 141.230.0.0/15 */
+    {0x8de80000u, PROTO_UNKNOWN, 0},
+    {0x8e04b100u, PROTO_AWS, 24}, /* 142.4.177.0/24 */
+    {0x8e04b200u, PROTO_AWS, 23}, /* 142.4.178.0/23 */
+    {0x8e04b400u, PROTO_AWS, 24}, /* 142.4.180.0/24 */
+    {0x8e04b500u, PROTO_UNKNOWN, 0},
     {0x8efa0000u, PROTO_GOOGLE, 15}, /* 142.250.0.0/15 */
-    {0x8efa0100u, PROTO_GOOGLE, 24}, /* 142.250.1.0/24 */
-    {0x8efa0200u, PROTO_GOOGLE, 23}, /* 142.250.2.0/23 */
-    {0x8efa0300u, PROTO_GOOGLE, 24}, /* 142.250.3.0/24 */
-    {0x8efa0400u, PROTO_GOOGLE, 23}, /* 142.250.4.0/23 */
-    {0x8efa0500u, PROTO_GOOGLE, 24}, /* 142.250.5.0/24 */
-    {0x8efa0600u, PROTO_GOOGLE, 23}, /* 142.250.6.0/23 */
-    {0x8efa0700u, PROTO_GOOGLE, 24}, /* 142.250.7.0/24 */
-    {0x8efa0800u, PROTO_GOOGLE, 23}, /* 142.250.8.0/23 */
-    {0x8efa0900u, PROTO_GOOGLE, 24}, /* 142.250.9.0/24 */
-    {0x8efa0a00u, PROTO_GOOGLE, 23}, /* 142.250.10.0/23 */
-    {0x8efa0b00u, PROTO_GOOGLE, 24}, /* 142.250.11.0/24 */
-    {0x8efa0c00u, PROTO_GOOGLE, 23}, /* 142.250.12.0/23 */
-    {0x8efa0d00u, PROTO_GOOGLE, 24}, /* 142.250.13.0/24 */
-    {0x8efa0e00u, PROTO_GOOGLE, 23}, /* 142.250.14.0/23 */
-    {0x8efa0f00u, PROTO_GOOGLE, 24}, /* 142.250.15.0/24 */
-    {0x8efa1000u, PROTO_GOOGLE, 23}, /* 142.250.16.0/23 */
-    {0x8efa1100u, PROTO_GOOGLE, 24}, /* 142.250.17.0/24 */
-    {0x8efa1200u, PROTO_GOOGLE, 23}, /* 142.250.18.0/23 */
-    {0x8efa1300u, PROTO_GOOGLE, 24}, /* 142.250.19.0/24 */
-    {0x8efa1400u, PROTO_GOOGLE, 23}, /* 142.250.20.0/23 */
-    {0x8efa1500u, PROTO_GOOGLE, 24}, /* 142.250.21.0/24 */
-    {0x8efa1600u, PROTO_GOOGLE, 23}, /* 142.250.22.0/23 */
-    {0x8efa1700u, PROTO_GOOGLE, 24}, /* 142.250.23.0/24 */
-    {0x8efa1800u, PROTO_GOOGLE, 23}, /* 142.250.24.0/23 */
-    {0x8efa1900u, PROTO_GOOGLE, 24}, /* 142.250.25.0/24 */
-    {0x8efa1a00u, PROTO_GOOGLE, 23}, /* 142.250.26.0/23 */
-    {0x8efa1b00u, PROTO_GOOGLE, 24}, /* 142.250.27.0/24 */
-    {0x8efa1c00u, PROTO_GOOGLE, 23}, /* 142.250.28.0/23 */
-    {0x8efa1d00u, PROTO_GOOGLE, 24}, /* 142.250.29.0/24 */
-    {0x8efa1e00u, PROTO_GOOGLE, 23}, /* 142.250.30.0/23 */
-    {0x8efa1f00u, PROTO_GOOGLE, 24}, /* 142.250.31.0/24 */
-    {0x8efa2000u, PROTO_GOOGLE, 23}, /* 142.250.32.0/23 */
-    {0x8efa2100u, PROTO_GOOGLE, 24}, /* 142.250.33.0/24 */
-    {0x8efa2200u, PROTO_GOOGLE, 23}, /* 142.250.34.0/23 */
-    {0x8efa2300u, PROTO_GOOGLE, 24}, /* 142.250.35.0/24 */
-    {0x8efa2400u, PROTO_GOOGLE, 23}, /* 142.250.36.0/23 */
-    {0x8efa2500u, PROTO_GOOGLE, 24}, /* 142.250.37.0/24 */
-    {0x8efa2600u, PROTO_GOOGLE, 23}, /* 142.250.38.0/23 */
-    {0x8efa2700u, PROTO_GOOGLE, 24}, /* 142.250.39.0/24 */
-    {0x8efa2800u, PROTO_GOOGLE, 23}, /* 142.250.40.0/23 */
-    {0x8efa2900u, PROTO_GOOGLE, 24}, /* 142.250.41.0/24 */
-    {0x8efa2a00u, PROTO_GOOGLE, 23}, /* 142.250.42.0/23 */
-    {0x8efa2b00u, PROTO_GOOGLE, 24}, /* 142.250.43.0/24 */
-    {0x8efa2c00u, PROTO_GOOGLE, 23}, /* 142.250.44.0/23 */
-    {0x8efa2d00u, PROTO_GOOGLE, 24}, /* 142.250.45.0/24 */
-    {0x8efa2e00u, PROTO_GOOGLE, 23}, /* 142.250.46.0/23 */
-    {0x8efa2f00u, PROTO_GOOGLE, 24}, /* 142.250.47.0/24 */
-    {0x8efa3000u, PROTO_GOOGLE, 23}, /* 142.250.48.0/23 */
-    {0x8efa3100u, PROTO_GOOGLE, 24}, /* 142.250.49.0/24 */
-    {0x8efa3200u, PROTO_GOOGLE, 23}, /* 142.250.50.0/23 */
-    {0x8efa3300u, PROTO_GOOGLE, 24}, /* 142.250.51.0/24 */
-    {0x8efa3400u, PROTO_GOOGLE, 23}, /* 142.250.52.0/23 */
-    {0x8efa3500u, PROTO_GOOGLE, 24}, /* 142.250.53.0/24 */
-    {0x8efa3600u, PROTO_GOOGLE, 23}, /* 142.250.54.0/23 */
-    {0x8efa3700u, PROTO_GOOGLE, 24}, /* 142.250.55.0/24 */
-    {0x8efa3800u, PROTO_GOOGLE, 23}, /* 142.250.56.0/23 */
-    {0x8efa3900u, PROTO_GOOGLE, 24}, /* 142.250.57.0/24 */
-    {0x8efa3a00u, PROTO_GOOGLE, 23}, /* 142.250.58.0/23 */
-    {0x8efa3b00u, PROTO_GOOGLE, 24}, /* 142.250.59.0/24 */
-    {0x8efa3c00u, PROTO_GOOGLE, 23}, /* 142.250.60.0/23 */
-    {0x8efa3d00u, PROTO_GOOGLE, 24}, /* 142.250.61.0/24 */
-    {0x8efa3e00u, PROTO_GOOGLE, 23}, /* 142.250.62.0/23 */
-    {0x8efa3f00u, PROTO_GOOGLE, 24}, /* 142.250.63.0/24 */
-    {0x8efa4000u, PROTO_GOOGLE, 23}, /* 142.250.64.0/23 */
-    {0x8efa4100u, PROTO_GOOGLE, 24}, /* 142.250.65.0/24 */
-    {0x8efa4200u, PROTO_GOOGLE, 23}, /* 142.250.66.0/23 */
-    {0x8efa4300u, PROTO_GOOGLE, 24}, /* 142.250.67.0/24 */
-    {0x8efa4400u, PROTO_GOOGLE, 23}, /* 142.250.68.0/23 */
-    {0x8efa4500u, PROTO_GOOGLE, 24}, /* 142.250.69.0/24 */
-    {0x8efa4600u, PROTO_GOOGLE, 23}, /* 142.250.70.0/23 */
-    {0x8efa4700u, PROTO_GOOGLE, 24}, /* 142.250.71.0/24 */
-    {0x8efa4800u, PROTO_GOOGLE, 23}, /* 142.250.72.0/23 */
-    {0x8efa4900u, PROTO_GOOGLE, 24}, /* 142.250.73.0/24 */
-    {0x8efa4a00u, PROTO_GOOGLE, 23}, /* 142.250.74.0/23 */
-    {0x8efa4b00u, PROTO_GOOGLE, 24}, /* 142.250.75.0/24 */
-    {0x8efa4c00u, PROTO_GOOGLE, 23}, /* 142.250.76.0/23 */
-    {0x8efa4d00u, PROTO_GOOGLE, 24}, /* 142.250.77.0/24 */
-    {0x8efa4e00u, PROTO_GOOGLE, 23}, /* 142.250.78.0/23 */
-    {0x8efa4f00u, PROTO_GOOGLE, 24}, /* 142.250.79.0/24 */
-    {0x8efa5000u, PROTO_GOOGLE, 23}, /* 142.250.80.0/23 */
-    {0x8efa5100u, PROTO_GOOGLE, 24}, /* 142.250.81.0/24 */
-    {0x8efa5200u, PROTO_GOOGLE, 23}, /* 142.250.82.0/23 */
-    {0x8efa5300u, PROTO_GOOGLE, 24}, /* 142.250.83.0/24 */
-    {0x8efa5400u, PROTO_GOOGLE, 23}, /* 142.250.84.0/23 */
-    {0x8efa5500u, PROTO_GOOGLE, 24}, /* 142.250.85.0/24 */
-    {0x8efa5600u, PROTO_GOOGLE, 23}, /* 142.250.86.0/23 */
-    {0x8efa5700u, PROTO_GOOGLE, 24}, /* 142.250.87.0/24 */
-    {0x8efa5800u, PROTO_GOOGLE, 23}, /* 142.250.88.0/23 */
-    {0x8efa5900u, PROTO_GOOGLE, 24}, /* 142.250.89.0/24 */
-    {0x8efa5a00u, PROTO_GOOGLE, 23}, /* 142.250.90.0/23 */
-    {0x8efa5b00u, PROTO_GOOGLE, 24}, /* 142.250.91.0/24 */
-    {0x8efa5c00u, PROTO_GOOGLE, 23}, /* 142.250.92.0/23 */
-    {0x8efa5d00u, PROTO_GOOGLE, 24}, /* 142.250.93.0/24 */
-    {0x8efa5e00u, PROTO_GOOGLE, 23}, /* 142.250.94.0/23 */
-    {0x8efa5f00u, PROTO_GOOGLE, 24}, /* 142.250.95.0/24 */
-    {0x8efa6000u, PROTO_GOOGLE, 23}, /* 142.250.96.0/23 */
-    {0x8efa6100u, PROTO_GOOGLE, 24}, /* 142.250.97.0/24 */
-    {0x8efa6200u, PROTO_GOOGLE, 23}, /* 142.250.98.0/23 */
-    {0x8efa6300u, PROTO_GOOGLE, 24}, /* 142.250.99.0/24 */
-    {0x8efa6400u, PROTO_GOOGLE, 23}, /* 142.250.100.0/23 */
-    {0x8efa6500u, PROTO_GOOGLE, 24}, /* 142.250.101.0/24 */
-    {0x8efa6600u, PROTO_GOOGLE, 23}, /* 142.250.102.0/23 */
-    {0x8efa6700u, PROTO_GOOGLE, 24}, /* 142.250.103.0/24 */
-    {0x8efa6800u, PROTO_GOOGLE, 23}, /* 142.250.104.0/23 */
-    {0x8efa6900u, PROTO_GOOGLE, 24}, /* 142.250.105.0/24 */
-    {0x8efa6a00u, PROTO_GOOGLE, 23}, /* 142.250.106.0/23 */
-    {0x8efa6b00u, PROTO_GOOGLE, 24}, /* 142.250.107.0/24 */
-    {0x8efa6c00u, PROTO_GOOGLE, 23}, /* 142.250.108.0/23 */
-    {0x8efa6d00u, PROTO_GOOGLE, 24}, /* 142.250.109.0/24 */
-    {0x8efa6e00u, PROTO_GOOGLE, 23}, /* 142.250.110.0/23 */
-    {0x8efa6f00u, PROTO_GOOGLE, 24}, /* 142.250.111.0/24 */
-    {0x8efa7000u, PROTO_GOOGLE, 23}, /* 142.250.112.0/23 */
-    {0x8efa7100u, PROTO_GOOGLE, 24}, /* 142.250.113.0/24 */
-    {0x8efa7200u, PROTO_GOOGLE, 23}, /* 142.250.114.0/23 */
-    {0x8efa7300u, PROTO_GOOGLE, 24}, /* 142.250.115.0/24 */
-    {0x8efa7400u, PROTO_GOOGLE, 23}, /* 142.250.116.0/23 */
-    {0x8efa7500u, PROTO_GOOGLE, 24}, /* 142.250.117.0/24 */
-    {0x8efa7600u, PROTO_GOOGLE, 23}, /* 142.250.118.0/23 */
-    {0x8efa7700u, PROTO_GOOGLE, 24}, /* 142.250.119.0/24 */
-    {0x8efa7800u, PROTO_GOOGLE, 23}, /* 142.250.120.0/23 */
-    {0x8efa7900u, PROTO_GOOGLE, 24}, /* 142.250.121.0/24 */
-    {0x8efa7a00u, PROTO_GOOGLE, 23}, /* 142.250.122.0/23 */
-    {0x8efa7b00u, PROTO_GOOGLE, 24}, /* 142.250.123.0/24 */
-    {0x8efa7c00u, PROTO_GOOGLE, 23}, /* 142.250.124.0/23 */
-    {0x8efa7d00u, PROTO_GOOGLE, 24}, /* 142.250.125.0/24 */
-    {0x8efa7e00u, PROTO_GOOGLE, 23}, /* 142.250.126.0/23 */
-    {0x8efa7f00u, PROTO_GOOGLE, 24}, /* 142.250.127.0/24 */
-    {0x8efa8000u, PROTO_GOOGLE, 23}, /* 142.250.128.0/23 */
-    {0x8efa8100u, PROTO_GOOGLE, 24}, /* 142.250.129.0/24 */
-    {0x8efa8200u, PROTO_GOOGLE, 23}, /* 142.250.130.0/23 */
-    {0x8efa8300u, PROTO_GOOGLE, 24}, /* 142.250.131.0/24 */
-    {0x8efa8400u, PROTO_GOOGLE, 23}, /* 142.250.132.0/23 */
-    {0x8efa8500u, PROTO_GOOGLE, 24}, /* 142.250.133.0/24 */
-    {0x8efa8600u, PROTO_GOOGLE, 23}, /* 142.250.134.0/23 */
-    {0x8efa8700u, PROTO_GOOGLE, 24}, /* 142.250.135.0/24 */
-    {0x8efa8800u, PROTO_GOOGLE, 23}, /* 142.250.136.0/23 */
-    {0x8efa8900u, PROTO_GOOGLE, 24}, /* 142.250.137.0/24 */
-    {0x8efa8a00u, PROTO_GOOGLE, 23}, /* 142.250.138.0/23 */
-    {0x8efa8b00u, PROTO_GOOGLE, 24}, /* 142.250.139.0/24 */
-    {0x8efa8c00u, PROTO_GOOGLE, 23}, /* 142.250.140.0/23 */
-    {0x8efa8d00u, PROTO_GOOGLE, 24}, /* 142.250.141.0/24 */
-    {0x8efa8e00u, PROTO_GOOGLE, 23}, /* 142.250.142.0/23 */
-    {0x8efa8f00u, PROTO_GOOGLE, 24}, /* 142.250.143.0/24 */
-    {0x8efa9000u, PROTO_GOOGLE, 23}, /* 142.250.144.0/23 */
-    {0x8efa9100u, PROTO_GOOGLE, 24}, /* 142.250.145.0/24 */
-    {0x8efa9200u, PROTO_GOOGLE, 23}, /* 142.250.146.0/23 */
-    {0x8efa9300u, PROTO_GOOGLE, 24}, /* 142.250.147.0/24 */
-    {0x8efa9400u, PROTO_GOOGLE, 23}, /* 142.250.148.0/23 */
-    {0x8efa9500u, PROTO_GOOGLE, 24}, /* 142.250.149.0/24 */
-    {0x8efa9600u, PROTO_GOOGLE, 23}, /* 142.250.150.0/23 */
-    {0x8efa9700u, PROTO_GOOGLE, 24}, /* 142.250.151.0/24 */
-    {0x8efa9800u, PROTO_GOOGLE, 23}, /* 142.250.152.0/23 */
-    {0x8efa9900u, PROTO_GOOGLE, 24}, /* 142.250.153.0/24 */
-    {0x8efa9a00u, PROTO_GOOGLE, 23}, /* 142.250.154.0/23 */
-    {0x8efa9b00u, PROTO_GOOGLE, 24}, /* 142.250.155.0/24 */
-    {0x8efa9c00u, PROTO_GOOGLE, 23}, /* 142.250.156.0/23 */
-    {0x8efa9d00u, PROTO_GOOGLE, 24}, /* 142.250.157.0/24 */
-    {0x8efa9e00u, PROTO_GOOGLE, 23}, /* 142.250.158.0/23 */
-    {0x8efa9f00u, PROTO_GOOGLE, 24}, /* 142.250.159.0/24 */
-    {0x8efaa000u, PROTO_GOOGLE, 23}, /* 142.250.160.0/23 */
-    {0x8efaa100u, PROTO_GOOGLE, 24}, /* 142.250.161.0/24 */
-    {0x8efaa200u, PROTO_GOOGLE, 23}, /* 142.250.162.0/23 */
-    {0x8efaa300u, PROTO_GOOGLE, 24}, /* 142.250.163.0/24 */
-    {0x8efaa400u, PROTO_GOOGLE, 23}, /* 142.250.164.0/23 */
-    {0x8efaa500u, PROTO_GOOGLE, 24}, /* 142.250.165.0/24 */
-    {0x8efaa600u, PROTO_GOOGLE, 23}, /* 142.250.166.0/23 */
-    {0x8efaa700u, PROTO_GOOGLE, 24}, /* 142.250.167.0/24 */
-    {0x8efaa800u, PROTO_GOOGLE, 23}, /* 142.250.168.0/23 */
-    {0x8efaa900u, PROTO_GOOGLE, 24}, /* 142.250.169.0/24 */
-    {0x8efaaa00u, PROTO_GOOGLE, 23}, /* 142.250.170.0/23 */
-    {0x8efaab00u, PROTO_GOOGLE, 24}, /* 142.250.171.0/24 */
-    {0x8efaac00u, PROTO_GOOGLE, 23}, /* 142.250.172.0/23 */
-    {0x8efaad00u, PROTO_GOOGLE, 24}, /* 142.250.173.0/24 */
-    {0x8efaae00u, PROTO_GOOGLE, 23}, /* 142.250.174.0/23 */
-    {0x8efaaf00u, PROTO_GOOGLE, 24}, /* 142.250.175.0/24 */
-    {0x8efab000u, PROTO_GOOGLE, 23}, /* 142.250.176.0/23 */
-    {0x8efab100u, PROTO_GOOGLE, 24}, /* 142.250.177.0/24 */
-    {0x8efab200u, PROTO_GOOGLE, 23}, /* 142.250.178.0/23 */
-    {0x8efab300u, PROTO_GOOGLE, 24}, /* 142.250.179.0/24 */
-    {0x8efab400u, PROTO_GOOGLE, 23}, /* 142.250.180.0/23 */
-    {0x8efab500u, PROTO_GOOGLE, 24}, /* 142.250.181.0/24 */
-    {0x8efab600u, PROTO_GOOGLE, 23}, /* 142.250.182.0/23 */
-    {0x8efab700u, PROTO_GOOGLE, 24}, /* 142.250.183.0/24 */
-    {0x8efab800u, PROTO_GOOGLE, 23}, /* 142.250.184.0/23 */
-    {0x8efab900u, PROTO_GOOGLE, 24}, /* 142.250.185.0/24 */
-    {0x8efaba00u, PROTO_GOOGLE, 23}, /* 142.250.186.0/23 */
-    {0x8efabb00u, PROTO_GOOGLE, 24}, /* 142.250.187.0/24 */
-    {0x8efabc00u, PROTO_GOOGLE, 23}, /* 142.250.188.0/23 */
-    {0x8efabd00u, PROTO_GOOGLE, 24}, /* 142.250.189.0/24 */
-    {0x8efabe00u, PROTO_GOOGLE, 23}, /* 142.250.190.0/23 */
-    {0x8efabf00u, PROTO_GOOGLE, 24}, /* 142.250.191.0/24 */
-    {0x8efac000u, PROTO_GOOGLE, 23}, /* 142.250.192.0/23 */
-    {0x8efac100u, PROTO_GOOGLE, 24}, /* 142.250.193.0/24 */
-    {0x8efac200u, PROTO_GOOGLE, 23}, /* 142.250.194.0/23 */
-    {0x8efac300u, PROTO_GOOGLE, 24}, /* 142.250.195.0/24 */
-    {0x8efac400u, PROTO_GOOGLE, 23}, /* 142.250.196.0/23 */
-    {0x8efac500u, PROTO_GOOGLE, 24}, /* 142.250.197.0/24 */
-    {0x8efac600u, PROTO_GOOGLE, 23}, /* 142.250.198.0/23 */
-    {0x8efac700u, PROTO_GOOGLE, 24}, /* 142.250.199.0/24 */
-    {0x8efac800u, PROTO_GOOGLE, 23}, /* 142.250.200.0/23 */
-    {0x8efac900u, PROTO_GOOGLE, 24}, /* 142.250.201.0/24 */
-    {0x8efaca00u, PROTO_GOOGLE, 23}, /* 142.250.202.0/23 */
-    {0x8efacb00u, PROTO_GOOGLE, 24}, /* 142.250.203.0/24 */
-    {0x8efacc00u, PROTO_GOOGLE, 23}, /* 142.250.204.0/23 */
-    {0x8efacd00u, PROTO_GOOGLE, 24}, /* 142.250.205.0/24 */
-    {0x8eface00u, PROTO_GOOGLE, 23}, /* 142.250.206.0/23 */
-    {0x8efacf00u, PROTO_GOOGLE, 24}, /* 142.250.207.0/24 */
-    {0x8efad000u, PROTO_GOOGLE, 23}, /* 142.250.208.0/23 */
-    {0x8efad100u, PROTO_GOOGLE, 24}, /* 142.250.209.0/24 */
-    {0x8efad200u, PROTO_GOOGLE, 23}, /* 142.250.210.0/23 */
-    {0x8efad300u, PROTO_GOOGLE, 24}, /* 142.250.211.0/24 */
-    {0x8efad400u, PROTO_GOOGLE, 23}, /* 142.250.212.0/23 */
-    {0x8efad500u, PROTO_GOOGLE, 24}, /* 142.250.213.0/24 */
-    {0x8efad600u, PROTO_GOOGLE, 23}, /* 142.250.214.0/23 */
-    {0x8efad700u, PROTO_GOOGLE, 24}, /* 142.250.215.0/24 */
-    {0x8efad800u, PROTO_GOOGLE, 23}, /* 142.250.216.0/23 */
-    {0x8efad900u, PROTO_GOOGLE, 24}, /* 142.250.217.0/24 */
-    {0x8efada00u, PROTO_GOOGLE, 23}, /* 142.250.218.0/23 */
-    {0x8efadb00u, PROTO_GOOGLE, 24}, /* 142.250.219.0/24 */
-    {0x8efadc00u, PROTO_GOOGLE, 23}, /* 142.250.220.0/23 */
-    {0x8efadd00u, PROTO_GOOGLE, 24}, /* 142.250.221.0/24 */
-    {0x8efade00u, PROTO_GOOGLE, 23}, /* 142.250.222.0/23 */
-    {0x8efadf00u, PROTO_GOOGLE, 24}, /* 142.250.223.0/24 */
-    {0x8efae000u, PROTO_GOOGLE, 23}, /* 142.250.224.0/23 */
-    {0x8efae100u, PROTO_GOOGLE, 24}, /* 142.250.225.0/24 */
-    {0x8efae200u, PROTO_GOOGLE, 23}, /* 142.250.226.0/23 */
-    {0x8efae300u, PROTO_GOOGLE, 24}, /* 142.250.227.0/24 */
-    {0x8efae400u, PROTO_GOOGLE, 23}, /* 142.250.228.0/23 */
-    {0x8efae500u, PROTO_GOOGLE, 24}, /* 142.250.229.0/24 */
-    {0x8efae600u, PROTO_GOOGLE, 23}, /* 142.250.230.0/23 */
-    {0x8efae700u, PROTO_GOOGLE, 24}, /* 142.250.231.0/24 */
-    {0x8efae800u, PROTO_GOOGLE, 23}, /* 142.250.232.0/23 */
-    {0x8efae900u, PROTO_GOOGLE, 24}, /* 142.250.233.0/24 */
-    {0x8efaea00u, PROTO_GOOGLE, 23}, /* 142.250.234.0/23 */
-    {0x8efaeb00u, PROTO_GOOGLE, 24}, /* 142.250.235.0/24 */
-    {0x8efaec00u, PROTO_GOOGLE, 23}, /* 142.250.236.0/23 */
-    {0x8efaed00u, PROTO_GOOGLE, 24}, /* 142.250.237.0/24 */
-    {0x8efaee00u, PROTO_GOOGLE, 23}, /* 142.250.238.0/23 */
-    {0x8efaef00u, PROTO_GOOGLE, 24}, /* 142.250.239.0/24 */
-    {0x8efaf000u, PROTO_GOOGLE, 23}, /* 142.250.240.0/23 */
-    {0x8efaf100u, PROTO_GOOGLE, 24}, /* 142.250.241.0/24 */
-    {0x8efaf200u, PROTO_GOOGLE, 23}, /* 142.250.242.0/23 */
-    {0x8efaf300u, PROTO_GOOGLE, 24}, /* 142.250.243.0/24 */
-    {0x8efaf400u, PROTO_GOOGLE, 23}, /* 142.250.244.0/23 */
-    {0x8efaf500u, PROTO_GOOGLE, 24}, /* 142.250.245.0/24 */
-    {0x8efaf600u, PROTO_GOOGLE, 23}, /* 142.250.246.0/23 */
-    {0x8efaf700u, PROTO_GOOGLE, 24}, /* 142.250.247.0/24 */
-    {0x8efaf800u, PROTO_GOOGLE, 23}, /* 142.250.248.0/23 */
-    {0x8efaf900u, PROTO_GOOGLE, 24}, /* 142.250.249.0/24 */
-    {0x8efafa00u, PROTO_GOOGLE, 23}, /* 142.250.250.0/23 */
-    {0x8efafb00u, PROTO_GOOGLE, 24}, /* 142.250.251.0/24 */
-    {0x8efafc00u, PROTO_GOOGLE, 23}, /* 142.250.252.0/23 */
-    {0x8efafd00u, PROTO_GOOGLE, 24}, /* 142.250.253.0/24 */
-    {0x8efafe00u, PROTO_GOOGLE, 23}, /* 142.250.254.0/23 */
-    {0x8efaff00u, PROTO_GOOGLE, 24}, /* 142.250.255.0/24 */
-    {0x8efb0000u, PROTO_GOOGLE, 23}, /* 142.251.0.0/23 */
-    {0x8efb0100u, PROTO_GOOGLE, 24}, /* 142.251.1.0/24 */
-    {0x8efb0200u, PROTO_GOOGLE, 23}, /* 142.251.2.0/23 */
-    {0x8efb0300u, PROTO_GOOGLE, 24}, /* 142.251.3.0/24 */
-    {0x8efb0400u, PROTO_GOOGLE, 23}, /* 142.251.4.0/23 */
-    {0x8efb0500u, PROTO_GOOGLE, 24}, /* 142.251.5.0/24 */
-    {0x8efb0600u, PROTO_GOOGLE, 23}, /* 142.251.6.0/23 */
-    {0x8efb0700u, PROTO_GOOGLE, 24}, /* 142.251.7.0/24 */
-    {0x8efb0800u, PROTO_GOOGLE, 23}, /* 142.251.8.0/23 */
-    {0x8efb0900u, PROTO_GOOGLE, 24}, /* 142.251.9.0/24 */
-    {0x8efb0a00u, PROTO_GOOGLE, 23}, /* 142.251.10.0/23 */
-    {0x8efb0b00u, PROTO_GOOGLE, 24}, /* 142.251.11.0/24 */
-    {0x8efb0c00u, PROTO_GOOGLE, 23}, /* 142.251.12.0/23 */
-    {0x8efb0d00u, PROTO_GOOGLE, 24}, /* 142.251.13.0/24 */
-    {0x8efb0e00u, PROTO_GOOGLE, 23}, /* 142.251.14.0/23 */
-    {0x8efb0f00u, PROTO_GOOGLE, 24}, /* 142.251.15.0/24 */
-    {0x8efb1000u, PROTO_GOOGLE, 23}, /* 142.251.16.0/23 */
-    {0x8efb1100u, PROTO_GOOGLE, 24}, /* 142.251.17.0/24 */
-    {0x8efb1200u, PROTO_GOOGLE, 23}, /* 142.251.18.0/23 */
-    {0x8efb1300u, PROTO_GOOGLE, 24}, /* 142.251.19.0/24 */
-    {0x8efb1400u, PROTO_GOOGLE, 23}, /* 142.251.20.0/23 */
-    {0x8efb1500u, PROTO_GOOGLE, 24}, /* 142.251.21.0/24 */
-    {0x8efb1600u, PROTO_GOOGLE, 23}, /* 142.251.22.0/23 */
-    {0x8efb1700u, PROTO_GOOGLE, 24}, /* 142.251.23.0/24 */
-    {0x8efb1800u, PROTO_GOOGLE, 23}, /* 142.251.24.0/23 */
-    {0x8efb1900u, PROTO_GOOGLE, 24}, /* 142.251.25.0/24 */
-    {0x8efb1a00u, PROTO_GOOGLE, 23}, /* 142.251.26.0/23 */
-    {0x8efb1b00u, PROTO_GOOGLE, 24}, /* 142.251.27.0/24 */
-    {0x8efb1c00u, PROTO_GOOGLE, 23}, /* 142.251.28.0/23 */
-    {0x8efb1d00u, PROTO_GOOGLE, 24}, /* 142.251.29.0/24 */
-    {0x8efb1e00u, PROTO_GOOGLE, 23}, /* 142.251.30.0/23 */
-    {0x8efb1f00u, PROTO_GOOGLE, 24}, /* 142.251.31.0/24 */
-    {0x8efb2000u, PROTO_GOOGLE, 23}, /* 142.251.32.0/23 */
-    {0x8efb2100u, PROTO_GOOGLE, 24}, /* 142.251.33.0/24 */
-    {0x8efb2200u, PROTO_GOOGLE, 23}, /* 142.251.34.0/23 */
-    {0x8efb2300u, PROTO_GOOGLE, 24}, /* 142.251.35.0/24 */
-    {0x8efb2400u, PROTO_GOOGLE, 23}, /* 142.251.36.0/23 */
-    {0x8efb2500u, PROTO_GOOGLE, 24}, /* 142.251.37.0/24 */
-    {0x8efb2600u, PROTO_GOOGLE, 23}, /* 142.251.38.0/23 */
-    {0x8efb2700u, PROTO_GOOGLE, 24}, /* 142.251.39.0/24 */
-    {0x8efb2800u, PROTO_GOOGLE, 23}, /* 142.251.40.0/23 */
-    {0x8efb2900u, PROTO_GOOGLE, 24}, /* 142.251.41.0/24 */
-    {0x8efb2a00u, PROTO_GOOGLE, 23}, /* 142.251.42.0/23 */
-    {0x8efb2b00u, PROTO_GOOGLE, 24}, /* 142.251.43.0/24 */
-    {0x8efb2c00u, PROTO_GOOGLE, 23}, /* 142.251.44.0/23 */
-    {0x8efb2d00u, PROTO_GOOGLE, 24}, /* 142.251.45.0/24 */
-    {0x8efb2e00u, PROTO_GOOGLE, 23}, /* 142.251.46.0/23 */
-    {0x8efb2f00u, PROTO_GOOGLE, 24}, /* 142.251.47.0/24 */
-    {0x8efb3000u, PROTO_GOOGLE, 23}, /* 142.251.48.0/23 */
-    {0x8efb3100u, PROTO_GOOGLE, 24}, /* 142.251.49.0/24 */
-    {0x8efb3200u, PROTO_GOOGLE, 23}, /* 142.251.50.0/23 */
-    {0x8efb3300u, PROTO_GOOGLE, 24}, /* 142.251.51.0/24 */
-    {0x8efb3400u, PROTO_GOOGLE, 23}, /* 142.251.52.0/23 */
-    {0x8efb3500u, PROTO_GOOGLE, 24}, /* 142.251.53.0/24 */
-    {0x8efb3600u, PROTO_GOOGLE, 23}, /* 142.251.54.0/23 */
-    {0x8efb3700u, PROTO_GOOGLE, 24}, /* 142.251.55.0/24 */
-    {0x8efb3800u, PROTO_GOOGLE, 23}, /* 142.251.56.0/23 */
-    {0x8efb3900u, PROTO_GOOGLE, 24}, /* 142.251.57.0/24 */
-    {0x8efb3a00u, PROTO_GOOGLE, 23}, /* 142.251.58.0/23 */
-    {0x8efb3b00u, PROTO_GOOGLE, 24}, /* 142.251.59.0/24 */
-    {0x8efb3c00u, PROTO_GOOGLE, 23}, /* 142.251.60.0/23 */
-    {0x8efb3d00u, PROTO_GOOGLE, 24}, /* 142.251.61.0/24 */
-    {0x8efb3e00u, PROTO_GOOGLE, 23}, /* 142.251.62.0/23 */
-    {0x8efb3f00u, PROTO_GOOGLE, 24}, /* 142.251.63.0/24 */
-    {0x8efb4000u, PROTO_GOOGLE, 23}, /* 142.251.64.0/23 */
-    {0x8efb4100u, PROTO_GOOGLE, 24}, /* 142.251.65.0/24 */
-    {0x8efb4200u, PROTO_GOOGLE, 23}, /* 142.251.66.0/23 */
-    {0x8efb4300u, PROTO_GOOGLE, 24}, /* 142.251.67.0/24 */
-    {0x8efb4400u, PROTO_GOOGLE, 23}, /* 142.251.68.0/23 */
-    {0x8efb4500u, PROTO_GOOGLE, 24}, /* 142.251.69.0/24 */
-    {0x8efb4600u, PROTO_GOOGLE, 23}, /* 142.251.70.0/23 */
-    {0x8efb4700u, PROTO_GOOGLE, 24}, /* 142.251.71.0/24 */
-    {0x8efb4800u, PROTO_GOOGLE, 23}, /* 142.251.72.0/23 */
-    {0x8efb4900u, PROTO_GOOGLE, 24}, /* 142.251.73.0/24 */
-    {0x8efb4a00u, PROTO_GOOGLE, 23}, /* 142.251.74.0/23 */
-    {0x8efb4b00u, PROTO_GOOGLE, 24}, /* 142.251.75.0/24 */
-    {0x8efb4c00u, PROTO_GOOGLE, 23}, /* 142.251.76.0/23 */
-    {0x8efb4d00u, PROTO_GOOGLE, 24}, /* 142.251.77.0/24 */
-    {0x8efb4e00u, PROTO_GOOGLE, 23}, /* 142.251.78.0/23 */
-    {0x8efb4f00u, PROTO_GOOGLE, 24}, /* 142.251.79.0/24 */
-    {0x8efb5000u, PROTO_GOOGLE, 23}, /* 142.251.80.0/23 */
-    {0x8efb5100u, PROTO_GOOGLE, 24}, /* 142.251.81.0/24 */
-    {0x8efb5200u, PROTO_GOOGLE, 23}, /* 142.251.82.0/23 */
-    {0x8efb5300u, PROTO_GOOGLE, 24}, /* 142.251.83.0/24 */
-    {0x8efb5400u, PROTO_GOOGLE, 23}, /* 142.251.84.0/23 */
-    {0x8efb5500u, PROTO_GOOGLE, 24}, /* 142.251.85.0/24 */
-    {0x8efb5600u, PROTO_GOOGLE, 23}, /* 142.251.86.0/23 */
-    {0x8efb5700u, PROTO_GOOGLE, 24}, /* 142.251.87.0/24 */
-    {0x8efb5800u, PROTO_GOOGLE, 23}, /* 142.251.88.0/23 */
-    {0x8efb5900u, PROTO_GOOGLE, 24}, /* 142.251.89.0/24 */
-    {0x8efb5a00u, PROTO_GOOGLE, 23}, /* 142.251.90.0/23 */
-    {0x8efb5b00u, PROTO_GOOGLE, 24}, /* 142.251.91.0/24 */
-    {0x8efb5c00u, PROTO_GOOGLE, 23}, /* 142.251.92.0/23 */
-    {0x8efb5d00u, PROTO_GOOGLE, 24}, /* 142.251.93.0/24 */
-    {0x8efb5e00u, PROTO_GOOGLE, 23}, /* 142.251.94.0/23 */
-    {0x8efb5f00u, PROTO_GOOGLE, 24}, /* 142.251.95.0/24 */
-    {0x8efb6000u, PROTO_GOOGLE, 23}, /* 142.251.96.0/23 */
-    {0x8efb6100u, PROTO_GOOGLE, 24}, /* 142.251.97.0/24 */
-    {0x8efb6200u, PROTO_GOOGLE, 23}, /* 142.251.98.0/23 */
-    {0x8efb6300u, PROTO_GOOGLE, 24}, /* 142.251.99.0/24 */
-    {0x8efb6400u, PROTO_GOOGLE, 23}, /* 142.251.100.0/23 */
-    {0x8efb6500u, PROTO_GOOGLE, 24}, /* 142.251.101.0/24 */
-    {0x8efb6600u, PROTO_GOOGLE, 23}, /* 142.251.102.0/23 */
-    {0x8efb6700u, PROTO_GOOGLE, 24}, /* 142.251.103.0/24 */
-    {0x8efb6800u, PROTO_GOOGLE, 23}, /* 142.251.104.0/23 */
-    {0x8efb6900u, PROTO_GOOGLE, 24}, /* 142.251.105.0/24 */
-    {0x8efb6a00u, PROTO_GOOGLE, 23}, /* 142.251.106.0/23 */
-    {0x8efb6b00u, PROTO_GOOGLE, 24}, /* 142.251.107.0/24 */
-    {0x8efb6c00u, PROTO_GOOGLE, 23}, /* 142.251.108.0/23 */
-    {0x8efb6d00u, PROTO_GOOGLE, 24}, /* 142.251.109.0/24 */
-    {0x8efb6e00u, PROTO_GOOGLE, 23}, /* 142.251.110.0/23 */
-    {0x8efb6f00u, PROTO_GOOGLE, 24}, /* 142.251.111.0/24 */
-    {0x8efb7000u, PROTO_GOOGLE, 23}, /* 142.251.112.0/23 */
-    {0x8efb7100u, PROTO_GOOGLE, 24}, /* 142.251.113.0/24 */
-    {0x8efb7200u, PROTO_GOOGLE, 23}, /* 142.251.114.0/23 */
-    {0x8efb7300u, PROTO_GOOGLE, 24}, /* 142.251.115.0/24 */
-    {0x8efb7400u, PROTO_GOOGLE, 23}, /* 142.251.116.0/23 */
-    {0x8efb7500u, PROTO_GOOGLE, 24}, /* 142.251.117.0/24 */
-    {0x8efb7600u, PROTO_GOOGLE, 23}, /* 142.251.118.0/23 */
-    {0x8efb7700u, PROTO_GOOGLE, 24}, /* 142.251.119.0/24 */
-    {0x8efb7800u, PROTO_GOOGLE, 23}, /* 142.251.120.0/23 */
-    {0x8efb7900u, PROTO_GOOGLE, 24}, /* 142.251.121.0/24 */
-    {0x8efb7a00u, PROTO_GOOGLE, 23}, /* 142.251.122.0/23 */
-    {0x8efb7b00u, PROTO_GOOGLE, 24}, /* 142.251.123.0/24 */
-    {0x8efb7c00u, PROTO_GOOGLE, 23}, /* 142.251.124.0/23 */
-    {0x8efb7d00u, PROTO_GOOGLE, 24}, /* 142.251.125.0/24 */
-    {0x8efb7e00u, PROTO_GOOGLE, 23}, /* 142.251.126.0/23 */
-    {0x8efb7f00u, PROTO_GOOGLE, 24}, /* 142.251.127.0/24 */
-    {0x8efb8000u, PROTO_GOOGLE, 23}, /* 142.251.128.0/23 */
-    {0x8efb8100u, PROTO_GOOGLE, 24}, /* 142.251.129.0/24 */
-    {0x8efb8200u, PROTO_GOOGLE, 23}, /* 142.251.130.0/23 */
-    {0x8efb8300u, PROTO_GOOGLE, 24}, /* 142.251.131.0/24 */
-    {0x8efb8400u, PROTO_GOOGLE, 23}, /* 142.251.132.0/23 */
-    {0x8efb8500u, PROTO_GOOGLE, 24}, /* 142.251.133.0/24 */
-    {0x8efb8600u, PROTO_GOOGLE, 23}, /* 142.251.134.0/23 */
-    {0x8efb8700u, PROTO_GOOGLE, 24}, /* 142.251.135.0/24 */
-    {0x8efb8800u, PROTO_GOOGLE, 23}, /* 142.251.136.0/23 */
-    {0x8efb8900u, PROTO_GOOGLE, 24}, /* 142.251.137.0/24 */
-    {0x8efb8a00u, PROTO_GOOGLE, 23}, /* 142.251.138.0/23 */
-    {0x8efb8b00u, PROTO_GOOGLE, 24}, /* 142.251.139.0/24 */
-    {0x8efb8c00u, PROTO_GOOGLE, 23}, /* 142.251.140.0/23 */
-    {0x8efb8d00u, PROTO_GOOGLE, 24}, /* 142.251.141.0/24 */
-    {0x8efb8e00u, PROTO_GOOGLE, 23}, /* 142.251.142.0/23 */
-    {0x8efb8f00u, PROTO_GOOGLE, 24}, /* 142.251.143.0/24 */
-    {0x8efb9000u, PROTO_GOOGLE, 23}, /* 142.251.144.0/23 */
-    {0x8efb9100u, PROTO_GOOGLE, 24}, /* 142.251.145.0/24 */
-    {0x8efb9200u, PROTO_GOOGLE, 23}, /* 142.251.146.0/23 */
-    {0x8efb9300u, PROTO_GOOGLE, 24}, /* 142.251.147.0/24 */
-    {0x8efb9400u, PROTO_GOOGLE, 23}, /* 142.251.148.0/23 */
-    {0x8efb9500u, PROTO_GOOGLE, 24}, /* 142.251.149.0/24 */
-    {0x8efb9600u, PROTO_GOOGLE, 23}, /* 142.251.150.0/23 */
-    {0x8efb9700u, PROTO_GOOGLE, 24}, /* 142.251.151.0/24 */
-    {0x8efb9800u, PROTO_GOOGLE, 23}, /* 142.251.152.0/23 */
-    {0x8efb9900u, PROTO_GOOGLE, 24}, /* 142.251.153.0/24 */
-    {0x8efb9a00u, PROTO_GOOGLE, 23}, /* 142.251.154.0/23 */
-    {0x8efb9b00u, PROTO_GOOGLE, 24}, /* 142.251.155.0/24 */
-    {0x8efb9c00u, PROTO_GOOGLE, 23}, /* 142.251.156.0/23 */
-    {0x8efb9d00u, PROTO_GOOGLE, 24}, /* 142.251.157.0/24 */
-    {0x8efb9e00u, PROTO_GOOGLE, 23}, /* 142.251.158.0/23 */
-    {0x8efb9f00u, PROTO_GOOGLE, 24}, /* 142.251.159.0/24 */
-    {0x8efba000u, PROTO_GOOGLE, 23}, /* 142.251.160.0/23 */
-    {0x8efba100u, PROTO_GOOGLE, 24}, /* 142.251.161.0/24 */
-    {0x8efba200u, PROTO_GOOGLE, 23}, /* 142.251.162.0/23 */
-    {0x8efba300u, PROTO_GOOGLE, 24}, /* 142.251.163.0/24 */
-    {0x8efba400u, PROTO_GOOGLE, 23}, /* 142.251.164.0/23 */
-    {0x8efba500u, PROTO_GOOGLE, 24}, /* 142.251.165.0/24 */
-    {0x8efba600u, PROTO_GOOGLE, 23}, /* 142.251.166.0/23 */
-    {0x8efba700u, PROTO_GOOGLE, 24}, /* 142.251.167.0/24 */
-    {0x8efba800u, PROTO_GOOGLE, 23}, /* 142.251.168.0/23 */
-    {0x8efba900u, PROTO_GOOGLE, 24}, /* 142.251.169.0/24 */
-    {0x8efbaa00u, PROTO_GOOGLE, 23}, /* 142.251.170.0/23 */
-    {0x8efbab00u, PROTO_GOOGLE, 24}, /* 142.251.171.0/24 */
-    {0x8efbac00u, PROTO_GOOGLE, 23}, /* 142.251.172.0/23 */
-    {0x8efbad00u, PROTO_GOOGLE, 24}, /* 142.251.173.0/24 */
-    {0x8efbae00u, PROTO_GOOGLE, 23}, /* 142.251.174.0/23 */
-    {0x8efbaf00u, PROTO_GOOGLE, 24}, /* 142.251.175.0/24 */
-    {0x8efbb000u, PROTO_GOOGLE, 23}, /* 142.251.176.0/23 */
-    {0x8efbb100u, PROTO_GOOGLE, 24}, /* 142.251.177.0/24 */
-    {0x8efbb200u, PROTO_GOOGLE, 23}, /* 142.251.178.0/23 */
-    {0x8efbb300u, PROTO_GOOGLE, 24}, /* 142.251.179.0/24 */
-    {0x8efbb400u, PROTO_GOOGLE, 23}, /* 142.251.180.0/23 */
-    {0x8efbb500u, PROTO_GOOGLE, 24}, /* 142.251.181.0/24 */
-    {0x8efbb600u, PROTO_GOOGLE, 23}, /* 142.251.182.0/23 */
-    {0x8efbb700u, PROTO_GOOGLE, 24}, /* 142.251.183.0/24 */
-    {0x8efbb800u, PROTO_GOOGLE, 23}, /* 142.251.184.0/23 */
-    {0x8efbb900u, PROTO_GOOGLE, 24}, /* 142.251.185.0/24 */
-    {0x8efbba00u, PROTO_GOOGLE, 23}, /* 142.251.186.0/23 */
-    {0x8efbbb00u, PROTO_GOOGLE, 24}, /* 142.251.187.0/24 */
-    {0x8efbbc00u, PROTO_GOOGLE, 23}, /* 142.251.188.0/23 */
-    {0x8efbbd00u, PROTO_GOOGLE, 24}, /* 142.251.189.0/24 */
-    {0x8efbbe00u, PROTO_GOOGLE, 23}, /* 142.251.190.0/23 */
-    {0x8efbbf00u, PROTO_GOOGLE, 24}, /* 142.251.191.0/24 */
-    {0x8efbc000u, PROTO_GOOGLE, 23}, /* 142.251.192.0/23 */
-    {0x8efbc100u, PROTO_GOOGLE, 24}, /* 142.251.193.0/24 */
-    {0x8efbc200u, PROTO_GOOGLE, 23}, /* 142.251.194.0/23 */
-    {0x8efbc300u, PROTO_GOOGLE, 24}, /* 142.251.195.0/24 */
-    {0x8efbc400u, PROTO_GOOGLE, 23}, /* 142.251.196.0/23 */
-    {0x8efbc500u, PROTO_GOOGLE, 24}, /* 142.251.197.0/24 */
-    {0x8efbc600u, PROTO_GOOGLE, 23}, /* 142.251.198.0/23 */
-    {0x8efbc700u, PROTO_GOOGLE, 24}, /* 142.251.199.0/24 */
-    {0x8efbc800u, PROTO_GOOGLE, 23}, /* 142.251.200.0/23 */
-    {0x8efbc900u, PROTO_GOOGLE, 24}, /* 142.251.201.0/24 */
-    {0x8efbca00u, PROTO_GOOGLE, 23}, /* 142.251.202.0/23 */
-    {0x8efbcb00u, PROTO_GOOGLE, 24}, /* 142.251.203.0/24 */
-    {0x8efbcc00u, PROTO_GOOGLE, 23}, /* 142.251.204.0/23 */
-    {0x8efbcd00u, PROTO_GOOGLE, 24}, /* 142.251.205.0/24 */
-    {0x8efbce00u, PROTO_GOOGLE, 23}, /* 142.251.206.0/23 */
-    {0x8efbcf00u, PROTO_GOOGLE, 24}, /* 142.251.207.0/24 */
-    {0x8efbd000u, PROTO_GOOGLE, 23}, /* 142.251.208.0/23 */
-    {0x8efbd100u, PROTO_GOOGLE, 24}, /* 142.251.209.0/24 */
-    {0x8efbd200u, PROTO_GOOGLE, 23}, /* 142.251.210.0/23 */
-    {0x8efbd300u, PROTO_GOOGLE, 24}, /* 142.251.211.0/24 */
-    {0x8efbd400u, PROTO_GOOGLE, 23}, /* 142.251.212.0/23 */
-    {0x8efbd500u, PROTO_GOOGLE, 24}, /* 142.251.213.0/24 */
-    {0x8efbd600u, PROTO_GOOGLE, 23}, /* 142.251.214.0/23 */
-    {0x8efbd700u, PROTO_GOOGLE, 24}, /* 142.251.215.0/24 */
-    {0x8efbd800u, PROTO_GOOGLE, 23}, /* 142.251.216.0/23 */
-    {0x8efbd900u, PROTO_GOOGLE, 24}, /* 142.251.217.0/24 */
-    {0x8efbda00u, PROTO_GOOGLE, 23}, /* 142.251.218.0/23 */
-    {0x8efbdb00u, PROTO_GOOGLE, 24}, /* 142.251.219.0/24 */
-    {0x8efbdc00u, PROTO_GOOGLE, 23}, /* 142.251.220.0/23 */
-    {0x8efbdd00u, PROTO_GOOGLE, 24}, /* 142.251.221.0/24 */
-    {0x8efbde00u, PROTO_GOOGLE, 23}, /* 142.251.222.0/23 */
-    {0x8efbdf00u, PROTO_GOOGLE, 24}, /* 142.251.223.0/24 */
-    {0x8efbe000u, PROTO_GOOGLE, 23}, /* 142.251.224.0/23 */
-    {0x8efbe100u, PROTO_GOOGLE, 24}, /* 142.251.225.0/24 */
-    {0x8efbe200u, PROTO_GOOGLE, 23}, /* 142.251.226.0/23 */
-    {0x8efbe300u, PROTO_GOOGLE, 24}, /* 142.251.227.0/24 */
-    {0x8efbe400u, PROTO_GOOGLE, 23}, /* 142.251.228.0/23 */
-    {0x8efbe500u, PROTO_GOOGLE, 24}, /* 142.251.229.0/24 */
-    {0x8efbe600u, PROTO_GOOGLE, 23}, /* 142.251.230.0/23 */
-    {0x8efbe700u, PROTO_GOOGLE, 24}, /* 142.251.231.0/24 */
-    {0x8efbe800u, PROTO_GOOGLE, 23}, /* 142.251.232.0/23 */
-    {0x8efbe900u, PROTO_GOOGLE, 24}, /* 142.251.233.0/24 */
-    {0x8efbea00u, PROTO_GOOGLE, 23}, /* 142.251.234.0/23 */
-    {0x8efbeb00u, PROTO_GOOGLE, 24}, /* 142.251.235.0/24 */
-    {0x8efbec00u, PROTO_GOOGLE, 23}, /* 142.251.236.0/23 */
-    {0x8efbed00u, PROTO_GOOGLE, 24}, /* 142.251.237.0/24 */
-    {0x8efbee00u, PROTO_GOOGLE, 23}, /* 142.251.238.0/23 */
-    {0x8efbef00u, PROTO_GOOGLE, 24}, /* 142.251.239.0/24 */
-    {0x8efbf000u, PROTO_GOOGLE, 23}, /* 142.251.240.0/23 */
-    {0x8efbf100u, PROTO_GOOGLE, 24}, /* 142.251.241.0/24 */
-    {0x8efbf200u, PROTO_GOOGLE, 23}, /* 142.251.242.0/23 */
-    {0x8efbf300u, PROTO_GOOGLE, 24}, /* 142.251.243.0/24 */
-    {0x8efbf400u, PROTO_GOOGLE, 23}, /* 142.251.244.0/23 */
-    {0x8efbf500u, PROTO_GOOGLE, 24}, /* 142.251.245.0/24 */
-    {0x8efbf600u, PROTO_GOOGLE, 23}, /* 142.251.246.0/23 */
-    {0x8efbf700u, PROTO_GOOGLE, 24}, /* 142.251.247.0/24 */
-    {0x8efbf800u, PROTO_GOOGLE, 23}, /* 142.251.248.0/23 */
-    {0x8efbf900u, PROTO_GOOGLE, 24}, /* 142.251.249.0/24 */
-    {0x8efbfa00u, PROTO_GOOGLE, 23}, /* 142.251.250.0/23 */
-    {0x8efbfb00u, PROTO_GOOGLE, 24}, /* 142.251.251.0/24 */
-    {0x8efbfc00u, PROTO_GOOGLE, 23}, /* 142.251.252.0/23 */
-    {0x8efbfd00u, PROTO_GOOGLE, 24}, /* 142.251.253.0/24 */
-    {0x8efbfe00u, PROTO_GOOGLE, 23}, /* 142.251.254.0/23 */
-    {0x8efbff00u, PROTO_GOOGLE, 24}, /* 142.251.255.0/24 */
     {0x8efc0000u, PROTO_UNKNOWN, 0},
+    {0x8fcc0000u, PROTO_CLOUDFRONT, 16}, /* 143.204.0.0/16 */
+    {0x8fcd0000u, PROTO_UNKNOWN, 0},
     {0x90b20000u, PROTO_APPLE, 18}, /* 144.178.0.0/18 */
     {0x90b24000u, PROTO_UNKNOWN, 0},
+    {0x90dc0000u, PROTO_CLOUDFRONT, 16}, /* 144.220.0.0/16 */
+    {0x90dd0000u, PROTO_UNKNOWN, 0},
+    {0x91840000u, PROTO_AZURE, 15}, /* 145.132.0.0/15 */
+    {0x91860000u, PROTO_UNKNOWN, 0},
+    {0x91be0000u, PROTO_AZURE, 15}, /* 145.190.0.0/15 */
+    {0x91c00000u, PROTO_UNKNOWN, 0},
+    {0x924b0000u, PROTO_FASTLY, 17}, /* 146.75.0.0/17 */
+    {0x924b8000u, PROTO_UNKNOWN, 0},
     {0x92940000u, PROTO_GOOGLE, 23}, /* 146.148.0.0/23 */
-    {0x92940100u, PROTO_GOOGLE, 24}, /* 146.148.1.0/24 */
-    {0x92940400u, PROTO_GOOGLE, 23}, /* 146.148.4.0/23 */
-    {0x92940500u, PROTO_GOOGLE, 24}, /* 146.148.5.0/24 */
-    {0x92940600u, PROTO_GOOGLE, 23}, /* 146.148.6.0/23 */
-    {0x92940700u, PROTO_GOOGLE, 24}, /* 146.148.7.0/24 */
-    {0x92940800u, PROTO_GOOGLE, 23}, /* 146.148.8.0/23 */
-    {0x92940900u, PROTO_GOOGLE, 24}, /* 146.148.9.0/24 */
-    {0x92940a00u, PROTO_GOOGLE, 23}, /* 146.148.10.0/23 */
-    {0x92940b00u, PROTO_GOOGLE, 24}, /* 146.148.11.0/24 */
-    {0x92940c00u, PROTO_GOOGLE, 23}, /* 146.148.12.0/23 */
-    {0x92940d00u, PROTO_GOOGLE, 24}, /* 146.148.13.0/24 */
-    {0x92940e00u, PROTO_GOOGLE, 23}, /* 146.148.14.0/23 */
-    {0x92940f00u, PROTO_GOOGLE, 24}, /* 146.148.15.0/24 */
-    {0x92941000u, PROTO_GOOGLE, 23}, /* 146.148.16.0/23 */
-    {0x92941100u, PROTO_GOOGLE, 24}, /* 146.148.17.0/24 */
-    {0x92941200u, PROTO_GOOGLE, 23}, /* 146.148.18.0/23 */
-    {0x92941300u, PROTO_GOOGLE, 24}, /* 146.148.19.0/24 */
-    {0x92941400u, PROTO_GOOGLE, 23}, /* 146.148.20.0/23 */
-    {0x92941500u, PROTO_GOOGLE, 24}, /* 146.148.21.0/24 */
-    {0x92941600u, PROTO_GOOGLE, 23}, /* 146.148.22.0/23 */
-    {0x92941700u, PROTO_GOOGLE, 24}, /* 146.148.23.0/24 */
-    {0x92941800u, PROTO_GOOGLE, 23}, /* 146.148.24.0/23 */
-    {0x92941900u, PROTO_GOOGLE, 24}, /* 146.148.25.0/24 */
-    {0x92941a00u, PROTO_GOOGLE, 23}, /* 146.148.26.0/23 */
-    {0x92941b00u, PROTO_GOOGLE, 24}, /* 146.148.27.0/24 */
-    {0x92941c00u, PROTO_GOOGLE, 23}, /* 146.148.28.0/23 */
-    {0x92941d00u, PROTO_GOOGLE, 24}, /* 146.148.29.0/24 */
-    {0x92941e00u, PROTO_GOOGLE, 23}, /* 146.148.30.0/23 */
-    {0x92941f00u, PROTO_GOOGLE, 24}, /* 146.148.31.0/24 */
-    {0x92942000u, PROTO_GOOGLE, 23}, /* 146.148.32.0/23 */
-    {0x92942100u, PROTO_GOOGLE, 24}, /* 146.148.33.0/24 */
-    {0x92942200u, PROTO_GOOGLE, 23}, /* 146.148.34.0/23 */
-    {0x92942300u, PROTO_GOOGLE, 24}, /* 146.148.35.0/24 */
-    {0x92942400u, PROTO_GOOGLE, 23}, /* 146.148.36.0/23 */
-    {0x92942500u, PROTO_GOOGLE, 24}, /* 146.148.37.0/24 */
-    {0x92942600u, PROTO_GOOGLE, 23}, /* 146.148.38.0/23 */
-    {0x92942700u, PROTO_GOOGLE, 24}, /* 146.148.39.0/24 */
-    {0x92942800u, PROTO_GOOGLE, 23}, /* 146.148.40.0/23 */
-    {0x92942900u, PROTO_GOOGLE, 24}, /* 146.148.41.0/24 */
-    {0x92942a00u, PROTO_GOOGLE, 23}, /* 146.148.42.0/23 */
-    {0x92942b00u, PROTO_GOOGLE, 24}, /* 146.148.43.0/24 */
-    {0x92942c00u, PROTO_GOOGLE, 23}, /* 146.148.44.0/23 */
-    {0x92942d00u, PROTO_GOOGLE, 24}, /* 146.148.45.0/24 */
-    {0x92942e00u, PROTO_GOOGLE, 23}, /* 146.148.46.0/23 */
-    {0x92942f00u, PROTO_GOOGLE, 24}, /* 146.148.47.0/24 */
-    {0x92943000u, PROTO_GOOGLE, 23}, /* 146.148.48.0/23 */
-    {0x92943100u, PROTO_GOOGLE, 24}, /* 146.148.49.0/24 */
-    {0x92943200u, PROTO_GOOGLE, 23}, /* 146.148.50.0/23 */
-    {0x92943300u, PROTO_GOOGLE, 24}, /* 146.148.51.0/24 */
-    {0x92943400u, PROTO_GOOGLE, 23}, /* 146.148.52.0/23 */
-    {0x92943500u, PROTO_GOOGLE, 24}, /* 146.148.53.0/24 */
-    {0x92943600u, PROTO_GOOGLE, 23}, /* 146.148.54.0/23 */
-    {0x92943700u, PROTO_GOOGLE, 24}, /* 146.148.55.0/24 */
-    {0x92943800u, PROTO_GOOGLE, 23}, /* 146.148.56.0/23 */
-    {0x92943900u, PROTO_GOOGLE, 24}, /* 146.148.57.0/24 */
-    {0x92943a00u, PROTO_GOOGLE, 23}, /* 146.148.58.0/23 */
-    {0x92943b00u, PROTO_GOOGLE, 24}, /* 146.148.59.0/24 */
-    {0x92943c00u, PROTO_GOOGLE, 23}, /* 146.148.60.0/23 */
-    {0x92943d00u, PROTO_GOOGLE, 24}, /* 146.148.61.0/24 */
-    {0x92943e00u, PROTO_GOOGLE, 23}, /* 146.148.62.0/23 */
-    {0x92943f00u, PROTO_GOOGLE, 24}, /* 146.148.63.0/24 */
-    {0x92944000u, PROTO_GOOGLE, 23}, /* 146.148.64.0/23 */
-    {0x92944100u, PROTO_GOOGLE, 24}, /* 146.148.65.0/24 */
-    {0x92944200u, PROTO_GOOGLE, 23}, /* 146.148.66.0/23 */
-    {0x92944300u, PROTO_GOOGLE, 24}, /* 146.148.67.0/24 */
-    {0x92944400u, PROTO_GOOGLE, 23}, /* 146.148.68.0/23 */
-    {0x92944500u, PROTO_GOOGLE, 24}, /* 146.148.69.0/24 */
-    {0x92944600u, PROTO_GOOGLE, 23}, /* 146.148.70.0/23 */
-    {0x92944700u, PROTO_GOOGLE, 24}, /* 146.148.71.0/24 */
-    {0x92944800u, PROTO_GOOGLE, 23}, /* 146.148.72.0/23 */
-    {0x92944900u, PROTO_GOOGLE, 24}, /* 146.148.73.0/24 */
-    {0x92944a00u, PROTO_GOOGLE, 23}, /* 146.148.74.0/23 */
-    {0x92944b00u, PROTO_GOOGLE, 24}, /* 146.148.75.0/24 */
-    {0x92944c00u, PROTO_GOOGLE, 23}, /* 146.148.76.0/23 */
-    {0x92944d00u, PROTO_GOOGLE, 24}, /* 146.148.77.0/24 */
-    {0x92944e00u, PROTO_GOOGLE, 23}, /* 146.148.78.0/23 */
-    {0x92944f00u, PROTO_GOOGLE, 24}, /* 146.148.79.0/24 */
-    {0x92945000u, PROTO_GOOGLE, 23}, /* 146.148.80.0/23 */
-    {0x92945100u, PROTO_GOOGLE, 24}, /* 146.148.81.0/24 */
-    {0x92945200u, PROTO_GOOGLE, 23}, /* 146.148.82.0/23 */
-    {0x92945300u, PROTO_GOOGLE, 24}, /* 146.148.83.0/24 */
-    {0x92945400u, PROTO_GOOGLE, 23}, /* 146.148.84.0/23 */
-    {0x92945500u, PROTO_GOOGLE, 24}, /* 146.148.85.0/24 */
-    {0x92945600u, PROTO_GOOGLE, 23}, /* 146.148.86.0/23 */
-    {0x92945700u, PROTO_GOOGLE, 24}, /* 146.148.87.0/24 */
-    {0x92945800u, PROTO_GOOGLE, 23}, /* 146.148.88.0/23 */
-    {0x92945900u, PROTO_GOOGLE, 24}, /* 146.148.89.0/24 */
-    {0x92945a00u, PROTO_GOOGLE, 23}, /* 146.148.90.0/23 */
-    {0x92945b00u, PROTO_GOOGLE, 24}, /* 146.148.91.0/24 */
-    {0x92945c00u, PROTO_GOOGLE, 23}, /* 146.148.92.0/23 */
-    {0x92945d00u, PROTO_GOOGLE, 24}, /* 146.148.93.0/24 */
-    {0x92945e00u, PROTO_GOOGLE, 23}, /* 146.148.94.0/23 */
-    {0x92945f00u, PROTO_GOOGLE, 24}, /* 146.148.95.0/24 */
-    {0x92946000u, PROTO_GOOGLE, 23}, /* 146.148.96.0/23 */
-    {0x92946100u, PROTO_GOOGLE, 24}, /* 146.148.97.0/24 */
-    {0x92946200u, PROTO_GOOGLE, 23}, /* 146.148.98.0/23 */
-    {0x92946300u, PROTO_GOOGLE, 24}, /* 146.148.99.0/24 */
-    {0x92946400u, PROTO_GOOGLE, 23}, /* 146.148.100.0/23 */
-    {0x92946500u, PROTO_GOOGLE, 24}, /* 146.148.101.0/24 */
-    {0x92946600u, PROTO_GOOGLE, 23}, /* 146.148.102.0/23 */
-    {0x92946700u, PROTO_GOOGLE, 24}, /* 146.148.103.0/24 */
-    {0x92946800u, PROTO_GOOGLE, 23}, /* 146.148.104.0/23 */
-    {0x92946900u, PROTO_GOOGLE, 24}, /* 146.148.105.0/24 */
-    {0x92946a00u, PROTO_GOOGLE, 23}, /* 146.148.106.0/23 */
-    {0x92946b00u, PROTO_GOOGLE, 24}, /* 146.148.107.0/24 */
-    {0x92946c00u, PROTO_GOOGLE, 23}, /* 146.148.108.0/23 */
-    {0x92946d00u, PROTO_GOOGLE, 24}, /* 146.148.109.0/24 */
-    {0x92946e00u, PROTO_GOOGLE, 23}, /* 146.148.110.0/23 */
-    {0x92946f00u, PROTO_GOOGLE, 24}, /* 146.148.111.0/24 */
-    {0x92947000u, PROTO_GOOGLE, 23}, /* 146.148.112.0/23 */
-    {0x92947100u, PROTO_GOOGLE, 24}, /* 146.148.113.0/24 */
-    {0x92947200u, PROTO_GOOGLE, 23}, /* 146.148.114.0/23 */
-    {0x92947300u, PROTO_GOOGLE, 24}, /* 146.148.115.0/24 */
-    {0x92947400u, PROTO_GOOGLE, 23}, /* 146.148.116.0/23 */
-    {0x92947500u, PROTO_GOOGLE, 24}, /* 146.148.117.0/24 */
-    {0x92947600u, PROTO_GOOGLE, 23}, /* 146.148.118.0/23 */
-    {0x92947700u, PROTO_GOOGLE, 24}, /* 146.148.119.0/24 */
-    {0x92947800u, PROTO_GOOGLE, 23}, /* 146.148.120.0/23 */
-    {0x92947900u, PROTO_GOOGLE, 24}, /* 146.148.121.0/24 */
-    {0x92947a00u, PROTO_GOOGLE, 23}, /* 146.148.122.0/23 */
-    {0x92947b00u, PROTO_GOOGLE, 24}, /* 146.148.123.0/24 */
-    {0x92947c00u, PROTO_GOOGLE, 23}, /* 146.148.124.0/23 */
-    {0x92947d00u, PROTO_GOOGLE, 24}, /* 146.148.125.0/24 */
-    {0x92947e00u, PROTO_GOOGLE, 23}, /* 146.148.126.0/23 */
-    {0x92947f00u, PROTO_GOOGLE, 24}, /* 146.148.127.0/24 */
+    {0x92940200u, PROTO_GOOGLE_CLOUD, 23}, /* 146.148.2.0/23 */
+    {0x92940400u, PROTO_GOOGLE_CLOUD, 22}, /* 146.148.4.0/22 */
+    {0x92940800u, PROTO_GOOGLE_CLOUD, 21}, /* 146.148.8.0/21 */
+    {0x92941000u, PROTO_GOOGLE_CLOUD, 20}, /* 146.148.16.0/20 */
+    {0x92942000u, PROTO_GOOGLE_CLOUD, 19}, /* 146.148.32.0/19 */
+    {0x92944000u, PROTO_GOOGLE_CLOUD, 18}, /* 146.148.64.0/18 */
     {0x92948000u, PROTO_UNKNOWN, 0},
+    {0x95804000u, PROTO_AWS, 18}, /* 149.128.64.0/18 */
+    {0x95808000u, PROTO_UNKNOWN, 0},
+    {0x96660000u, PROTO_AWS, 15}, /* 150.102.0.0/15 */
+    {0x96680000u, PROTO_UNKNOWN, 0},
+    {0x96de0000u, PROTO_AWS, 21}, /* 150.222.0.0/21 */
+    {0x96de0800u, PROTO_AWS, 22}, /* 150.222.8.0/22 */
+    {0x96de0c00u, PROTO_AWS, 23}, /* 150.222.12.0/23 */
+    {0x96de0e00u, PROTO_AWS, 24}, /* 150.222.14.0/24 */
+    {0x96de0f00u, PROTO_UNKNOWN, 0},
+    {0x96de0f7cu, PROTO_AWS, 30}, /* 150.222.15.124/30 */
+    {0x96de0f84u, PROTO_AWS, 31}, /* 150.222.15.132/31 */
+    {0x96de0f86u, PROTO_UNKNOWN, 0},
+    {0x96de1820u, PROTO_AWS, 29}, /* 150.222.24.32/29 */
+    {0x96de1828u, PROTO_UNKNOWN, 0},
+    {0x96de1840u, PROTO_AWS, 29}, /* 150.222.24.64/29 */
+    {0x96de1848u, PROTO_UNKNOWN, 0},
+    {0x96de1920u, PROTO_AWS, 29}, /* 150.222.25.32/29 */
+    {0x96de1928u, PROTO_UNKNOWN, 0},
+    {0x96de1a00u, PROTO_AWS, 23}, /* 150.222.26.0/23 */
+    {0x96de1c00u, PROTO_AWS, 22}, /* 150.222.28.0/22 */
+    {0x96de2000u, PROTO_AWS, 21}, /* 150.222.32.0/21 */
+    {0x96de2800u, PROTO_AWS, 22}, /* 150.222.40.0/22 */
+    {0x96de2c00u, PROTO_AWS, 24}, /* 150.222.44.0/24 */
+    {0x96de2d00u, PROTO_AWS, 26}, /* 150.222.45.0/26 */
+    {0x96de2d40u, PROTO_AWS, 27}, /* 150.222.45.64/27 */
+    {0x96de2d60u, PROTO_UNKNOWN, 0},
+    {0x96de2d80u, PROTO_AWS, 25}, /* 150.222.45.128/25 */
+    {0x96de2e00u, PROTO_AWS, 23}, /* 150.222.46.0/23 */
+    {0x96de3000u, PROTO_AWS, 21}, /* 150.222.48.0/21 */
+    {0x96de3800u, PROTO_AWS, 27}, /* 150.222.56.0/27 */
+    {0x96de3820u, PROTO_UNKNOWN, 0},
+    {0x96de4000u, PROTO_AWS, 22}, /* 150.222.64.0/22 */
+    {0x96de4400u, PROTO_UNKNOWN, 0},
+    {0x96de4474u, PROTO_AWS, 31}, /* 150.222.68.116/31 */
+    {0x96de4476u, PROTO_UNKNOWN, 0},
+    {0x96de4500u, PROTO_AWS, 24}, /* 150.222.69.0/24 */
+    {0x96de4600u, PROTO_AWS, 23}, /* 150.222.70.0/23 */
+    {0x96de4800u, PROTO_AWS, 21}, /* 150.222.72.0/21 */
+    {0x96de5000u, PROTO_AWS, 20}, /* 150.222.80.0/20 */
+    {0x96de7000u, PROTO_AWS, 21}, /* 150.222.112.0/21 */
+    {0x96de7800u, PROTO_AWS, 22}, /* 150.222.120.0/22 */
+    {0x96de7c00u, PROTO_UNKNOWN, 0},
+    {0x96de8100u, PROTO_AWS, 24}, /* 150.222.129.0/24 */
+    {0x96de8200u, PROTO_UNKNOWN, 0},
+    {0x96de8500u, PROTO_AWS, 24}, /* 150.222.133.0/24 */
+    {0x96de8600u, PROTO_AWS, 23}, /* 150.222.134.0/23 */
+    {0x96de8a00u, PROTO_AWS, 24}, /* 150.222.138.0/24 */
+    {0x96de8b00u, PROTO_UNKNOWN, 0},
+    {0x96de8b74u, PROTO_AWS, 30}, /* 150.222.139.116/30 */
+    {0x96de8b78u, PROTO_AWS, 29}, /* 150.222.139.120/29 */
+    {0x96de8b80u, PROTO_UNKNOWN, 0},
+    {0x96de8c00u, PROTO_AWS, 22}, /* 150.222.140.0/22 */
+    {0x96de9000u, PROTO_UNKNOWN, 0},
+    {0x96de9020u, PROTO_AWS, 29}, /* 150.222.144.32/29 */
+    {0x96de9028u, PROTO_UNKNOWN, 0},
+    {0x96de9040u, PROTO_AWS, 29}, /* 150.222.144.64/29 */
+    {0x96de9048u, PROTO_UNKNOWN, 0},
+    {0x96de9060u, PROTO_AWS, 29}, /* 150.222.144.96/29 */
+    {0x96de9068u, PROTO_UNKNOWN, 0},
+    {0x96de9820u, PROTO_AWS, 29}, /* 150.222.152.32/29 */
+    {0x96de9828u, PROTO_UNKNOWN, 0},
+    {0x96de9840u, PROTO_AWS, 29}, /* 150.222.152.64/29 */
+    {0x96de9848u, PROTO_UNKNOWN, 0},
+    {0x96de9860u, PROTO_AWS, 29}, /* 150.222.152.96/29 */
+    {0x96de9868u, PROTO_UNKNOWN, 0},
+    {0x96dea020u, PROTO_AWS, 29}, /* 150.222.160.32/29 */
+    {0x96dea028u, PROTO_UNKNOWN, 0},
+    {0x96dea4d0u, PROTO_AWS, 29}, /* 150.222.164.208/29 */
+    {0x96dea4d8u, PROTO_UNKNOWN, 0},
+    {0x96dea4dcu, PROTO_AWS, 31}, /* 150.222.164.220/31 */
+    {0x96dea4deu, PROTO_AWS, 32}, /* 150.222.164.222/32 */
+    {0x96dea4dfu, PROTO_UNKNOWN, 0},
+    {0x96dea820u, PROTO_AWS, 29}, /* 150.222.168.32/29 */
+    {0x96dea828u, PROTO_UNKNOWN, 0},
+    {0x96deb000u, PROTO_AWS, 22}, /* 150.222.176.0/22 */
+    {0x96deb400u, PROTO_AWS, 24}, /* 150.222.180.0/24 */
+    {0x96deb500u, PROTO_UNKNOWN, 0},
+    {0x96deb60eu, PROTO_AWS, 31}, /* 150.222.182.14/31 */
+    {0x96deb612u, PROTO_UNKNOWN, 0},
+    {0x96dec400u, PROTO_AWS, 24}, /* 150.222.196.0/24 */
+    {0x96dec500u, PROTO_UNKNOWN, 0},
+    {0x96dec700u, PROTO_AWS, 25}, /* 150.222.199.0/25 */
+    {0x96dec780u, PROTO_UNKNOWN, 0},
+    {0x96dec83cu, PROTO_AWS, 31}, /* 150.222.200.60/31 */
+    {0x96dec83eu, PROTO_UNKNOWN, 0},
+    {0x96deca00u, PROTO_AWS, 23}, /* 150.222.202.0/23 */
+    {0x96decc00u, PROTO_AWS, 22}, /* 150.222.204.0/22 */
+    {0x96ded000u, PROTO_AWS, 24}, /* 150.222.208.0/24 */
+    {0x96ded100u, PROTO_UNKNOWN, 0},
+    {0x96ded200u, PROTO_AWS, 23}, /* 150.222.210.0/23 */
+    {0x96ded400u, PROTO_AWS, 22}, /* 150.222.212.0/22 */
+    {0x96ded800u, PROTO_AWS, 21}, /* 150.222.216.0/21 */
+    {0x96dee000u, PROTO_AWS, 24}, /* 150.222.224.0/24 */
+    {0x96dee100u, PROTO_UNKNOWN, 0},
+    {0x96dee200u, PROTO_AWS, 23}, /* 150.222.226.0/23 */
+    {0x96dee400u, PROTO_AWS, 22}, /* 150.222.228.0/22 */
+    {0x96dee800u, PROTO_AWS, 23}, /* 150.222.232.0/23 */
+    {0x96deea00u, PROTO_AWS, 26}, /* 150.222.234.0/26 */
+    {0x96deea40u, PROTO_AWS, 28}, /* 150.222.234.64/28 */
+    {0x96deea50u, PROTO_AWS, 29}, /* 150.222.234.80/29 */
+    {0x96deea58u, PROTO_UNKNOWN, 0},
+    {0x96deea60u, PROTO_AWS, 27}, /* 150.222.234.96/27 */
+    {0x96deea80u, PROTO_AWS, 28}, /* 150.222.234.128/28 */
+    {0x96deea90u, PROTO_UNKNOWN, 0},
+    {0x96deeb00u, PROTO_AWS, 24}, /* 150.222.235.0/24 */
+    {0x96deec00u, PROTO_AWS, 22}, /* 150.222.236.0/22 */
+    {0x96def000u, PROTO_UNKNOWN, 0},
+    {0x96def254u, PROTO_AWS, 31}, /* 150.222.242.84/31 */
+    {0x96def256u, PROTO_UNKNOWN, 0},
+    {0x96def2d6u, PROTO_AWS, 31}, /* 150.222.242.214/31 */
+    {0x96def2d8u, PROTO_UNKNOWN, 0},
+    {0x96def57au, PROTO_AWS, 31}, /* 150.222.245.122/31 */
+    {0x96def57cu, PROTO_UNKNOWN, 0},
+    {0x96defcf4u, PROTO_AWS, 30}, /* 150.222.252.244/30 */
+    {0x96defcfcu, PROTO_UNKNOWN, 0},
+    {0x96f72000u, PROTO_AWS, 22}, /* 150.247.32.0/22 */
+    {0x96f72400u, PROTO_AWS, 23}, /* 150.247.36.0/23 */
+    {0x96f72600u, PROTO_UNKNOWN, 0},
+    {0x96f72700u, PROTO_AWS, 24}, /* 150.247.39.0/24 */
+    {0x96f72800u, PROTO_AWS, 21}, /* 150.247.40.0/21 */
+    {0x96f73000u, PROTO_UNKNOWN, 0},
+    {0x97650000u, PROTO_FASTLY, 16}, /* 151.101.0.0/16 */
+    {0x97660000u, PROTO_UNKNOWN, 0},
+    {0x97940800u, PROTO_AWS, 21}, /* 151.148.8.0/21 */
+    {0x97941000u, PROTO_AWS, 30}, /* 151.148.16.0/30 */
+    {0x97941004u, PROTO_AWS, 31}, /* 151.148.16.4/31 */
+    {0x97941006u, PROTO_AWS, 32}, /* 151.148.16.6/32 */
+    {0x97941007u, PROTO_UNKNOWN, 0},
+    {0x97941008u, PROTO_AWS, 30}, /* 151.148.16.8/30 */
+    {0x9794100cu, PROTO_UNKNOWN, 0},
+    {0x97941100u, PROTO_AWS, 24}, /* 151.148.17.0/24 */
+    {0x97941200u, PROTO_AWS, 23}, /* 151.148.18.0/23 */
+    {0x97941400u, PROTO_AWS, 24}, /* 151.148.20.0/24 */
+    {0x97941500u, PROTO_UNKNOWN, 0},
+    {0x97942000u, PROTO_AWS, 21}, /* 151.148.32.0/21 */
+    {0x97942800u, PROTO_AWS, 23}, /* 151.148.40.0/23 */
+    {0x97942a00u, PROTO_UNKNOWN, 0},
+    {0x97ce3000u, PROTO_AZURE, 20}, /* 151.206.48.0/20 */
+    {0x97ce4000u, PROTO_AZURE, 18}, /* 151.206.64.0/18 */
+    {0x97cec000u, PROTO_AZURE, 23}, /* 151.206.192.0/23 */
+    {0x97cec200u, PROTO_AZURE, 24}, /* 151.206.194.0/24 */
+    {0x97cec300u, PROTO_UNKNOWN, 0},
+    {0x98ee0000u, PROTO_GOOGLE, 16}, /* 152.238.0.0/16 */
+    {0x98ef0000u, PROTO_UNKNOWN, 0},
+    {0x98ef8000u, PROTO_GOOGLE_CLOUD, 17}, /* 152.239.128.0/17 */
+    {0x98f00000u, PROTO_UNKNOWN, 0},
     {0x9a210000u, PROTO_YAHOO, 24}, /* 154.33.0.0/24 */
     {0x9a210100u, PROTO_UNKNOWN, 0},
     {0x9a220000u, PROTO_YAHOO, 24}, /* 154.34.0.0/24 */
@@ -5475,915 +6011,290 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0x9a228000u, PROTO_YAHOO, 17}, /* 154.34.128.0/17 */
     {0x9a22e000u, PROTO_YAHOO, 20}, /* 154.34.224.0/20 */
     {0x9a230000u, PROTO_UNKNOWN, 0},
+    {0x9b920000u, PROTO_AWS, 16}, /* 155.146.0.0/16 */
+    {0x9b930000u, PROTO_UNKNOWN, 0},
+    {0x9c040000u, PROTO_AWS, 15}, /* 156.4.0.0/15 */
+    {0x9c060000u, PROTO_UNKNOWN, 0},
+    {0x9d344000u, PROTO_FASTLY, 18}, /* 157.52.64.0/18 */
+    {0x9d348000u, PROTO_UNKNOWN, 0},
+    {0x9d370280u, PROTO_AZURE, 26}, /* 157.55.2.128/26 */
+    {0x9d3702c0u, PROTO_UNKNOWN, 0},
+    {0x9d370780u, PROTO_AZURE, 26}, /* 157.55.7.128/26 */
+    {0x9d3707c0u, PROTO_UNKNOWN, 0},
+    {0x9d370840u, PROTO_AZURE, 26}, /* 157.55.8.64/26 */
+    {0x9d370880u, PROTO_UNKNOWN, 0},
+    {0x9d370890u, PROTO_AZURE, 28}, /* 157.55.8.144/28 */
+    {0x9d3708a0u, PROTO_UNKNOWN, 0},
+    {0x9d370aa0u, PROTO_AZURE, 29}, /* 157.55.10.160/29 */
+    {0x9d370aa8u, PROTO_UNKNOWN, 0},
+    {0x9d370ab0u, PROTO_AZURE, 28}, /* 157.55.10.176/28 */
+    {0x9d370ac0u, PROTO_AZURE, 26}, /* 157.55.10.192/26 */
+    {0x9d370b00u, PROTO_UNKNOWN, 0},
+    {0x9d370b80u, PROTO_AZURE, 25}, /* 157.55.11.128/25 */
+    {0x9d370c00u, PROTO_UNKNOWN, 0},
+    {0x9d370c40u, PROTO_AZURE, 26}, /* 157.55.12.64/26 */
+    {0x9d370cc0u, PROTO_UNKNOWN, 0},
+    {0x9d370d40u, PROTO_AZURE, 26}, /* 157.55.13.64/26 */
+    {0x9d370dc0u, PROTO_UNKNOWN, 0},
+    {0x9d372500u, PROTO_AZURE, 24}, /* 157.55.37.0/24 */
+    {0x9d372600u, PROTO_AZURE, 23}, /* 157.55.38.0/23 */
+    {0x9d372800u, PROTO_UNKNOWN, 0},
+    {0x9d373000u, PROTO_AZURE, 24}, /* 157.55.48.0/24 */
+    {0x9d373100u, PROTO_UNKNOWN, 0},
+    {0x9d373200u, PROTO_AZURE, 25}, /* 157.55.50.0/25 */
+    {0x9d373280u, PROTO_UNKNOWN, 0},
+    {0x9d373700u, PROTO_AZURE, 27}, /* 157.55.55.0/27 */
+    {0x9d373720u, PROTO_AZURE, 28}, /* 157.55.55.32/28 */
+    {0x9d373730u, PROTO_UNKNOWN, 0},
+    {0x9d373764u, PROTO_AZURE, 30}, /* 157.55.55.100/30 */
+    {0x9d373768u, PROTO_AZURE, 29}, /* 157.55.55.104/29 */
+    {0x9d373770u, PROTO_UNKNOWN, 0},
+    {0x9d373788u, PROTO_AZURE, 29}, /* 157.55.55.136/29 */
+    {0x9d373790u, PROTO_AZURE, 28}, /* 157.55.55.144/28 */
+    {0x9d3737b0u, PROTO_AZURE, 29}, /* 157.55.55.176/29 */
+    {0x9d3737b8u, PROTO_UNKNOWN, 0},
+    {0x9d3737c8u, PROTO_AZURE, 29}, /* 157.55.55.200/29 */
+    {0x9d3737d0u, PROTO_UNKNOWN, 0},
+    {0x9d3737d8u, PROTO_AZURE, 29}, /* 157.55.55.216/29 */
+    {0x9d3737e0u, PROTO_UNKNOWN, 0},
+    {0x9d3737e4u, PROTO_AZURE, 30}, /* 157.55.55.228/30 */
+    {0x9d3737e8u, PROTO_AZURE, 29}, /* 157.55.55.232/29 */
+    {0x9d3737f0u, PROTO_AZURE, 28}, /* 157.55.55.240/28 */
+    {0x9d373800u, PROTO_UNKNOWN, 0},
+    {0x9d373ce0u, PROTO_AZURE, 27}, /* 157.55.60.224/27 */
+    {0x9d373d00u, PROTO_UNKNOWN, 0},
+    {0x9d374000u, PROTO_AZURE, 19}, /* 157.55.64.0/19 */
+    {0x9d376000u, PROTO_UNKNOWN, 0},
+    {0x9d376720u, PROTO_AZURE, 27}, /* 157.55.103.32/27 */
+    {0x9d376740u, PROTO_UNKNOWN, 0},
+    {0x9d376780u, PROTO_AZURE, 25}, /* 157.55.103.128/25 */
+    {0x9d376800u, PROTO_UNKNOWN, 0},
+    {0x9d376a00u, PROTO_AZURE, 26}, /* 157.55.106.0/26 */
+    {0x9d376a40u, PROTO_UNKNOWN, 0},
+    {0x9d376a80u, PROTO_AZURE, 25}, /* 157.55.106.128/25 */
+    {0x9d376b00u, PROTO_AZURE, 24}, /* 157.55.107.0/24 */
+    {0x9d376c00u, PROTO_AZURE, 22}, /* 157.55.108.0/22 */
+    {0x9d377000u, PROTO_UNKNOWN, 0},
+    {0x9d378800u, PROTO_AZURE, 21}, /* 157.55.136.0/21 */
+    {0x9d379000u, PROTO_UNKNOWN, 0},
+    {0x9d3799e0u, PROTO_AZURE, 28}, /* 157.55.153.224/28 */
+    {0x9d3799f0u, PROTO_UNKNOWN, 0},
+    {0x9d379a80u, PROTO_AZURE, 25}, /* 157.55.154.128/25 */
+    {0x9d379b00u, PROTO_UNKNOWN, 0},
+    {0x9d37a000u, PROTO_AZURE, 19}, /* 157.55.160.0/19 */
+    {0x9d37c000u, PROTO_AZURE, 21}, /* 157.55.192.0/21 */
+    {0x9d37c800u, PROTO_AZURE, 22}, /* 157.55.200.0/22 */
+    {0x9d37cc00u, PROTO_UNKNOWN, 0},
+    {0x9d37cc01u, PROTO_AZURE, 32}, /* 157.55.204.1/32 */
+    {0x9d37cc02u, PROTO_AZURE, 31}, /* 157.55.204.2/31 */
+    {0x9d37cc04u, PROTO_UNKNOWN, 0},
+    {0x9d37cc21u, PROTO_AZURE, 32}, /* 157.55.204.33/32 */
+    {0x9d37cc22u, PROTO_AZURE, 31}, /* 157.55.204.34/31 */
+    {0x9d37cc24u, PROTO_UNKNOWN, 0},
+    {0x9d37cc80u, PROTO_AZURE, 25}, /* 157.55.204.128/25 */
+    {0x9d37cd00u, PROTO_UNKNOWN, 0},
+    {0x9d37d000u, PROTO_AZURE, 21}, /* 157.55.208.0/21 */
+    {0x9d37d800u, PROTO_UNKNOWN, 0},
+    {0x9d37f800u, PROTO_AZURE, 21}, /* 157.55.248.0/21 */
+    {0x9d380000u, PROTO_UNKNOWN, 0},
+    {0x9d380200u, PROTO_AZURE, 23}, /* 157.56.2.0/23 */
+    {0x9d380400u, PROTO_UNKNOWN, 0},
+    {0x9d380800u, PROTO_AZURE, 21}, /* 157.56.8.0/21 */
+    {0x9d381000u, PROTO_UNKNOWN, 0},
+    {0x9d3818a0u, PROTO_AZURE, 27}, /* 157.56.24.160/27 */
+    {0x9d3818e0u, PROTO_UNKNOWN, 0},
+    {0x9d381c00u, PROTO_AZURE, 22}, /* 157.56.28.0/22 */
+    {0x9d382000u, PROTO_UNKNOWN, 0},
+    {0x9d385000u, PROTO_AZURE, 25}, /* 157.56.80.0/25 */
+    {0x9d385080u, PROTO_UNKNOWN, 0},
+    {0x9d38a000u, PROTO_AZURE, 21}, /* 157.56.160.0/21 */
+    {0x9d38a800u, PROTO_UNKNOWN, 0},
+    {0x9d38b000u, PROTO_AZURE, 21}, /* 157.56.176.0/21 */
+    {0x9d38b800u, PROTO_UNKNOWN, 0},
+    {0x9d38d800u, PROTO_AZURE, 26}, /* 157.56.216.0/26 */
+    {0x9d38d840u, PROTO_UNKNOWN, 0},
+    {0x9daf0000u, PROTO_AWS, 16}, /* 157.175.0.0/16 */
+    {0x9db00000u, PROTO_UNKNOWN, 0},
     {0x9df00000u, PROTO_FACEBOOK, 16}, /* 157.240.0.0/16 */
     {0x9df00100u, PROTO_FACEBOOK, 24}, /* 157.240.1.0/24 */
     {0x9df00b00u, PROTO_FACEBOOK, 16}, /* 157.240.0.0/16 */
-    {0x9df10000u, PROTO_UNKNOWN, 0},
+    {0x9df10000u, PROTO_AWS, 16}, /* 157.241.0.0/16 */
+    {0x9df20000u, PROTO_UNKNOWN, 0},
+    {0x9e170000u, PROTO_AZURE, 16}, /* 158.23.0.0/16 */
+    {0x9e180000u, PROTO_UNKNOWN, 0},
+    {0x9e9e0000u, PROTO_AZURE, 16}, /* 158.158.0.0/16 */
+    {0x9e9f0000u, PROTO_UNKNOWN, 0},
     {0x9ecd0000u, PROTO_YAHOO, 24}, /* 158.205.0.0/24 */
     {0x9ecd0100u, PROTO_UNKNOWN, 0},
     {0x9ecd7900u, PROTO_YAHOO, 24}, /* 158.205.121.0/24 */
     {0x9ecd7a00u, PROTO_UNKNOWN, 0},
+    {0x9efc0000u, PROTO_AWS, 15}, /* 158.252.0.0/15 */
+    {0x9efe0000u, PROTO_UNKNOWN, 0},
+    {0x9ff88500u, PROTO_AWS, 24}, /* 159.248.133.0/24 */
+    {0x9ff88600u, PROTO_UNKNOWN, 0},
+    {0x9ff8c800u, PROTO_AWS, 21}, /* 159.248.200.0/21 */
+    {0x9ff8d000u, PROTO_UNKNOWN, 0},
+    {0x9ff8d800u, PROTO_AWS, 21}, /* 159.248.216.0/21 */
+    {0x9ff8e000u, PROTO_AWS, 20}, /* 159.248.224.0/20 */
+    {0x9ff8f000u, PROTO_AWS, 21}, /* 159.248.240.0/21 */
+    {0x9ff8f800u, PROTO_UNKNOWN, 0},
+    {0xa0010000u, PROTO_AWS, 16}, /* 160.1.0.0/16 */
+    {0xa0020000u, PROTO_UNKNOWN, 0},
     {0xa01e8000u, PROTO_YAHOO, 17}, /* 160.30.128.0/17 */
     {0xa01f0000u, PROTO_UNKNOWN, 0},
-    {0xa29e0000u, PROTO_CLOUDFLARE, 16}, /* 162.158.0.0/16 */
-    {0xa29f0000u, PROTO_UNKNOWN, 0},
+    {0xa1b20000u, PROTO_AWS, 18}, /* 161.178.0.0/18 */
+    {0xa1b24000u, PROTO_UNKNOWN, 0},
+    {0xa1b28000u, PROTO_AWS, 18}, /* 161.178.128.0/18 */
+    {0xa1b2c000u, PROTO_UNKNOWN, 0},
+    {0xa1bc0000u, PROTO_AWS, 18}, /* 161.188.0.0/18 */
+    {0xa1bc4000u, PROTO_AWS, 19}, /* 161.188.64.0/19 */
+    {0xa1bc6000u, PROTO_UNKNOWN, 0},
+    {0xa1bc7000u, PROTO_AWS, 21}, /* 161.188.112.0/21 */
+    {0xa1bc7800u, PROTO_AWS, 22}, /* 161.188.120.0/22 */
+    {0xa1bc7c00u, PROTO_UNKNOWN, 0},
+    {0xa1bc7f00u, PROTO_AWS, 24}, /* 161.188.127.0/24 */
+    {0xa1bc8000u, PROTO_UNKNOWN, 0},
+    {0xa1bd0000u, PROTO_AWS, 16}, /* 161.189.0.0/16 */
+    {0xa1be0000u, PROTO_UNKNOWN, 0},
+    {0xa1c10000u, PROTO_AWS, 18}, /* 161.193.0.0/18 */
+    {0xa1c14000u, PROTO_UNKNOWN, 0},
+    {0xa1c18000u, PROTO_AWS, 18}, /* 161.193.128.0/18 */
+    {0xa1c1c000u, PROTO_UNKNOWN, 0},
+    {0xa2788000u, PROTO_GOOGLE, 17}, /* 162.120.128.0/17 */
+    {0xa2790000u, PROTO_UNKNOWN, 0},
+    {0xa29e0000u, PROTO_CLOUDFLARE, 15}, /* 162.158.0.0/15 */
+    {0xa2a00000u, PROTO_UNKNOWN, 0},
     {0xa2d01400u, PROTO_YAHOO, 22}, /* 162.208.20.0/22 */
     {0xa2d01500u, PROTO_YAHOO, 24}, /* 162.208.21.0/24 */
     {0xa2d01600u, PROTO_YAHOO, 23}, /* 162.208.22.0/23 */
     {0xa2d01700u, PROTO_YAHOO, 24}, /* 162.208.23.0/24 */
     {0xa2d01800u, PROTO_UNKNOWN, 0},
-    {0xa2d89400u, PROTO_GOOGLE, 22}, /* 162.216.148.0/22 */
-    {0xa2d89500u, PROTO_GOOGLE, 24}, /* 162.216.149.0/24 */
-    {0xa2d89600u, PROTO_GOOGLE, 23}, /* 162.216.150.0/23 */
-    {0xa2d89700u, PROTO_GOOGLE, 24}, /* 162.216.151.0/24 */
+    {0xa2d07900u, PROTO_AWS, 24}, /* 162.208.121.0/24 */
+    {0xa2d07a00u, PROTO_UNKNOWN, 0},
+    {0xa2d5e800u, PROTO_AWS, 22}, /* 162.213.232.0/22 */
+    {0xa2d5ec00u, PROTO_UNKNOWN, 0},
+    {0xa2d89400u, PROTO_GOOGLE_CLOUD, 22}, /* 162.216.148.0/22 */
     {0xa2d89800u, PROTO_UNKNOWN, 0},
-    {0xa2deb000u, PROTO_GOOGLE, 21}, /* 162.222.176.0/21 */
-    {0xa2deb100u, PROTO_GOOGLE, 24}, /* 162.222.177.0/24 */
-    {0xa2deb200u, PROTO_GOOGLE, 23}, /* 162.222.178.0/23 */
-    {0xa2deb300u, PROTO_GOOGLE, 24}, /* 162.222.179.0/24 */
-    {0xa2deb400u, PROTO_GOOGLE, 23}, /* 162.222.180.0/23 */
-    {0xa2deb500u, PROTO_GOOGLE, 24}, /* 162.222.181.0/24 */
-    {0xa2deb600u, PROTO_GOOGLE, 23}, /* 162.222.182.0/23 */
-    {0xa2deb700u, PROTO_GOOGLE, 24}, /* 162.222.183.0/24 */
+    {0xa2de9400u, PROTO_AWS, 22}, /* 162.222.148.0/22 */
+    {0xa2de9800u, PROTO_UNKNOWN, 0},
+    {0xa2deb000u, PROTO_GOOGLE_CLOUD, 21}, /* 162.222.176.0/21 */
     {0xa2deb800u, PROTO_UNKNOWN, 0},
+    {0xa2faec00u, PROTO_AWS, 22}, /* 162.250.236.0/22 */
+    {0xa2faf000u, PROTO_UNKNOWN, 0},
     {0xa42e0000u, PROTO_YAHOO, 16}, /* 164.46.0.0/16 */
     {0xa42f0000u, PROTO_UNKNOWN, 0},
-    {0xa83d0000u, PROTO_AZURE, 24}, /* 168.61.0.0/24 */
-    {0xa83d0100u, PROTO_UNKNOWN, 0},
-    {0xa83e0000u, PROTO_AZURE, 23}, /* 168.62.0.0/23 */
-    {0xa83e0200u, PROTO_UNKNOWN, 0},
+    {0xa6750000u, PROTO_AWS, 16}, /* 166.117.0.0/16 */
+    {0xa6760000u, PROTO_UNKNOWN, 0},
+    {0xa7520000u, PROTO_FASTLY, 17}, /* 167.82.0.0/17 */
+    {0xa7528000u, PROTO_FASTLY, 20}, /* 167.82.128.0/20 */
+    {0xa7529000u, PROTO_UNKNOWN, 0},
+    {0xa752a000u, PROTO_FASTLY, 20}, /* 167.82.160.0/20 */
+    {0xa752b000u, PROTO_UNKNOWN, 0},
+    {0xa752e000u, PROTO_FASTLY, 20}, /* 167.82.224.0/20 */
+    {0xa752f000u, PROTO_UNKNOWN, 0},
+    {0xa7690000u, PROTO_AZURE, 16}, /* 167.105.0.0/16 */
+    {0xa76a0000u, PROTO_UNKNOWN, 0},
+    {0xa83d0000u, PROTO_AZURE, 16}, /* 168.61.0.0/16 */
+    {0xa83e0000u, PROTO_AZURE, 15}, /* 168.62.0.0/15 */
+    {0xa8400000u, PROTO_UNKNOWN, 0},
     {0xa8726300u, PROTO_APPLE, 24}, /* 168.114.99.0/24 */
     {0xa8726400u, PROTO_UNKNOWN, 0},
     {0xa872f000u, PROTO_APPLE, 24}, /* 168.114.240.0/24 */
     {0xa872f100u, PROTO_UNKNOWN, 0},
-    {0xac400000u, PROTO_CLOUDFLARE, 16}, /* 172.64.0.0/16 */
-    {0xac410000u, PROTO_UNKNOWN, 0},
-    {0xac606000u, PROTO_AMAZON, 20}, /* 172.96.96.0/20 */
-    {0xac606100u, PROTO_AMAZON, 24}, /* 172.96.97.0/24 */
-    {0xac606300u, PROTO_AMAZON, 20}, /* 172.96.96.0/20 */
-    {0xac607000u, PROTO_UNKNOWN, 0},
+    {0xa8b90400u, PROTO_AWS, 22}, /* 168.185.4.0/22 */
+    {0xa8b90800u, PROTO_UNKNOWN, 0},
+    {0xa8c00000u, PROTO_AWS, 15}, /* 168.192.0.0/15 */
+    {0xa8c20000u, PROTO_UNKNOWN, 0},
+    {0xac400000u, PROTO_CLOUDFLARE, 13}, /* 172.64.0.0/13 */
+    {0xac480000u, PROTO_UNKNOWN, 0},
+    {0xac606100u, PROTO_AWS, 24}, /* 172.96.97.0/24 */
+    {0xac606300u, PROTO_UNKNOWN, 0},
+    {0xac606e00u, PROTO_AWS, 24}, /* 172.96.110.0/24 */
+    {0xac606f00u, PROTO_UNKNOWN, 0},
     {0xac660800u, PROTO_GOOGLE, 21}, /* 172.102.8.0/21 */
-    {0xac660900u, PROTO_GOOGLE, 24}, /* 172.102.9.0/24 */
-    {0xac660a00u, PROTO_GOOGLE, 23}, /* 172.102.10.0/23 */
-    {0xac660b00u, PROTO_GOOGLE, 24}, /* 172.102.11.0/24 */
-    {0xac660c00u, PROTO_GOOGLE, 23}, /* 172.102.12.0/23 */
-    {0xac660d00u, PROTO_GOOGLE, 24}, /* 172.102.13.0/24 */
-    {0xac660e00u, PROTO_GOOGLE, 23}, /* 172.102.14.0/23 */
-    {0xac660f00u, PROTO_GOOGLE, 24}, /* 172.102.15.0/24 */
     {0xac661000u, PROTO_UNKNOWN, 0},
+    {0xac6a0000u, PROTO_AWS, 15}, /* 172.106.0.0/15 */
+    {0xac6c0000u, PROTO_UNKNOWN, 0},
     {0xac6e2000u, PROTO_GOOGLE, 21}, /* 172.110.32.0/21 */
-    {0xac6e2100u, PROTO_GOOGLE, 24}, /* 172.110.33.0/24 */
-    {0xac6e2200u, PROTO_GOOGLE, 23}, /* 172.110.34.0/23 */
-    {0xac6e2300u, PROTO_GOOGLE, 24}, /* 172.110.35.0/24 */
-    {0xac6e2400u, PROTO_GOOGLE, 23}, /* 172.110.36.0/23 */
-    {0xac6e2500u, PROTO_GOOGLE, 24}, /* 172.110.37.0/24 */
-    {0xac6e2600u, PROTO_GOOGLE, 23}, /* 172.110.38.0/23 */
-    {0xac6e2700u, PROTO_GOOGLE, 24}, /* 172.110.39.0/24 */
     {0xac6e2800u, PROTO_UNKNOWN, 0},
+    {0xac6f4000u, PROTO_FASTLY, 18}, /* 172.111.64.0/18 */
+    {0xac6f8000u, PROTO_UNKNOWN, 0},
+    {0xac800000u, PROTO_AZURE, 10}, /* 172.128.0.0/10 */
+    {0xacc00000u, PROTO_AZURE, 12}, /* 172.192.0.0/12 */
+    {0xacd00000u, PROTO_AZURE, 13}, /* 172.208.0.0/13 */
+    {0xacd80000u, PROTO_UNKNOWN, 0},
     {0xacd90000u, PROTO_GOOGLE, 16}, /* 172.217.0.0/16 */
-    {0xacd90100u, PROTO_GOOGLE, 24}, /* 172.217.1.0/24 */
-    {0xacd90200u, PROTO_GOOGLE, 23}, /* 172.217.2.0/23 */
-    {0xacd90300u, PROTO_GOOGLE, 24}, /* 172.217.3.0/24 */
-    {0xacd90400u, PROTO_GOOGLE, 23}, /* 172.217.4.0/23 */
-    {0xacd90500u, PROTO_GOOGLE, 24}, /* 172.217.5.0/24 */
-    {0xacd90600u, PROTO_GOOGLE, 23}, /* 172.217.6.0/23 */
-    {0xacd90700u, PROTO_GOOGLE, 24}, /* 172.217.7.0/24 */
-    {0xacd90800u, PROTO_GOOGLE, 23}, /* 172.217.8.0/23 */
-    {0xacd90900u, PROTO_GOOGLE, 24}, /* 172.217.9.0/24 */
-    {0xacd90a00u, PROTO_GOOGLE, 23}, /* 172.217.10.0/23 */
-    {0xacd90b00u, PROTO_GOOGLE, 24}, /* 172.217.11.0/24 */
-    {0xacd90c00u, PROTO_GOOGLE, 23}, /* 172.217.12.0/23 */
-    {0xacd90d00u, PROTO_GOOGLE, 24}, /* 172.217.13.0/24 */
-    {0xacd90e00u, PROTO_GOOGLE, 23}, /* 172.217.14.0/23 */
-    {0xacd90f00u, PROTO_GOOGLE, 24}, /* 172.217.15.0/24 */
-    {0xacd91000u, PROTO_GOOGLE, 23}, /* 172.217.16.0/23 */
-    {0xacd91100u, PROTO_GOOGLE, 24}, /* 172.217.17.0/24 */
-    {0xacd91200u, PROTO_GOOGLE, 23}, /* 172.217.18.0/23 */
-    {0xacd91300u, PROTO_GOOGLE, 24}, /* 172.217.19.0/24 */
-    {0xacd91400u, PROTO_GOOGLE, 23}, /* 172.217.20.0/23 */
-    {0xacd91500u, PROTO_GOOGLE, 24}, /* 172.217.21.0/24 */
-    {0xacd91600u, PROTO_GOOGLE, 23}, /* 172.217.22.0/23 */
-    {0xacd91700u, PROTO_GOOGLE, 24}, /* 172.217.23.0/24 */
-    {0xacd91800u, PROTO_GOOGLE, 23}, /* 172.217.24.0/23 */
-    {0xacd91900u, PROTO_GOOGLE, 24}, /* 172.217.25.0/24 */
-    {0xacd91a00u, PROTO_GOOGLE, 23}, /* 172.217.26.0/23 */
-    {0xacd91b00u, PROTO_GOOGLE, 24}, /* 172.217.27.0/24 */
-    {0xacd91c00u, PROTO_GOOGLE, 23}, /* 172.217.28.0/23 */
-    {0xacd91d00u, PROTO_GOOGLE, 24}, /* 172.217.29.0/24 */
-    {0xacd91e00u, PROTO_GOOGLE, 23}, /* 172.217.30.0/23 */
-    {0xacd91f00u, PROTO_GOOGLE, 24}, /* 172.217.31.0/24 */
-    {0xacd92000u, PROTO_GOOGLE, 23}, /* 172.217.32.0/23 */
-    {0xacd92100u, PROTO_GOOGLE, 24}, /* 172.217.33.0/24 */
-    {0xacd92200u, PROTO_GOOGLE, 23}, /* 172.217.34.0/23 */
-    {0xacd92300u, PROTO_GOOGLE, 24}, /* 172.217.35.0/24 */
-    {0xacd92400u, PROTO_GOOGLE, 23}, /* 172.217.36.0/23 */
-    {0xacd92500u, PROTO_GOOGLE, 24}, /* 172.217.37.0/24 */
-    {0xacd92600u, PROTO_GOOGLE, 23}, /* 172.217.38.0/23 */
-    {0xacd92700u, PROTO_GOOGLE, 24}, /* 172.217.39.0/24 */
-    {0xacd92800u, PROTO_GOOGLE, 23}, /* 172.217.40.0/23 */
-    {0xacd92900u, PROTO_GOOGLE, 24}, /* 172.217.41.0/24 */
-    {0xacd92a00u, PROTO_GOOGLE, 23}, /* 172.217.42.0/23 */
-    {0xacd92b00u, PROTO_GOOGLE, 24}, /* 172.217.43.0/24 */
-    {0xacd92c00u, PROTO_GOOGLE, 23}, /* 172.217.44.0/23 */
-    {0xacd92d00u, PROTO_GOOGLE, 24}, /* 172.217.45.0/24 */
-    {0xacd92e00u, PROTO_GOOGLE, 23}, /* 172.217.46.0/23 */
-    {0xacd92f00u, PROTO_GOOGLE, 24}, /* 172.217.47.0/24 */
-    {0xacd93000u, PROTO_GOOGLE, 23}, /* 172.217.48.0/23 */
-    {0xacd93100u, PROTO_GOOGLE, 24}, /* 172.217.49.0/24 */
-    {0xacd93200u, PROTO_GOOGLE, 23}, /* 172.217.50.0/23 */
-    {0xacd93300u, PROTO_GOOGLE, 24}, /* 172.217.51.0/24 */
-    {0xacd93400u, PROTO_GOOGLE, 23}, /* 172.217.52.0/23 */
-    {0xacd93500u, PROTO_GOOGLE, 24}, /* 172.217.53.0/24 */
-    {0xacd93600u, PROTO_GOOGLE, 23}, /* 172.217.54.0/23 */
-    {0xacd93700u, PROTO_GOOGLE, 24}, /* 172.217.55.0/24 */
-    {0xacd93800u, PROTO_GOOGLE, 23}, /* 172.217.56.0/23 */
-    {0xacd93900u, PROTO_GOOGLE, 24}, /* 172.217.57.0/24 */
-    {0xacd93a00u, PROTO_GOOGLE, 23}, /* 172.217.58.0/23 */
-    {0xacd93b00u, PROTO_GOOGLE, 24}, /* 172.217.59.0/24 */
-    {0xacd93c00u, PROTO_GOOGLE, 23}, /* 172.217.60.0/23 */
-    {0xacd93d00u, PROTO_GOOGLE, 24}, /* 172.217.61.0/24 */
-    {0xacd93e00u, PROTO_GOOGLE, 23}, /* 172.217.62.0/23 */
-    {0xacd93f00u, PROTO_GOOGLE, 24}, /* 172.217.63.0/24 */
-    {0xacd94000u, PROTO_GOOGLE, 23}, /* 172.217.64.0/23 */
-    {0xacd94100u, PROTO_GOOGLE, 24}, /* 172.217.65.0/24 */
-    {0xacd94200u, PROTO_GOOGLE, 23}, /* 172.217.66.0/23 */
-    {0xacd94300u, PROTO_GOOGLE, 24}, /* 172.217.67.0/24 */
-    {0xacd94400u, PROTO_GOOGLE, 23}, /* 172.217.68.0/23 */
-    {0xacd94500u, PROTO_GOOGLE, 24}, /* 172.217.69.0/24 */
-    {0xacd94600u, PROTO_GOOGLE, 23}, /* 172.217.70.0/23 */
-    {0xacd94700u, PROTO_GOOGLE, 24}, /* 172.217.71.0/24 */
-    {0xacd94800u, PROTO_GOOGLE, 23}, /* 172.217.72.0/23 */
-    {0xacd94900u, PROTO_GOOGLE, 24}, /* 172.217.73.0/24 */
-    {0xacd94a00u, PROTO_GOOGLE, 23}, /* 172.217.74.0/23 */
-    {0xacd94b00u, PROTO_GOOGLE, 24}, /* 172.217.75.0/24 */
-    {0xacd94c00u, PROTO_GOOGLE, 23}, /* 172.217.76.0/23 */
-    {0xacd94d00u, PROTO_GOOGLE, 24}, /* 172.217.77.0/24 */
-    {0xacd94e00u, PROTO_GOOGLE, 23}, /* 172.217.78.0/23 */
-    {0xacd94f00u, PROTO_GOOGLE, 24}, /* 172.217.79.0/24 */
-    {0xacd95000u, PROTO_GOOGLE, 23}, /* 172.217.80.0/23 */
-    {0xacd95100u, PROTO_GOOGLE, 24}, /* 172.217.81.0/24 */
-    {0xacd95200u, PROTO_GOOGLE, 23}, /* 172.217.82.0/23 */
-    {0xacd95300u, PROTO_GOOGLE, 24}, /* 172.217.83.0/24 */
-    {0xacd95400u, PROTO_GOOGLE, 23}, /* 172.217.84.0/23 */
-    {0xacd95500u, PROTO_GOOGLE, 24}, /* 172.217.85.0/24 */
-    {0xacd95600u, PROTO_GOOGLE, 23}, /* 172.217.86.0/23 */
-    {0xacd95700u, PROTO_GOOGLE, 24}, /* 172.217.87.0/24 */
-    {0xacd95800u, PROTO_GOOGLE, 23}, /* 172.217.88.0/23 */
-    {0xacd95900u, PROTO_GOOGLE, 24}, /* 172.217.89.0/24 */
-    {0xacd95a00u, PROTO_GOOGLE, 23}, /* 172.217.90.0/23 */
-    {0xacd95b00u, PROTO_GOOGLE, 24}, /* 172.217.91.0/24 */
-    {0xacd95c00u, PROTO_GOOGLE, 23}, /* 172.217.92.0/23 */
-    {0xacd95d00u, PROTO_GOOGLE, 24}, /* 172.217.93.0/24 */
-    {0xacd95e00u, PROTO_GOOGLE, 23}, /* 172.217.94.0/23 */
-    {0xacd95f00u, PROTO_GOOGLE, 24}, /* 172.217.95.0/24 */
-    {0xacd96000u, PROTO_GOOGLE, 23}, /* 172.217.96.0/23 */
-    {0xacd96100u, PROTO_GOOGLE, 24}, /* 172.217.97.0/24 */
-    {0xacd96200u, PROTO_GOOGLE, 23}, /* 172.217.98.0/23 */
-    {0xacd96300u, PROTO_GOOGLE, 24}, /* 172.217.99.0/24 */
-    {0xacd96400u, PROTO_GOOGLE, 23}, /* 172.217.100.0/23 */
-    {0xacd96500u, PROTO_GOOGLE, 24}, /* 172.217.101.0/24 */
-    {0xacd96600u, PROTO_GOOGLE, 23}, /* 172.217.102.0/23 */
-    {0xacd96700u, PROTO_GOOGLE, 24}, /* 172.217.103.0/24 */
-    {0xacd96800u, PROTO_GOOGLE, 23}, /* 172.217.104.0/23 */
-    {0xacd96900u, PROTO_GOOGLE, 24}, /* 172.217.105.0/24 */
-    {0xacd96a00u, PROTO_GOOGLE, 23}, /* 172.217.106.0/23 */
-    {0xacd96b00u, PROTO_GOOGLE, 24}, /* 172.217.107.0/24 */
-    {0xacd96c00u, PROTO_GOOGLE, 23}, /* 172.217.108.0/23 */
-    {0xacd96d00u, PROTO_GOOGLE, 24}, /* 172.217.109.0/24 */
-    {0xacd96e00u, PROTO_GOOGLE, 23}, /* 172.217.110.0/23 */
-    {0xacd96f00u, PROTO_GOOGLE, 24}, /* 172.217.111.0/24 */
-    {0xacd97000u, PROTO_GOOGLE, 23}, /* 172.217.112.0/23 */
-    {0xacd97100u, PROTO_GOOGLE, 24}, /* 172.217.113.0/24 */
-    {0xacd97200u, PROTO_GOOGLE, 23}, /* 172.217.114.0/23 */
-    {0xacd97300u, PROTO_GOOGLE, 24}, /* 172.217.115.0/24 */
-    {0xacd97400u, PROTO_GOOGLE, 23}, /* 172.217.116.0/23 */
-    {0xacd97500u, PROTO_GOOGLE, 24}, /* 172.217.117.0/24 */
-    {0xacd97600u, PROTO_GOOGLE, 23}, /* 172.217.118.0/23 */
-    {0xacd97700u, PROTO_GOOGLE, 24}, /* 172.217.119.0/24 */
-    {0xacd97800u, PROTO_GOOGLE, 23}, /* 172.217.120.0/23 */
-    {0xacd97900u, PROTO_GOOGLE, 24}, /* 172.217.121.0/24 */
-    {0xacd97a00u, PROTO_GOOGLE, 23}, /* 172.217.122.0/23 */
-    {0xacd97b00u, PROTO_GOOGLE, 24}, /* 172.217.123.0/24 */
-    {0xacd97c00u, PROTO_GOOGLE, 23}, /* 172.217.124.0/23 */
-    {0xacd97d00u, PROTO_GOOGLE, 24}, /* 172.217.125.0/24 */
-    {0xacd97e00u, PROTO_GOOGLE, 23}, /* 172.217.126.0/23 */
-    {0xacd97f00u, PROTO_GOOGLE, 24}, /* 172.217.127.0/24 */
-    {0xacd98000u, PROTO_GOOGLE, 23}, /* 172.217.128.0/23 */
-    {0xacd98100u, PROTO_GOOGLE, 24}, /* 172.217.129.0/24 */
-    {0xacd98200u, PROTO_GOOGLE, 23}, /* 172.217.130.0/23 */
-    {0xacd98300u, PROTO_GOOGLE, 24}, /* 172.217.131.0/24 */
-    {0xacd98400u, PROTO_GOOGLE, 23}, /* 172.217.132.0/23 */
-    {0xacd98500u, PROTO_GOOGLE, 24}, /* 172.217.133.0/24 */
-    {0xacd98600u, PROTO_GOOGLE, 23}, /* 172.217.134.0/23 */
-    {0xacd98700u, PROTO_GOOGLE, 24}, /* 172.217.135.0/24 */
-    {0xacd98800u, PROTO_GOOGLE, 23}, /* 172.217.136.0/23 */
-    {0xacd98900u, PROTO_GOOGLE, 24}, /* 172.217.137.0/24 */
-    {0xacd98a00u, PROTO_GOOGLE, 23}, /* 172.217.138.0/23 */
-    {0xacd98b00u, PROTO_GOOGLE, 24}, /* 172.217.139.0/24 */
-    {0xacd98c00u, PROTO_GOOGLE, 23}, /* 172.217.140.0/23 */
-    {0xacd98d00u, PROTO_GOOGLE, 24}, /* 172.217.141.0/24 */
-    {0xacd98e00u, PROTO_GOOGLE, 23}, /* 172.217.142.0/23 */
-    {0xacd98f00u, PROTO_GOOGLE, 24}, /* 172.217.143.0/24 */
-    {0xacd99000u, PROTO_GOOGLE, 23}, /* 172.217.144.0/23 */
-    {0xacd99100u, PROTO_GOOGLE, 24}, /* 172.217.145.0/24 */
-    {0xacd99200u, PROTO_GOOGLE, 23}, /* 172.217.146.0/23 */
-    {0xacd99300u, PROTO_GOOGLE, 24}, /* 172.217.147.0/24 */
-    {0xacd99400u, PROTO_GOOGLE, 23}, /* 172.217.148.0/23 */
-    {0xacd99500u, PROTO_GOOGLE, 24}, /* 172.217.149.0/24 */
-    {0xacd99600u, PROTO_GOOGLE, 23}, /* 172.217.150.0/23 */
-    {0xacd99700u, PROTO_GOOGLE, 24}, /* 172.217.151.0/24 */
-    {0xacd99800u, PROTO_GOOGLE, 23}, /* 172.217.152.0/23 */
-    {0xacd99900u, PROTO_GOOGLE, 24}, /* 172.217.153.0/24 */
-    {0xacd99a00u, PROTO_GOOGLE, 23}, /* 172.217.154.0/23 */
-    {0xacd99b00u, PROTO_GOOGLE, 24}, /* 172.217.155.0/24 */
-    {0xacd99c00u, PROTO_GOOGLE, 23}, /* 172.217.156.0/23 */
-    {0xacd99d00u, PROTO_GOOGLE, 24}, /* 172.217.157.0/24 */
-    {0xacd99e00u, PROTO_GOOGLE, 23}, /* 172.217.158.0/23 */
-    {0xacd99f00u, PROTO_GOOGLE, 24}, /* 172.217.159.0/24 */
-    {0xacd9a000u, PROTO_GOOGLE, 23}, /* 172.217.160.0/23 */
-    {0xacd9a100u, PROTO_GOOGLE, 24}, /* 172.217.161.0/24 */
-    {0xacd9a200u, PROTO_GOOGLE, 23}, /* 172.217.162.0/23 */
-    {0xacd9a300u, PROTO_GOOGLE, 24}, /* 172.217.163.0/24 */
-    {0xacd9a400u, PROTO_GOOGLE, 23}, /* 172.217.164.0/23 */
-    {0xacd9a500u, PROTO_GOOGLE, 24}, /* 172.217.165.0/24 */
-    {0xacd9a600u, PROTO_GOOGLE, 23}, /* 172.217.166.0/23 */
-    {0xacd9a700u, PROTO_GOOGLE, 24}, /* 172.217.167.0/24 */
-    {0xacd9a800u, PROTO_GOOGLE, 23}, /* 172.217.168.0/23 */
-    {0xacd9a900u, PROTO_GOOGLE, 24}, /* 172.217.169.0/24 */
-    {0xacd9aa00u, PROTO_GOOGLE, 23}, /* 172.217.170.0/23 */
-    {0xacd9ab00u, PROTO_GOOGLE, 24}, /* 172.217.171.0/24 */
-    {0xacd9ac00u, PROTO_GOOGLE, 23}, /* 172.217.172.0/23 */
-    {0xacd9ad00u, PROTO_GOOGLE, 24}, /* 172.217.173.0/24 */
-    {0xacd9ae00u, PROTO_GOOGLE, 23}, /* 172.217.174.0/23 */
-    {0xacd9af00u, PROTO_GOOGLE, 24}, /* 172.217.175.0/24 */
-    {0xacd9b000u, PROTO_GOOGLE, 23}, /* 172.217.176.0/23 */
-    {0xacd9b100u, PROTO_GOOGLE, 24}, /* 172.217.177.0/24 */
-    {0xacd9b200u, PROTO_GOOGLE, 23}, /* 172.217.178.0/23 */
-    {0xacd9b300u, PROTO_GOOGLE, 24}, /* 172.217.179.0/24 */
-    {0xacd9b400u, PROTO_GOOGLE, 23}, /* 172.217.180.0/23 */
-    {0xacd9b500u, PROTO_GOOGLE, 24}, /* 172.217.181.0/24 */
-    {0xacd9b600u, PROTO_GOOGLE, 23}, /* 172.217.182.0/23 */
-    {0xacd9b700u, PROTO_GOOGLE, 24}, /* 172.217.183.0/24 */
-    {0xacd9b800u, PROTO_GOOGLE, 23}, /* 172.217.184.0/23 */
-    {0xacd9b900u, PROTO_GOOGLE, 24}, /* 172.217.185.0/24 */
-    {0xacd9ba00u, PROTO_GOOGLE, 23}, /* 172.217.186.0/23 */
-    {0xacd9bb00u, PROTO_GOOGLE, 24}, /* 172.217.187.0/24 */
-    {0xacd9bc00u, PROTO_GOOGLE, 23}, /* 172.217.188.0/23 */
-    {0xacd9bd00u, PROTO_GOOGLE, 24}, /* 172.217.189.0/24 */
-    {0xacd9be00u, PROTO_GOOGLE, 23}, /* 172.217.190.0/23 */
-    {0xacd9bf00u, PROTO_GOOGLE, 24}, /* 172.217.191.0/24 */
-    {0xacd9c000u, PROTO_GOOGLE, 23}, /* 172.217.192.0/23 */
-    {0xacd9c100u, PROTO_GOOGLE, 24}, /* 172.217.193.0/24 */
-    {0xacd9c200u, PROTO_GOOGLE, 23}, /* 172.217.194.0/23 */
-    {0xacd9c300u, PROTO_GOOGLE, 24}, /* 172.217.195.0/24 */
-    {0xacd9c400u, PROTO_GOOGLE, 23}, /* 172.217.196.0/23 */
-    {0xacd9c500u, PROTO_GOOGLE, 24}, /* 172.217.197.0/24 */
-    {0xacd9c600u, PROTO_GOOGLE, 23}, /* 172.217.198.0/23 */
-    {0xacd9c700u, PROTO_GOOGLE, 24}, /* 172.217.199.0/24 */
-    {0xacd9c800u, PROTO_GOOGLE, 23}, /* 172.217.200.0/23 */
-    {0xacd9c900u, PROTO_GOOGLE, 24}, /* 172.217.201.0/24 */
-    {0xacd9ca00u, PROTO_GOOGLE, 23}, /* 172.217.202.0/23 */
-    {0xacd9cb00u, PROTO_GOOGLE, 24}, /* 172.217.203.0/24 */
-    {0xacd9cc00u, PROTO_GOOGLE, 23}, /* 172.217.204.0/23 */
-    {0xacd9cd00u, PROTO_GOOGLE, 24}, /* 172.217.205.0/24 */
-    {0xacd9ce00u, PROTO_GOOGLE, 23}, /* 172.217.206.0/23 */
-    {0xacd9cf00u, PROTO_GOOGLE, 24}, /* 172.217.207.0/24 */
-    {0xacd9d000u, PROTO_GOOGLE, 23}, /* 172.217.208.0/23 */
-    {0xacd9d100u, PROTO_GOOGLE, 24}, /* 172.217.209.0/24 */
-    {0xacd9d200u, PROTO_GOOGLE, 23}, /* 172.217.210.0/23 */
-    {0xacd9d300u, PROTO_GOOGLE, 24}, /* 172.217.211.0/24 */
-    {0xacd9d400u, PROTO_GOOGLE, 23}, /* 172.217.212.0/23 */
-    {0xacd9d500u, PROTO_GOOGLE, 24}, /* 172.217.213.0/24 */
-    {0xacd9d600u, PROTO_GOOGLE, 23}, /* 172.217.214.0/23 */
-    {0xacd9d700u, PROTO_GOOGLE, 24}, /* 172.217.215.0/24 */
-    {0xacd9d800u, PROTO_GOOGLE, 23}, /* 172.217.216.0/23 */
-    {0xacd9d900u, PROTO_GOOGLE, 24}, /* 172.217.217.0/24 */
-    {0xacd9da00u, PROTO_GOOGLE, 23}, /* 172.217.218.0/23 */
-    {0xacd9db00u, PROTO_GOOGLE, 24}, /* 172.217.219.0/24 */
-    {0xacd9dc00u, PROTO_GOOGLE, 23}, /* 172.217.220.0/23 */
-    {0xacd9dd00u, PROTO_GOOGLE, 24}, /* 172.217.221.0/24 */
-    {0xacd9de00u, PROTO_GOOGLE, 23}, /* 172.217.222.0/23 */
-    {0xacd9df00u, PROTO_GOOGLE, 24}, /* 172.217.223.0/24 */
-    {0xacd9e000u, PROTO_GOOGLE, 23}, /* 172.217.224.0/23 */
-    {0xacd9e100u, PROTO_GOOGLE, 24}, /* 172.217.225.0/24 */
-    {0xacd9e200u, PROTO_GOOGLE, 23}, /* 172.217.226.0/23 */
-    {0xacd9e300u, PROTO_GOOGLE, 24}, /* 172.217.227.0/24 */
-    {0xacd9e400u, PROTO_GOOGLE, 23}, /* 172.217.228.0/23 */
-    {0xacd9e500u, PROTO_GOOGLE, 24}, /* 172.217.229.0/24 */
-    {0xacd9e600u, PROTO_GOOGLE, 23}, /* 172.217.230.0/23 */
-    {0xacd9e700u, PROTO_GOOGLE, 24}, /* 172.217.231.0/24 */
-    {0xacd9e800u, PROTO_GOOGLE, 23}, /* 172.217.232.0/23 */
-    {0xacd9e900u, PROTO_GOOGLE, 24}, /* 172.217.233.0/24 */
-    {0xacd9ea00u, PROTO_GOOGLE, 23}, /* 172.217.234.0/23 */
-    {0xacd9eb00u, PROTO_GOOGLE, 24}, /* 172.217.235.0/24 */
-    {0xacd9ec00u, PROTO_GOOGLE, 23}, /* 172.217.236.0/23 */
-    {0xacd9ed00u, PROTO_GOOGLE, 24}, /* 172.217.237.0/24 */
-    {0xacd9ee00u, PROTO_GOOGLE, 23}, /* 172.217.238.0/23 */
-    {0xacd9ef00u, PROTO_GOOGLE, 24}, /* 172.217.239.0/24 */
-    {0xacd9f000u, PROTO_GOOGLE, 23}, /* 172.217.240.0/23 */
-    {0xacd9f100u, PROTO_GOOGLE, 24}, /* 172.217.241.0/24 */
-    {0xacd9f200u, PROTO_GOOGLE, 23}, /* 172.217.242.0/23 */
-    {0xacd9f300u, PROTO_GOOGLE, 24}, /* 172.217.243.0/24 */
-    {0xacd9f400u, PROTO_GOOGLE, 23}, /* 172.217.244.0/23 */
-    {0xacd9f500u, PROTO_GOOGLE, 24}, /* 172.217.245.0/24 */
-    {0xacd9f600u, PROTO_GOOGLE, 23}, /* 172.217.246.0/23 */
-    {0xacd9f700u, PROTO_GOOGLE, 24}, /* 172.217.247.0/24 */
-    {0xacd9f800u, PROTO_GOOGLE, 23}, /* 172.217.248.0/23 */
-    {0xacd9f900u, PROTO_GOOGLE, 24}, /* 172.217.249.0/24 */
-    {0xacd9fa00u, PROTO_GOOGLE, 23}, /* 172.217.250.0/23 */
-    {0xacd9fb00u, PROTO_GOOGLE, 24}, /* 172.217.251.0/24 */
-    {0xacd9fc00u, PROTO_GOOGLE, 23}, /* 172.217.252.0/23 */
-    {0xacd9fd00u, PROTO_GOOGLE, 24}, /* 172.217.253.0/24 */
-    {0xacd9fe00u, PROTO_GOOGLE, 23}, /* 172.217.254.0/23 */
-    {0xacd9ff00u, PROTO_GOOGLE, 24}, /* 172.217.255.0/24 */
     {0xacda0000u, PROTO_UNKNOWN, 0},
     {0xacfd0000u, PROTO_GOOGLE, 16}, /* 172.253.0.0/16 */
-    {0xacfd0100u, PROTO_GOOGLE, 24}, /* 172.253.1.0/24 */
-    {0xacfd0200u, PROTO_GOOGLE, 23}, /* 172.253.2.0/23 */
-    {0xacfd0300u, PROTO_GOOGLE, 24}, /* 172.253.3.0/24 */
-    {0xacfd0400u, PROTO_GOOGLE, 23}, /* 172.253.4.0/23 */
-    {0xacfd0500u, PROTO_GOOGLE, 24}, /* 172.253.5.0/24 */
-    {0xacfd0600u, PROTO_GOOGLE, 23}, /* 172.253.6.0/23 */
-    {0xacfd0700u, PROTO_GOOGLE, 24}, /* 172.253.7.0/24 */
-    {0xacfd0800u, PROTO_GOOGLE, 23}, /* 172.253.8.0/23 */
-    {0xacfd0900u, PROTO_GOOGLE, 24}, /* 172.253.9.0/24 */
-    {0xacfd0a00u, PROTO_GOOGLE, 23}, /* 172.253.10.0/23 */
-    {0xacfd0b00u, PROTO_GOOGLE, 24}, /* 172.253.11.0/24 */
-    {0xacfd0c00u, PROTO_GOOGLE, 23}, /* 172.253.12.0/23 */
-    {0xacfd0d00u, PROTO_GOOGLE, 24}, /* 172.253.13.0/24 */
-    {0xacfd0e00u, PROTO_GOOGLE, 23}, /* 172.253.14.0/23 */
-    {0xacfd0f00u, PROTO_GOOGLE, 24}, /* 172.253.15.0/24 */
-    {0xacfd1000u, PROTO_GOOGLE, 23}, /* 172.253.16.0/23 */
-    {0xacfd1100u, PROTO_GOOGLE, 24}, /* 172.253.17.0/24 */
-    {0xacfd1200u, PROTO_GOOGLE, 23}, /* 172.253.18.0/23 */
-    {0xacfd1300u, PROTO_GOOGLE, 24}, /* 172.253.19.0/24 */
-    {0xacfd1400u, PROTO_GOOGLE, 23}, /* 172.253.20.0/23 */
-    {0xacfd1500u, PROTO_GOOGLE, 24}, /* 172.253.21.0/24 */
-    {0xacfd1600u, PROTO_GOOGLE, 23}, /* 172.253.22.0/23 */
-    {0xacfd1700u, PROTO_GOOGLE, 24}, /* 172.253.23.0/24 */
-    {0xacfd1800u, PROTO_GOOGLE, 23}, /* 172.253.24.0/23 */
-    {0xacfd1900u, PROTO_GOOGLE, 24}, /* 172.253.25.0/24 */
-    {0xacfd1a00u, PROTO_GOOGLE, 23}, /* 172.253.26.0/23 */
-    {0xacfd1b00u, PROTO_GOOGLE, 24}, /* 172.253.27.0/24 */
-    {0xacfd1c00u, PROTO_GOOGLE, 23}, /* 172.253.28.0/23 */
-    {0xacfd1d00u, PROTO_GOOGLE, 24}, /* 172.253.29.0/24 */
-    {0xacfd1e00u, PROTO_GOOGLE, 23}, /* 172.253.30.0/23 */
-    {0xacfd1f00u, PROTO_GOOGLE, 24}, /* 172.253.31.0/24 */
-    {0xacfd2000u, PROTO_GOOGLE, 23}, /* 172.253.32.0/23 */
-    {0xacfd2100u, PROTO_GOOGLE, 24}, /* 172.253.33.0/24 */
-    {0xacfd2200u, PROTO_GOOGLE, 23}, /* 172.253.34.0/23 */
-    {0xacfd2300u, PROTO_GOOGLE, 24}, /* 172.253.35.0/24 */
-    {0xacfd2400u, PROTO_GOOGLE, 23}, /* 172.253.36.0/23 */
-    {0xacfd2500u, PROTO_GOOGLE, 24}, /* 172.253.37.0/24 */
-    {0xacfd2600u, PROTO_GOOGLE, 23}, /* 172.253.38.0/23 */
-    {0xacfd2700u, PROTO_GOOGLE, 24}, /* 172.253.39.0/24 */
-    {0xacfd2800u, PROTO_GOOGLE, 23}, /* 172.253.40.0/23 */
-    {0xacfd2900u, PROTO_GOOGLE, 24}, /* 172.253.41.0/24 */
-    {0xacfd2a00u, PROTO_GOOGLE, 23}, /* 172.253.42.0/23 */
-    {0xacfd2b00u, PROTO_GOOGLE, 24}, /* 172.253.43.0/24 */
-    {0xacfd2c00u, PROTO_GOOGLE, 23}, /* 172.253.44.0/23 */
-    {0xacfd2d00u, PROTO_GOOGLE, 24}, /* 172.253.45.0/24 */
-    {0xacfd2e00u, PROTO_GOOGLE, 23}, /* 172.253.46.0/23 */
-    {0xacfd2f00u, PROTO_GOOGLE, 24}, /* 172.253.47.0/24 */
-    {0xacfd3000u, PROTO_GOOGLE, 23}, /* 172.253.48.0/23 */
-    {0xacfd3100u, PROTO_GOOGLE, 24}, /* 172.253.49.0/24 */
-    {0xacfd3200u, PROTO_GOOGLE, 23}, /* 172.253.50.0/23 */
-    {0xacfd3300u, PROTO_GOOGLE, 24}, /* 172.253.51.0/24 */
-    {0xacfd3400u, PROTO_GOOGLE, 23}, /* 172.253.52.0/23 */
-    {0xacfd3500u, PROTO_GOOGLE, 24}, /* 172.253.53.0/24 */
-    {0xacfd3600u, PROTO_GOOGLE, 23}, /* 172.253.54.0/23 */
-    {0xacfd3700u, PROTO_GOOGLE, 24}, /* 172.253.55.0/24 */
-    {0xacfd3800u, PROTO_GOOGLE, 23}, /* 172.253.56.0/23 */
-    {0xacfd3900u, PROTO_GOOGLE, 24}, /* 172.253.57.0/24 */
-    {0xacfd3a00u, PROTO_GOOGLE, 23}, /* 172.253.58.0/23 */
-    {0xacfd3b00u, PROTO_GOOGLE, 24}, /* 172.253.59.0/24 */
-    {0xacfd3c00u, PROTO_GOOGLE, 23}, /* 172.253.60.0/23 */
-    {0xacfd3d00u, PROTO_GOOGLE, 24}, /* 172.253.61.0/24 */
-    {0xacfd3e00u, PROTO_GOOGLE, 23}, /* 172.253.62.0/23 */
-    {0xacfd3f00u, PROTO_GOOGLE, 24}, /* 172.253.63.0/24 */
-    {0xacfd4000u, PROTO_GOOGLE, 23}, /* 172.253.64.0/23 */
-    {0xacfd4100u, PROTO_GOOGLE, 24}, /* 172.253.65.0/24 */
-    {0xacfd4200u, PROTO_GOOGLE, 23}, /* 172.253.66.0/23 */
-    {0xacfd4300u, PROTO_GOOGLE, 24}, /* 172.253.67.0/24 */
-    {0xacfd4400u, PROTO_GOOGLE, 23}, /* 172.253.68.0/23 */
-    {0xacfd4500u, PROTO_GOOGLE, 24}, /* 172.253.69.0/24 */
-    {0xacfd4600u, PROTO_GOOGLE, 23}, /* 172.253.70.0/23 */
-    {0xacfd4700u, PROTO_GOOGLE, 24}, /* 172.253.71.0/24 */
-    {0xacfd4800u, PROTO_GOOGLE, 23}, /* 172.253.72.0/23 */
-    {0xacfd4900u, PROTO_GOOGLE, 24}, /* 172.253.73.0/24 */
-    {0xacfd4a00u, PROTO_GOOGLE, 23}, /* 172.253.74.0/23 */
-    {0xacfd4b00u, PROTO_GOOGLE, 24}, /* 172.253.75.0/24 */
-    {0xacfd4c00u, PROTO_GOOGLE, 23}, /* 172.253.76.0/23 */
-    {0xacfd4d00u, PROTO_GOOGLE, 24}, /* 172.253.77.0/24 */
-    {0xacfd4e00u, PROTO_GOOGLE, 23}, /* 172.253.78.0/23 */
-    {0xacfd4f00u, PROTO_GOOGLE, 24}, /* 172.253.79.0/24 */
-    {0xacfd5000u, PROTO_GOOGLE, 23}, /* 172.253.80.0/23 */
-    {0xacfd5100u, PROTO_GOOGLE, 24}, /* 172.253.81.0/24 */
-    {0xacfd5200u, PROTO_GOOGLE, 23}, /* 172.253.82.0/23 */
-    {0xacfd5300u, PROTO_GOOGLE, 24}, /* 172.253.83.0/24 */
-    {0xacfd5400u, PROTO_GOOGLE, 23}, /* 172.253.84.0/23 */
-    {0xacfd5500u, PROTO_GOOGLE, 24}, /* 172.253.85.0/24 */
-    {0xacfd5600u, PROTO_GOOGLE, 23}, /* 172.253.86.0/23 */
-    {0xacfd5700u, PROTO_GOOGLE, 24}, /* 172.253.87.0/24 */
-    {0xacfd5800u, PROTO_GOOGLE, 23}, /* 172.253.88.0/23 */
-    {0xacfd5900u, PROTO_GOOGLE, 24}, /* 172.253.89.0/24 */
-    {0xacfd5a00u, PROTO_GOOGLE, 23}, /* 172.253.90.0/23 */
-    {0xacfd5b00u, PROTO_GOOGLE, 24}, /* 172.253.91.0/24 */
-    {0xacfd5c00u, PROTO_GOOGLE, 23}, /* 172.253.92.0/23 */
-    {0xacfd5d00u, PROTO_GOOGLE, 24}, /* 172.253.93.0/24 */
-    {0xacfd5e00u, PROTO_GOOGLE, 23}, /* 172.253.94.0/23 */
-    {0xacfd5f00u, PROTO_GOOGLE, 24}, /* 172.253.95.0/24 */
-    {0xacfd6000u, PROTO_GOOGLE, 23}, /* 172.253.96.0/23 */
-    {0xacfd6100u, PROTO_GOOGLE, 24}, /* 172.253.97.0/24 */
-    {0xacfd6200u, PROTO_GOOGLE, 23}, /* 172.253.98.0/23 */
-    {0xacfd6300u, PROTO_GOOGLE, 24}, /* 172.253.99.0/24 */
-    {0xacfd6400u, PROTO_GOOGLE, 23}, /* 172.253.100.0/23 */
-    {0xacfd6500u, PROTO_GOOGLE, 24}, /* 172.253.101.0/24 */
-    {0xacfd6600u, PROTO_GOOGLE, 23}, /* 172.253.102.0/23 */
-    {0xacfd6700u, PROTO_GOOGLE, 24}, /* 172.253.103.0/24 */
-    {0xacfd6800u, PROTO_GOOGLE, 23}, /* 172.253.104.0/23 */
-    {0xacfd6900u, PROTO_GOOGLE, 24}, /* 172.253.105.0/24 */
-    {0xacfd6a00u, PROTO_GOOGLE, 23}, /* 172.253.106.0/23 */
-    {0xacfd6b00u, PROTO_GOOGLE, 24}, /* 172.253.107.0/24 */
-    {0xacfd6c00u, PROTO_GOOGLE, 23}, /* 172.253.108.0/23 */
-    {0xacfd6d00u, PROTO_GOOGLE, 24}, /* 172.253.109.0/24 */
-    {0xacfd6e00u, PROTO_GOOGLE, 23}, /* 172.253.110.0/23 */
-    {0xacfd6f00u, PROTO_GOOGLE, 24}, /* 172.253.111.0/24 */
-    {0xacfd7000u, PROTO_GOOGLE, 23}, /* 172.253.112.0/23 */
-    {0xacfd7100u, PROTO_GOOGLE, 24}, /* 172.253.113.0/24 */
-    {0xacfd7200u, PROTO_GOOGLE, 23}, /* 172.253.114.0/23 */
-    {0xacfd7300u, PROTO_GOOGLE, 24}, /* 172.253.115.0/24 */
-    {0xacfd7400u, PROTO_GOOGLE, 23}, /* 172.253.116.0/23 */
-    {0xacfd7500u, PROTO_GOOGLE, 24}, /* 172.253.117.0/24 */
-    {0xacfd7600u, PROTO_GOOGLE, 23}, /* 172.253.118.0/23 */
-    {0xacfd7700u, PROTO_GOOGLE, 24}, /* 172.253.119.0/24 */
-    {0xacfd7800u, PROTO_GOOGLE, 23}, /* 172.253.120.0/23 */
-    {0xacfd7900u, PROTO_GOOGLE, 24}, /* 172.253.121.0/24 */
-    {0xacfd7a00u, PROTO_GOOGLE, 23}, /* 172.253.122.0/23 */
-    {0xacfd7b00u, PROTO_GOOGLE, 24}, /* 172.253.123.0/24 */
-    {0xacfd7c00u, PROTO_GOOGLE, 23}, /* 172.253.124.0/23 */
-    {0xacfd7d00u, PROTO_GOOGLE, 24}, /* 172.253.125.0/24 */
-    {0xacfd7e00u, PROTO_GOOGLE, 23}, /* 172.253.126.0/23 */
-    {0xacfd7f00u, PROTO_GOOGLE, 24}, /* 172.253.127.0/24 */
-    {0xacfd8000u, PROTO_GOOGLE, 23}, /* 172.253.128.0/23 */
-    {0xacfd8100u, PROTO_GOOGLE, 24}, /* 172.253.129.0/24 */
-    {0xacfd8200u, PROTO_GOOGLE, 23}, /* 172.253.130.0/23 */
-    {0xacfd8300u, PROTO_GOOGLE, 24}, /* 172.253.131.0/24 */
-    {0xacfd8400u, PROTO_GOOGLE, 23}, /* 172.253.132.0/23 */
-    {0xacfd8500u, PROTO_GOOGLE, 24}, /* 172.253.133.0/24 */
-    {0xacfd8600u, PROTO_GOOGLE, 23}, /* 172.253.134.0/23 */
-    {0xacfd8700u, PROTO_GOOGLE, 24}, /* 172.253.135.0/24 */
-    {0xacfd8800u, PROTO_GOOGLE, 23}, /* 172.253.136.0/23 */
-    {0xacfd8900u, PROTO_GOOGLE, 24}, /* 172.253.137.0/24 */
-    {0xacfd8a00u, PROTO_GOOGLE, 23}, /* 172.253.138.0/23 */
-    {0xacfd8b00u, PROTO_GOOGLE, 24}, /* 172.253.139.0/24 */
-    {0xacfd8c00u, PROTO_GOOGLE, 23}, /* 172.253.140.0/23 */
-    {0xacfd8d00u, PROTO_GOOGLE, 24}, /* 172.253.141.0/24 */
-    {0xacfd8e00u, PROTO_GOOGLE, 23}, /* 172.253.142.0/23 */
-    {0xacfd8f00u, PROTO_GOOGLE, 24}, /* 172.253.143.0/24 */
-    {0xacfd9000u, PROTO_GOOGLE, 23}, /* 172.253.144.0/23 */
-    {0xacfd9100u, PROTO_GOOGLE, 24}, /* 172.253.145.0/24 */
-    {0xacfd9200u, PROTO_GOOGLE, 23}, /* 172.253.146.0/23 */
-    {0xacfd9300u, PROTO_GOOGLE, 24}, /* 172.253.147.0/24 */
-    {0xacfd9400u, PROTO_GOOGLE, 23}, /* 172.253.148.0/23 */
-    {0xacfd9500u, PROTO_GOOGLE, 24}, /* 172.253.149.0/24 */
-    {0xacfd9600u, PROTO_GOOGLE, 23}, /* 172.253.150.0/23 */
-    {0xacfd9700u, PROTO_GOOGLE, 24}, /* 172.253.151.0/24 */
-    {0xacfd9800u, PROTO_GOOGLE, 23}, /* 172.253.152.0/23 */
-    {0xacfd9900u, PROTO_GOOGLE, 24}, /* 172.253.153.0/24 */
-    {0xacfd9a00u, PROTO_GOOGLE, 23}, /* 172.253.154.0/23 */
-    {0xacfd9b00u, PROTO_GOOGLE, 24}, /* 172.253.155.0/24 */
-    {0xacfd9c00u, PROTO_GOOGLE, 23}, /* 172.253.156.0/23 */
-    {0xacfd9d00u, PROTO_GOOGLE, 24}, /* 172.253.157.0/24 */
-    {0xacfd9e00u, PROTO_GOOGLE, 23}, /* 172.253.158.0/23 */
-    {0xacfd9f00u, PROTO_GOOGLE, 24}, /* 172.253.159.0/24 */
-    {0xacfda000u, PROTO_GOOGLE, 23}, /* 172.253.160.0/23 */
-    {0xacfda100u, PROTO_GOOGLE, 24}, /* 172.253.161.0/24 */
-    {0xacfda200u, PROTO_GOOGLE, 23}, /* 172.253.162.0/23 */
-    {0xacfda300u, PROTO_GOOGLE, 24}, /* 172.253.163.0/24 */
-    {0xacfda400u, PROTO_GOOGLE, 23}, /* 172.253.164.0/23 */
-    {0xacfda500u, PROTO_GOOGLE, 24}, /* 172.253.165.0/24 */
-    {0xacfda600u, PROTO_GOOGLE, 23}, /* 172.253.166.0/23 */
-    {0xacfda700u, PROTO_GOOGLE, 24}, /* 172.253.167.0/24 */
-    {0xacfda800u, PROTO_GOOGLE, 23}, /* 172.253.168.0/23 */
-    {0xacfda900u, PROTO_GOOGLE, 24}, /* 172.253.169.0/24 */
-    {0xacfdaa00u, PROTO_GOOGLE, 23}, /* 172.253.170.0/23 */
-    {0xacfdab00u, PROTO_GOOGLE, 24}, /* 172.253.171.0/24 */
-    {0xacfdac00u, PROTO_GOOGLE, 23}, /* 172.253.172.0/23 */
-    {0xacfdad00u, PROTO_GOOGLE, 24}, /* 172.253.173.0/24 */
-    {0xacfdae00u, PROTO_GOOGLE, 23}, /* 172.253.174.0/23 */
-    {0xacfdaf00u, PROTO_GOOGLE, 24}, /* 172.253.175.0/24 */
-    {0xacfdb000u, PROTO_GOOGLE, 23}, /* 172.253.176.0/23 */
-    {0xacfdb100u, PROTO_GOOGLE, 24}, /* 172.253.177.0/24 */
-    {0xacfdb200u, PROTO_GOOGLE, 23}, /* 172.253.178.0/23 */
-    {0xacfdb300u, PROTO_GOOGLE, 24}, /* 172.253.179.0/24 */
-    {0xacfdb400u, PROTO_GOOGLE, 23}, /* 172.253.180.0/23 */
-    {0xacfdb500u, PROTO_GOOGLE, 24}, /* 172.253.181.0/24 */
-    {0xacfdb600u, PROTO_GOOGLE, 23}, /* 172.253.182.0/23 */
-    {0xacfdb700u, PROTO_GOOGLE, 24}, /* 172.253.183.0/24 */
-    {0xacfdb800u, PROTO_GOOGLE, 23}, /* 172.253.184.0/23 */
-    {0xacfdb900u, PROTO_GOOGLE, 24}, /* 172.253.185.0/24 */
-    {0xacfdba00u, PROTO_GOOGLE, 23}, /* 172.253.186.0/23 */
-    {0xacfdbb00u, PROTO_GOOGLE, 24}, /* 172.253.187.0/24 */
-    {0xacfdbc00u, PROTO_GOOGLE, 23}, /* 172.253.188.0/23 */
-    {0xacfdbd00u, PROTO_GOOGLE, 24}, /* 172.253.189.0/24 */
-    {0xacfdbe00u, PROTO_GOOGLE, 23}, /* 172.253.190.0/23 */
-    {0xacfdbf00u, PROTO_GOOGLE, 24}, /* 172.253.191.0/24 */
-    {0xacfdc000u, PROTO_GOOGLE, 23}, /* 172.253.192.0/23 */
-    {0xacfdc100u, PROTO_GOOGLE, 24}, /* 172.253.193.0/24 */
-    {0xacfdc200u, PROTO_GOOGLE, 23}, /* 172.253.194.0/23 */
-    {0xacfdc300u, PROTO_GOOGLE, 24}, /* 172.253.195.0/24 */
-    {0xacfdc400u, PROTO_GOOGLE, 23}, /* 172.253.196.0/23 */
-    {0xacfdc500u, PROTO_GOOGLE, 24}, /* 172.253.197.0/24 */
-    {0xacfdc600u, PROTO_GOOGLE, 23}, /* 172.253.198.0/23 */
-    {0xacfdc700u, PROTO_GOOGLE, 24}, /* 172.253.199.0/24 */
-    {0xacfdc800u, PROTO_GOOGLE, 23}, /* 172.253.200.0/23 */
-    {0xacfdc900u, PROTO_GOOGLE, 24}, /* 172.253.201.0/24 */
-    {0xacfdca00u, PROTO_GOOGLE, 23}, /* 172.253.202.0/23 */
-    {0xacfdcb00u, PROTO_GOOGLE, 24}, /* 172.253.203.0/24 */
-    {0xacfdcc00u, PROTO_GOOGLE, 23}, /* 172.253.204.0/23 */
-    {0xacfdcd00u, PROTO_GOOGLE, 24}, /* 172.253.205.0/24 */
-    {0xacfdce00u, PROTO_GOOGLE, 23}, /* 172.253.206.0/23 */
-    {0xacfdcf00u, PROTO_GOOGLE, 24}, /* 172.253.207.0/24 */
-    {0xacfdd000u, PROTO_GOOGLE, 23}, /* 172.253.208.0/23 */
-    {0xacfdd100u, PROTO_GOOGLE, 24}, /* 172.253.209.0/24 */
-    {0xacfdd200u, PROTO_GOOGLE, 23}, /* 172.253.210.0/23 */
-    {0xacfdd300u, PROTO_GOOGLE, 24}, /* 172.253.211.0/24 */
-    {0xacfdd400u, PROTO_GOOGLE, 23}, /* 172.253.212.0/23 */
-    {0xacfdd500u, PROTO_GOOGLE, 24}, /* 172.253.213.0/24 */
-    {0xacfdd600u, PROTO_GOOGLE, 23}, /* 172.253.214.0/23 */
-    {0xacfdd700u, PROTO_GOOGLE, 24}, /* 172.253.215.0/24 */
-    {0xacfdd800u, PROTO_GOOGLE, 23}, /* 172.253.216.0/23 */
-    {0xacfdd900u, PROTO_GOOGLE, 24}, /* 172.253.217.0/24 */
-    {0xacfdda00u, PROTO_GOOGLE, 23}, /* 172.253.218.0/23 */
-    {0xacfddb00u, PROTO_GOOGLE, 24}, /* 172.253.219.0/24 */
-    {0xacfddc00u, PROTO_GOOGLE, 23}, /* 172.253.220.0/23 */
-    {0xacfddd00u, PROTO_GOOGLE, 24}, /* 172.253.221.0/24 */
-    {0xacfdde00u, PROTO_GOOGLE, 23}, /* 172.253.222.0/23 */
-    {0xacfddf00u, PROTO_GOOGLE, 24}, /* 172.253.223.0/24 */
-    {0xacfde000u, PROTO_GOOGLE, 23}, /* 172.253.224.0/23 */
-    {0xacfde100u, PROTO_GOOGLE, 24}, /* 172.253.225.0/24 */
-    {0xacfde200u, PROTO_GOOGLE, 23}, /* 172.253.226.0/23 */
-    {0xacfde300u, PROTO_GOOGLE, 24}, /* 172.253.227.0/24 */
-    {0xacfde400u, PROTO_GOOGLE, 23}, /* 172.253.228.0/23 */
-    {0xacfde500u, PROTO_GOOGLE, 24}, /* 172.253.229.0/24 */
-    {0xacfde600u, PROTO_GOOGLE, 23}, /* 172.253.230.0/23 */
-    {0xacfde700u, PROTO_GOOGLE, 24}, /* 172.253.231.0/24 */
-    {0xacfde800u, PROTO_GOOGLE, 23}, /* 172.253.232.0/23 */
-    {0xacfde900u, PROTO_GOOGLE, 24}, /* 172.253.233.0/24 */
-    {0xacfdea00u, PROTO_GOOGLE, 23}, /* 172.253.234.0/23 */
-    {0xacfdeb00u, PROTO_GOOGLE, 24}, /* 172.253.235.0/24 */
-    {0xacfdec00u, PROTO_GOOGLE, 23}, /* 172.253.236.0/23 */
-    {0xacfded00u, PROTO_GOOGLE, 24}, /* 172.253.237.0/24 */
-    {0xacfdee00u, PROTO_GOOGLE, 23}, /* 172.253.238.0/23 */
-    {0xacfdef00u, PROTO_GOOGLE, 24}, /* 172.253.239.0/24 */
-    {0xacfdf000u, PROTO_GOOGLE, 23}, /* 172.253.240.0/23 */
-    {0xacfdf100u, PROTO_GOOGLE, 24}, /* 172.253.241.0/24 */
-    {0xacfdf200u, PROTO_GOOGLE, 23}, /* 172.253.242.0/23 */
-    {0xacfdf300u, PROTO_GOOGLE, 24}, /* 172.253.243.0/24 */
-    {0xacfdf400u, PROTO_GOOGLE, 23}, /* 172.253.244.0/23 */
-    {0xacfdf500u, PROTO_GOOGLE, 24}, /* 172.253.245.0/24 */
-    {0xacfdf600u, PROTO_GOOGLE, 23}, /* 172.253.246.0/23 */
-    {0xacfdf700u, PROTO_GOOGLE, 24}, /* 172.253.247.0/24 */
-    {0xacfdf800u, PROTO_GOOGLE, 23}, /* 172.253.248.0/23 */
-    {0xacfdf900u, PROTO_GOOGLE, 24}, /* 172.253.249.0/24 */
-    {0xacfdfa00u, PROTO_GOOGLE, 23}, /* 172.253.250.0/23 */
-    {0xacfdfb00u, PROTO_GOOGLE, 24}, /* 172.253.251.0/24 */
-    {0xacfdfc00u, PROTO_GOOGLE, 23}, /* 172.253.252.0/23 */
-    {0xacfdfd00u, PROTO_GOOGLE, 24}, /* 172.253.253.0/24 */
-    {0xacfdfe00u, PROTO_GOOGLE, 23}, /* 172.253.254.0/23 */
-    {0xacfdff00u, PROTO_GOOGLE, 24}, /* 172.253.255.0/24 */
     {0xacfe0000u, PROTO_UNKNOWN, 0},
-    {0xad953000u, PROTO_CLOUDFLARE, 20}, /* 173.149.48.0/20 */
-    {0xad954000u, PROTO_UNKNOWN, 0},
+    {0xad53c000u, PROTO_AWS, 19}, /* 173.83.192.0/19 */
+    {0xad53e000u, PROTO_AWS, 21}, /* 173.83.224.0/21 */
+    {0xad53e800u, PROTO_AWS, 22}, /* 173.83.232.0/22 */
+    {0xad53ec00u, PROTO_AWS, 23}, /* 173.83.236.0/23 */
+    {0xad53ee00u, PROTO_AWS, 24}, /* 173.83.238.0/24 */
+    {0xad53ef00u, PROTO_UNKNOWN, 0},
     {0xadc20000u, PROTO_GOOGLE, 16}, /* 173.194.0.0/16 */
-    {0xadc20100u, PROTO_GOOGLE, 24}, /* 173.194.1.0/24 */
-    {0xadc20200u, PROTO_GOOGLE, 23}, /* 173.194.2.0/23 */
-    {0xadc20300u, PROTO_GOOGLE, 24}, /* 173.194.3.0/24 */
-    {0xadc20400u, PROTO_GOOGLE, 23}, /* 173.194.4.0/23 */
-    {0xadc20500u, PROTO_GOOGLE, 24}, /* 173.194.5.0/24 */
-    {0xadc20600u, PROTO_GOOGLE, 23}, /* 173.194.6.0/23 */
-    {0xadc20700u, PROTO_GOOGLE, 24}, /* 173.194.7.0/24 */
-    {0xadc20800u, PROTO_GOOGLE, 23}, /* 173.194.8.0/23 */
-    {0xadc20900u, PROTO_GOOGLE, 24}, /* 173.194.9.0/24 */
-    {0xadc20a00u, PROTO_GOOGLE, 23}, /* 173.194.10.0/23 */
-    {0xadc20b00u, PROTO_GOOGLE, 24}, /* 173.194.11.0/24 */
-    {0xadc20c00u, PROTO_GOOGLE, 23}, /* 173.194.12.0/23 */
-    {0xadc20d00u, PROTO_GOOGLE, 24}, /* 173.194.13.0/24 */
-    {0xadc20e00u, PROTO_GOOGLE, 23}, /* 173.194.14.0/23 */
-    {0xadc20f00u, PROTO_GOOGLE, 24}, /* 173.194.15.0/24 */
-    {0xadc21000u, PROTO_GOOGLE, 23}, /* 173.194.16.0/23 */
-    {0xadc21100u, PROTO_GOOGLE, 24}, /* 173.194.17.0/24 */
-    {0xadc21200u, PROTO_GOOGLE, 23}, /* 173.194.18.0/23 */
-    {0xadc21300u, PROTO_GOOGLE, 24}, /* 173.194.19.0/24 */
-    {0xadc21400u, PROTO_GOOGLE, 23}, /* 173.194.20.0/23 */
-    {0xadc21500u, PROTO_GOOGLE, 24}, /* 173.194.21.0/24 */
-    {0xadc21600u, PROTO_GOOGLE, 23}, /* 173.194.22.0/23 */
-    {0xadc21700u, PROTO_GOOGLE, 24}, /* 173.194.23.0/24 */
-    {0xadc21800u, PROTO_GOOGLE, 23}, /* 173.194.24.0/23 */
-    {0xadc21900u, PROTO_GOOGLE, 24}, /* 173.194.25.0/24 */
-    {0xadc21a00u, PROTO_GOOGLE, 23}, /* 173.194.26.0/23 */
-    {0xadc21b00u, PROTO_GOOGLE, 24}, /* 173.194.27.0/24 */
-    {0xadc21c00u, PROTO_GOOGLE, 23}, /* 173.194.28.0/23 */
-    {0xadc21d00u, PROTO_GOOGLE, 24}, /* 173.194.29.0/24 */
-    {0xadc21e00u, PROTO_GOOGLE, 23}, /* 173.194.30.0/23 */
-    {0xadc21f00u, PROTO_GOOGLE, 24}, /* 173.194.31.0/24 */
-    {0xadc22000u, PROTO_GOOGLE, 23}, /* 173.194.32.0/23 */
-    {0xadc22100u, PROTO_GOOGLE, 24}, /* 173.194.33.0/24 */
-    {0xadc22200u, PROTO_GOOGLE, 23}, /* 173.194.34.0/23 */
-    {0xadc22300u, PROTO_GOOGLE, 24}, /* 173.194.35.0/24 */
-    {0xadc22400u, PROTO_GOOGLE, 23}, /* 173.194.36.0/23 */
-    {0xadc22500u, PROTO_GOOGLE, 24}, /* 173.194.37.0/24 */
-    {0xadc22600u, PROTO_GOOGLE, 23}, /* 173.194.38.0/23 */
-    {0xadc22700u, PROTO_GOOGLE, 24}, /* 173.194.39.0/24 */
-    {0xadc22800u, PROTO_GOOGLE, 23}, /* 173.194.40.0/23 */
-    {0xadc22900u, PROTO_GOOGLE, 24}, /* 173.194.41.0/24 */
-    {0xadc22a00u, PROTO_GOOGLE, 23}, /* 173.194.42.0/23 */
-    {0xadc22b00u, PROTO_GOOGLE, 24}, /* 173.194.43.0/24 */
-    {0xadc22c00u, PROTO_GOOGLE, 23}, /* 173.194.44.0/23 */
-    {0xadc22d00u, PROTO_GOOGLE, 24}, /* 173.194.45.0/24 */
-    {0xadc22e00u, PROTO_GOOGLE, 23}, /* 173.194.46.0/23 */
-    {0xadc22f00u, PROTO_GOOGLE, 24}, /* 173.194.47.0/24 */
-    {0xadc23000u, PROTO_GOOGLE, 23}, /* 173.194.48.0/23 */
-    {0xadc23100u, PROTO_GOOGLE, 24}, /* 173.194.49.0/24 */
-    {0xadc23200u, PROTO_GOOGLE, 23}, /* 173.194.50.0/23 */
-    {0xadc23300u, PROTO_GOOGLE, 24}, /* 173.194.51.0/24 */
-    {0xadc23400u, PROTO_GOOGLE, 23}, /* 173.194.52.0/23 */
-    {0xadc23500u, PROTO_GOOGLE, 24}, /* 173.194.53.0/24 */
-    {0xadc23600u, PROTO_GOOGLE, 23}, /* 173.194.54.0/23 */
-    {0xadc23700u, PROTO_GOOGLE, 24}, /* 173.194.55.0/24 */
-    {0xadc23800u, PROTO_GOOGLE, 23}, /* 173.194.56.0/23 */
-    {0xadc23900u, PROTO_GOOGLE, 24}, /* 173.194.57.0/24 */
-    {0xadc23a00u, PROTO_GOOGLE, 23}, /* 173.194.58.0/23 */
-    {0xadc23b00u, PROTO_GOOGLE, 24}, /* 173.194.59.0/24 */
-    {0xadc23c00u, PROTO_GOOGLE, 23}, /* 173.194.60.0/23 */
-    {0xadc23d00u, PROTO_GOOGLE, 24}, /* 173.194.61.0/24 */
-    {0xadc23e00u, PROTO_GOOGLE, 23}, /* 173.194.62.0/23 */
-    {0xadc23f00u, PROTO_GOOGLE, 24}, /* 173.194.63.0/24 */
-    {0xadc24000u, PROTO_GOOGLE, 23}, /* 173.194.64.0/23 */
-    {0xadc24100u, PROTO_GOOGLE, 24}, /* 173.194.65.0/24 */
-    {0xadc24200u, PROTO_GOOGLE, 23}, /* 173.194.66.0/23 */
-    {0xadc24300u, PROTO_GOOGLE, 24}, /* 173.194.67.0/24 */
-    {0xadc24400u, PROTO_GOOGLE, 23}, /* 173.194.68.0/23 */
-    {0xadc24500u, PROTO_GOOGLE, 24}, /* 173.194.69.0/24 */
-    {0xadc24600u, PROTO_GOOGLE, 23}, /* 173.194.70.0/23 */
-    {0xadc24700u, PROTO_GOOGLE, 24}, /* 173.194.71.0/24 */
-    {0xadc24800u, PROTO_GOOGLE, 23}, /* 173.194.72.0/23 */
-    {0xadc24900u, PROTO_GOOGLE, 24}, /* 173.194.73.0/24 */
-    {0xadc24a00u, PROTO_GOOGLE, 23}, /* 173.194.74.0/23 */
-    {0xadc24b00u, PROTO_GOOGLE, 24}, /* 173.194.75.0/24 */
-    {0xadc24c00u, PROTO_GOOGLE, 23}, /* 173.194.76.0/23 */
-    {0xadc24d00u, PROTO_GOOGLE, 24}, /* 173.194.77.0/24 */
-    {0xadc24e00u, PROTO_GOOGLE, 23}, /* 173.194.78.0/23 */
-    {0xadc24f00u, PROTO_GOOGLE, 24}, /* 173.194.79.0/24 */
-    {0xadc25000u, PROTO_GOOGLE, 23}, /* 173.194.80.0/23 */
-    {0xadc25100u, PROTO_GOOGLE, 24}, /* 173.194.81.0/24 */
-    {0xadc25200u, PROTO_GOOGLE, 23}, /* 173.194.82.0/23 */
-    {0xadc25300u, PROTO_GOOGLE, 24}, /* 173.194.83.0/24 */
-    {0xadc25400u, PROTO_GOOGLE, 23}, /* 173.194.84.0/23 */
-    {0xadc25500u, PROTO_GOOGLE, 24}, /* 173.194.85.0/24 */
-    {0xadc25600u, PROTO_GOOGLE, 23}, /* 173.194.86.0/23 */
-    {0xadc25700u, PROTO_GOOGLE, 24}, /* 173.194.87.0/24 */
-    {0xadc25800u, PROTO_GOOGLE, 23}, /* 173.194.88.0/23 */
-    {0xadc25900u, PROTO_GOOGLE, 24}, /* 173.194.89.0/24 */
-    {0xadc25a00u, PROTO_GOOGLE, 23}, /* 173.194.90.0/23 */
-    {0xadc25b00u, PROTO_GOOGLE, 24}, /* 173.194.91.0/24 */
-    {0xadc25c00u, PROTO_GOOGLE, 23}, /* 173.194.92.0/23 */
-    {0xadc25d00u, PROTO_GOOGLE, 24}, /* 173.194.93.0/24 */
-    {0xadc25e00u, PROTO_GOOGLE, 23}, /* 173.194.94.0/23 */
-    {0xadc25f00u, PROTO_GOOGLE, 24}, /* 173.194.95.0/24 */
-    {0xadc26000u, PROTO_GOOGLE, 23}, /* 173.194.96.0/23 */
-    {0xadc26100u, PROTO_GOOGLE, 24}, /* 173.194.97.0/24 */
-    {0xadc26200u, PROTO_GOOGLE, 23}, /* 173.194.98.0/23 */
-    {0xadc26300u, PROTO_GOOGLE, 24}, /* 173.194.99.0/24 */
-    {0xadc26400u, PROTO_GOOGLE, 23}, /* 173.194.100.0/23 */
-    {0xadc26500u, PROTO_GOOGLE, 24}, /* 173.194.101.0/24 */
-    {0xadc26600u, PROTO_GOOGLE, 23}, /* 173.194.102.0/23 */
-    {0xadc26700u, PROTO_GOOGLE, 24}, /* 173.194.103.0/24 */
-    {0xadc26800u, PROTO_GOOGLE, 23}, /* 173.194.104.0/23 */
-    {0xadc26900u, PROTO_GOOGLE, 24}, /* 173.194.105.0/24 */
-    {0xadc26a00u, PROTO_GOOGLE, 23}, /* 173.194.106.0/23 */
-    {0xadc26b00u, PROTO_GOOGLE, 24}, /* 173.194.107.0/24 */
-    {0xadc26c00u, PROTO_GOOGLE, 23}, /* 173.194.108.0/23 */
-    {0xadc26d00u, PROTO_GOOGLE, 24}, /* 173.194.109.0/24 */
-    {0xadc26e00u, PROTO_GOOGLE, 23}, /* 173.194.110.0/23 */
-    {0xadc26f00u, PROTO_GOOGLE, 24}, /* 173.194.111.0/24 */
-    {0xadc27000u, PROTO_GOOGLE, 23}, /* 173.194.112.0/23 */
-    {0xadc27100u, PROTO_GOOGLE, 24}, /* 173.194.113.0/24 */
-    {0xadc27200u, PROTO_GOOGLE, 23}, /* 173.194.114.0/23 */
-    {0xadc27300u, PROTO_GOOGLE, 24}, /* 173.194.115.0/24 */
-    {0xadc27400u, PROTO_GOOGLE, 23}, /* 173.194.116.0/23 */
-    {0xadc27500u, PROTO_GOOGLE, 24}, /* 173.194.117.0/24 */
-    {0xadc27600u, PROTO_GOOGLE, 23}, /* 173.194.118.0/23 */
-    {0xadc27700u, PROTO_GOOGLE, 24}, /* 173.194.119.0/24 */
-    {0xadc27800u, PROTO_GOOGLE, 23}, /* 173.194.120.0/23 */
-    {0xadc27900u, PROTO_GOOGLE, 24}, /* 173.194.121.0/24 */
-    {0xadc27a00u, PROTO_GOOGLE, 23}, /* 173.194.122.0/23 */
-    {0xadc27b00u, PROTO_GOOGLE, 24}, /* 173.194.123.0/24 */
-    {0xadc27c00u, PROTO_GOOGLE, 23}, /* 173.194.124.0/23 */
-    {0xadc27d00u, PROTO_GOOGLE, 24}, /* 173.194.125.0/24 */
-    {0xadc27e00u, PROTO_GOOGLE, 23}, /* 173.194.126.0/23 */
-    {0xadc27f00u, PROTO_GOOGLE, 24}, /* 173.194.127.0/24 */
-    {0xadc28000u, PROTO_GOOGLE, 23}, /* 173.194.128.0/23 */
-    {0xadc28100u, PROTO_GOOGLE, 24}, /* 173.194.129.0/24 */
-    {0xadc28200u, PROTO_GOOGLE, 23}, /* 173.194.130.0/23 */
-    {0xadc28300u, PROTO_GOOGLE, 24}, /* 173.194.131.0/24 */
-    {0xadc28400u, PROTO_GOOGLE, 23}, /* 173.194.132.0/23 */
-    {0xadc28500u, PROTO_GOOGLE, 24}, /* 173.194.133.0/24 */
-    {0xadc28600u, PROTO_GOOGLE, 23}, /* 173.194.134.0/23 */
-    {0xadc28700u, PROTO_GOOGLE, 24}, /* 173.194.135.0/24 */
-    {0xadc28800u, PROTO_GOOGLE, 23}, /* 173.194.136.0/23 */
-    {0xadc28900u, PROTO_GOOGLE, 24}, /* 173.194.137.0/24 */
-    {0xadc28a00u, PROTO_GOOGLE, 23}, /* 173.194.138.0/23 */
-    {0xadc28b00u, PROTO_GOOGLE, 24}, /* 173.194.139.0/24 */
-    {0xadc28c00u, PROTO_GOOGLE, 23}, /* 173.194.140.0/23 */
-    {0xadc28d00u, PROTO_GOOGLE, 24}, /* 173.194.141.0/24 */
-    {0xadc28e00u, PROTO_GOOGLE, 23}, /* 173.194.142.0/23 */
-    {0xadc28f00u, PROTO_GOOGLE, 24}, /* 173.194.143.0/24 */
-    {0xadc29000u, PROTO_GOOGLE, 23}, /* 173.194.144.0/23 */
-    {0xadc29100u, PROTO_GOOGLE, 24}, /* 173.194.145.0/24 */
-    {0xadc29200u, PROTO_GOOGLE, 23}, /* 173.194.146.0/23 */
-    {0xadc29300u, PROTO_GOOGLE, 24}, /* 173.194.147.0/24 */
-    {0xadc29400u, PROTO_GOOGLE, 23}, /* 173.194.148.0/23 */
-    {0xadc29500u, PROTO_GOOGLE, 24}, /* 173.194.149.0/24 */
-    {0xadc29600u, PROTO_GOOGLE, 23}, /* 173.194.150.0/23 */
-    {0xadc29700u, PROTO_GOOGLE, 24}, /* 173.194.151.0/24 */
-    {0xadc29800u, PROTO_GOOGLE, 23}, /* 173.194.152.0/23 */
-    {0xadc29900u, PROTO_GOOGLE, 24}, /* 173.194.153.0/24 */
-    {0xadc29a00u, PROTO_GOOGLE, 23}, /* 173.194.154.0/23 */
-    {0xadc29b00u, PROTO_GOOGLE, 24}, /* 173.194.155.0/24 */
-    {0xadc29c00u, PROTO_GOOGLE, 23}, /* 173.194.156.0/23 */
-    {0xadc29d00u, PROTO_GOOGLE, 24}, /* 173.194.157.0/24 */
-    {0xadc29e00u, PROTO_GOOGLE, 23}, /* 173.194.158.0/23 */
-    {0xadc29f00u, PROTO_GOOGLE, 24}, /* 173.194.159.0/24 */
-    {0xadc2a000u, PROTO_GOOGLE, 23}, /* 173.194.160.0/23 */
-    {0xadc2a100u, PROTO_GOOGLE, 24}, /* 173.194.161.0/24 */
-    {0xadc2a200u, PROTO_GOOGLE, 23}, /* 173.194.162.0/23 */
-    {0xadc2a300u, PROTO_GOOGLE, 24}, /* 173.194.163.0/24 */
-    {0xadc2a400u, PROTO_GOOGLE, 23}, /* 173.194.164.0/23 */
-    {0xadc2a500u, PROTO_GOOGLE, 24}, /* 173.194.165.0/24 */
-    {0xadc2a600u, PROTO_GOOGLE, 23}, /* 173.194.166.0/23 */
-    {0xadc2a700u, PROTO_GOOGLE, 24}, /* 173.194.167.0/24 */
-    {0xadc2a800u, PROTO_GOOGLE, 23}, /* 173.194.168.0/23 */
-    {0xadc2a900u, PROTO_GOOGLE, 24}, /* 173.194.169.0/24 */
-    {0xadc2aa00u, PROTO_GOOGLE, 23}, /* 173.194.170.0/23 */
-    {0xadc2ab00u, PROTO_GOOGLE, 24}, /* 173.194.171.0/24 */
-    {0xadc2ac00u, PROTO_GOOGLE, 23}, /* 173.194.172.0/23 */
-    {0xadc2ad00u, PROTO_GOOGLE, 24}, /* 173.194.173.0/24 */
-    {0xadc2ae00u, PROTO_GOOGLE, 23}, /* 173.194.174.0/23 */
-    {0xadc2af00u, PROTO_GOOGLE, 24}, /* 173.194.175.0/24 */
-    {0xadc2b000u, PROTO_GOOGLE, 23}, /* 173.194.176.0/23 */
-    {0xadc2b100u, PROTO_GOOGLE, 24}, /* 173.194.177.0/24 */
-    {0xadc2b200u, PROTO_GOOGLE, 23}, /* 173.194.178.0/23 */
-    {0xadc2b300u, PROTO_GOOGLE, 24}, /* 173.194.179.0/24 */
-    {0xadc2b400u, PROTO_GOOGLE, 23}, /* 173.194.180.0/23 */
-    {0xadc2b500u, PROTO_GOOGLE, 24}, /* 173.194.181.0/24 */
-    {0xadc2b600u, PROTO_GOOGLE, 23}, /* 173.194.182.0/23 */
-    {0xadc2b700u, PROTO_GOOGLE, 24}, /* 173.194.183.0/24 */
-    {0xadc2b800u, PROTO_GOOGLE, 23}, /* 173.194.184.0/23 */
-    {0xadc2b900u, PROTO_GOOGLE, 24}, /* 173.194.185.0/24 */
-    {0xadc2ba00u, PROTO_GOOGLE, 23}, /* 173.194.186.0/23 */
-    {0xadc2bb00u, PROTO_GOOGLE, 24}, /* 173.194.187.0/24 */
-    {0xadc2bc00u, PROTO_GOOGLE, 23}, /* 173.194.188.0/23 */
-    {0xadc2bd00u, PROTO_GOOGLE, 24}, /* 173.194.189.0/24 */
-    {0xadc2be00u, PROTO_GOOGLE, 23}, /* 173.194.190.0/23 */
-    {0xadc2bf00u, PROTO_GOOGLE, 24}, /* 173.194.191.0/24 */
-    {0xadc2c000u, PROTO_GOOGLE, 23}, /* 173.194.192.0/23 */
-    {0xadc2c100u, PROTO_GOOGLE, 24}, /* 173.194.193.0/24 */
-    {0xadc2c200u, PROTO_GOOGLE, 23}, /* 173.194.194.0/23 */
-    {0xadc2c300u, PROTO_GOOGLE, 24}, /* 173.194.195.0/24 */
-    {0xadc2c400u, PROTO_GOOGLE, 23}, /* 173.194.196.0/23 */
-    {0xadc2c500u, PROTO_GOOGLE, 24}, /* 173.194.197.0/24 */
-    {0xadc2c600u, PROTO_GOOGLE, 23}, /* 173.194.198.0/23 */
-    {0xadc2c700u, PROTO_GOOGLE, 24}, /* 173.194.199.0/24 */
-    {0xadc2c800u, PROTO_GOOGLE, 23}, /* 173.194.200.0/23 */
-    {0xadc2c900u, PROTO_GOOGLE, 24}, /* 173.194.201.0/24 */
-    {0xadc2ca00u, PROTO_GOOGLE, 23}, /* 173.194.202.0/23 */
-    {0xadc2cb00u, PROTO_GOOGLE, 24}, /* 173.194.203.0/24 */
-    {0xadc2cc00u, PROTO_GOOGLE, 23}, /* 173.194.204.0/23 */
-    {0xadc2cd00u, PROTO_GOOGLE, 24}, /* 173.194.205.0/24 */
-    {0xadc2ce00u, PROTO_GOOGLE, 23}, /* 173.194.206.0/23 */
-    {0xadc2cf00u, PROTO_GOOGLE, 24}, /* 173.194.207.0/24 */
-    {0xadc2d000u, PROTO_GOOGLE, 23}, /* 173.194.208.0/23 */
-    {0xadc2d100u, PROTO_GOOGLE, 24}, /* 173.194.209.0/24 */
-    {0xadc2d200u, PROTO_GOOGLE, 23}, /* 173.194.210.0/23 */
-    {0xadc2d300u, PROTO_GOOGLE, 24}, /* 173.194.211.0/24 */
-    {0xadc2d400u, PROTO_GOOGLE, 23}, /* 173.194.212.0/23 */
-    {0xadc2d500u, PROTO_GOOGLE, 24}, /* 173.194.213.0/24 */
-    {0xadc2d600u, PROTO_GOOGLE, 23}, /* 173.194.214.0/23 */
-    {0xadc2d700u, PROTO_GOOGLE, 24}, /* 173.194.215.0/24 */
-    {0xadc2d800u, PROTO_GOOGLE, 23}, /* 173.194.216.0/23 */
-    {0xadc2d900u, PROTO_GOOGLE, 24}, /* 173.194.217.0/24 */
-    {0xadc2da00u, PROTO_GOOGLE, 23}, /* 173.194.218.0/23 */
-    {0xadc2db00u, PROTO_GOOGLE, 24}, /* 173.194.219.0/24 */
-    {0xadc2dc00u, PROTO_GOOGLE, 23}, /* 173.194.220.0/23 */
-    {0xadc2dd00u, PROTO_GOOGLE, 24}, /* 173.194.221.0/24 */
-    {0xadc2de00u, PROTO_GOOGLE, 23}, /* 173.194.222.0/23 */
-    {0xadc2df00u, PROTO_GOOGLE, 24}, /* 173.194.223.0/24 */
-    {0xadc2e000u, PROTO_GOOGLE, 23}, /* 173.194.224.0/23 */
-    {0xadc2e100u, PROTO_GOOGLE, 24}, /* 173.194.225.0/24 */
-    {0xadc2e200u, PROTO_GOOGLE, 23}, /* 173.194.226.0/23 */
-    {0xadc2e300u, PROTO_GOOGLE, 24}, /* 173.194.227.0/24 */
-    {0xadc2e400u, PROTO_GOOGLE, 23}, /* 173.194.228.0/23 */
-    {0xadc2e500u, PROTO_GOOGLE, 24}, /* 173.194.229.0/24 */
-    {0xadc2e600u, PROTO_GOOGLE, 23}, /* 173.194.230.0/23 */
-    {0xadc2e700u, PROTO_GOOGLE, 24}, /* 173.194.231.0/24 */
-    {0xadc2e800u, PROTO_GOOGLE, 23}, /* 173.194.232.0/23 */
-    {0xadc2e900u, PROTO_GOOGLE, 24}, /* 173.194.233.0/24 */
-    {0xadc2ea00u, PROTO_GOOGLE, 23}, /* 173.194.234.0/23 */
-    {0xadc2eb00u, PROTO_GOOGLE, 24}, /* 173.194.235.0/24 */
-    {0xadc2ec00u, PROTO_GOOGLE, 23}, /* 173.194.236.0/23 */
-    {0xadc2ed00u, PROTO_GOOGLE, 24}, /* 173.194.237.0/24 */
-    {0xadc2ee00u, PROTO_GOOGLE, 23}, /* 173.194.238.0/23 */
-    {0xadc2ef00u, PROTO_GOOGLE, 24}, /* 173.194.239.0/24 */
-    {0xadc2f000u, PROTO_GOOGLE, 23}, /* 173.194.240.0/23 */
-    {0xadc2f100u, PROTO_GOOGLE, 24}, /* 173.194.241.0/24 */
-    {0xadc2f200u, PROTO_GOOGLE, 23}, /* 173.194.242.0/23 */
-    {0xadc2f300u, PROTO_GOOGLE, 24}, /* 173.194.243.0/24 */
-    {0xadc2f400u, PROTO_GOOGLE, 23}, /* 173.194.244.0/23 */
-    {0xadc2f500u, PROTO_GOOGLE, 24}, /* 173.194.245.0/24 */
-    {0xadc2f600u, PROTO_GOOGLE, 23}, /* 173.194.246.0/23 */
-    {0xadc2f700u, PROTO_GOOGLE, 24}, /* 173.194.247.0/24 */
-    {0xadc2f800u, PROTO_GOOGLE, 23}, /* 173.194.248.0/23 */
-    {0xadc2f900u, PROTO_GOOGLE, 24}, /* 173.194.249.0/24 */
-    {0xadc2fa00u, PROTO_GOOGLE, 23}, /* 173.194.250.0/23 */
-    {0xadc2fb00u, PROTO_GOOGLE, 24}, /* 173.194.251.0/24 */
-    {0xadc2fc00u, PROTO_GOOGLE, 23}, /* 173.194.252.0/23 */
-    {0xadc2fd00u, PROTO_GOOGLE, 24}, /* 173.194.253.0/24 */
-    {0xadc2fe00u, PROTO_GOOGLE, 23}, /* 173.194.254.0/23 */
-    {0xadc2ff00u, PROTO_GOOGLE, 24}, /* 173.194.255.0/24 */
     {0xadc30000u, PROTO_UNKNOWN, 0},
     {0xadf30000u, PROTO_WEBEX, 20}, /* 173.243.0.0/20 */
     {0xadf31000u, PROTO_UNKNOWN, 0},
+    {0xadf53000u, PROTO_CLOUDFLARE, 20}, /* 173.245.48.0/20 */
+    {0xadf54000u, PROTO_UNKNOWN, 0},
     {0xadfc4000u, PROTO_FACEBOOK, 18}, /* 173.252.64.0/18 */
     {0xadfc4600u, PROTO_FACEBOOK, 24}, /* 173.252.70.0/24 */
     {0xadfc4700u, PROTO_FACEBOOK, 18}, /* 173.252.64.0/18 */
     {0xadfc6000u, PROTO_FACEBOOK, 19}, /* 173.252.96.0/19 */
     {0xadfc8000u, PROTO_UNKNOWN, 0},
-    {0xadff7000u, PROTO_GOOGLE, 23}, /* 173.255.112.0/23 */
-    {0xadff7100u, PROTO_GOOGLE, 24}, /* 173.255.113.0/24 */
-    {0xadff7200u, PROTO_GOOGLE, 23}, /* 173.255.114.0/23 */
-    {0xadff7300u, PROTO_GOOGLE, 24}, /* 173.255.115.0/24 */
-    {0xadff7400u, PROTO_GOOGLE, 23}, /* 173.255.116.0/23 */
-    {0xadff7500u, PROTO_GOOGLE, 24}, /* 173.255.117.0/24 */
-    {0xadff7600u, PROTO_GOOGLE, 23}, /* 173.255.118.0/23 */
-    {0xadff7700u, PROTO_GOOGLE, 24}, /* 173.255.119.0/24 */
-    {0xadff7800u, PROTO_GOOGLE, 23}, /* 173.255.120.0/23 */
-    {0xadff7900u, PROTO_GOOGLE, 24}, /* 173.255.121.0/24 */
-    {0xadff7a00u, PROTO_GOOGLE, 23}, /* 173.255.122.0/23 */
-    {0xadff7b00u, PROTO_GOOGLE, 24}, /* 173.255.123.0/24 */
-    {0xadff7c00u, PROTO_GOOGLE, 23}, /* 173.255.124.0/23 */
-    {0xadff7d00u, PROTO_GOOGLE, 24}, /* 173.255.125.0/24 */
-    {0xadff7e00u, PROTO_GOOGLE, 23}, /* 173.255.126.0/23 */
-    {0xadff7f00u, PROTO_GOOGLE, 24}, /* 173.255.127.0/24 */
+    {0xadff7000u, PROTO_GOOGLE_CLOUD, 20}, /* 173.255.112.0/20 */
     {0xadff8000u, PROTO_UNKNOWN, 0},
-    {0xae810000u, PROTO_AMAZON, 16}, /* 174.129.0.0/16 */
+    {0xae810000u, PROTO_AWS, 16}, /* 174.129.0.0/16 */
     {0xae820000u, PROTO_UNKNOWN, 0},
-    {0xaf298000u, PROTO_AMAZON, 18}, /* 175.41.128.0/18 */
+    {0xaf298000u, PROTO_AWS, 17}, /* 175.41.128.0/17 */
     {0xaf2a0000u, PROTO_UNKNOWN, 0},
-    {0xb0204000u, PROTO_AMAZON, 19}, /* 176.32.64.0/19 */
-    {0xb0206000u, PROTO_AMAZON, 21}, /* 176.32.96.0/21 */
-    {0xb0206200u, PROTO_AMAZON, 24}, /* 176.32.98.0/24 */
-    {0xb0206300u, PROTO_AMAZON, 21}, /* 176.32.96.0/21 */
-    {0xb0207800u, PROTO_AMAZON, 22}, /* 176.32.120.0/22 */
+    {0xb0204000u, PROTO_AWS, 19}, /* 176.32.64.0/19 */
+    {0xb0206000u, PROTO_AWS, 20}, /* 176.32.96.0/20 */
+    {0xb0207000u, PROTO_AWS, 21}, /* 176.32.112.0/21 */
+    {0xb0207800u, PROTO_AWS, 22}, /* 176.32.120.0/22 */
     {0xb0207c00u, PROTO_UNKNOWN, 0},
-    {0xb0207e00u, PROTO_AMAZON, 23}, /* 176.32.126.0/23 */
-    {0xb0208000u, PROTO_UNKNOWN, 0},
-    {0xb0220000u, PROTO_AMAZON, 19}, /* 176.34.0.0/19 */
-    {0xb0224000u, PROTO_AMAZON, 18}, /* 176.34.64.0/18 */
-    {0xb0228000u, PROTO_AMAZON, 17}, /* 176.34.128.0/17 */
-    {0xb0229000u, PROTO_AMAZON, 20}, /* 176.34.144.0/20 */
-    {0xb022a000u, PROTO_AMAZON, 19}, /* 176.34.160.0/19 */
-    {0xb022c000u, PROTO_AMAZON, 18}, /* 176.34.192.0/18 */
+    {0xb0207c80u, PROTO_AWS, 25}, /* 176.32.124.128/25 */
+    {0xb0207d00u, PROTO_AWS, 24}, /* 176.32.125.0/24 */
+    {0xb0207e00u, PROTO_UNKNOWN, 0},
+    {0xb0220000u, PROTO_AWS, 16}, /* 176.34.0.0/16 */
     {0xb0230000u, PROTO_UNKNOWN, 0},
-    {0xb1270400u, PROTO_AMAZON, 22}, /* 177.39.4.0/22 */
-    {0xb1270500u, PROTO_AMAZON, 24}, /* 177.39.5.0/24 */
-    {0xb1270800u, PROTO_UNKNOWN, 0},
-    {0xb1420800u, PROTO_AMAZON, 23}, /* 177.66.8.0/23 */
-    {0xb1420900u, PROTO_AMAZON, 24}, /* 177.66.9.0/24 */
-    {0xb1420a00u, PROTO_AMAZON, 23}, /* 177.66.10.0/23 */
-    {0xb1420b00u, PROTO_AMAZON, 24}, /* 177.66.11.0/24 */
-    {0xb1420c00u, PROTO_AMAZON, 23}, /* 177.66.12.0/23 */
-    {0xb1420d00u, PROTO_AMAZON, 24}, /* 177.66.13.0/24 */
-    {0xb1420e00u, PROTO_AMAZON, 23}, /* 177.66.14.0/23 */
-    {0xb1420f00u, PROTO_AMAZON, 24}, /* 177.66.15.0/24 */
-    {0xb1421000u, PROTO_UNKNOWN, 0},
-    {0xb1478000u, PROTO_AMAZON, 17}, /* 177.71.128.0/17 */
-    {0xb147c000u, PROTO_AMAZON, 20}, /* 177.71.192.0/20 */
-    {0xb147e000u, PROTO_AMAZON, 19}, /* 177.71.224.0/19 */
+    {0xb1478000u, PROTO_AWS, 17}, /* 177.71.128.0/17 */
     {0xb1480000u, PROTO_UNKNOWN, 0},
-    {0xb148f000u, PROTO_AMAZON, 21}, /* 177.72.240.0/21 */
+    {0xb148f000u, PROTO_AWS, 21}, /* 177.72.240.0/21 */
     {0xb148f800u, PROTO_UNKNOWN, 0},
-    {0xb2ec0000u, PROTO_AMAZON, 20}, /* 178.236.0.0/20 */
+    {0xb1b00000u, PROTO_GOOGLE, 16}, /* 177.176.0.0/16 */
+    {0xb1b10000u, PROTO_UNKNOWN, 0},
+    {0xb1b20000u, PROTO_GOOGLE, 15}, /* 177.178.0.0/15 */
+    {0xb1b40000u, PROTO_UNKNOWN, 0},
+    {0xb1d00000u, PROTO_GOOGLE, 15}, /* 177.208.0.0/15 */
+    {0xb1d20000u, PROTO_UNKNOWN, 0},
+    {0xb2ec0000u, PROTO_AWS, 20}, /* 178.236.0.0/20 */
     {0xb2ec1000u, PROTO_UNKNOWN, 0},
     {0xb33cc000u, PROTO_FACEBOOK, 22}, /* 179.60.192.0/22 */
     {0xb33cc100u, PROTO_FACEBOOK, 24}, /* 179.60.193.0/24 */
     {0xb33cc400u, PROTO_UNKNOWN, 0},
+    {0xb3430000u, PROTO_GOOGLE_CLOUD, 17}, /* 179.67.0.0/17 */
+    {0xb3438000u, PROTO_UNKNOWN, 0},
+    {0xb3458000u, PROTO_GOOGLE_CLOUD, 17}, /* 179.69.128.0/17 */
+    {0xb3460000u, PROTO_UNKNOWN, 0},
+    {0xb3c18000u, PROTO_GOOGLE_CLOUD, 17}, /* 179.193.128.0/17 */
+    {0xb3c20000u, PROTO_UNKNOWN, 0},
+    {0xb3c70000u, PROTO_GOOGLE_CLOUD, 17}, /* 179.199.0.0/17 */
+    {0xb3c78000u, PROTO_UNKNOWN, 0},
+    {0xb4a33900u, PROTO_CLOUDFRONT, 25}, /* 180.163.57.0/25 */
+    {0xb4a33980u, PROTO_CLOUDFRONT, 26}, /* 180.163.57.128/26 */
+    {0xb4a339c0u, PROTO_UNKNOWN, 0},
     {0xb4de6c00u, PROTO_YAHOO, 23}, /* 180.222.108.0/23 */
     {0xb4de6e00u, PROTO_YAHOO, 24}, /* 180.222.110.0/24 */
     {0xb4de6f00u, PROTO_UNKNOWN, 0},
     {0xb6160000u, PROTO_YAHOO, 17}, /* 182.22.0.0/17 */
     {0xb6168000u, PROTO_UNKNOWN, 0},
+    {0xb6180000u, PROTO_AWS, 14}, /* 182.24.0.0/14 */
+    {0xb61c0000u, PROTO_AWS, 15}, /* 182.28.0.0/15 */
+    {0xb61e0000u, PROTO_AWS, 16}, /* 182.30.0.0/16 */
+    {0xb61f0000u, PROTO_UNKNOWN, 0},
     {0xb6a14c00u, PROTO_YAHOO, 22}, /* 182.161.76.0/22 */
     {0xb6a14d00u, PROTO_YAHOO, 24}, /* 182.161.77.0/24 */
     {0xb6a15000u, PROTO_UNKNOWN, 0},
@@ -6392,30 +6303,32 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0xb7b14c00u, PROTO_YAHOO, 22}, /* 183.177.76.0/22 */
     {0xb7b15000u, PROTO_YAHOO, 23}, /* 183.177.80.0/23 */
     {0xb7b15400u, PROTO_UNKNOWN, 0},
-    {0xb8480000u, PROTO_AMAZON, 18}, /* 184.72.0.0/18 */
-    {0xb8484000u, PROTO_AMAZON, 19}, /* 184.72.64.0/19 */
-    {0xb8488000u, PROTO_AMAZON, 17}, /* 184.72.128.0/17 */
-    {0xb8490000u, PROTO_AMAZON, 16}, /* 184.73.0.0/16 */
+    {0xb8200000u, PROTO_AWS, 12}, /* 184.32.0.0/12 */
+    {0xb8300000u, PROTO_UNKNOWN, 0},
+    {0xb8480000u, PROTO_AWS, 15}, /* 184.72.0.0/15 */
     {0xb84a0000u, PROTO_UNKNOWN, 0},
+    {0xb84c0000u, PROTO_AWS, 14}, /* 184.76.0.0/14 */
+    {0xb8500000u, PROTO_UNKNOWN, 0},
     {0xb8a50000u, PROTO_YAHOO, 16}, /* 184.165.0.0/16 */
     {0xb8a60000u, PROTO_UNKNOWN, 0},
-    {0xb8a98000u, PROTO_AMAZON, 17}, /* 184.169.128.0/17 */
+    {0xb8a98000u, PROTO_AWS, 17}, /* 184.169.128.0/17 */
     {0xb8aa0000u, PROTO_UNKNOWN, 0},
+    {0xb8c00000u, PROTO_AWS, 11}, /* 184.192.0.0/11 */
+    {0xb8e00000u, PROTO_UNKNOWN, 0},
     {0xb902dc00u, PROTO_NETFLIX, 22}, /* 185.2.220.0/22 */
     {0xb902dd00u, PROTO_NETFLIX, 24}, /* 185.2.221.0/24 */
     {0xb902de00u, PROTO_NETFLIX, 22}, /* 185.2.220.0/22 */
     {0xb902e000u, PROTO_UNKNOWN, 0},
     {0xb909bc00u, PROTO_NETFLIX, 22}, /* 185.9.188.0/22 */
     {0xb909c000u, PROTO_UNKNOWN, 0},
-    {0xb9191c00u, PROTO_GOOGLE, 23}, /* 185.25.28.0/23 */
-    {0xb9191d00u, PROTO_GOOGLE, 24}, /* 185.25.29.0/24 */
-    {0xb9191e00u, PROTO_GOOGLE, 23}, /* 185.25.30.0/23 */
-    {0xb9191f00u, PROTO_GOOGLE, 24}, /* 185.25.31.0/24 */
-    {0xb9192000u, PROTO_UNKNOWN, 0},
+    {0xb91f1000u, PROTO_FASTLY, 22}, /* 185.31.16.0/22 */
+    {0xb91f1400u, PROTO_UNKNOWN, 0},
+    {0xb92acc00u, PROTO_AWS, 22}, /* 185.42.204.0/22 */
+    {0xb92ad000u, PROTO_UNKNOWN, 0},
     {0xb92d0400u, PROTO_TWITTER, 24}, /* 185.45.4.0/24 */
     {0xb92d0600u, PROTO_TWITTER, 23}, /* 185.45.6.0/23 */
     {0xb92d0800u, PROTO_UNKNOWN, 0},
-    {0xb9307800u, PROTO_AMAZON, 22}, /* 185.48.120.0/22 */
+    {0xb9307800u, PROTO_AWS, 22}, /* 185.48.120.0/22 */
     {0xb9307c00u, PROTO_UNKNOWN, 0},
     {0xb93cd800u, PROTO_FACEBOOK, 22}, /* 185.60.216.0/22 */
     {0xb93cd900u, PROTO_FACEBOOK, 24}, /* 185.60.217.0/24 */
@@ -6425,11 +6338,21 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0xb93eda00u, PROTO_YAHOO, 23}, /* 185.62.218.0/23 */
     {0xb93edb00u, PROTO_YAHOO, 24}, /* 185.62.219.0/24 */
     {0xb93edc00u, PROTO_UNKNOWN, 0},
-    {0xb98f1000u, PROTO_AMAZON, 22}, /* 185.143.16.0/22 */
-    {0xb98f1400u, PROTO_UNKNOWN, 0},
+    {0xb98f1000u, PROTO_AWS, 24}, /* 185.143.16.0/24 */
+    {0xb98f1100u, PROTO_UNKNOWN, 0},
     {0xb9969400u, PROTO_GOOGLE, 22}, /* 185.150.148.0/22 */
-    {0xb9969500u, PROTO_GOOGLE, 24}, /* 185.150.149.0/24 */
     {0xb9969800u, PROTO_UNKNOWN, 0},
+    {0xbaf20000u, PROTO_GOOGLE_CLOUD, 18}, /* 186.242.0.0/18 */
+    {0xbaf24000u, PROTO_GOOGLE, 18}, /* 186.242.64.0/18 */
+    {0xbaf28000u, PROTO_UNKNOWN, 0},
+    {0xbaf50000u, PROTO_GOOGLE, 16}, /* 186.245.0.0/16 */
+    {0xbaf60000u, PROTO_UNKNOWN, 0},
+    {0xbb4e0000u, PROTO_GOOGLE, 17}, /* 187.78.0.0/17 */
+    {0xbb4e8000u, PROTO_UNKNOWN, 0},
+    {0xbb4f0000u, PROTO_GOOGLE, 17}, /* 187.79.0.0/17 */
+    {0xbb4f8000u, PROTO_UNKNOWN, 0},
+    {0xbb7e8000u, PROTO_GOOGLE, 17}, /* 187.126.128.0/17 */
+    {0xbb7f0000u, PROTO_UNKNOWN, 0},
     {0xbc40e000u, PROTO_TWITTER, 24}, /* 188.64.224.0/24 */
     {0xbc40e800u, PROTO_UNKNOWN, 0},
     {0xbc726000u, PROTO_CLOUDFLARE, 20}, /* 188.114.96.0/20 */
@@ -6440,585 +6363,209 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0xbc7d5800u, PROTO_UNKNOWN, 0},
     {0xbc7d5c00u, PROTO_YAHOO, 24}, /* 188.125.92.0/24 */
     {0xbc7d5e00u, PROTO_UNKNOWN, 0},
+    {0xbd188000u, PROTO_GOOGLE, 17}, /* 189.24.128.0/17 */
+    {0xbd190000u, PROTO_UNKNOWN, 0},
+    {0xbd300000u, PROTO_GOOGLE, 16}, /* 189.48.0.0/16 */
+    {0xbd310000u, PROTO_UNKNOWN, 0},
+    {0xbd318000u, PROTO_GOOGLE, 17}, /* 189.49.128.0/17 */
+    {0xbd320000u, PROTO_UNKNOWN, 0},
+    {0xbd460000u, PROTO_GOOGLE, 15}, /* 189.70.0.0/15 */
+    {0xbd480000u, PROTO_UNKNOWN, 0},
+    {0xbd520000u, PROTO_GOOGLE, 15}, /* 189.82.0.0/15 */
+    {0xbd540000u, PROTO_UNKNOWN, 0},
+    {0xbd698000u, PROTO_GOOGLE, 17}, /* 189.105.128.0/17 */
+    {0xbd6a0000u, PROTO_GOOGLE, 15}, /* 189.106.0.0/15 */
+    {0xbd6c0000u, PROTO_UNKNOWN, 0},
     {0xbe5df000u, PROTO_CLOUDFLARE, 20}, /* 190.93.240.0/20 */
     {0xbe5e0000u, PROTO_UNKNOWN, 0},
-    {0xbfe80000u, PROTO_AZURE, 21}, /* 191.232.0.0/21 */
-    {0xbfe80800u, PROTO_UNKNOWN, 0},
+    {0xbf008000u, PROTO_GOOGLE, 17}, /* 191.0.128.0/17 */
+    {0xbf010000u, PROTO_UNKNOWN, 0},
+    {0xbf020000u, PROTO_GOOGLE, 15}, /* 191.2.0.0/15 */
+    {0xbf040000u, PROTO_UNKNOWN, 0},
+    {0xbf288000u, PROTO_GOOGLE, 17}, /* 191.40.128.0/17 */
+    {0xbf290000u, PROTO_UNKNOWN, 0},
+    {0xbf2c8000u, PROTO_GOOGLE, 17}, /* 191.44.128.0/17 */
+    {0xbf2d0000u, PROTO_UNKNOWN, 0},
+    {0xbf2d8000u, PROTO_GOOGLE, 17}, /* 191.45.128.0/17 */
+    {0xbf2e0000u, PROTO_GOOGLE, 15}, /* 191.46.0.0/15 */
+    {0xbf300000u, PROTO_UNKNOWN, 0},
+    {0xbfa60000u, PROTO_AWS, 16}, /* 191.166.0.0/16 */
+    {0xbfa70000u, PROTO_UNKNOWN, 0},
+    {0xbfd40000u, PROTO_GOOGLE, 15}, /* 191.212.0.0/15 */
+    {0xbfd60000u, PROTO_UNKNOWN, 0},
+    {0xbfd88000u, PROTO_GOOGLE, 17}, /* 191.216.128.0/17 */
+    {0xbfd90000u, PROTO_UNKNOWN, 0},
+    {0xbfda0000u, PROTO_GOOGLE, 17}, /* 191.218.0.0/17 */
+    {0xbfda8000u, PROTO_UNKNOWN, 0},
+    {0xbfdc0000u, PROTO_GOOGLE, 15}, /* 191.220.0.0/15 */
+    {0xbfde0000u, PROTO_UNKNOWN, 0},
+    {0xbfe81000u, PROTO_AZURE, 21}, /* 191.232.16.0/21 */
+    {0xbfe81800u, PROTO_UNKNOWN, 0},
+    {0xbfe82000u, PROTO_AZURE, 19}, /* 191.232.32.0/19 */
+    {0xbfe84000u, PROTO_AZURE, 20}, /* 191.232.64.0/20 */
+    {0xbfe85000u, PROTO_UNKNOWN, 0},
+    {0xbfe8a000u, PROTO_AZURE, 19}, /* 191.232.160.0/19 */
+    {0xbfe8c000u, PROTO_AZURE, 18}, /* 191.232.192.0/18 */
+    {0xbfe90000u, PROTO_AZURE, 19}, /* 191.233.0.0/19 */
+    {0xbfe92000u, PROTO_AZURE, 20}, /* 191.233.32.0/20 */
+    {0xbfe93000u, PROTO_AZURE, 21}, /* 191.233.48.0/21 */
+    {0xbfe93800u, PROTO_UNKNOWN, 0},
+    {0xbfe94000u, PROTO_AZURE, 18}, /* 191.233.64.0/18 */
+    {0xbfe98000u, PROTO_AZURE, 17}, /* 191.233.128.0/17 */
+    {0xbfea0000u, PROTO_UNKNOWN, 0},
+    {0xbfea0200u, PROTO_AZURE, 23}, /* 191.234.2.0/23 */
+    {0xbfea0400u, PROTO_UNKNOWN, 0},
+    {0xbfea1000u, PROTO_AZURE, 20}, /* 191.234.16.0/20 */
+    {0xbfea2000u, PROTO_AZURE, 19}, /* 191.234.32.0/19 */
+    {0xbfea4000u, PROTO_UNKNOWN, 0},
+    {0xbfea8000u, PROTO_AZURE, 17}, /* 191.234.128.0/17 */
+    {0xbfeb0000u, PROTO_UNKNOWN, 0},
+    {0xbfeb2000u, PROTO_AZURE, 19}, /* 191.235.32.0/19 */
+    {0xbfeb4000u, PROTO_AZURE, 18}, /* 191.235.64.0/18 */
+    {0xbfeb8000u, PROTO_AZURE, 17}, /* 191.235.128.0/17 */
+    {0xbfec0000u, PROTO_AZURE, 16}, /* 191.236.0.0/16 */
+    {0xbfed0000u, PROTO_AZURE, 17}, /* 191.237.0.0/17 */
+    {0xbfed8000u, PROTO_AZURE, 18}, /* 191.237.128.0/18 */
+    {0xbfedc000u, PROTO_AZURE, 22}, /* 191.237.192.0/22 */
+    {0xbfedc400u, PROTO_AZURE, 24}, /* 191.237.196.0/24 */
+    {0xbfedc500u, PROTO_UNKNOWN, 0},
+    {0xbfedc800u, PROTO_AZURE, 21}, /* 191.237.200.0/21 */
+    {0xbfedd000u, PROTO_AZURE, 20}, /* 191.237.208.0/20 */
+    {0xbfede000u, PROTO_AZURE, 21}, /* 191.237.224.0/21 */
+    {0xbfede800u, PROTO_AZURE, 22}, /* 191.237.232.0/22 */
+    {0xbfedec00u, PROTO_AZURE, 24}, /* 191.237.236.0/24 */
+    {0xbfeded00u, PROTO_UNKNOWN, 0},
+    {0xbfedee00u, PROTO_AZURE, 24}, /* 191.237.238.0/24 */
+    {0xbfedef00u, PROTO_UNKNOWN, 0},
+    {0xbfedf000u, PROTO_AZURE, 23}, /* 191.237.240.0/23 */
+    {0xbfedf200u, PROTO_UNKNOWN, 0},
+    {0xbfedf800u, PROTO_AZURE, 21}, /* 191.237.248.0/21 */
+    {0xbfee0000u, PROTO_AZURE, 18}, /* 191.238.0.0/18 */
+    {0xbfee4000u, PROTO_AZURE, 22}, /* 191.238.64.0/22 */
+    {0xbfee4400u, PROTO_AZURE, 24}, /* 191.238.68.0/24 */
+    {0xbfee4500u, PROTO_UNKNOWN, 0},
+    {0xbfee4600u, PROTO_AZURE, 23}, /* 191.238.70.0/23 */
+    {0xbfee4800u, PROTO_AZURE, 21}, /* 191.238.72.0/21 */
+    {0xbfee5800u, PROTO_AZURE, 22}, /* 191.238.88.0/22 */
+    {0xbfee5c00u, PROTO_AZURE, 23}, /* 191.238.92.0/23 */
+    {0xbfee5e00u, PROTO_UNKNOWN, 0},
+    {0xbfee6000u, PROTO_AZURE, 19}, /* 191.238.96.0/19 */
+    {0xbfee8000u, PROTO_AZURE, 21}, /* 191.238.128.0/21 */
+    {0xbfee8800u, PROTO_UNKNOWN, 0},
+    {0xbfee9000u, PROTO_AZURE, 20}, /* 191.238.144.0/20 */
+    {0xbfeea000u, PROTO_AZURE, 19}, /* 191.238.160.0/19 */
+    {0xbfeec000u, PROTO_AZURE, 18}, /* 191.238.192.0/18 */
+    {0xbfef0000u, PROTO_AZURE, 17}, /* 191.239.0.0/17 */
+    {0xbfef8000u, PROTO_UNKNOWN, 0},
+    {0xbfefa000u, PROTO_AZURE, 19}, /* 191.239.160.0/19 */
+    {0xbfefc000u, PROTO_AZURE, 22}, /* 191.239.192.0/22 */
+    {0xbfefc400u, PROTO_UNKNOWN, 0},
+    {0xbfefc800u, PROTO_AZURE, 21}, /* 191.239.200.0/21 */
+    {0xbfefd000u, PROTO_AZURE, 20}, /* 191.239.208.0/20 */
+    {0xbfefe000u, PROTO_AZURE, 19}, /* 191.239.224.0/19 */
+    {0xbff00000u, PROTO_UNKNOWN, 0},
     {0xc00c4a00u, PROTO_APPLE, 24}, /* 192.12.74.0/24 */
     {0xc00c4b00u, PROTO_UNKNOWN, 0},
+    {0xc0104000u, PROTO_AWS, 21}, /* 192.16.64.0/21 */
+    {0xc0104800u, PROTO_UNKNOWN, 0},
+    {0xc01fd400u, PROTO_AWS, 23}, /* 192.31.212.0/23 */
+    {0xc01fd600u, PROTO_UNKNOWN, 0},
     {0xc0233200u, PROTO_APPLE, 24}, /* 192.35.50.0/24 */
     {0xc0233300u, PROTO_UNKNOWN, 0},
     {0xc02af900u, PROTO_APPLE, 24}, /* 192.42.249.0/24 */
     {0xc02afa00u, PROTO_UNKNOWN, 0},
+    {0xc02baf00u, PROTO_AWS, 24}, /* 192.43.175.0/24 */
+    {0xc02bb000u, PROTO_UNKNOWN, 0},
+    {0xc02bb800u, PROTO_AWS, 24}, /* 192.43.184.0/24 */
+    {0xc02bb900u, PROTO_UNKNOWN, 0},
     {0xc02c4400u, PROTO_TWITTER, 23}, /* 192.44.68.0/23 */
     {0xc02c4500u, PROTO_TWITTER, 24}, /* 192.44.69.0/24 */
     {0xc02c4600u, PROTO_UNKNOWN, 0},
     {0xc030ec00u, PROTO_TWITTER, 23}, /* 192.48.236.0/23 */
     {0xc030ee00u, PROTO_UNKNOWN, 0},
     {0xc068a000u, PROTO_GOOGLE, 23}, /* 192.104.160.0/23 */
-    {0xc068a100u, PROTO_GOOGLE, 24}, /* 192.104.161.0/24 */
     {0xc068a200u, PROTO_UNKNOWN, 0},
-    {0xc0771000u, PROTO_GOOGLE, 20}, /* 192.119.16.0/20 */
-    {0xc0771c00u, PROTO_GOOGLE, 24}, /* 192.119.28.0/24 */
-    {0xc0771d00u, PROTO_GOOGLE, 20}, /* 192.119.16.0/20 */
-    {0xc0772000u, PROTO_UNKNOWN, 0},
+    {0xc06cef00u, PROTO_AWS, 24}, /* 192.108.239.0/24 */
+    {0xc06cf000u, PROTO_UNKNOWN, 0},
     {0xc0854c00u, PROTO_TWITTER, 22}, /* 192.133.76.0/22 */
     {0xc0854e00u, PROTO_TWITTER, 23}, /* 192.133.78.0/23 */
     {0xc0855000u, PROTO_UNKNOWN, 0},
-    {0xc09e1c00u, PROTO_GOOGLE, 22}, /* 192.158.28.0/22 */
-    {0xc09e1d00u, PROTO_GOOGLE, 24}, /* 192.158.29.0/24 */
-    {0xc09e1e00u, PROTO_GOOGLE, 23}, /* 192.158.30.0/23 */
-    {0xc09e1f00u, PROTO_GOOGLE, 24}, /* 192.158.31.0/24 */
+    {0xc09d2400u, PROTO_AWS, 24}, /* 192.157.36.0/24 */
+    {0xc09d2500u, PROTO_UNKNOWN, 0},
+    {0xc09d4800u, PROTO_AWS, 23}, /* 192.157.72.0/23 */
+    {0xc09d4a00u, PROTO_UNKNOWN, 0},
+    {0xc09e1c00u, PROTO_GOOGLE_CLOUD, 22}, /* 192.158.28.0/22 */
     {0xc09e2000u, PROTO_UNKNOWN, 0},
     {0xc0ad4000u, PROTO_NETFLIX, 18}, /* 192.173.64.0/18 */
     {0xc0ad8000u, PROTO_UNKNOWN, 0},
     {0xc0b20000u, PROTO_GOOGLE, 15}, /* 192.178.0.0/15 */
-    {0xc0b20100u, PROTO_GOOGLE, 24}, /* 192.178.1.0/24 */
-    {0xc0b20200u, PROTO_GOOGLE, 23}, /* 192.178.2.0/23 */
-    {0xc0b20300u, PROTO_GOOGLE, 24}, /* 192.178.3.0/24 */
-    {0xc0b20400u, PROTO_GOOGLE, 23}, /* 192.178.4.0/23 */
-    {0xc0b20500u, PROTO_GOOGLE, 24}, /* 192.178.5.0/24 */
-    {0xc0b20600u, PROTO_GOOGLE, 23}, /* 192.178.6.0/23 */
-    {0xc0b20700u, PROTO_GOOGLE, 24}, /* 192.178.7.0/24 */
-    {0xc0b20800u, PROTO_GOOGLE, 23}, /* 192.178.8.0/23 */
-    {0xc0b20900u, PROTO_GOOGLE, 24}, /* 192.178.9.0/24 */
-    {0xc0b20a00u, PROTO_GOOGLE, 23}, /* 192.178.10.0/23 */
-    {0xc0b20b00u, PROTO_GOOGLE, 24}, /* 192.178.11.0/24 */
-    {0xc0b20c00u, PROTO_GOOGLE, 23}, /* 192.178.12.0/23 */
-    {0xc0b20d00u, PROTO_GOOGLE, 24}, /* 192.178.13.0/24 */
-    {0xc0b20e00u, PROTO_GOOGLE, 23}, /* 192.178.14.0/23 */
-    {0xc0b20f00u, PROTO_GOOGLE, 24}, /* 192.178.15.0/24 */
-    {0xc0b21000u, PROTO_GOOGLE, 23}, /* 192.178.16.0/23 */
-    {0xc0b21100u, PROTO_GOOGLE, 24}, /* 192.178.17.0/24 */
-    {0xc0b21200u, PROTO_GOOGLE, 23}, /* 192.178.18.0/23 */
-    {0xc0b21300u, PROTO_GOOGLE, 24}, /* 192.178.19.0/24 */
-    {0xc0b21400u, PROTO_GOOGLE, 23}, /* 192.178.20.0/23 */
-    {0xc0b21500u, PROTO_GOOGLE, 24}, /* 192.178.21.0/24 */
-    {0xc0b21600u, PROTO_GOOGLE, 23}, /* 192.178.22.0/23 */
-    {0xc0b21700u, PROTO_GOOGLE, 24}, /* 192.178.23.0/24 */
-    {0xc0b21800u, PROTO_GOOGLE, 23}, /* 192.178.24.0/23 */
-    {0xc0b21900u, PROTO_GOOGLE, 24}, /* 192.178.25.0/24 */
-    {0xc0b21a00u, PROTO_GOOGLE, 23}, /* 192.178.26.0/23 */
-    {0xc0b21b00u, PROTO_GOOGLE, 24}, /* 192.178.27.0/24 */
-    {0xc0b21c00u, PROTO_GOOGLE, 23}, /* 192.178.28.0/23 */
-    {0xc0b21d00u, PROTO_GOOGLE, 24}, /* 192.178.29.0/24 */
-    {0xc0b21e00u, PROTO_GOOGLE, 23}, /* 192.178.30.0/23 */
-    {0xc0b21f00u, PROTO_GOOGLE, 24}, /* 192.178.31.0/24 */
-    {0xc0b22000u, PROTO_GOOGLE, 23}, /* 192.178.32.0/23 */
-    {0xc0b22100u, PROTO_GOOGLE, 24}, /* 192.178.33.0/24 */
-    {0xc0b22200u, PROTO_GOOGLE, 23}, /* 192.178.34.0/23 */
-    {0xc0b22300u, PROTO_GOOGLE, 24}, /* 192.178.35.0/24 */
-    {0xc0b22400u, PROTO_GOOGLE, 23}, /* 192.178.36.0/23 */
-    {0xc0b22500u, PROTO_GOOGLE, 24}, /* 192.178.37.0/24 */
-    {0xc0b22600u, PROTO_GOOGLE, 23}, /* 192.178.38.0/23 */
-    {0xc0b22700u, PROTO_GOOGLE, 24}, /* 192.178.39.0/24 */
-    {0xc0b22800u, PROTO_GOOGLE, 23}, /* 192.178.40.0/23 */
-    {0xc0b22900u, PROTO_GOOGLE, 24}, /* 192.178.41.0/24 */
-    {0xc0b22a00u, PROTO_GOOGLE, 23}, /* 192.178.42.0/23 */
-    {0xc0b22b00u, PROTO_GOOGLE, 24}, /* 192.178.43.0/24 */
-    {0xc0b22c00u, PROTO_GOOGLE, 23}, /* 192.178.44.0/23 */
-    {0xc0b22d00u, PROTO_GOOGLE, 24}, /* 192.178.45.0/24 */
-    {0xc0b22e00u, PROTO_GOOGLE, 23}, /* 192.178.46.0/23 */
-    {0xc0b22f00u, PROTO_GOOGLE, 24}, /* 192.178.47.0/24 */
-    {0xc0b23000u, PROTO_GOOGLE, 23}, /* 192.178.48.0/23 */
-    {0xc0b23100u, PROTO_GOOGLE, 24}, /* 192.178.49.0/24 */
-    {0xc0b23200u, PROTO_GOOGLE, 23}, /* 192.178.50.0/23 */
-    {0xc0b23300u, PROTO_GOOGLE, 24}, /* 192.178.51.0/24 */
-    {0xc0b23400u, PROTO_GOOGLE, 23}, /* 192.178.52.0/23 */
-    {0xc0b23500u, PROTO_GOOGLE, 24}, /* 192.178.53.0/24 */
-    {0xc0b23600u, PROTO_GOOGLE, 23}, /* 192.178.54.0/23 */
-    {0xc0b23700u, PROTO_GOOGLE, 24}, /* 192.178.55.0/24 */
-    {0xc0b23800u, PROTO_GOOGLE, 23}, /* 192.178.56.0/23 */
-    {0xc0b23900u, PROTO_GOOGLE, 24}, /* 192.178.57.0/24 */
-    {0xc0b23a00u, PROTO_GOOGLE, 23}, /* 192.178.58.0/23 */
-    {0xc0b23b00u, PROTO_GOOGLE, 24}, /* 192.178.59.0/24 */
-    {0xc0b23c00u, PROTO_GOOGLE, 23}, /* 192.178.60.0/23 */
-    {0xc0b23d00u, PROTO_GOOGLE, 24}, /* 192.178.61.0/24 */
-    {0xc0b23e00u, PROTO_GOOGLE, 23}, /* 192.178.62.0/23 */
-    {0xc0b23f00u, PROTO_GOOGLE, 24}, /* 192.178.63.0/24 */
-    {0xc0b24000u, PROTO_GOOGLE, 23}, /* 192.178.64.0/23 */
-    {0xc0b24100u, PROTO_GOOGLE, 24}, /* 192.178.65.0/24 */
-    {0xc0b24200u, PROTO_GOOGLE, 23}, /* 192.178.66.0/23 */
-    {0xc0b24300u, PROTO_GOOGLE, 24}, /* 192.178.67.0/24 */
-    {0xc0b24400u, PROTO_GOOGLE, 23}, /* 192.178.68.0/23 */
-    {0xc0b24500u, PROTO_GOOGLE, 24}, /* 192.178.69.0/24 */
-    {0xc0b24600u, PROTO_GOOGLE, 23}, /* 192.178.70.0/23 */
-    {0xc0b24700u, PROTO_GOOGLE, 24}, /* 192.178.71.0/24 */
-    {0xc0b24800u, PROTO_GOOGLE, 23}, /* 192.178.72.0/23 */
-    {0xc0b24900u, PROTO_GOOGLE, 24}, /* 192.178.73.0/24 */
-    {0xc0b24a00u, PROTO_GOOGLE, 23}, /* 192.178.74.0/23 */
-    {0xc0b24b00u, PROTO_GOOGLE, 24}, /* 192.178.75.0/24 */
-    {0xc0b24c00u, PROTO_GOOGLE, 23}, /* 192.178.76.0/23 */
-    {0xc0b24d00u, PROTO_GOOGLE, 24}, /* 192.178.77.0/24 */
-    {0xc0b24e00u, PROTO_GOOGLE, 23}, /* 192.178.78.0/23 */
-    {0xc0b24f00u, PROTO_GOOGLE, 24}, /* 192.178.79.0/24 */
-    {0xc0b25000u, PROTO_GOOGLE, 23}, /* 192.178.80.0/23 */
-    {0xc0b25100u, PROTO_GOOGLE, 24}, /* 192.178.81.0/24 */
-    {0xc0b25200u, PROTO_GOOGLE, 23}, /* 192.178.82.0/23 */
-    {0xc0b25300u, PROTO_GOOGLE, 24}, /* 192.178.83.0/24 */
-    {0xc0b25400u, PROTO_GOOGLE, 23}, /* 192.178.84.0/23 */
-    {0xc0b25500u, PROTO_GOOGLE, 24}, /* 192.178.85.0/24 */
-    {0xc0b25600u, PROTO_GOOGLE, 23}, /* 192.178.86.0/23 */
-    {0xc0b25700u, PROTO_GOOGLE, 24}, /* 192.178.87.0/24 */
-    {0xc0b25800u, PROTO_GOOGLE, 23}, /* 192.178.88.0/23 */
-    {0xc0b25900u, PROTO_GOOGLE, 24}, /* 192.178.89.0/24 */
-    {0xc0b25a00u, PROTO_GOOGLE, 23}, /* 192.178.90.0/23 */
-    {0xc0b25b00u, PROTO_GOOGLE, 24}, /* 192.178.91.0/24 */
-    {0xc0b25c00u, PROTO_GOOGLE, 23}, /* 192.178.92.0/23 */
-    {0xc0b25d00u, PROTO_GOOGLE, 24}, /* 192.178.93.0/24 */
-    {0xc0b25e00u, PROTO_GOOGLE, 23}, /* 192.178.94.0/23 */
-    {0xc0b25f00u, PROTO_GOOGLE, 24}, /* 192.178.95.0/24 */
-    {0xc0b26000u, PROTO_GOOGLE, 23}, /* 192.178.96.0/23 */
-    {0xc0b26100u, PROTO_GOOGLE, 24}, /* 192.178.97.0/24 */
-    {0xc0b26200u, PROTO_GOOGLE, 23}, /* 192.178.98.0/23 */
-    {0xc0b26300u, PROTO_GOOGLE, 24}, /* 192.178.99.0/24 */
-    {0xc0b26400u, PROTO_GOOGLE, 23}, /* 192.178.100.0/23 */
-    {0xc0b26500u, PROTO_GOOGLE, 24}, /* 192.178.101.0/24 */
-    {0xc0b26600u, PROTO_GOOGLE, 23}, /* 192.178.102.0/23 */
-    {0xc0b26700u, PROTO_GOOGLE, 24}, /* 192.178.103.0/24 */
-    {0xc0b26800u, PROTO_GOOGLE, 23}, /* 192.178.104.0/23 */
-    {0xc0b26900u, PROTO_GOOGLE, 24}, /* 192.178.105.0/24 */
-    {0xc0b26a00u, PROTO_GOOGLE, 23}, /* 192.178.106.0/23 */
-    {0xc0b26b00u, PROTO_GOOGLE, 24}, /* 192.178.107.0/24 */
-    {0xc0b26c00u, PROTO_GOOGLE, 23}, /* 192.178.108.0/23 */
-    {0xc0b26d00u, PROTO_GOOGLE, 24}, /* 192.178.109.0/24 */
-    {0xc0b26e00u, PROTO_GOOGLE, 23}, /* 192.178.110.0/23 */
-    {0xc0b26f00u, PROTO_GOOGLE, 24}, /* 192.178.111.0/24 */
-    {0xc0b27000u, PROTO_GOOGLE, 23}, /* 192.178.112.0/23 */
-    {0xc0b27100u, PROTO_GOOGLE, 24}, /* 192.178.113.0/24 */
-    {0xc0b27200u, PROTO_GOOGLE, 23}, /* 192.178.114.0/23 */
-    {0xc0b27300u, PROTO_GOOGLE, 24}, /* 192.178.115.0/24 */
-    {0xc0b27400u, PROTO_GOOGLE, 23}, /* 192.178.116.0/23 */
-    {0xc0b27500u, PROTO_GOOGLE, 24}, /* 192.178.117.0/24 */
-    {0xc0b27600u, PROTO_GOOGLE, 23}, /* 192.178.118.0/23 */
-    {0xc0b27700u, PROTO_GOOGLE, 24}, /* 192.178.119.0/24 */
-    {0xc0b27800u, PROTO_GOOGLE, 23}, /* 192.178.120.0/23 */
-    {0xc0b27900u, PROTO_GOOGLE, 24}, /* 192.178.121.0/24 */
-    {0xc0b27a00u, PROTO_GOOGLE, 23}, /* 192.178.122.0/23 */
-    {0xc0b27b00u, PROTO_GOOGLE, 24}, /* 192.178.123.0/24 */
-    {0xc0b27c00u, PROTO_GOOGLE, 23}, /* 192.178.124.0/23 */
-    {0xc0b27d00u, PROTO_GOOGLE, 24}, /* 192.178.125.0/24 */
-    {0xc0b27e00u, PROTO_GOOGLE, 23}, /* 192.178.126.0/23 */
-    {0xc0b27f00u, PROTO_GOOGLE, 24}, /* 192.178.127.0/24 */
-    {0xc0b28000u, PROTO_GOOGLE, 23}, /* 192.178.128.0/23 */
-    {0xc0b28100u, PROTO_GOOGLE, 24}, /* 192.178.129.0/24 */
-    {0xc0b28200u, PROTO_GOOGLE, 23}, /* 192.178.130.0/23 */
-    {0xc0b28300u, PROTO_GOOGLE, 24}, /* 192.178.131.0/24 */
-    {0xc0b28400u, PROTO_GOOGLE, 23}, /* 192.178.132.0/23 */
-    {0xc0b28500u, PROTO_GOOGLE, 24}, /* 192.178.133.0/24 */
-    {0xc0b28600u, PROTO_GOOGLE, 23}, /* 192.178.134.0/23 */
-    {0xc0b28700u, PROTO_GOOGLE, 24}, /* 192.178.135.0/24 */
-    {0xc0b28800u, PROTO_GOOGLE, 23}, /* 192.178.136.0/23 */
-    {0xc0b28900u, PROTO_GOOGLE, 24}, /* 192.178.137.0/24 */
-    {0xc0b28a00u, PROTO_GOOGLE, 23}, /* 192.178.138.0/23 */
-    {0xc0b28b00u, PROTO_GOOGLE, 24}, /* 192.178.139.0/24 */
-    {0xc0b28c00u, PROTO_GOOGLE, 23}, /* 192.178.140.0/23 */
-    {0xc0b28d00u, PROTO_GOOGLE, 24}, /* 192.178.141.0/24 */
-    {0xc0b28e00u, PROTO_GOOGLE, 23}, /* 192.178.142.0/23 */
-    {0xc0b28f00u, PROTO_GOOGLE, 24}, /* 192.178.143.0/24 */
-    {0xc0b29000u, PROTO_GOOGLE, 23}, /* 192.178.144.0/23 */
-    {0xc0b29100u, PROTO_GOOGLE, 24}, /* 192.178.145.0/24 */
-    {0xc0b29200u, PROTO_GOOGLE, 23}, /* 192.178.146.0/23 */
-    {0xc0b29300u, PROTO_GOOGLE, 24}, /* 192.178.147.0/24 */
-    {0xc0b29400u, PROTO_GOOGLE, 23}, /* 192.178.148.0/23 */
-    {0xc0b29500u, PROTO_GOOGLE, 24}, /* 192.178.149.0/24 */
-    {0xc0b29600u, PROTO_GOOGLE, 23}, /* 192.178.150.0/23 */
-    {0xc0b29700u, PROTO_GOOGLE, 24}, /* 192.178.151.0/24 */
-    {0xc0b29800u, PROTO_GOOGLE, 23}, /* 192.178.152.0/23 */
-    {0xc0b29900u, PROTO_GOOGLE, 24}, /* 192.178.153.0/24 */
-    {0xc0b29a00u, PROTO_GOOGLE, 23}, /* 192.178.154.0/23 */
-    {0xc0b29b00u, PROTO_GOOGLE, 24}, /* 192.178.155.0/24 */
-    {0xc0b29c00u, PROTO_GOOGLE, 23}, /* 192.178.156.0/23 */
-    {0xc0b29d00u, PROTO_GOOGLE, 24}, /* 192.178.157.0/24 */
-    {0xc0b29e00u, PROTO_GOOGLE, 23}, /* 192.178.158.0/23 */
-    {0xc0b29f00u, PROTO_GOOGLE, 24}, /* 192.178.159.0/24 */
-    {0xc0b2a000u, PROTO_GOOGLE, 23}, /* 192.178.160.0/23 */
-    {0xc0b2a100u, PROTO_GOOGLE, 24}, /* 192.178.161.0/24 */
-    {0xc0b2a200u, PROTO_GOOGLE, 23}, /* 192.178.162.0/23 */
-    {0xc0b2a300u, PROTO_GOOGLE, 24}, /* 192.178.163.0/24 */
-    {0xc0b2a400u, PROTO_GOOGLE, 23}, /* 192.178.164.0/23 */
-    {0xc0b2a500u, PROTO_GOOGLE, 24}, /* 192.178.165.0/24 */
-    {0xc0b2a600u, PROTO_GOOGLE, 23}, /* 192.178.166.0/23 */
-    {0xc0b2a700u, PROTO_GOOGLE, 24}, /* 192.178.167.0/24 */
-    {0xc0b2a800u, PROTO_GOOGLE, 23}, /* 192.178.168.0/23 */
-    {0xc0b2a900u, PROTO_GOOGLE, 24}, /* 192.178.169.0/24 */
-    {0xc0b2aa00u, PROTO_GOOGLE, 23}, /* 192.178.170.0/23 */
-    {0xc0b2ab00u, PROTO_GOOGLE, 24}, /* 192.178.171.0/24 */
-    {0xc0b2ac00u, PROTO_GOOGLE, 23}, /* 192.178.172.0/23 */
-    {0xc0b2ad00u, PROTO_GOOGLE, 24}, /* 192.178.173.0/24 */
-    {0xc0b2ae00u, PROTO_GOOGLE, 23}, /* 192.178.174.0/23 */
-    {0xc0b2af00u, PROTO_GOOGLE, 24}, /* 192.178.175.0/24 */
-    {0xc0b2b000u, PROTO_GOOGLE, 23}, /* 192.178.176.0/23 */
-    {0xc0b2b100u, PROTO_GOOGLE, 24}, /* 192.178.177.0/24 */
-    {0xc0b2b200u, PROTO_GOOGLE, 23}, /* 192.178.178.0/23 */
-    {0xc0b2b300u, PROTO_GOOGLE, 24}, /* 192.178.179.0/24 */
-    {0xc0b2b400u, PROTO_GOOGLE, 23}, /* 192.178.180.0/23 */
-    {0xc0b2b500u, PROTO_GOOGLE, 24}, /* 192.178.181.0/24 */
-    {0xc0b2b600u, PROTO_GOOGLE, 23}, /* 192.178.182.0/23 */
-    {0xc0b2b700u, PROTO_GOOGLE, 24}, /* 192.178.183.0/24 */
-    {0xc0b2b800u, PROTO_GOOGLE, 23}, /* 192.178.184.0/23 */
-    {0xc0b2b900u, PROTO_GOOGLE, 24}, /* 192.178.185.0/24 */
-    {0xc0b2ba00u, PROTO_GOOGLE, 23}, /* 192.178.186.0/23 */
-    {0xc0b2bb00u, PROTO_GOOGLE, 24}, /* 192.178.187.0/24 */
-    {0xc0b2bc00u, PROTO_GOOGLE, 23}, /* 192.178.188.0/23 */
-    {0xc0b2bd00u, PROTO_GOOGLE, 24}, /* 192.178.189.0/24 */
-    {0xc0b2be00u, PROTO_GOOGLE, 23}, /* 192.178.190.0/23 */
-    {0xc0b2bf00u, PROTO_GOOGLE, 24}, /* 192.178.191.0/24 */
-    {0xc0b2c000u, PROTO_GOOGLE, 23}, /* 192.178.192.0/23 */
-    {0xc0b2c100u, PROTO_GOOGLE, 24}, /* 192.178.193.0/24 */
-    {0xc0b2c200u, PROTO_GOOGLE, 23}, /* 192.178.194.0/23 */
-    {0xc0b2c300u, PROTO_GOOGLE, 24}, /* 192.178.195.0/24 */
-    {0xc0b2c400u, PROTO_GOOGLE, 23}, /* 192.178.196.0/23 */
-    {0xc0b2c500u, PROTO_GOOGLE, 24}, /* 192.178.197.0/24 */
-    {0xc0b2c600u, PROTO_GOOGLE, 23}, /* 192.178.198.0/23 */
-    {0xc0b2c700u, PROTO_GOOGLE, 24}, /* 192.178.199.0/24 */
-    {0xc0b2c800u, PROTO_GOOGLE, 23}, /* 192.178.200.0/23 */
-    {0xc0b2c900u, PROTO_GOOGLE, 24}, /* 192.178.201.0/24 */
-    {0xc0b2ca00u, PROTO_GOOGLE, 23}, /* 192.178.202.0/23 */
-    {0xc0b2cb00u, PROTO_GOOGLE, 24}, /* 192.178.203.0/24 */
-    {0xc0b2cc00u, PROTO_GOOGLE, 23}, /* 192.178.204.0/23 */
-    {0xc0b2cd00u, PROTO_GOOGLE, 24}, /* 192.178.205.0/24 */
-    {0xc0b2ce00u, PROTO_GOOGLE, 23}, /* 192.178.206.0/23 */
-    {0xc0b2cf00u, PROTO_GOOGLE, 24}, /* 192.178.207.0/24 */
-    {0xc0b2d000u, PROTO_GOOGLE, 23}, /* 192.178.208.0/23 */
-    {0xc0b2d100u, PROTO_GOOGLE, 24}, /* 192.178.209.0/24 */
-    {0xc0b2d200u, PROTO_GOOGLE, 23}, /* 192.178.210.0/23 */
-    {0xc0b2d300u, PROTO_GOOGLE, 24}, /* 192.178.211.0/24 */
-    {0xc0b2d400u, PROTO_GOOGLE, 23}, /* 192.178.212.0/23 */
-    {0xc0b2d500u, PROTO_GOOGLE, 24}, /* 192.178.213.0/24 */
-    {0xc0b2d600u, PROTO_GOOGLE, 23}, /* 192.178.214.0/23 */
-    {0xc0b2d700u, PROTO_GOOGLE, 24}, /* 192.178.215.0/24 */
-    {0xc0b2d800u, PROTO_GOOGLE, 23}, /* 192.178.216.0/23 */
-    {0xc0b2d900u, PROTO_GOOGLE, 24}, /* 192.178.217.0/24 */
-    {0xc0b2da00u, PROTO_GOOGLE, 23}, /* 192.178.218.0/23 */
-    {0xc0b2db00u, PROTO_GOOGLE, 24}, /* 192.178.219.0/24 */
-    {0xc0b2dc00u, PROTO_GOOGLE, 23}, /* 192.178.220.0/23 */
-    {0xc0b2dd00u, PROTO_GOOGLE, 24}, /* 192.178.221.0/24 */
-    {0xc0b2de00u, PROTO_GOOGLE, 23}, /* 192.178.222.0/23 */
-    {0xc0b2df00u, PROTO_GOOGLE, 24}, /* 192.178.223.0/24 */
-    {0xc0b2e000u, PROTO_GOOGLE, 23}, /* 192.178.224.0/23 */
-    {0xc0b2e100u, PROTO_GOOGLE, 24}, /* 192.178.225.0/24 */
-    {0xc0b2e200u, PROTO_GOOGLE, 23}, /* 192.178.226.0/23 */
-    {0xc0b2e300u, PROTO_GOOGLE, 24}, /* 192.178.227.0/24 */
-    {0xc0b2e400u, PROTO_GOOGLE, 23}, /* 192.178.228.0/23 */
-    {0xc0b2e500u, PROTO_GOOGLE, 24}, /* 192.178.229.0/24 */
-    {0xc0b2e600u, PROTO_GOOGLE, 23}, /* 192.178.230.0/23 */
-    {0xc0b2e700u, PROTO_GOOGLE, 24}, /* 192.178.231.0/24 */
-    {0xc0b2e800u, PROTO_GOOGLE, 23}, /* 192.178.232.0/23 */
-    {0xc0b2e900u, PROTO_GOOGLE, 24}, /* 192.178.233.0/24 */
-    {0xc0b2ea00u, PROTO_GOOGLE, 23}, /* 192.178.234.0/23 */
-    {0xc0b2eb00u, PROTO_GOOGLE, 24}, /* 192.178.235.0/24 */
-    {0xc0b2ec00u, PROTO_GOOGLE, 23}, /* 192.178.236.0/23 */
-    {0xc0b2ed00u, PROTO_GOOGLE, 24}, /* 192.178.237.0/24 */
-    {0xc0b2ee00u, PROTO_GOOGLE, 23}, /* 192.178.238.0/23 */
-    {0xc0b2ef00u, PROTO_GOOGLE, 24}, /* 192.178.239.0/24 */
-    {0xc0b2f000u, PROTO_GOOGLE, 23}, /* 192.178.240.0/23 */
-    {0xc0b2f100u, PROTO_GOOGLE, 24}, /* 192.178.241.0/24 */
-    {0xc0b2f200u, PROTO_GOOGLE, 23}, /* 192.178.242.0/23 */
-    {0xc0b2f300u, PROTO_GOOGLE, 24}, /* 192.178.243.0/24 */
-    {0xc0b2f400u, PROTO_GOOGLE, 23}, /* 192.178.244.0/23 */
-    {0xc0b2f500u, PROTO_GOOGLE, 24}, /* 192.178.245.0/24 */
-    {0xc0b2f600u, PROTO_GOOGLE, 23}, /* 192.178.246.0/23 */
-    {0xc0b2f700u, PROTO_GOOGLE, 24}, /* 192.178.247.0/24 */
-    {0xc0b2f800u, PROTO_GOOGLE, 23}, /* 192.178.248.0/23 */
-    {0xc0b2f900u, PROTO_GOOGLE, 24}, /* 192.178.249.0/24 */
-    {0xc0b2fa00u, PROTO_GOOGLE, 23}, /* 192.178.250.0/23 */
-    {0xc0b2fb00u, PROTO_GOOGLE, 24}, /* 192.178.251.0/24 */
-    {0xc0b2fc00u, PROTO_GOOGLE, 23}, /* 192.178.252.0/23 */
-    {0xc0b2fd00u, PROTO_GOOGLE, 24}, /* 192.178.253.0/24 */
-    {0xc0b2fe00u, PROTO_GOOGLE, 23}, /* 192.178.254.0/23 */
-    {0xc0b2ff00u, PROTO_GOOGLE, 24}, /* 192.178.255.0/24 */
-    {0xc0b30000u, PROTO_GOOGLE, 23}, /* 192.179.0.0/23 */
-    {0xc0b30100u, PROTO_GOOGLE, 24}, /* 192.179.1.0/24 */
-    {0xc0b30200u, PROTO_GOOGLE, 23}, /* 192.179.2.0/23 */
-    {0xc0b30300u, PROTO_GOOGLE, 24}, /* 192.179.3.0/24 */
-    {0xc0b30400u, PROTO_GOOGLE, 23}, /* 192.179.4.0/23 */
-    {0xc0b30500u, PROTO_GOOGLE, 24}, /* 192.179.5.0/24 */
-    {0xc0b30600u, PROTO_GOOGLE, 23}, /* 192.179.6.0/23 */
-    {0xc0b30700u, PROTO_GOOGLE, 24}, /* 192.179.7.0/24 */
-    {0xc0b30800u, PROTO_GOOGLE, 23}, /* 192.179.8.0/23 */
-    {0xc0b30900u, PROTO_GOOGLE, 24}, /* 192.179.9.0/24 */
-    {0xc0b30a00u, PROTO_GOOGLE, 23}, /* 192.179.10.0/23 */
-    {0xc0b30b00u, PROTO_GOOGLE, 24}, /* 192.179.11.0/24 */
-    {0xc0b30c00u, PROTO_GOOGLE, 23}, /* 192.179.12.0/23 */
-    {0xc0b30d00u, PROTO_GOOGLE, 24}, /* 192.179.13.0/24 */
-    {0xc0b30e00u, PROTO_GOOGLE, 23}, /* 192.179.14.0/23 */
-    {0xc0b30f00u, PROTO_GOOGLE, 24}, /* 192.179.15.0/24 */
-    {0xc0b31000u, PROTO_GOOGLE, 23}, /* 192.179.16.0/23 */
-    {0xc0b31100u, PROTO_GOOGLE, 24}, /* 192.179.17.0/24 */
-    {0xc0b31200u, PROTO_GOOGLE, 23}, /* 192.179.18.0/23 */
-    {0xc0b31300u, PROTO_GOOGLE, 24}, /* 192.179.19.0/24 */
-    {0xc0b31400u, PROTO_GOOGLE, 23}, /* 192.179.20.0/23 */
-    {0xc0b31500u, PROTO_GOOGLE, 24}, /* 192.179.21.0/24 */
-    {0xc0b31600u, PROTO_GOOGLE, 23}, /* 192.179.22.0/23 */
-    {0xc0b31700u, PROTO_GOOGLE, 24}, /* 192.179.23.0/24 */
-    {0xc0b31800u, PROTO_GOOGLE, 23}, /* 192.179.24.0/23 */
-    {0xc0b31900u, PROTO_GOOGLE, 24}, /* 192.179.25.0/24 */
-    {0xc0b31a00u, PROTO_GOOGLE, 23}, /* 192.179.26.0/23 */
-    {0xc0b31b00u, PROTO_GOOGLE, 24}, /* 192.179.27.0/24 */
-    {0xc0b31c00u, PROTO_GOOGLE, 23}, /* 192.179.28.0/23 */
-    {0xc0b31d00u, PROTO_GOOGLE, 24}, /* 192.179.29.0/24 */
-    {0xc0b31e00u, PROTO_GOOGLE, 23}, /* 192.179.30.0/23 */
-    {0xc0b31f00u, PROTO_GOOGLE, 24}, /* 192.179.31.0/24 */
-    {0xc0b32000u, PROTO_GOOGLE, 23}, /* 192.179.32.0/23 */
-    {0xc0b32100u, PROTO_GOOGLE, 24}, /* 192.179.33.0/24 */
-    {0xc0b32200u, PROTO_GOOGLE, 23}, /* 192.179.34.0/23 */
-    {0xc0b32300u, PROTO_GOOGLE, 24}, /* 192.179.35.0/24 */
-    {0xc0b32400u, PROTO_GOOGLE, 23}, /* 192.179.36.0/23 */
-    {0xc0b32500u, PROTO_GOOGLE, 24}, /* 192.179.37.0/24 */
-    {0xc0b32600u, PROTO_GOOGLE, 23}, /* 192.179.38.0/23 */
-    {0xc0b32700u, PROTO_GOOGLE, 24}, /* 192.179.39.0/24 */
-    {0xc0b32800u, PROTO_GOOGLE, 23}, /* 192.179.40.0/23 */
-    {0xc0b32900u, PROTO_GOOGLE, 24}, /* 192.179.41.0/24 */
-    {0xc0b32a00u, PROTO_GOOGLE, 23}, /* 192.179.42.0/23 */
-    {0xc0b32b00u, PROTO_GOOGLE, 24}, /* 192.179.43.0/24 */
-    {0xc0b32c00u, PROTO_GOOGLE, 23}, /* 192.179.44.0/23 */
-    {0xc0b32d00u, PROTO_GOOGLE, 24}, /* 192.179.45.0/24 */
-    {0xc0b32e00u, PROTO_GOOGLE, 23}, /* 192.179.46.0/23 */
-    {0xc0b32f00u, PROTO_GOOGLE, 24}, /* 192.179.47.0/24 */
-    {0xc0b33000u, PROTO_GOOGLE, 23}, /* 192.179.48.0/23 */
-    {0xc0b33100u, PROTO_GOOGLE, 24}, /* 192.179.49.0/24 */
-    {0xc0b33200u, PROTO_GOOGLE, 23}, /* 192.179.50.0/23 */
-    {0xc0b33300u, PROTO_GOOGLE, 24}, /* 192.179.51.0/24 */
-    {0xc0b33400u, PROTO_GOOGLE, 23}, /* 192.179.52.0/23 */
-    {0xc0b33500u, PROTO_GOOGLE, 24}, /* 192.179.53.0/24 */
-    {0xc0b33600u, PROTO_GOOGLE, 23}, /* 192.179.54.0/23 */
-    {0xc0b33700u, PROTO_GOOGLE, 24}, /* 192.179.55.0/24 */
-    {0xc0b33800u, PROTO_GOOGLE, 23}, /* 192.179.56.0/23 */
-    {0xc0b33900u, PROTO_GOOGLE, 24}, /* 192.179.57.0/24 */
-    {0xc0b33a00u, PROTO_GOOGLE, 23}, /* 192.179.58.0/23 */
-    {0xc0b33b00u, PROTO_GOOGLE, 24}, /* 192.179.59.0/24 */
-    {0xc0b33c00u, PROTO_GOOGLE, 23}, /* 192.179.60.0/23 */
-    {0xc0b33d00u, PROTO_GOOGLE, 24}, /* 192.179.61.0/24 */
-    {0xc0b33e00u, PROTO_GOOGLE, 23}, /* 192.179.62.0/23 */
-    {0xc0b33f00u, PROTO_GOOGLE, 24}, /* 192.179.63.0/24 */
-    {0xc0b34000u, PROTO_GOOGLE, 23}, /* 192.179.64.0/23 */
-    {0xc0b34100u, PROTO_GOOGLE, 24}, /* 192.179.65.0/24 */
-    {0xc0b34200u, PROTO_GOOGLE, 23}, /* 192.179.66.0/23 */
-    {0xc0b34300u, PROTO_GOOGLE, 24}, /* 192.179.67.0/24 */
-    {0xc0b34400u, PROTO_GOOGLE, 23}, /* 192.179.68.0/23 */
-    {0xc0b34500u, PROTO_GOOGLE, 24}, /* 192.179.69.0/24 */
-    {0xc0b34600u, PROTO_GOOGLE, 23}, /* 192.179.70.0/23 */
-    {0xc0b34700u, PROTO_GOOGLE, 24}, /* 192.179.71.0/24 */
-    {0xc0b34800u, PROTO_GOOGLE, 23}, /* 192.179.72.0/23 */
-    {0xc0b34900u, PROTO_GOOGLE, 24}, /* 192.179.73.0/24 */
-    {0xc0b34a00u, PROTO_GOOGLE, 23}, /* 192.179.74.0/23 */
-    {0xc0b34b00u, PROTO_GOOGLE, 24}, /* 192.179.75.0/24 */
-    {0xc0b34c00u, PROTO_GOOGLE, 23}, /* 192.179.76.0/23 */
-    {0xc0b34d00u, PROTO_GOOGLE, 24}, /* 192.179.77.0/24 */
-    {0xc0b34e00u, PROTO_GOOGLE, 23}, /* 192.179.78.0/23 */
-    {0xc0b34f00u, PROTO_GOOGLE, 24}, /* 192.179.79.0/24 */
-    {0xc0b35000u, PROTO_GOOGLE, 23}, /* 192.179.80.0/23 */
-    {0xc0b35100u, PROTO_GOOGLE, 24}, /* 192.179.81.0/24 */
-    {0xc0b35200u, PROTO_GOOGLE, 23}, /* 192.179.82.0/23 */
-    {0xc0b35300u, PROTO_GOOGLE, 24}, /* 192.179.83.0/24 */
-    {0xc0b35400u, PROTO_GOOGLE, 23}, /* 192.179.84.0/23 */
-    {0xc0b35500u, PROTO_GOOGLE, 24}, /* 192.179.85.0/24 */
-    {0xc0b35600u, PROTO_GOOGLE, 23}, /* 192.179.86.0/23 */
-    {0xc0b35700u, PROTO_GOOGLE, 24}, /* 192.179.87.0/24 */
-    {0xc0b35800u, PROTO_GOOGLE, 23}, /* 192.179.88.0/23 */
-    {0xc0b35900u, PROTO_GOOGLE, 24}, /* 192.179.89.0/24 */
-    {0xc0b35a00u, PROTO_GOOGLE, 23}, /* 192.179.90.0/23 */
-    {0xc0b35b00u, PROTO_GOOGLE, 24}, /* 192.179.91.0/24 */
-    {0xc0b35c00u, PROTO_GOOGLE, 23}, /* 192.179.92.0/23 */
-    {0xc0b35d00u, PROTO_GOOGLE, 24}, /* 192.179.93.0/24 */
-    {0xc0b35e00u, PROTO_GOOGLE, 23}, /* 192.179.94.0/23 */
-    {0xc0b35f00u, PROTO_GOOGLE, 24}, /* 192.179.95.0/24 */
-    {0xc0b36000u, PROTO_GOOGLE, 23}, /* 192.179.96.0/23 */
-    {0xc0b36100u, PROTO_GOOGLE, 24}, /* 192.179.97.0/24 */
-    {0xc0b36200u, PROTO_GOOGLE, 23}, /* 192.179.98.0/23 */
-    {0xc0b36300u, PROTO_GOOGLE, 24}, /* 192.179.99.0/24 */
-    {0xc0b36400u, PROTO_GOOGLE, 23}, /* 192.179.100.0/23 */
-    {0xc0b36500u, PROTO_GOOGLE, 24}, /* 192.179.101.0/24 */
-    {0xc0b36600u, PROTO_GOOGLE, 23}, /* 192.179.102.0/23 */
-    {0xc0b36700u, PROTO_GOOGLE, 24}, /* 192.179.103.0/24 */
-    {0xc0b36800u, PROTO_GOOGLE, 23}, /* 192.179.104.0/23 */
-    {0xc0b36900u, PROTO_GOOGLE, 24}, /* 192.179.105.0/24 */
-    {0xc0b36a00u, PROTO_GOOGLE, 23}, /* 192.179.106.0/23 */
-    {0xc0b36b00u, PROTO_GOOGLE, 24}, /* 192.179.107.0/24 */
-    {0xc0b36c00u, PROTO_GOOGLE, 23}, /* 192.179.108.0/23 */
-    {0xc0b36d00u, PROTO_GOOGLE, 24}, /* 192.179.109.0/24 */
-    {0xc0b36e00u, PROTO_GOOGLE, 23}, /* 192.179.110.0/23 */
-    {0xc0b36f00u, PROTO_GOOGLE, 24}, /* 192.179.111.0/24 */
-    {0xc0b37000u, PROTO_GOOGLE, 23}, /* 192.179.112.0/23 */
-    {0xc0b37100u, PROTO_GOOGLE, 24}, /* 192.179.113.0/24 */
-    {0xc0b37200u, PROTO_GOOGLE, 23}, /* 192.179.114.0/23 */
-    {0xc0b37300u, PROTO_GOOGLE, 24}, /* 192.179.115.0/24 */
-    {0xc0b37400u, PROTO_GOOGLE, 23}, /* 192.179.116.0/23 */
-    {0xc0b37500u, PROTO_GOOGLE, 24}, /* 192.179.117.0/24 */
-    {0xc0b37600u, PROTO_GOOGLE, 23}, /* 192.179.118.0/23 */
-    {0xc0b37700u, PROTO_GOOGLE, 24}, /* 192.179.119.0/24 */
-    {0xc0b37800u, PROTO_GOOGLE, 23}, /* 192.179.120.0/23 */
-    {0xc0b37900u, PROTO_GOOGLE, 24}, /* 192.179.121.0/24 */
-    {0xc0b37a00u, PROTO_GOOGLE, 23}, /* 192.179.122.0/23 */
-    {0xc0b37b00u, PROTO_GOOGLE, 24}, /* 192.179.123.0/24 */
-    {0xc0b37c00u, PROTO_GOOGLE, 23}, /* 192.179.124.0/23 */
-    {0xc0b37d00u, PROTO_GOOGLE, 24}, /* 192.179.125.0/24 */
-    {0xc0b37e00u, PROTO_GOOGLE, 23}, /* 192.179.126.0/23 */
-    {0xc0b37f00u, PROTO_GOOGLE, 24}, /* 192.179.127.0/24 */
-    {0xc0b38000u, PROTO_GOOGLE, 23}, /* 192.179.128.0/23 */
-    {0xc0b38100u, PROTO_GOOGLE, 24}, /* 192.179.129.0/24 */
-    {0xc0b38200u, PROTO_GOOGLE, 23}, /* 192.179.130.0/23 */
-    {0xc0b38300u, PROTO_GOOGLE, 24}, /* 192.179.131.0/24 */
-    {0xc0b38400u, PROTO_GOOGLE, 23}, /* 192.179.132.0/23 */
-    {0xc0b38500u, PROTO_GOOGLE, 24}, /* 192.179.133.0/24 */
-    {0xc0b38600u, PROTO_GOOGLE, 23}, /* 192.179.134.0/23 */
-    {0xc0b38700u, PROTO_GOOGLE, 24}, /* 192.179.135.0/24 */
-    {0xc0b38800u, PROTO_GOOGLE, 23}, /* 192.179.136.0/23 */
-    {0xc0b38900u, PROTO_GOOGLE, 24}, /* 192.179.137.0/24 */
-    {0xc0b38a00u, PROTO_GOOGLE, 23}, /* 192.179.138.0/23 */
-    {0xc0b38b00u, PROTO_GOOGLE, 24}, /* 192.179.139.0/24 */
-    {0xc0b38c00u, PROTO_GOOGLE, 23}, /* 192.179.140.0/23 */
-    {0xc0b38d00u, PROTO_GOOGLE, 24}, /* 192.179.141.0/24 */
-    {0xc0b38e00u, PROTO_GOOGLE, 23}, /* 192.179.142.0/23 */
-    {0xc0b38f00u, PROTO_GOOGLE, 24}, /* 192.179.143.0/24 */
-    {0xc0b39000u, PROTO_GOOGLE, 23}, /* 192.179.144.0/23 */
-    {0xc0b39100u, PROTO_GOOGLE, 24}, /* 192.179.145.0/24 */
-    {0xc0b39200u, PROTO_GOOGLE, 23}, /* 192.179.146.0/23 */
-    {0xc0b39300u, PROTO_GOOGLE, 24}, /* 192.179.147.0/24 */
-    {0xc0b39400u, PROTO_GOOGLE, 23}, /* 192.179.148.0/23 */
-    {0xc0b39500u, PROTO_GOOGLE, 24}, /* 192.179.149.0/24 */
-    {0xc0b39600u, PROTO_GOOGLE, 23}, /* 192.179.150.0/23 */
-    {0xc0b39700u, PROTO_GOOGLE, 24}, /* 192.179.151.0/24 */
-    {0xc0b39800u, PROTO_GOOGLE, 23}, /* 192.179.152.0/23 */
-    {0xc0b39900u, PROTO_GOOGLE, 24}, /* 192.179.153.0/24 */
-    {0xc0b39a00u, PROTO_GOOGLE, 23}, /* 192.179.154.0/23 */
-    {0xc0b39b00u, PROTO_GOOGLE, 24}, /* 192.179.155.0/24 */
-    {0xc0b39c00u, PROTO_GOOGLE, 23}, /* 192.179.156.0/23 */
-    {0xc0b39d00u, PROTO_GOOGLE, 24}, /* 192.179.157.0/24 */
-    {0xc0b39e00u, PROTO_GOOGLE, 23}, /* 192.179.158.0/23 */
-    {0xc0b39f00u, PROTO_GOOGLE, 24}, /* 192.179.159.0/24 */
-    {0xc0b3a000u, PROTO_GOOGLE, 23}, /* 192.179.160.0/23 */
-    {0xc0b3a100u, PROTO_GOOGLE, 24}, /* 192.179.161.0/24 */
-    {0xc0b3a200u, PROTO_GOOGLE, 23}, /* 192.179.162.0/23 */
-    {0xc0b3a300u, PROTO_GOOGLE, 24}, /* 192.179.163.0/24 */
-    {0xc0b3a400u, PROTO_GOOGLE, 23}, /* 192.179.164.0/23 */
-    {0xc0b3a500u, PROTO_GOOGLE, 24}, /* 192.179.165.0/24 */
-    {0xc0b3a600u, PROTO_GOOGLE, 23}, /* 192.179.166.0/23 */
-    {0xc0b3a700u, PROTO_GOOGLE, 24}, /* 192.179.167.0/24 */
-    {0xc0b3a800u, PROTO_GOOGLE, 23}, /* 192.179.168.0/23 */
-    {0xc0b3a900u, PROTO_GOOGLE, 24}, /* 192.179.169.0/24 */
-    {0xc0b3aa00u, PROTO_GOOGLE, 23}, /* 192.179.170.0/23 */
-    {0xc0b3ab00u, PROTO_GOOGLE, 24}, /* 192.179.171.0/24 */
-    {0xc0b3ac00u, PROTO_GOOGLE, 23}, /* 192.179.172.0/23 */
-    {0xc0b3ad00u, PROTO_GOOGLE, 24}, /* 192.179.173.0/24 */
-    {0xc0b3ae00u, PROTO_GOOGLE, 23}, /* 192.179.174.0/23 */
-    {0xc0b3af00u, PROTO_GOOGLE, 24}, /* 192.179.175.0/24 */
-    {0xc0b3b000u, PROTO_GOOGLE, 23}, /* 192.179.176.0/23 */
-    {0xc0b3b100u, PROTO_GOOGLE, 24}, /* 192.179.177.0/24 */
-    {0xc0b3b200u, PROTO_GOOGLE, 23}, /* 192.179.178.0/23 */
-    {0xc0b3b300u, PROTO_GOOGLE, 24}, /* 192.179.179.0/24 */
-    {0xc0b3b400u, PROTO_GOOGLE, 23}, /* 192.179.180.0/23 */
-    {0xc0b3b500u, PROTO_GOOGLE, 24}, /* 192.179.181.0/24 */
-    {0xc0b3b600u, PROTO_GOOGLE, 23}, /* 192.179.182.0/23 */
-    {0xc0b3b700u, PROTO_GOOGLE, 24}, /* 192.179.183.0/24 */
-    {0xc0b3b800u, PROTO_GOOGLE, 23}, /* 192.179.184.0/23 */
-    {0xc0b3b900u, PROTO_GOOGLE, 24}, /* 192.179.185.0/24 */
-    {0xc0b3ba00u, PROTO_GOOGLE, 23}, /* 192.179.186.0/23 */
-    {0xc0b3bb00u, PROTO_GOOGLE, 24}, /* 192.179.187.0/24 */
-    {0xc0b3bc00u, PROTO_GOOGLE, 23}, /* 192.179.188.0/23 */
-    {0xc0b3bd00u, PROTO_GOOGLE, 24}, /* 192.179.189.0/24 */
-    {0xc0b3be00u, PROTO_GOOGLE, 23}, /* 192.179.190.0/23 */
-    {0xc0b3bf00u, PROTO_GOOGLE, 24}, /* 192.179.191.0/24 */
-    {0xc0b3c000u, PROTO_GOOGLE, 23}, /* 192.179.192.0/23 */
-    {0xc0b3c100u, PROTO_GOOGLE, 24}, /* 192.179.193.0/24 */
-    {0xc0b3c200u, PROTO_GOOGLE, 23}, /* 192.179.194.0/23 */
-    {0xc0b3c300u, PROTO_GOOGLE, 24}, /* 192.179.195.0/24 */
-    {0xc0b3c400u, PROTO_GOOGLE, 23}, /* 192.179.196.0/23 */
-    {0xc0b3c500u, PROTO_GOOGLE, 24}, /* 192.179.197.0/24 */
-    {0xc0b3c600u, PROTO_GOOGLE, 23}, /* 192.179.198.0/23 */
-    {0xc0b3c700u, PROTO_GOOGLE, 24}, /* 192.179.199.0/24 */
-    {0xc0b3c800u, PROTO_GOOGLE, 23}, /* 192.179.200.0/23 */
-    {0xc0b3c900u, PROTO_GOOGLE, 24}, /* 192.179.201.0/24 */
-    {0xc0b3ca00u, PROTO_GOOGLE, 23}, /* 192.179.202.0/23 */
-    {0xc0b3cb00u, PROTO_GOOGLE, 24}, /* 192.179.203.0/24 */
-    {0xc0b3cc00u, PROTO_GOOGLE, 23}, /* 192.179.204.0/23 */
-    {0xc0b3cd00u, PROTO_GOOGLE, 24}, /* 192.179.205.0/24 */
-    {0xc0b3ce00u, PROTO_GOOGLE, 23}, /* 192.179.206.0/23 */
-    {0xc0b3cf00u, PROTO_GOOGLE, 24}, /* 192.179.207.0/24 */
-    {0xc0b3d000u, PROTO_GOOGLE, 23}, /* 192.179.208.0/23 */
-    {0xc0b3d100u, PROTO_GOOGLE, 24}, /* 192.179.209.0/24 */
-    {0xc0b3d200u, PROTO_GOOGLE, 23}, /* 192.179.210.0/23 */
-    {0xc0b3d300u, PROTO_GOOGLE, 24}, /* 192.179.211.0/24 */
-    {0xc0b3d400u, PROTO_GOOGLE, 23}, /* 192.179.212.0/23 */
-    {0xc0b3d500u, PROTO_GOOGLE, 24}, /* 192.179.213.0/24 */
-    {0xc0b3d600u, PROTO_GOOGLE, 23}, /* 192.179.214.0/23 */
-    {0xc0b3d700u, PROTO_GOOGLE, 24}, /* 192.179.215.0/24 */
-    {0xc0b3d800u, PROTO_GOOGLE, 23}, /* 192.179.216.0/23 */
-    {0xc0b3d900u, PROTO_GOOGLE, 24}, /* 192.179.217.0/24 */
-    {0xc0b3da00u, PROTO_GOOGLE, 23}, /* 192.179.218.0/23 */
-    {0xc0b3db00u, PROTO_GOOGLE, 24}, /* 192.179.219.0/24 */
-    {0xc0b3dc00u, PROTO_GOOGLE, 23}, /* 192.179.220.0/23 */
-    {0xc0b3dd00u, PROTO_GOOGLE, 24}, /* 192.179.221.0/24 */
-    {0xc0b3de00u, PROTO_GOOGLE, 23}, /* 192.179.222.0/23 */
-    {0xc0b3df00u, PROTO_GOOGLE, 24}, /* 192.179.223.0/24 */
-    {0xc0b3e000u, PROTO_GOOGLE, 23}, /* 192.179.224.0/23 */
-    {0xc0b3e100u, PROTO_GOOGLE, 24}, /* 192.179.225.0/24 */
-    {0xc0b3e200u, PROTO_GOOGLE, 23}, /* 192.179.226.0/23 */
-    {0xc0b3e300u, PROTO_GOOGLE, 24}, /* 192.179.227.0/24 */
-    {0xc0b3e400u, PROTO_GOOGLE, 23}, /* 192.179.228.0/23 */
-    {0xc0b3e500u, PROTO_GOOGLE, 24}, /* 192.179.229.0/24 */
-    {0xc0b3e600u, PROTO_GOOGLE, 23}, /* 192.179.230.0/23 */
-    {0xc0b3e700u, PROTO_GOOGLE, 24}, /* 192.179.231.0/24 */
-    {0xc0b3e800u, PROTO_GOOGLE, 23}, /* 192.179.232.0/23 */
-    {0xc0b3e900u, PROTO_GOOGLE, 24}, /* 192.179.233.0/24 */
-    {0xc0b3ea00u, PROTO_GOOGLE, 23}, /* 192.179.234.0/23 */
-    {0xc0b3eb00u, PROTO_GOOGLE, 24}, /* 192.179.235.0/24 */
-    {0xc0b3ec00u, PROTO_GOOGLE, 23}, /* 192.179.236.0/23 */
-    {0xc0b3ed00u, PROTO_GOOGLE, 24}, /* 192.179.237.0/24 */
-    {0xc0b3ee00u, PROTO_GOOGLE, 23}, /* 192.179.238.0/23 */
-    {0xc0b3ef00u, PROTO_GOOGLE, 24}, /* 192.179.239.0/24 */
-    {0xc0b3f000u, PROTO_GOOGLE, 23}, /* 192.179.240.0/23 */
-    {0xc0b3f100u, PROTO_GOOGLE, 24}, /* 192.179.241.0/24 */
-    {0xc0b3f200u, PROTO_GOOGLE, 23}, /* 192.179.242.0/23 */
-    {0xc0b3f300u, PROTO_GOOGLE, 24}, /* 192.179.243.0/24 */
-    {0xc0b3f400u, PROTO_GOOGLE, 23}, /* 192.179.244.0/23 */
-    {0xc0b3f500u, PROTO_GOOGLE, 24}, /* 192.179.245.0/24 */
-    {0xc0b3f600u, PROTO_GOOGLE, 23}, /* 192.179.246.0/23 */
-    {0xc0b3f700u, PROTO_GOOGLE, 24}, /* 192.179.247.0/24 */
-    {0xc0b3f800u, PROTO_GOOGLE, 23}, /* 192.179.248.0/23 */
-    {0xc0b3f900u, PROTO_GOOGLE, 24}, /* 192.179.249.0/24 */
-    {0xc0b3fa00u, PROTO_GOOGLE, 23}, /* 192.179.250.0/23 */
-    {0xc0b3fb00u, PROTO_GOOGLE, 24}, /* 192.179.251.0/24 */
-    {0xc0b3fc00u, PROTO_GOOGLE, 23}, /* 192.179.252.0/23 */
-    {0xc0b3fd00u, PROTO_GOOGLE, 24}, /* 192.179.253.0/24 */
-    {0xc0b3fe00u, PROTO_GOOGLE, 23}, /* 192.179.254.0/23 */
-    {0xc0b3ff00u, PROTO_GOOGLE, 24}, /* 192.179.255.0/24 */
     {0xc0b40000u, PROTO_UNKNOWN, 0},
-    {0xc0c8e000u, PROTO_GOOGLE, 19}, /* 192.200.224.0/19 */
-    {0xc0c90000u, PROTO_UNKNOWN, 0},
+    {0xc0bdc500u, PROTO_AWS, 24}, /* 192.189.197.0/24 */
+    {0xc0bdc600u, PROTO_UNKNOWN, 0},
     {0xc0da0800u, PROTO_YAHOO, 21}, /* 192.218.8.0/21 */
     {0xc0da1000u, PROTO_UNKNOWN, 0},
     {0xc0da8800u, PROTO_YAHOO, 23}, /* 192.218.136.0/23 */
     {0xc0da8a00u, PROTO_UNKNOWN, 0},
-    {0xc1210400u, PROTO_GOOGLE, 24}, /* 193.33.4.0/24 */
-    {0xc1210600u, PROTO_UNKNOWN, 0},
     {0xc15dc400u, PROTO_YAHOO, 24}, /* 193.93.196.0/24 */
     {0xc15dc800u, PROTO_UNKNOWN, 0},
-    {0xc1c8de00u, PROTO_GOOGLE, 24}, /* 193.200.222.0/24 */
-    {0xc1c8df00u, PROTO_UNKNOWN, 0},
-    {0xc27a5000u, PROTO_GOOGLE, 24}, /* 194.122.80.0/24 */
-    {0xc27a5400u, PROTO_UNKNOWN, 0},
+    {0xc1954000u, PROTO_AZURE, 19}, /* 193.149.64.0/19 */
+    {0xc1956000u, PROTO_UNKNOWN, 0},
+    {0xc1ba0400u, PROTO_GOOGLE, 24}, /* 193.186.4.0/24 */
+    {0xc1ba0500u, PROTO_UNKNOWN, 0},
+    {0xc3110000u, PROTO_AWS, 24}, /* 195.17.0.0/24 */
+    {0xc3110100u, PROTO_UNKNOWN, 0},
     {0xc3325800u, PROTO_YAHOO, 24}, /* 195.50.88.0/24 */
     {0xc3325900u, PROTO_UNKNOWN, 0},
-    {0xc5eaf000u, PROTO_CLOUDFLARE, 20}, /* 197.234.240.0/20 */
-    {0xc5eb0000u, PROTO_UNKNOWN, 0},
+    {0xc5eaf000u, PROTO_CLOUDFLARE, 22}, /* 197.234.240.0/22 */
+    {0xc5eaf400u, PROTO_UNKNOWN, 0},
     {0xc6266000u, PROTO_NETFLIX, 19}, /* 198.38.96.0/19 */
     {0xc6267400u, PROTO_NETFLIX, 24}, /* 198.38.116.0/24 */
     {0xc6267a00u, PROTO_NETFLIX, 19}, /* 198.38.96.0/19 */
     {0xc6268000u, PROTO_UNKNOWN, 0},
-    {0xc6298000u, PROTO_CLOUDFLARE, 20}, /* 198.41.128.0/20 */
-    {0xc6299000u, PROTO_UNKNOWN, 0},
+    {0xc6296000u, PROTO_AWS, 21}, /* 198.41.96.0/21 */
+    {0xc6296800u, PROTO_AWS, 22}, /* 198.41.104.0/22 */
+    {0xc6296c00u, PROTO_UNKNOWN, 0},
+    {0xc6298000u, PROTO_CLOUDFLARE, 17}, /* 198.41.128.0/17 */
+    {0xc62a0000u, PROTO_UNKNOWN, 0},
     {0xc62d3000u, PROTO_NETFLIX, 20}, /* 198.45.48.0/20 */
     {0xc62d4000u, PROTO_UNKNOWN, 0},
+    {0xc6630200u, PROTO_AWS, 24}, /* 198.99.2.0/24 */
+    {0xc6630300u, PROTO_UNKNOWN, 0},
+    {0xc6b46100u, PROTO_AZURE, 25}, /* 198.180.97.0/25 */
+    {0xc6b46180u, PROTO_AZURE, 26}, /* 198.180.97.128/26 */
+    {0xc6b461c0u, PROTO_AZURE, 27}, /* 198.180.97.192/27 */
+    {0xc6b461e0u, PROTO_AZURE, 30}, /* 198.180.97.224/30 */
+    {0xc6b461e4u, PROTO_AZURE, 31}, /* 198.180.97.228/31 */
+    {0xc6b461e6u, PROTO_UNKNOWN, 0},
     {0xc6b71000u, PROTO_APPLE, 24}, /* 198.183.16.0/24 */
     {0xc6b71200u, PROTO_UNKNOWN, 0},
     {0xc6b71c00u, PROTO_APPLE, 22}, /* 198.183.28.0/22 */
     {0xc6b72000u, PROTO_UNKNOWN, 0},
     {0xc6b78600u, PROTO_YAHOO, 23}, /* 198.183.134.0/23 */
     {0xc6b78a00u, PROTO_UNKNOWN, 0},
+    {0xc709f800u, PROTO_AWS, 21}, /* 199.9.248.0/21 */
+    {0xc70a0000u, PROTO_UNKNOWN, 0},
     {0xc7109c00u, PROTO_TWITTER, 22}, /* 199.16.156.0/22 */
     {0xc710a000u, PROTO_UNKNOWN, 0},
+    {0xc71b4800u, PROTO_FASTLY, 21}, /* 199.27.72.0/21 */
+    {0xc71b5000u, PROTO_UNKNOWN, 0},
+    {0xc71e1000u, PROTO_AZURE, 24}, /* 199.30.16.0/24 */
+    {0xc71e1100u, PROTO_UNKNOWN, 0},
+    {0xc71e1200u, PROTO_AZURE, 23}, /* 199.30.18.0/23 */
+    {0xc71e1400u, PROTO_AZURE, 24}, /* 199.30.20.0/24 */
+    {0xc71e1500u, PROTO_UNKNOWN, 0},
+    {0xc71e1600u, PROTO_AZURE, 24}, /* 199.30.22.0/24 */
+    {0xc71e1700u, PROTO_UNKNOWN, 0},
+    {0xc71e1800u, PROTO_AZURE, 23}, /* 199.30.24.0/23 */
+    {0xc71e1a00u, PROTO_UNKNOWN, 0},
+    {0xc71e1b00u, PROTO_AZURE, 24}, /* 199.30.27.0/24 */
+    {0xc71e1c00u, PROTO_AZURE, 23}, /* 199.30.28.0/23 */
+    {0xc71e1e00u, PROTO_UNKNOWN, 0},
+    {0xc71e1f00u, PROTO_AZURE, 24}, /* 199.30.31.0/24 */
+    {0xc71e2000u, PROTO_UNKNOWN, 0},
+    {0xc7249a00u, PROTO_GOOGLE, 23}, /* 199.36.154.0/23 */
+    {0xc7249c00u, PROTO_GOOGLE, 24}, /* 199.36.156.0/24 */
+    {0xc7249d00u, PROTO_UNKNOWN, 0},
     {0xc73b9400u, PROTO_TWITTER, 22}, /* 199.59.148.0/22 */
     {0xc73b9800u, PROTO_UNKNOWN, 0},
     {0xc7453a00u, PROTO_TWITTER, 23}, /* 199.69.58.0/23 */
@@ -7028,33 +6575,29 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0xc7603c00u, PROTO_TWITTER, 23}, /* 199.96.60.0/23 */
     {0xc7603f00u, PROTO_TWITTER, 24}, /* 199.96.63.0/24 */
     {0xc7604000u, PROTO_UNKNOWN, 0},
-    {0xc77fe800u, PROTO_AMAZON, 22}, /* 199.127.232.0/22 */
+    {0xc77fe800u, PROTO_AWS, 22}, /* 199.127.232.0/22 */
     {0xc77fec00u, PROTO_UNKNOWN, 0},
     {0xc7aa3800u, PROTO_APPLE, 21}, /* 199.170.56.0/21 */
     {0xc7aa4000u, PROTO_UNKNOWN, 0},
-    {0xc7c07000u, PROTO_GOOGLE, 22}, /* 199.192.112.0/22 */
-    {0xc7c07100u, PROTO_GOOGLE, 24}, /* 199.192.113.0/24 */
-    {0xc7c07200u, PROTO_GOOGLE, 23}, /* 199.192.114.0/23 */
-    {0xc7c07300u, PROTO_GOOGLE, 24}, /* 199.192.115.0/24 */
+    {0xc7c07000u, PROTO_GOOGLE, 23}, /* 199.192.112.0/23 */
+    {0xc7c07200u, PROTO_GOOGLE, 24}, /* 199.192.114.0/24 */
+    {0xc7c07300u, PROTO_GOOGLE_CLOUD, 24}, /* 199.192.115.0/24 */
     {0xc7c07400u, PROTO_UNKNOWN, 0},
     {0xc7c94000u, PROTO_FACEBOOK, 24}, /* 199.201.64.0/24 */
     {0xc7c94400u, PROTO_UNKNOWN, 0},
-    {0xc7dfe800u, PROTO_GOOGLE, 21}, /* 199.223.232.0/21 */
-    {0xc7dfe900u, PROTO_GOOGLE, 24}, /* 199.223.233.0/24 */
-    {0xc7dfea00u, PROTO_GOOGLE, 23}, /* 199.223.234.0/23 */
-    {0xc7dfeb00u, PROTO_GOOGLE, 24}, /* 199.223.235.0/24 */
-    {0xc7dfec00u, PROTO_GOOGLE, 23}, /* 199.223.236.0/23 */
+    {0xc7dfe800u, PROTO_GOOGLE_CLOUD, 22}, /* 199.223.232.0/22 */
+    {0xc7dfec00u, PROTO_GOOGLE_CLOUD, 24}, /* 199.223.236.0/24 */
     {0xc7dfed00u, PROTO_GOOGLE, 24}, /* 199.223.237.0/24 */
     {0xc7dfee00u, PROTO_GOOGLE, 23}, /* 199.223.238.0/23 */
-    {0xc7dfef00u, PROTO_GOOGLE, 24}, /* 199.223.239.0/24 */
     {0xc7dff000u, PROTO_UNKNOWN, 0},
-    {0xc7ffc000u, PROTO_AMAZON, 22}, /* 199.255.192.0/22 */
-    {0xc7ffc100u, PROTO_AMAZON, 24}, /* 199.255.193.0/24 */
-    {0xc7ffc400u, PROTO_UNKNOWN, 0},
+    {0xc7e80000u, PROTO_FASTLY, 16}, /* 199.232.0.0/16 */
+    {0xc7e90000u, PROTO_UNKNOWN, 0},
     {0xc898a000u, PROTO_YAHOO, 23}, /* 200.152.160.0/23 */
     {0xc898a400u, PROTO_UNKNOWN, 0},
     {0xc898a800u, PROTO_YAHOO, 21}, /* 200.152.168.0/21 */
     {0xc898b000u, PROTO_UNKNOWN, 0},
+    {0xc8e20000u, PROTO_GOOGLE, 16}, /* 200.226.0.0/16 */
+    {0xc8e30000u, PROTO_UNKNOWN, 0},
     {0xca04a400u, PROTO_YAHOO, 24}, /* 202.4.164.0/24 */
     {0xca04a500u, PROTO_UNKNOWN, 0},
     {0xca09d000u, PROTO_YAHOO, 23}, /* 202.9.208.0/23 */
@@ -7069,6 +6612,10 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0xca3a0200u, PROTO_UNKNOWN, 0},
     {0xca597800u, PROTO_YAHOO, 24}, /* 202.89.120.0/24 */
     {0xca597a00u, PROTO_UNKNOWN, 0},
+    {0xca59e940u, PROTO_AZURE, 27}, /* 202.89.233.64/27 */
+    {0xca59e960u, PROTO_UNKNOWN, 0},
+    {0xca59eb80u, PROTO_AZURE, 25}, /* 202.89.235.128/25 */
+    {0xca59ec00u, PROTO_UNKNOWN, 0},
     {0xca5d4000u, PROTO_YAHOO, 19}, /* 202.93.64.0/19 */
     {0xca5d5000u, PROTO_YAHOO, 20}, /* 202.93.80.0/20 */
     {0xca5d6000u, PROTO_UNKNOWN, 0},
@@ -7079,6 +6626,8 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0xcaa0c000u, PROTO_UNKNOWN, 0},
     {0xcaabea00u, PROTO_YAHOO, 24}, /* 202.171.234.0/24 */
     {0xcaabeb00u, PROTO_UNKNOWN, 0},
+    {0xcaae8400u, PROTO_AWS, 22}, /* 202.174.132.0/22 */
+    {0xcaae8800u, PROTO_UNKNOWN, 0},
     {0xcada0000u, PROTO_YAHOO, 16}, /* 202.218.0.0/16 */
     {0xcada0100u, PROTO_YAHOO, 24}, /* 202.218.1.0/24 */
     {0xcada0200u, PROTO_YAHOO, 23}, /* 202.218.2.0/23 */
@@ -7153,8 +6702,8 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0xcaf4d000u, PROTO_UNKNOWN, 0},
     {0xcb0ed400u, PROTO_YAHOO, 24}, /* 203.14.212.0/24 */
     {0xcb0ed500u, PROTO_UNKNOWN, 0},
-    {0xcb53dc00u, PROTO_AMAZON, 24}, /* 203.83.220.0/24 */
-    {0xcb53de00u, PROTO_UNKNOWN, 0},
+    {0xcb53dc00u, PROTO_AWS, 22}, /* 203.83.220.0/22 */
+    {0xcb53e000u, PROTO_UNKNOWN, 0},
     {0xcb53f800u, PROTO_YAHOO, 23}, /* 203.83.248.0/23 */
     {0xcb53fa00u, PROTO_UNKNOWN, 0},
     {0xcb54c000u, PROTO_YAHOO, 19}, /* 203.84.192.0/19 */
@@ -7233,20 +6782,29 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0xcc47bd00u, PROTO_UNKNOWN, 0},
     {0xcc47c800u, PROTO_YAHOO, 22}, /* 204.71.200.0/22 */
     {0xcc47cc00u, PROTO_UNKNOWN, 0},
+    {0xcc4fb400u, PROTO_AZURE, 24}, /* 204.79.180.0/24 */
+    {0xcc4fb500u, PROTO_UNKNOWN, 0},
     {0xcc4fbe00u, PROTO_APPLE, 24}, /* 204.79.190.0/24 */
     {0xcc4fbf00u, PROTO_UNKNOWN, 0},
+    {0xcc57b900u, PROTO_AWS, 24}, /* 204.87.185.0/24 */
+    {0xcc57ba00u, PROTO_UNKNOWN, 0},
+    {0xcc981200u, PROTO_AZURE, 31}, /* 204.152.18.0/31 */
+    {0xcc981202u, PROTO_UNKNOWN, 0},
+    {0xcc981208u, PROTO_AZURE, 29}, /* 204.152.18.8/29 */
+    {0xcc981210u, PROTO_UNKNOWN, 0},
+    {0xcc981220u, PROTO_AZURE, 27}, /* 204.152.18.32/27 */
+    {0xcc981240u, PROTO_AZURE, 26}, /* 204.152.18.64/26 */
+    {0xcc981280u, PROTO_UNKNOWN, 0},
+    {0xcc981300u, PROTO_AZURE, 24}, /* 204.152.19.0/24 */
+    {0xcc981400u, PROTO_UNKNOWN, 0},
     {0xccb37800u, PROTO_APPLE, 24}, /* 204.179.120.0/24 */
     {0xccb37900u, PROTO_UNKNOWN, 0},
-    {0xccec8000u, PROTO_AMAZON, 18}, /* 204.236.128.0/18 */
-    {0xccece000u, PROTO_AMAZON, 19}, /* 204.236.224.0/19 */
+    {0xccec8000u, PROTO_AWS, 17}, /* 204.236.128.0/17 */
     {0xcced0000u, PROTO_UNKNOWN, 0},
-    {0xccf6a000u, PROTO_AMAZON, 19}, /* 204.246.160.0/19 */
-    {0xccf6a400u, PROTO_AMAZON, 23}, /* 204.246.164.0/23 */
-    {0xccf6a600u, PROTO_AMAZON, 24}, /* 204.246.166.0/24 */
-    {0xccf6a800u, PROTO_AMAZON, 23}, /* 204.246.168.0/23 */
-    {0xccf6ac00u, PROTO_AMAZON, 19}, /* 204.246.160.0/19 */
-    {0xccf6ae00u, PROTO_AMAZON, 23}, /* 204.246.174.0/23 */
-    {0xccf6b000u, PROTO_AMAZON, 24}, /* 204.246.176.0/24 */
+    {0xccf6a000u, PROTO_AWS, 22}, /* 204.246.160.0/22 */
+    {0xccf6a400u, PROTO_CLOUDFRONT, 22}, /* 204.246.164.0/22 */
+    {0xccf6a800u, PROTO_CLOUDFRONT, 21}, /* 204.246.168.0/21 */
+    {0xccf6b000u, PROTO_CLOUDFRONT, 20}, /* 204.246.176.0/20 */
     {0xccf6c000u, PROTO_UNKNOWN, 0},
     {0xcd950800u, PROTO_APPLE, 21}, /* 205.149.8.0/21 */
     {0xcd951000u, PROTO_UNKNOWN, 0},
@@ -7255,73 +6813,92 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0xcdacd800u, PROTO_UNKNOWN, 0},
     {0xcdb4af00u, PROTO_APPLE, 24}, /* 205.180.175.0/24 */
     {0xcdb4b000u, PROTO_UNKNOWN, 0},
-    {0xcdcb0000u, PROTO_AWS, 18}, /* 205.203.0.0/18 */
-    {0xcdcb4000u, PROTO_UNKNOWN, 0},
-    {0xcdfbc000u, PROTO_AMAZON, 18}, /* 205.251.192.0/18 */
-    {0xcdfbc100u, PROTO_AMAZON, 24}, /* 205.251.193.0/24 */
-    {0xcdfbc200u, PROTO_AMAZON, 23}, /* 205.251.194.0/23 */
-    {0xcdfbc300u, PROTO_AMAZON, 24}, /* 205.251.195.0/24 */
-    {0xcdfbca00u, PROTO_AMAZON, 23}, /* 205.251.202.0/23 */
-    {0xcdfbd200u, PROTO_AMAZON, 24}, /* 205.251.210.0/24 */
-    {0xcdfbd600u, PROTO_AMAZON, 23}, /* 205.251.214.0/23 */
-    {0xcdfbdc00u, PROTO_AMAZON, 24}, /* 205.251.220.0/24 */
-    {0xcdfbde00u, PROTO_AMAZON, 23}, /* 205.251.222.0/23 */
-    {0xcdfbe000u, PROTO_AMAZON, 22}, /* 205.251.224.0/22 */
-    {0xcdfbea00u, PROTO_AMAZON, 24}, /* 205.251.234.0/24 */
-    {0xcdfbec00u, PROTO_AMAZON, 22}, /* 205.251.236.0/22 */
-    {0xcdfbf400u, PROTO_AMAZON, 23}, /* 205.251.244.0/23 */
-    {0xcdfbf600u, PROTO_AMAZON, 18}, /* 205.251.192.0/18 */
-    {0xcdfbf700u, PROTO_AMAZON, 24}, /* 205.251.247.0/24 */
-    {0xcdfbfa00u, PROTO_AMAZON, 23}, /* 205.251.250.0/23 */
-    {0xcdfbfe00u, PROTO_AMAZON, 24}, /* 205.251.254.0/24 */
-    {0xcdfbff00u, PROTO_AMAZON, 18}, /* 205.251.192.0/18 */
-    {0xcdfc0000u, PROTO_UNKNOWN, 0},
+    {0xcdfbc000u, PROTO_AWS, 21}, /* 205.251.192.0/21 */
+    {0xcdfbc800u, PROTO_AWS, 23}, /* 205.251.200.0/23 */
+    {0xcdfbca00u, PROTO_CLOUDFRONT, 23}, /* 205.251.202.0/23 */
+    {0xcdfbcc00u, PROTO_CLOUDFRONT, 22}, /* 205.251.204.0/22 */
+    {0xcdfbd000u, PROTO_CLOUDFRONT, 20}, /* 205.251.208.0/20 */
+    {0xcdfbe000u, PROTO_UNKNOWN, 0},
+    {0xcdfbe100u, PROTO_AWS, 24}, /* 205.251.225.0/24 */
+    {0xcdfbe300u, PROTO_UNKNOWN, 0},
+    {0xcdfbe400u, PROTO_AWS, 22}, /* 205.251.228.0/22 */
+    {0xcdfbe800u, PROTO_AWS, 21}, /* 205.251.232.0/21 */
+    {0xcdfbf800u, PROTO_AWS, 24}, /* 205.251.248.0/24 */
+    {0xcdfbf900u, PROTO_CLOUDFRONT, 24}, /* 205.251.249.0/24 */
+    {0xcdfbfa00u, PROTO_CLOUDFRONT, 23}, /* 205.251.250.0/23 */
+    {0xcdfbfe00u, PROTO_CLOUDFRONT, 24}, /* 205.251.254.0/24 */
+    {0xcdfbff00u, PROTO_UNKNOWN, 0},
     {0xce030000u, PROTO_YAHOO, 19}, /* 206.3.0.0/19 */
     {0xce032000u, PROTO_UNKNOWN, 0},
+    {0xce48d100u, PROTO_AWS, 24}, /* 206.72.209.0/24 */
+    {0xce48d200u, PROTO_UNKNOWN, 0},
     {0xceadfa40u, PROTO_YAHOO, 26}, /* 206.173.250.64/26 */
     {0xceadfa80u, PROTO_UNKNOWN, 0},
     {0xcebe2000u, PROTO_YAHOO, 20}, /* 206.190.32.0/20 */
     {0xcebe3000u, PROTO_YAHOO, 21}, /* 206.190.48.0/21 */
     {0xcebe3800u, PROTO_UNKNOWN, 0},
+    {0xcf2e0d00u, PROTO_AZURE, 24}, /* 207.46.13.0/24 */
+    {0xcf2e0e00u, PROTO_UNKNOWN, 0},
+    {0xcf2e3281u, PROTO_AZURE, 32}, /* 207.46.50.129/32 */
+    {0xcf2e3282u, PROTO_AZURE, 31}, /* 207.46.50.130/31 */
+    {0xcf2e3284u, PROTO_UNKNOWN, 0},
+    {0xcf2e328au, PROTO_AZURE, 31}, /* 207.46.50.138/31 */
+    {0xcf2e328eu, PROTO_UNKNOWN, 0},
+    {0xcf2e3b40u, PROTO_AZURE, 27}, /* 207.46.59.64/27 */
+    {0xcf2e3b60u, PROTO_UNKNOWN, 0},
+    {0xcf2e3f40u, PROTO_AZURE, 27}, /* 207.46.63.64/27 */
+    {0xcf2e3f60u, PROTO_UNKNOWN, 0},
+    {0xcf2e3f80u, PROTO_AZURE, 25}, /* 207.46.63.128/25 */
+    {0xcf2e4000u, PROTO_UNKNOWN, 0},
+    {0xcf2e4800u, PROTO_AZURE, 27}, /* 207.46.72.0/27 */
+    {0xcf2e4820u, PROTO_UNKNOWN, 0},
+    {0xcf2e4de1u, PROTO_AZURE, 32}, /* 207.46.77.225/32 */
+    {0xcf2e4de2u, PROTO_AZURE, 31}, /* 207.46.77.226/31 */
+    {0xcf2e4de4u, PROTO_AZURE, 32}, /* 207.46.77.228/32 */
+    {0xcf2e4de5u, PROTO_UNKNOWN, 0},
+    {0xcf2e5700u, PROTO_AZURE, 24}, /* 207.46.87.0/24 */
+    {0xcf2e5800u, PROTO_UNKNOWN, 0},
+    {0xcf2e5910u, PROTO_AZURE, 28}, /* 207.46.89.16/28 */
+    {0xcf2e5920u, PROTO_UNKNOWN, 0},
+    {0xcf2e5f20u, PROTO_AZURE, 27}, /* 207.46.95.32/27 */
+    {0xcf2e5f40u, PROTO_UNKNOWN, 0},
+    {0xcf2e7e00u, PROTO_AZURE, 24}, /* 207.46.126.0/24 */
+    {0xcf2e7f00u, PROTO_UNKNOWN, 0},
+    {0xcf2e8000u, PROTO_AZURE, 19}, /* 207.46.128.0/19 */
+    {0xcf2ea000u, PROTO_UNKNOWN, 0},
+    {0xcf2ec1c0u, PROTO_AZURE, 28}, /* 207.46.193.192/28 */
+    {0xcf2ec1d0u, PROTO_UNKNOWN, 0},
+    {0xcf2ec860u, PROTO_AZURE, 27}, /* 207.46.200.96/27 */
+    {0xcf2ec880u, PROTO_UNKNOWN, 0},
+    {0xcf2ec8b0u, PROTO_AZURE, 28}, /* 207.46.200.176/28 */
+    {0xcf2ec8c0u, PROTO_UNKNOWN, 0},
+    {0xcf2eca80u, PROTO_AZURE, 28}, /* 207.46.202.128/28 */
+    {0xcf2eca90u, PROTO_UNKNOWN, 0},
+    {0xcf2ecd00u, PROTO_AZURE, 24}, /* 207.46.205.0/24 */
+    {0xcf2ece00u, PROTO_UNKNOWN, 0},
+    {0xcf2ee000u, PROTO_AZURE, 20}, /* 207.46.224.0/20 */
+    {0xcf2ef000u, PROTO_UNKNOWN, 0},
+    {0xcf44ae08u, PROTO_AZURE, 29}, /* 207.68.174.8/29 */
+    {0xcf44ae10u, PROTO_UNKNOWN, 0},
+    {0xcf44ae28u, PROTO_AZURE, 29}, /* 207.68.174.40/29 */
+    {0xcf44ae38u, PROTO_UNKNOWN, 0},
+    {0xcf44aeb8u, PROTO_AZURE, 29}, /* 207.68.174.184/29 */
+    {0xcf44aec0u, PROTO_AZURE, 27}, /* 207.68.174.192/27 */
+    {0xcf44aee0u, PROTO_UNKNOWN, 0},
     {0xcf7ee000u, PROTO_YAHOO, 20}, /* 207.126.224.0/20 */
     {0xcf7ef000u, PROTO_UNKNOWN, 0},
-    {0xcfaba000u, PROTO_AMAZON, 19}, /* 207.171.160.0/19 */
-    {0xcfabaa00u, PROTO_AMAZON, 24}, /* 207.171.170.0/24 */
-    {0xcfabab00u, PROTO_AMAZON, 19}, /* 207.171.160.0/19 */
-    {0xcfabb000u, PROTO_AMAZON, 20}, /* 207.171.176.0/20 */
-    {0xcfabb300u, PROTO_AMAZON, 24}, /* 207.171.179.0/24 */
-    {0xcfabb400u, PROTO_AMAZON, 20}, /* 207.171.176.0/20 */
-    {0xcfabb800u, PROTO_AMAZON, 23}, /* 207.171.184.0/23 */
-    {0xcfabba00u, PROTO_AMAZON, 20}, /* 207.171.176.0/20 */
+    {0xcfaba000u, PROTO_AWS, 19}, /* 207.171.160.0/19 */
     {0xcfabc000u, PROTO_UNKNOWN, 0},
+    {0xcfaf0000u, PROTO_GOOGLE_CLOUD, 16}, /* 207.175.0.0/16 */
+    {0xcfb00000u, PROTO_UNKNOWN, 0},
     {0xcfb6a000u, PROTO_WEBEX, 19}, /* 207.182.160.0/19 */
     {0xcfb6a100u, PROTO_WEBEX, 24}, /* 207.182.161.0/24 */
     {0xcfb6c000u, PROTO_UNKNOWN, 0},
     {0xcfdfa000u, PROTO_GOOGLE, 20}, /* 207.223.160.0/20 */
-    {0xcfdfa100u, PROTO_GOOGLE, 24}, /* 207.223.161.0/24 */
-    {0xcfdfa200u, PROTO_GOOGLE, 23}, /* 207.223.162.0/23 */
-    {0xcfdfa300u, PROTO_GOOGLE, 24}, /* 207.223.163.0/24 */
-    {0xcfdfa400u, PROTO_GOOGLE, 23}, /* 207.223.164.0/23 */
-    {0xcfdfa500u, PROTO_GOOGLE, 24}, /* 207.223.165.0/24 */
-    {0xcfdfa600u, PROTO_GOOGLE, 23}, /* 207.223.166.0/23 */
-    {0xcfdfa700u, PROTO_GOOGLE, 24}, /* 207.223.167.0/24 */
-    {0xcfdfa800u, PROTO_GOOGLE, 23}, /* 207.223.168.0/23 */
-    {0xcfdfa900u, PROTO_GOOGLE, 24}, /* 207.223.169.0/24 */
-    {0xcfdfaa00u, PROTO_GOOGLE, 23}, /* 207.223.170.0/23 */
-    {0xcfdfab00u, PROTO_GOOGLE, 24}, /* 207.223.171.0/24 */
-    {0xcfdfac00u, PROTO_GOOGLE, 23}, /* 207.223.172.0/23 */
-    {0xcfdfad00u, PROTO_GOOGLE, 24}, /* 207.223.173.0/24 */
-    {0xcfdfae00u, PROTO_GOOGLE, 23}, /* 207.223.174.0/23 */
-    {0xcfdfaf00u, PROTO_GOOGLE, 24}, /* 207.223.175.0/24 */
     {0xcfdfb000u, PROTO_UNKNOWN, 0},
     {0xd0085100u, PROTO_WEBEX, 24}, /* 208.8.81.0/24 */
     {0xd0085200u, PROTO_UNKNOWN, 0},
-    {0xd02ff800u, PROTO_AMAZON, 23}, /* 208.47.248.0/23 */
-    {0xd02ffa00u, PROTO_UNKNOWN, 0},
     {0xd0419800u, PROTO_GOOGLE, 22}, /* 208.65.152.0/22 */
-    {0xd0419900u, PROTO_GOOGLE, 24}, /* 208.65.153.0/24 */
-    {0xd0419a00u, PROTO_GOOGLE, 23}, /* 208.65.154.0/23 */
-    {0xd0419b00u, PROTO_GOOGLE, 24}, /* 208.65.155.0/24 */
     {0xd0419c00u, PROTO_UNKNOWN, 0},
     {0xd0434200u, PROTO_YAHOO, 23}, /* 208.67.66.0/23 */
     {0xd0434400u, PROTO_UNKNOWN, 0},
@@ -7332,45 +6909,22 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0xd04b4c00u, PROTO_NETFLIX, 22}, /* 208.75.76.0/22 */
     {0xd04b4d00u, PROTO_NETFLIX, 24}, /* 208.75.77.0/24 */
     {0xd04b5000u, PROTO_UNKNOWN, 0},
+    {0xd04e8000u, PROTO_AWS, 21}, /* 208.78.128.0/21 */
+    {0xd04e8800u, PROTO_UNKNOWN, 0},
     {0xd051bc00u, PROTO_GOOGLE, 22}, /* 208.81.188.0/22 */
     {0xd051c000u, PROTO_UNKNOWN, 0},
+    {0xd0565800u, PROTO_AWS, 22}, /* 208.86.88.0/22 */
+    {0xd0565c00u, PROTO_UNKNOWN, 0},
+    {0xd06e3000u, PROTO_AWS, 20}, /* 208.110.48.0/20 */
+    {0xd06e4000u, PROTO_UNKNOWN, 0},
     {0xd075e000u, PROTO_GOOGLE, 19}, /* 208.117.224.0/19 */
-    {0xd075e100u, PROTO_GOOGLE, 24}, /* 208.117.225.0/24 */
-    {0xd075e200u, PROTO_GOOGLE, 23}, /* 208.117.226.0/23 */
-    {0xd075e300u, PROTO_GOOGLE, 24}, /* 208.117.227.0/24 */
-    {0xd075e400u, PROTO_GOOGLE, 23}, /* 208.117.228.0/23 */
-    {0xd075e500u, PROTO_GOOGLE, 24}, /* 208.117.229.0/24 */
-    {0xd075e600u, PROTO_GOOGLE, 23}, /* 208.117.230.0/23 */
-    {0xd075e700u, PROTO_GOOGLE, 24}, /* 208.117.231.0/24 */
-    {0xd075e800u, PROTO_GOOGLE, 23}, /* 208.117.232.0/23 */
-    {0xd075e900u, PROTO_GOOGLE, 24}, /* 208.117.233.0/24 */
-    {0xd075ea00u, PROTO_GOOGLE, 23}, /* 208.117.234.0/23 */
-    {0xd075eb00u, PROTO_GOOGLE, 24}, /* 208.117.235.0/24 */
-    {0xd075ec00u, PROTO_GOOGLE, 23}, /* 208.117.236.0/23 */
-    {0xd075ed00u, PROTO_GOOGLE, 24}, /* 208.117.237.0/24 */
-    {0xd075ee00u, PROTO_GOOGLE, 23}, /* 208.117.238.0/23 */
-    {0xd075ef00u, PROTO_GOOGLE, 24}, /* 208.117.239.0/24 */
-    {0xd075f000u, PROTO_GOOGLE, 23}, /* 208.117.240.0/23 */
-    {0xd075f100u, PROTO_GOOGLE, 24}, /* 208.117.241.0/24 */
-    {0xd075f200u, PROTO_GOOGLE, 23}, /* 208.117.242.0/23 */
-    {0xd075f300u, PROTO_GOOGLE, 24}, /* 208.117.243.0/24 */
-    {0xd075f400u, PROTO_GOOGLE, 23}, /* 208.117.244.0/23 */
-    {0xd075f500u, PROTO_GOOGLE, 24}, /* 208.117.245.0/24 */
-    {0xd075f600u, PROTO_GOOGLE, 23}, /* 208.117.246.0/23 */
-    {0xd075f700u, PROTO_GOOGLE, 24}, /* 208.117.247.0/24 */
-    {0xd075f800u, PROTO_GOOGLE, 23}, /* 208.117.248.0/23 */
-    {0xd075f900u, PROTO_GOOGLE, 24}, /* 208.117.249.0/24 */
-    {0xd075fa00u, PROTO_GOOGLE, 23}, /* 208.117.250.0/23 */
-    {0xd075fb00u, PROTO_GOOGLE, 24}, /* 208.117.251.0/24 */
-    {0xd075fc00u, PROTO_GOOGLE, 23}, /* 208.117.252.0/23 */
-    {0xd075fd00u, PROTO_GOOGLE, 24}, /* 208.117.253.0/24 */
-    {0xd075fe00u, PROTO_GOOGLE, 23}, /* 208.117.254.0/23 */
-    {0xd075ff00u, PROTO_GOOGLE, 24}, /* 208.117.255.0/24 */
     {0xd0760000u, PROTO_UNKNOWN, 0},
     {0xd0b26f00u, PROTO_YAHOO, 24}, /* 208.178.111.0/24 */
     {0xd0b27000u, PROTO_UNKNOWN, 0},
     {0xd101e000u, PROTO_YAHOO, 23}, /* 209.1.224.0/23 */
     {0xd101e200u, PROTO_UNKNOWN, 0},
+    {0xd136b000u, PROTO_AWS, 20}, /* 209.54.176.0/20 */
+    {0xd136c000u, PROTO_UNKNOWN, 0},
     {0xd149b400u, PROTO_YAHOO, 22}, /* 209.73.180.0/22 */
     {0xd149b800u, PROTO_UNKNOWN, 0},
     {0xd149b900u, PROTO_YAHOO, 24}, /* 209.73.185.0/24 */
@@ -7378,136 +6932,8 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0xd149bc00u, PROTO_YAHOO, 23}, /* 209.73.188.0/23 */
     {0xd149c000u, PROTO_UNKNOWN, 0},
     {0xd1558000u, PROTO_GOOGLE, 17}, /* 209.85.128.0/17 */
-    {0xd1558100u, PROTO_GOOGLE, 24}, /* 209.85.129.0/24 */
-    {0xd1558200u, PROTO_GOOGLE, 23}, /* 209.85.130.0/23 */
-    {0xd1558300u, PROTO_GOOGLE, 24}, /* 209.85.131.0/24 */
-    {0xd1558400u, PROTO_GOOGLE, 23}, /* 209.85.132.0/23 */
-    {0xd1558500u, PROTO_GOOGLE, 24}, /* 209.85.133.0/24 */
-    {0xd1558600u, PROTO_GOOGLE, 23}, /* 209.85.134.0/23 */
-    {0xd1558700u, PROTO_GOOGLE, 24}, /* 209.85.135.0/24 */
-    {0xd1558800u, PROTO_GOOGLE, 23}, /* 209.85.136.0/23 */
-    {0xd1558900u, PROTO_GOOGLE, 24}, /* 209.85.137.0/24 */
-    {0xd1558a00u, PROTO_GOOGLE, 23}, /* 209.85.138.0/23 */
-    {0xd1558b00u, PROTO_GOOGLE, 24}, /* 209.85.139.0/24 */
-    {0xd1558c00u, PROTO_GOOGLE, 23}, /* 209.85.140.0/23 */
-    {0xd1558d00u, PROTO_GOOGLE, 24}, /* 209.85.141.0/24 */
-    {0xd1558e00u, PROTO_GOOGLE, 23}, /* 209.85.142.0/23 */
-    {0xd1558f00u, PROTO_GOOGLE, 24}, /* 209.85.143.0/24 */
-    {0xd1559000u, PROTO_GOOGLE, 23}, /* 209.85.144.0/23 */
-    {0xd1559100u, PROTO_GOOGLE, 24}, /* 209.85.145.0/24 */
-    {0xd1559200u, PROTO_GOOGLE, 23}, /* 209.85.146.0/23 */
-    {0xd1559300u, PROTO_GOOGLE, 24}, /* 209.85.147.0/24 */
-    {0xd1559400u, PROTO_GOOGLE, 23}, /* 209.85.148.0/23 */
-    {0xd1559500u, PROTO_GOOGLE, 24}, /* 209.85.149.0/24 */
-    {0xd1559600u, PROTO_GOOGLE, 23}, /* 209.85.150.0/23 */
-    {0xd1559700u, PROTO_GOOGLE, 24}, /* 209.85.151.0/24 */
-    {0xd1559800u, PROTO_GOOGLE, 23}, /* 209.85.152.0/23 */
-    {0xd1559900u, PROTO_GOOGLE, 24}, /* 209.85.153.0/24 */
-    {0xd1559a00u, PROTO_GOOGLE, 23}, /* 209.85.154.0/23 */
-    {0xd1559b00u, PROTO_GOOGLE, 24}, /* 209.85.155.0/24 */
-    {0xd1559c00u, PROTO_GOOGLE, 23}, /* 209.85.156.0/23 */
-    {0xd1559d00u, PROTO_GOOGLE, 24}, /* 209.85.157.0/24 */
-    {0xd1559e00u, PROTO_GOOGLE, 23}, /* 209.85.158.0/23 */
-    {0xd1559f00u, PROTO_GOOGLE, 24}, /* 209.85.159.0/24 */
-    {0xd155a000u, PROTO_GOOGLE, 23}, /* 209.85.160.0/23 */
-    {0xd155a100u, PROTO_GOOGLE, 24}, /* 209.85.161.0/24 */
-    {0xd155a200u, PROTO_GOOGLE, 23}, /* 209.85.162.0/23 */
-    {0xd155a300u, PROTO_GOOGLE, 24}, /* 209.85.163.0/24 */
-    {0xd155a400u, PROTO_GOOGLE, 23}, /* 209.85.164.0/23 */
-    {0xd155a500u, PROTO_GOOGLE, 24}, /* 209.85.165.0/24 */
-    {0xd155a600u, PROTO_GOOGLE, 23}, /* 209.85.166.0/23 */
-    {0xd155a700u, PROTO_GOOGLE, 24}, /* 209.85.167.0/24 */
-    {0xd155a800u, PROTO_GOOGLE, 23}, /* 209.85.168.0/23 */
-    {0xd155a900u, PROTO_GOOGLE, 24}, /* 209.85.169.0/24 */
-    {0xd155aa00u, PROTO_GOOGLE, 23}, /* 209.85.170.0/23 */
-    {0xd155ab00u, PROTO_GOOGLE, 24}, /* 209.85.171.0/24 */
-    {0xd155ac00u, PROTO_GOOGLE, 23}, /* 209.85.172.0/23 */
-    {0xd155ad00u, PROTO_GOOGLE, 24}, /* 209.85.173.0/24 */
-    {0xd155ae00u, PROTO_GOOGLE, 23}, /* 209.85.174.0/23 */
-    {0xd155af00u, PROTO_GOOGLE, 24}, /* 209.85.175.0/24 */
-    {0xd155b000u, PROTO_GOOGLE, 23}, /* 209.85.176.0/23 */
-    {0xd155b100u, PROTO_GOOGLE, 24}, /* 209.85.177.0/24 */
-    {0xd155b200u, PROTO_GOOGLE, 23}, /* 209.85.178.0/23 */
-    {0xd155b300u, PROTO_GOOGLE, 24}, /* 209.85.179.0/24 */
-    {0xd155b400u, PROTO_GOOGLE, 23}, /* 209.85.180.0/23 */
-    {0xd155b500u, PROTO_GOOGLE, 24}, /* 209.85.181.0/24 */
-    {0xd155b600u, PROTO_GOOGLE, 23}, /* 209.85.182.0/23 */
-    {0xd155b700u, PROTO_GOOGLE, 24}, /* 209.85.183.0/24 */
-    {0xd155b800u, PROTO_GOOGLE, 23}, /* 209.85.184.0/23 */
-    {0xd155b900u, PROTO_GOOGLE, 24}, /* 209.85.185.0/24 */
-    {0xd155ba00u, PROTO_GOOGLE, 23}, /* 209.85.186.0/23 */
-    {0xd155bb00u, PROTO_GOOGLE, 24}, /* 209.85.187.0/24 */
-    {0xd155bc00u, PROTO_GOOGLE, 23}, /* 209.85.188.0/23 */
-    {0xd155bd00u, PROTO_GOOGLE, 24}, /* 209.85.189.0/24 */
-    {0xd155be00u, PROTO_GOOGLE, 23}, /* 209.85.190.0/23 */
-    {0xd155bf00u, PROTO_GOOGLE, 24}, /* 209.85.191.0/24 */
-    {0xd155c000u, PROTO_GOOGLE, 23}, /* 209.85.192.0/23 */
-    {0xd155c100u, PROTO_GOOGLE, 24}, /* 209.85.193.0/24 */
-    {0xd155c200u, PROTO_GOOGLE, 23}, /* 209.85.194.0/23 */
-    {0xd155c300u, PROTO_GOOGLE, 24}, /* 209.85.195.0/24 */
-    {0xd155c400u, PROTO_GOOGLE, 23}, /* 209.85.196.0/23 */
-    {0xd155c500u, PROTO_GOOGLE, 24}, /* 209.85.197.0/24 */
-    {0xd155c600u, PROTO_GOOGLE, 23}, /* 209.85.198.0/23 */
-    {0xd155c700u, PROTO_GOOGLE, 24}, /* 209.85.199.0/24 */
-    {0xd155c800u, PROTO_GOOGLE, 23}, /* 209.85.200.0/23 */
-    {0xd155c900u, PROTO_GOOGLE, 24}, /* 209.85.201.0/24 */
-    {0xd155ca00u, PROTO_GOOGLE, 23}, /* 209.85.202.0/23 */
-    {0xd155cb00u, PROTO_GOOGLE, 24}, /* 209.85.203.0/24 */
-    {0xd155cc00u, PROTO_GOOGLE, 23}, /* 209.85.204.0/23 */
-    {0xd155cd00u, PROTO_GOOGLE, 24}, /* 209.85.205.0/24 */
-    {0xd155ce00u, PROTO_GOOGLE, 23}, /* 209.85.206.0/23 */
-    {0xd155cf00u, PROTO_GOOGLE, 24}, /* 209.85.207.0/24 */
-    {0xd155d000u, PROTO_GOOGLE, 23}, /* 209.85.208.0/23 */
-    {0xd155d100u, PROTO_GOOGLE, 24}, /* 209.85.209.0/24 */
-    {0xd155d200u, PROTO_GOOGLE, 23}, /* 209.85.210.0/23 */
-    {0xd155d300u, PROTO_GOOGLE, 24}, /* 209.85.211.0/24 */
-    {0xd155d400u, PROTO_GOOGLE, 23}, /* 209.85.212.0/23 */
-    {0xd155d500u, PROTO_GOOGLE, 24}, /* 209.85.213.0/24 */
-    {0xd155d600u, PROTO_GOOGLE, 23}, /* 209.85.214.0/23 */
-    {0xd155d700u, PROTO_GOOGLE, 24}, /* 209.85.215.0/24 */
-    {0xd155d800u, PROTO_GOOGLE, 23}, /* 209.85.216.0/23 */
-    {0xd155d900u, PROTO_GOOGLE, 24}, /* 209.85.217.0/24 */
-    {0xd155da00u, PROTO_GOOGLE, 23}, /* 209.85.218.0/23 */
-    {0xd155db00u, PROTO_GOOGLE, 24}, /* 209.85.219.0/24 */
-    {0xd155dc00u, PROTO_GOOGLE, 23}, /* 209.85.220.0/23 */
-    {0xd155dd00u, PROTO_GOOGLE, 24}, /* 209.85.221.0/24 */
-    {0xd155de00u, PROTO_GOOGLE, 23}, /* 209.85.222.0/23 */
-    {0xd155df00u, PROTO_GOOGLE, 24}, /* 209.85.223.0/24 */
-    {0xd155e000u, PROTO_GOOGLE, 23}, /* 209.85.224.0/23 */
-    {0xd155e100u, PROTO_GOOGLE, 24}, /* 209.85.225.0/24 */
-    {0xd155e200u, PROTO_GOOGLE, 23}, /* 209.85.226.0/23 */
-    {0xd155e300u, PROTO_GOOGLE, 24}, /* 209.85.227.0/24 */
-    {0xd155e400u, PROTO_GOOGLE, 23}, /* 209.85.228.0/23 */
-    {0xd155e500u, PROTO_GOOGLE, 24}, /* 209.85.229.0/24 */
-    {0xd155e600u, PROTO_GOOGLE, 23}, /* 209.85.230.0/23 */
-    {0xd155e700u, PROTO_GOOGLE, 24}, /* 209.85.231.0/24 */
-    {0xd155e800u, PROTO_GOOGLE, 23}, /* 209.85.232.0/23 */
-    {0xd155e900u, PROTO_GOOGLE, 24}, /* 209.85.233.0/24 */
-    {0xd155ea00u, PROTO_GOOGLE, 23}, /* 209.85.234.0/23 */
-    {0xd155eb00u, PROTO_GOOGLE, 24}, /* 209.85.235.0/24 */
-    {0xd155ec00u, PROTO_GOOGLE, 23}, /* 209.85.236.0/23 */
-    {0xd155ed00u, PROTO_GOOGLE, 24}, /* 209.85.237.0/24 */
-    {0xd155ee00u, PROTO_GOOGLE, 23}, /* 209.85.238.0/23 */
-    {0xd155ef00u, PROTO_GOOGLE, 24}, /* 209.85.239.0/24 */
-    {0xd155f000u, PROTO_GOOGLE, 23}, /* 209.85.240.0/23 */
-    {0xd155f100u, PROTO_GOOGLE, 24}, /* 209.85.241.0/24 */
-    {0xd155f200u, PROTO_GOOGLE, 23}, /* 209.85.242.0/23 */
-    {0xd155f300u, PROTO_GOOGLE, 24}, /* 209.85.243.0/24 */
-    {0xd155f400u, PROTO_GOOGLE, 23}, /* 209.85.244.0/23 */
-    {0xd155f500u, PROTO_GOOGLE, 24}, /* 209.85.245.0/24 */
-    {0xd155f600u, PROTO_GOOGLE, 23}, /* 209.85.246.0/23 */
-    {0xd155f700u, PROTO_GOOGLE, 24}, /* 209.85.247.0/24 */
-    {0xd155f800u, PROTO_GOOGLE, 23}, /* 209.85.248.0/23 */
-    {0xd155f900u, PROTO_GOOGLE, 24}, /* 209.85.249.0/24 */
-    {0xd155fa00u, PROTO_GOOGLE, 23}, /* 209.85.250.0/23 */
-    {0xd155fb00u, PROTO_GOOGLE, 24}, /* 209.85.251.0/24 */
-    {0xd155fc00u, PROTO_GOOGLE, 23}, /* 209.85.252.0/23 */
-    {0xd155fd00u, PROTO_GOOGLE, 24}, /* 209.85.253.0/24 */
-    {0xd155fe00u, PROTO_GOOGLE, 23}, /* 209.85.254.0/23 */
-    {0xd155ff00u, PROTO_GOOGLE, 24}, /* 209.85.255.0/24 */
     {0xd1560000u, PROTO_UNKNOWN, 0},
     {0xd16bb000u, PROTO_GOOGLE, 20}, /* 209.107.176.0/20 */
-    {0xd16bb800u, PROTO_GOOGLE, 21}, /* 209.107.184.0/21 */
     {0xd16bc000u, PROTO_UNKNOWN, 0},
     {0xd1833200u, PROTO_YAHOO, 23}, /* 209.131.50.0/23 */
     {0xd1833800u, PROTO_YAHOO, 24}, /* 209.131.56.0/24 */
@@ -7518,12 +6944,16 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0xd1c5c000u, PROTO_WEBEX, 19}, /* 209.197.192.0/19 */
     {0xd1c5c100u, PROTO_WEBEX, 24}, /* 209.197.193.0/24 */
     {0xd1c5e000u, PROTO_UNKNOWN, 0},
+    {0xd1c71000u, PROTO_AZURE, 20}, /* 209.199.16.0/20 */
+    {0xd1c73000u, PROTO_UNKNOWN, 0},
+    {0xd1c78000u, PROTO_AZURE, 20}, /* 209.199.128.0/20 */
+    {0xd1c79000u, PROTO_UNKNOWN, 0},
     {0xd1c8d800u, PROTO_APPLE, 23}, /* 209.200.216.0/23 */
     {0xd1c8da00u, PROTO_UNKNOWN, 0},
-    {0xd1c96000u, PROTO_AMAZON, 22}, /* 209.201.96.0/22 */
-    {0xd1c96400u, PROTO_UNKNOWN, 0},
     {0xd1e12800u, PROTO_YAHOO, 24}, /* 209.225.40.0/24 */
     {0xd1e12900u, PROTO_UNKNOWN, 0},
+    {0xd1f0d400u, PROTO_AZURE, 23}, /* 209.240.212.0/23 */
+    {0xd1f0d600u, PROTO_UNKNOWN, 0},
     {0xd1f79e00u, PROTO_YAHOO, 24}, /* 209.247.158.0/24 */
     {0xd1f79f00u, PROTO_UNKNOWN, 0},
     {0xd204c000u, PROTO_WEBEX, 20}, /* 210.4.192.0/20 */
@@ -7664,44 +7094,28 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0xd4527600u, PROTO_YAHOO, 23}, /* 212.82.118.0/23 */
     {0xd4527800u, PROTO_YAHOO, 20}, /* 212.82.112.0/20 */
     {0xd4528000u, PROTO_UNKNOWN, 0},
-    {0xd815a000u, PROTO_GOOGLE, 20}, /* 216.21.160.0/20 */
-    {0xd815b000u, PROTO_UNKNOWN, 0},
+    {0xd5c78000u, PROTO_AZURE, 20}, /* 213.199.128.0/20 */
+    {0xd5c79000u, PROTO_UNKNOWN, 0},
+    {0xd5c7a900u, PROTO_AZURE, 24}, /* 213.199.169.0/24 */
+    {0xd5c7aa00u, PROTO_UNKNOWN, 0},
+    {0xd5c7b420u, PROTO_AZURE, 28}, /* 213.199.180.32/28 */
+    {0xd5c7b430u, PROTO_UNKNOWN, 0},
+    {0xd5c7b460u, PROTO_AZURE, 27}, /* 213.199.180.96/27 */
+    {0xd5c7b480u, PROTO_UNKNOWN, 0},
+    {0xd5c7b4c0u, PROTO_AZURE, 27}, /* 213.199.180.192/27 */
+    {0xd5c7b4e0u, PROTO_UNKNOWN, 0},
+    {0xd5c7b700u, PROTO_AZURE, 24}, /* 213.199.183.0/24 */
+    {0xd5c7b800u, PROTO_UNKNOWN, 0},
     {0xd8273000u, PROTO_YAHOO, 20}, /* 216.39.48.0/20 */
     {0xd8274000u, PROTO_UNKNOWN, 0},
+    {0xd8278800u, PROTO_AWS, 21}, /* 216.39.136.0/21 */
+    {0xd8279000u, PROTO_UNKNOWN, 0},
+    {0xd8279800u, PROTO_AWS, 21}, /* 216.39.152.0/21 */
+    {0xd827a000u, PROTO_AWS, 20}, /* 216.39.160.0/20 */
+    {0xd827b000u, PROTO_UNKNOWN, 0},
     {0xd8304400u, PROTO_YAHOO, 24}, /* 216.48.68.0/24 */
     {0xd8304500u, PROTO_UNKNOWN, 0},
     {0xd83ac000u, PROTO_GOOGLE, 19}, /* 216.58.192.0/19 */
-    {0xd83ac100u, PROTO_GOOGLE, 24}, /* 216.58.193.0/24 */
-    {0xd83ac200u, PROTO_GOOGLE, 23}, /* 216.58.194.0/23 */
-    {0xd83ac300u, PROTO_GOOGLE, 24}, /* 216.58.195.0/24 */
-    {0xd83ac400u, PROTO_GOOGLE, 23}, /* 216.58.196.0/23 */
-    {0xd83ac500u, PROTO_GOOGLE, 24}, /* 216.58.197.0/24 */
-    {0xd83ac600u, PROTO_GOOGLE, 23}, /* 216.58.198.0/23 */
-    {0xd83ac700u, PROTO_GOOGLE, 24}, /* 216.58.199.0/24 */
-    {0xd83ac800u, PROTO_GOOGLE, 23}, /* 216.58.200.0/23 */
-    {0xd83ac900u, PROTO_GOOGLE, 24}, /* 216.58.201.0/24 */
-    {0xd83aca00u, PROTO_GOOGLE, 23}, /* 216.58.202.0/23 */
-    {0xd83acb00u, PROTO_GOOGLE, 24}, /* 216.58.203.0/24 */
-    {0xd83acc00u, PROTO_GOOGLE, 23}, /* 216.58.204.0/23 */
-    {0xd83acd00u, PROTO_GOOGLE, 24}, /* 216.58.205.0/24 */
-    {0xd83ace00u, PROTO_GOOGLE, 23}, /* 216.58.206.0/23 */
-    {0xd83acf00u, PROTO_GOOGLE, 24}, /* 216.58.207.0/24 */
-    {0xd83ad000u, PROTO_GOOGLE, 23}, /* 216.58.208.0/23 */
-    {0xd83ad100u, PROTO_GOOGLE, 24}, /* 216.58.209.0/24 */
-    {0xd83ad200u, PROTO_GOOGLE, 23}, /* 216.58.210.0/23 */
-    {0xd83ad300u, PROTO_GOOGLE, 24}, /* 216.58.211.0/24 */
-    {0xd83ad400u, PROTO_GOOGLE, 23}, /* 216.58.212.0/23 */
-    {0xd83ad500u, PROTO_GOOGLE, 24}, /* 216.58.213.0/24 */
-    {0xd83ad600u, PROTO_GOOGLE, 23}, /* 216.58.214.0/23 */
-    {0xd83ad700u, PROTO_GOOGLE, 24}, /* 216.58.215.0/24 */
-    {0xd83ad800u, PROTO_GOOGLE, 23}, /* 216.58.216.0/23 */
-    {0xd83ad900u, PROTO_GOOGLE, 24}, /* 216.58.217.0/24 */
-    {0xd83ada00u, PROTO_GOOGLE, 23}, /* 216.58.218.0/23 */
-    {0xd83adb00u, PROTO_GOOGLE, 24}, /* 216.58.219.0/24 */
-    {0xd83adc00u, PROTO_GOOGLE, 23}, /* 216.58.220.0/23 */
-    {0xd83add00u, PROTO_GOOGLE, 24}, /* 216.58.221.0/24 */
-    {0xd83ade00u, PROTO_GOOGLE, 23}, /* 216.58.222.0/23 */
-    {0xd83adf00u, PROTO_GOOGLE, 24}, /* 216.58.223.0/24 */
     {0xd83ae000u, PROTO_UNKNOWN, 0},
     {0xd8495000u, PROTO_GOOGLE, 20}, /* 216.73.80.0/20 */
     {0xd8496000u, PROTO_UNKNOWN, 0},
@@ -7724,55 +7138,35 @@ static const ip_range_interval_t ip_range_intervals[IP_RANGE_INTERVAL_COUNT] = {
     {0xd888e400u, PROTO_UNKNOWN, 0},
     {0xd888e800u, PROTO_YAHOO, 22}, /* 216.136.232.0/22 */
     {0xd888ec00u, PROTO_UNKNOWN, 0},
-    {0xd8892000u, PROTO_AMAZON, 23}, /* 216.137.32.0/23 */
+    {0xd8892000u, PROTO_CLOUDFRONT, 19}, /* 216.137.32.0/19 */
     {0xd8894000u, PROTO_UNKNOWN, 0},
     {0xd8913000u, PROTO_YAHOO, 20}, /* 216.145.48.0/20 */
     {0xd8914000u, PROTO_UNKNOWN, 0},
     {0xd89bc000u, PROTO_YAHOO, 20}, /* 216.155.192.0/20 */
     {0xd89bd000u, PROTO_UNKNOWN, 0},
-    {0xd8b6e000u, PROTO_AMAZON, 21}, /* 216.182.224.0/21 */
-    {0xd8b6ec00u, PROTO_AMAZON, 23}, /* 216.182.236.0/23 */
-    {0xd8b6ee00u, PROTO_AMAZON, 21}, /* 216.182.232.0/21 */
+    {0xd8b6e000u, PROTO_AWS, 20}, /* 216.182.224.0/20 */
     {0xd8b6f000u, PROTO_UNKNOWN, 0},
+    {0xd8c6c000u, PROTO_AWS, 23}, /* 216.198.192.0/23 */
+    {0xd8c6c200u, PROTO_AWS, 24}, /* 216.198.194.0/24 */
+    {0xd8c6c300u, PROTO_UNKNOWN, 0},
+    {0xd8c6c400u, PROTO_AWS, 22}, /* 216.198.196.0/22 */
+    {0xd8c6c800u, PROTO_AWS, 21}, /* 216.198.200.0/21 */
+    {0xd8c6d000u, PROTO_AWS, 20}, /* 216.198.208.0/20 */
+    {0xd8c6e000u, PROTO_AWS, 19}, /* 216.198.224.0/19 */
+    {0xd8c70000u, PROTO_UNKNOWN, 0},
+    {0xd8d80000u, PROTO_AWS, 15}, /* 216.216.0.0/15 */
+    {0xd8da0000u, PROTO_UNKNOWN, 0},
+    {0xd8dcd000u, PROTO_AZURE, 20}, /* 216.220.208.0/20 */
+    {0xd8dce000u, PROTO_UNKNOWN, 0},
     {0xd8ef2000u, PROTO_GOOGLE, 19}, /* 216.239.32.0/19 */
-    {0xd8ef2100u, PROTO_GOOGLE, 24}, /* 216.239.33.0/24 */
-    {0xd8ef2200u, PROTO_GOOGLE, 23}, /* 216.239.34.0/23 */
-    {0xd8ef2300u, PROTO_GOOGLE, 24}, /* 216.239.35.0/24 */
-    {0xd8ef2400u, PROTO_GOOGLE, 23}, /* 216.239.36.0/23 */
-    {0xd8ef2500u, PROTO_GOOGLE, 24}, /* 216.239.37.0/24 */
-    {0xd8ef2600u, PROTO_GOOGLE, 23}, /* 216.239.38.0/23 */
-    {0xd8ef2700u, PROTO_GOOGLE, 24}, /* 216.239.39.0/24 */
-    {0xd8ef2800u, PROTO_GOOGLE, 23}, /* 216.239.40.0/23 */
-    {0xd8ef2900u, PROTO_GOOGLE, 24}, /* 216.239.41.0/24 */
-    {0xd8ef2a00u, PROTO_GOOGLE, 23}, /* 216.239.42.0/23 */
-    {0xd8ef2b00u, PROTO_GOOGLE, 24}, /* 216.239.43.0/24 */
-    {0xd8ef2e00u, PROTO_GOOGLE, 23}, /* 216.239.46.0/23 */
-    {0xd8ef2f00u, PROTO_GOOGLE, 24}, /* 216.239.47.0/24 */
-    {0xd8ef3000u, PROTO_GOOGLE, 23}, /* 216.239.48.0/23 */
-    {0xd8ef3100u, PROTO_GOOGLE, 24}, /* 216.239.49.0/24 */
-    {0xd8ef3200u, PROTO_GOOGLE, 23}, /* 216.239.50.0/23 */
-    {0xd8ef3300u, PROTO_GOOGLE, 24}, /* 216.239.51.0/24 */
-    {0xd8ef3400u, PROTO_GOOGLE, 23}, /* 216.239.52.0/23 */
-    {0xd8ef3500u, PROTO_GOOGLE, 24}, /* 216.239.53.0/24 */
-    {0xd8ef3600u, PROTO_GOOGLE, 23}, /* 216.239.54.0/23 */
-    {0xd8ef3700u, PROTO_GOOGLE, 24}, /* 216.239.55.0/24 */
-    {0xd8ef3800u, PROTO_GOOGLE, 23}, /* 216.239.56.0/23 */
-    {0xd8ef3900u, PROTO_GOOGLE, 24}, /* 216.239.57.0/24 */
-    {0xd8ef3a00u, PROTO_GOOGLE, 23}, /* 216.239.58.0/23 */
-    {0xd8ef3b00u, PROTO_GOOGLE, 24}, /* 216.239.59.0/24 */
-    {0xd8ef3c00u, PROTO_GOOGLE, 23}, /* 216.239.60.0/23 */
-    {0xd8ef3d00u, PROTO_GOOGLE, 24}, /* 216.239.61.0/24 */
-    {0xd8ef3e00u, PROTO_GOOGLE, 23}, /* 216.239.62.0/23 */
-    {0xd8ef3f00u, PROTO_GOOGLE, 24}, /* 216.239.63.0/24 */
     {0xd8ef4000u, PROTO_UNKNOWN, 0},
+    {0xd8f40000u, PROTO_AWS, 18}, /* 216.244.0.0/18 */
+    {0xd8f44000u, PROTO_UNKNOWN, 0},
     {0xd8fc6000u, PROTO_YAHOO, 19}, /* 216.252.96.0/19 */
     {0xd8fc6800u, PROTO_YAHOO, 21}, /* 216.252.104.0/21 */
     {0xd8fc7000u, PROTO_YAHOO, 19}, /* 216.252.96.0/19 */
     {0xd8fc8000u, PROTO_UNKNOWN, 0},
     {0xd8fcdc00u, PROTO_GOOGLE, 22}, /* 216.252.220.0/22 */
-    {0xd8fcdd00u, PROTO_GOOGLE, 24}, /* 216.252.221.0/24 */
-    {0xd8fcde00u, PROTO_GOOGLE, 23}, /* 216.252.222.0/23 */
-    {0xd8fcdf00u, PROTO_GOOGLE, 24}, /* 216.252.223.0/24 */
     {0xd8fce000u, PROTO_UNKNOWN, 0},
     {0xd8ffe000u, PROTO_YAHOO, 20}, /* 216.255.224.0/20 */
     {0xd8ffe800u, PROTO_YAHOO, 21}, /* 216.255.232.0/21 */

@@ -19,9 +19,9 @@
  *   turn        TURN ChannelData framing (length + 4 = datagram, constant
  *               size) on 443: never, and a ChannelData from the server
  *               rejects as well
- *   ip range    a server in an IP-range block (1.0.0.2: google) gets the
- *               guess first; the verdict keeps it after quic_ietf, with
- *               its method (N2)
+ *   ip range    a server in an IP-range block (8.8.8.8: google, from
+ *               goog.json since issue #565) gets the guess first; the
+ *               verdict keeps it after quic_ietf, with its method (N2)
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -308,7 +308,7 @@ static void test_turn(void) {
 static void test_ip_range(void) {
     printf("ip range\n");
     mmt_handler_t *h = fresh();
-    memcpy(g_server, (const uint8_t[4]) {1, 0, 0, 2}, 4);
+    memcpy(g_server, (const uint8_t[4]) {8, 8, 8, 8}, 4);
     cli(h, DCID_A);
     CHECK(!g_quic && g_last == PROTO_GOOGLE && g_method == MMT_CLASSIFICATION_METHOD_IP,
           "first packet: the IP-range guess google (method IP; got last %u, method %d)", g_last, g_method);

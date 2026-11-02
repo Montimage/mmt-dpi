@@ -1,6 +1,6 @@
 {
   "_comment": [
-    "Issues #389 and #390 (F-TEST-003): reviewed DNS, TLS, QUIC, HTTP/2, S1AP, NGAP and NAS accuracy cases plus unknown/malformed traffic; issue #527: a positive and a negative case per default-chain classifier (see coverage-pending.txt for the ones still owed); issue #564: corroboration cases for DICOM, gQUIC, STUN and S1AP/NGAP.",
+    "Issues #389 and #390 (F-TEST-003): reviewed DNS, TLS, QUIC, HTTP/2, S1AP, NGAP and NAS accuracy cases plus unknown/malformed traffic; issue #527: a positive and a negative case per default-chain classifier (see coverage-pending.txt for the ones still owed); issue #564: corroboration cases for DICOM, gQUIC, STUN and S1AP/NGAP; issue #565: IP-range attribution of a CloudFront and a Google Cloud tenant address.",
     "Checked by tools/ci/tests/check-accuracy-corpus.py; NOT part of ci/golden_pcaps.txt,",
     "so the golden classification fingerprint's input set is unchanged.",
     "expected counts are per packet: wire = carries the family's wire-protocol label,",
@@ -4418,6 +4418,72 @@
         "checks": [
           "RFC 8489 header and XOR-MAPPED-ADDRESS as acc_stun_positive; only the server address, the port and the transaction id differ",
           "attribution must stay empty: origin/main relabels the flow gtalk from the IP-range table (stun.gtalk, F-BUG-304); nothing in the message names an application"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_ip_cloudfront_tenant.pcap",
+      "family": "unknown",
+      "case": "unknown",
+      "description": "TCP handshake then opaque high-entropy bytes both ways between 192.0.2.1:47811 and 13.32.10.10:47812, an address of AWS's published CloudFront range 13.32.0.0/15: the IP-range table attributes the flow to the CDN, cloudfront, from the first SYN -- never to the first-party application amazon.",
+      "sha256": "762877d6eaff839a69022761df17dd42eb5737205a632cdbc801c368056686e5",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 0,
+        "other": {
+          "cloudfront": 5
+        },
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_ip_cloudfront_tenant"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (an RFC 5737 client address, the CloudFront edge address 13.32.10.10 as a constant, locally administered MACs, SHA-256 counter-stream payload); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #565",
+        "date": "2026-11-02",
+        "checks": [
+          "payload is a SHA-256 counter stream on unassigned ports: only the server address can yield a verdict",
+          "13.32.0.0/15 is service CLOUDFRONT in ip-ranges.json (data/ip_ranges.txt feed aws); origin/main's 2017 table labels it amazon (13.32.0.0/14 PROTO_AMAZON, F-BUG-305)",
+          "the verdict is an IP-range guess: classification method ip (phase0_precision reports ip:5:5)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_ip_gcp_tenant.pcap",
+      "family": "unknown",
+      "case": "unknown",
+      "description": "TCP handshake then opaque high-entropy bytes both ways between 192.0.2.1:47813 and 35.192.10.10:47814, an address of Google Cloud's published customer range 35.192.0.0/14: the IP-range table attributes the flow to the cloud, google_cloud, from the first SYN -- never to the first-party application google.",
+      "sha256": "7a2ec0ebe75e917147bf13709bfbfe1fc96617673e94395d31f9c6959a8c46f1",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 0,
+        "other": {
+          "google_cloud": 5
+        },
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_ip_gcp_tenant"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (an RFC 5737 client address, the Google Cloud customer address 35.192.10.10 as a constant, locally administered MACs, SHA-256 counter-stream payload); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #565",
+        "date": "2026-11-02",
+        "checks": [
+          "payload is a SHA-256 counter stream on unassigned ports: only the server address can yield a verdict",
+          "35.192.0.0/14 is in cloud.json (data/ip_ranges.txt feed google-cloud); origin/main's 2017 table labels it google (35.192.0.0/12 PROTO_GOOGLE, F-BUG-305)",
+          "the verdict is an IP-range guess: classification method ip (phase0_precision reports ip:5:5)"
         ]
       }
     },

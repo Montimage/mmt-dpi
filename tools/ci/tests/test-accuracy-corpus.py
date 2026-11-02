@@ -276,9 +276,11 @@ with Scratch() as s:
     except ValueError:
         fams = {}
     check("--json reports the abstention family with its own keys",
-          rc == 0 and fams.get("unknown") == {"unknown_cases": 6,
-                                              "packets": 16, "abstain": 14,
-                                              "accepted": 2}
+          # issue #565 adds the CloudFront and Google Cloud tenant cases:
+          # five IP-attributed packets each
+          rc == 0 and fams.get("unknown") == {"unknown_cases": 8,
+                                              "packets": 26, "abstain": 14,
+                                              "accepted": 12}
           and not any("unknown_cases" in v for k, v in fams.items()
                       if k != "unknown"), out)
 
