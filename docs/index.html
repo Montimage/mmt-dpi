@@ -712,19 +712,39 @@
 }
 
 <span class="t-key">int</span> <span class="t-fn">main</span>(<span class="t-key">int</span> argc, <span class="t-key">char</span> **argv) {
-    <span class="t-fn">init_extraction</span>();
-    <span class="t-key">char</span> errbuf[<span class="t-num">1024</span>];
+    <span class="t-key">if</span> (argc != <span class="t-num">2</span>) {
+        <span class="t-fn">fprintf</span>(stderr, <span class="t-str">"usage: %s &lt;interface&gt;\n"</span>, argv[<span class="t-num">0</span>]);
+        <span class="t-key">return</span> <span class="t-num">1</span>;
+    }
+    <span class="t-key">char</span> errbuf[<span class="t-ty">MMT_ERRBUF_SIZE</span>];   <span class="t-com">// large enough for pcap's errors too</span>
+    <span class="t-key">if</span> (!<span class="t-fn">init_extraction</span>()) <span class="t-key">return</span> <span class="t-num">1</span>;
     <span class="t-ty">mmt_handler_t</span> *h = <span class="t-fn">mmt_init_handler</span>(<span class="t-ty">DLT_EN10MB</span>, <span class="t-num">0</span>, errbuf);
+    <span class="t-key">if</span> (!h) {
+        <span class="t-fn">fprintf</span>(stderr, <span class="t-str">"mmt_init_handler: %s\n"</span>, errbuf);
+        <span class="t-fn">close_extraction</span>();
+        <span class="t-key">return</span> <span class="t-num">1</span>;
+    }
 
     <span class="t-com">// Report each session on a timer (0 = include incomplete packets).</span>
     <span class="t-fn">register_session_timer_handler</span>(h, on_session, <span class="t-ty">NULL</span>, <span class="t-num">0</span>);
 
     <span class="t-com">// Capture live from an interface and pump frames into MMT.</span>
     <span class="t-ty">pcap_t</span> *pcap = <span class="t-fn">pcap_open_live</span>(argv[<span class="t-num">1</span>], <span class="t-num">65535</span>, <span class="t-num">1</span>, <span class="t-num">1000</span>, errbuf);
+    <span class="t-key">if</span> (!pcap) {   <span class="t-com">// e.g. no capture permission: run with sudo</span>
+        <span class="t-fn">fprintf</span>(stderr, <span class="t-str">"pcap_open_live: %s\n"</span>, errbuf);
+        <span class="t-fn">mmt_close_handler</span>(h);
+        <span class="t-fn">close_extraction</span>();
+        <span class="t-key">return</span> <span class="t-num">1</span>;
+    }
     <span class="t-fn">pcap_loop</span>(pcap, <span class="t-num">-1</span>, on_capture, (<span class="t-ty">u_char</span>*)h);
+
+    <span class="t-fn">pcap_close</span>(pcap);
+    <span class="t-fn">mmt_close_handler</span>(h);
+    <span class="t-fn">close_extraction</span>();
+    <span class="t-key">return</span> <span class="t-num">0</span>;
 }</pre>
             </div>
-            <p class="api-note">Session accessors expose packet/byte counts, uplink/downlink splits, and more. Built-in <code>tcp/rtt</code> and <code>tcp/retransmission</code> attributes add per-flow timing. Run live captures with <code>sudo</code>.</p>
+            <p class="api-note">Session accessors expose packet/byte counts, uplink/downlink splits, and more. Built-in <code>tcp/rtt</code> and <code>tcp/retransmission</code> attributes add per-flow timing. Run live captures with <code>sudo</code>; a permission or loader error is explained in <a href="troubleshooting.html">Troubleshooting</a>.</p>
           </div>
         </div>
       </div>
@@ -840,7 +860,9 @@
         Every route above installs to <code>/opt/mmt/dpi</code> (the command above the fold is the source installer's), and the first-run steps beside it compile and run the published <a href="first-run/hello_packet.c">hello_packet.c</a> against that prefix. Prefer a package? Grab the
         <code>.deb</code>/<code>.rpm</code> from <a href="https://github.com/montimage-projects/mmt-dpi/releases" target="_blank" rel="noopener">Releases</a>;
         building from source is covered in the
-        <a href="Compilation-and-Installation-Instructions.html">Compilation and Installation Instructions</a>. Every guide lives in the
+        <a href="Compilation-and-Installation-Instructions.html">Compilation and Installation Instructions</a>, and an error on the
+        way — a missing header or library, the loader, the plugin directory, a permission — in
+        <a href="troubleshooting.html">Troubleshooting</a>. Every guide lives in the
         <a href="docs/">documentation index</a>.
       </p>
     </section>

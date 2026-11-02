@@ -14,9 +14,10 @@ Thank you for your interest in contributing to MMT-DPI! This guide will help you
 
 ### Prerequisites
 
-Linux only, with GCC and GNU Make. The reference toolchain, the package list
-and the `apt-get` line are maintained in one place:
-[Agent Environment Notes §1 Toolchain Requirements](docs/AGENT_ENVIRONMENT.md#1-toolchain-requirements).
+Linux only, with GCC and GNU Make. Install the packages listed in the
+[prerequisites](docs/Compilation-and-Installation-Instructions.md#prerequisites),
+including the two the test suite adds (`pkg-config`, `jq`). If a build,
+install or first run fails, see [Troubleshooting](docs/troubleshooting.md).
 
 ### Build from Source
 

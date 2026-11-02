@@ -86,6 +86,7 @@ Scope: `docs/`, root Markdown, `docs/DECISIONS.md`.
 
 - Verify each doc claim against sources (`rules/*.mk`, `sdk/Makefile`, `src/`, `tests/`); fix or flag unverifiable claims.
 - Every non-trivial resolution gets one append-only entry in `docs/DECISIONS.md`: question, answer, source.
+- A documentation fix found on a validation run is logged append-only in `docs/doc-fix-log.md`; `docs/troubleshooting.md` is the user-facing first-run error page, never a fix log.
 - Facts that have a single home stay there: link to [docs/AGENT_ENVIRONMENT.md](docs/AGENT_ENVIRONMENT.md) rather than restating it, and keep `scripts/validate-agent-environment.sh` green.
 - Report: files fixed, claims verified, entries appended. Do not reformat docs beyond what the fix requires.
 

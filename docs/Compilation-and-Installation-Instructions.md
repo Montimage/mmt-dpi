@@ -7,19 +7,56 @@ title: "Compilation and Installation Instructions"
 
 ------------------
 
-# Before compiling
-A modern C/C++ toolchain is required. MMT-DPI is continuously built and tested
-on Ubuntu 22.04 / 24.04 / 26.04, Debian 12 / 13, Rocky Linux 9 / 10 and CentOS
-Stream 9 / 10 using the GCC and Clang versions shipped by those distributions
-(GCC 11–15, Clang 14+).
-GCC 11 is the enforced floor — `rules/arch-linux.mk` fails the build on an
-older GCC; the contract and the matching glibc/libstdc++ floors are stated in
-[Agent Environment Notes §1](./AGENT_ENVIRONMENT.md#1-toolchain-requirements).
+# Prerequisites
 
-# Pre-requisites
+MMT-DPI builds on Linux only, with GCC 11 or newer and GNU Make. It is
+continuously built and tested on Ubuntu 22.04 / 24.04 / 26.04, Debian 12 / 13,
+Rocky Linux 9 / 10 and CentOS Stream 9 / 10 with the GCC and Clang versions
+those distributions ship (GCC 11–15, Clang 14+); an older GCC stops the build
+with a message naming the compiler it found (`rules/arch-linux.mk`).
 
-Required packages: `libxml2-dev` (only for `ENABLESEC=1` — `rules/common.mk:76-84`),
-`libpcap-dev` (for examples). The libraries link no other third-party library.
+To build the SDK you need a C compiler, `make` and `git`; to compile the
+example programs, which read packet captures, you also need the libpcap
+headers. One command installs all of them:
+
+Debian, Ubuntu:
+
+```bash
+sudo apt-get install -y build-essential gcc g++ make git libpcap-dev
+```
+
+Fedora, Rocky Linux, AlmaLinux, CentOS Stream (on Rocky Linux, AlmaLinux and
+CentOS Stream `libpcap-devel` is in the CRB repository: add
+`--enablerepo=crb` after `dnf`):
+
+```bash
+sudo dnf install -y gcc gcc-c++ make git libpcap-devel
+```
+
+openSUSE:
+
+```bash
+sudo zypper install -y gcc gcc-c++ make git libpcap-devel
+```
+
+Arch Linux (best-effort):
+
+```bash
+sudo pacman -S --needed base-devel git libpcap
+```
+
+Two optional extras:
+
+- the security engines (`make -C sdk ENABLESEC=1`) also need the libxml2
+  headers, `libxml2-dev` or `libxml2-devel` (`rules/common.mk:76-84`); no
+  other third-party library is linked;
+- contributors who run the test suite also need `pkg-config` and `jq`.
+
+The one-command source installer of the
+[Quick Start](./index.html#quick-start) installs the build packages itself;
+this list is for building from a checkout. If a step below fails, the
+[Troubleshooting](./troubleshooting.md) page has the fix for each first-run
+error.
 
 ### Get source code
 ```bash
@@ -28,13 +65,6 @@ cd mmt-dpi
 ```
  
 # Linux 
-
-## Install required tools and packages
-
-The toolchain and package list are maintained in one place — install them with
-the `apt-get` line in
-[Agent Environment Notes §1 Toolchain Requirements](./AGENT_ENVIRONMENT.md#1-toolchain-requirements),
-which also records why each package is needed.
 
 ## Compile and install/uninstall
 
@@ -51,11 +81,7 @@ To uninstall run `sudo make uninstall` (pass the same `MMT_BASE` as the install)
 
 # Examples
 
-In this example, we are going to use `libpcap` to capture packets from a given NIC. So we need to install `libpcap-dev` library:
-
-```bash
-sudo apt-get install libpcap-dev
-```
+In this example, we are going to use `libpcap` to capture packets from a given NIC, so the libpcap headers of the [prerequisites](#prerequisites) must be installed.
 
 You can test `mmt-dpi` library with some examples in [`src/examples`](https://github.com/montimage-projects/mmt-dpi/tree/main/src/examples) to see how it works.
 
@@ -68,7 +94,7 @@ gcc -o extract_all extract_all.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lm
 ---------------------------------
 
 > **Note:** macOS and Windows are **not supported** — only Linux is
-> ([Agent Environment Notes](./AGENT_ENVIRONMENT.md)). The make rules the old
+> (see [Prerequisites](#prerequisites)). The make rules the old
 > macOS/Windows builds relied on (`rules/arch-osx.mk`, `rules/arch-win32.mk`,
 > `rules/arch-win64.mk`, `rules/common-windows.mk`) were removed in #228, so
 > `ARCH=osx|win32|win64` fails at the `include arch-$(ARCH).mk` line; the

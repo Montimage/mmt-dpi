@@ -5,9 +5,11 @@
 #
 # What it asserts, one check per recorded finding:
 #
-#   F-DOCS-004  docs/troubleshooting.md carries a correcting entry whose
-#               statement of NDEBUG's semantics matches rules/common.mk
-#               (the default build defines -DNDEBUG; NDEBUG=1 suppresses it).
+#   F-DOCS-004  docs/doc-fix-log.md (the documentation fix log, published
+#               as docs/troubleshooting.md until issue #580) carries a
+#               correcting entry whose statement of NDEBUG's semantics
+#               matches rules/common.mk (the default build defines
+#               -DNDEBUG; NDEBUG=1 suppresses it).
 #   F-DOCS-010  DEB_PACKAGE_CHECKLIST.md no longer sits at the root posing as
 #               current status; the moved copy under docs/ carries a dated
 #               header naming the version it describes (1.7.10) and the
@@ -30,7 +32,7 @@
 #               resolves to a repository file and range, and lands on the
 #               line its tools/ci/doc-citations.txt row records
 #               (tools/ci/check-doc-citations.py); DECISIONS.md and
-#               troubleshooting.md are exempt as append-only logs.
+#               doc-fix-log.md are exempt as append-only logs.
 #   F-DOCS-014  the unsupported-platform instruction blocks (Homebrew
 #               formulas, ARCH=osx/win32/win64 builds, /opt/windows staging)
 #               are gone from Compilation-and-Installation-Instructions.md,
@@ -98,7 +100,7 @@ command -v python3 >/dev/null 2>&1 || { echo "✗ python3 is required" >&2; exit
 
 echo "=== doc-drift validation (issue #249) ==="
 
-# --- F-DOCS-004: troubleshooting log correction -----------------------------
+# --- F-DOCS-004: documentation fix log correction ---------------------------
 echo ""
 echo "-- F-DOCS-004: NDEBUG semantics --"
 
@@ -112,11 +114,11 @@ check "rules/common.mk: default build defines -DNDEBUG, NDEBUG=1 suppresses it" 
 
 # The correcting entry lives in the newest dated section of the append-only
 # log and must state the suppress semantics against -DNDEBUG.
-check "docs/troubleshooting.md carries a correcting NDEBUG entry" \
+check "docs/doc-fix-log.md carries a correcting NDEBUG entry" \
       "awk '/^## /{sec=\$0} /NDEBUG=1/{if (sec != \"## 2026-07-21\") print}' \
-          docs/troubleshooting.md | grep -q 'suppress' \
+          docs/doc-fix-log.md | grep -q 'suppress' \
        && awk '/^## /{sec=\$0} /suppress/{if (sec != \"## 2026-07-21\") print}' \
-          docs/troubleshooting.md | grep -q -- '-DNDEBUG'"
+          docs/doc-fix-log.md | grep -q -- '-DNDEBUG'"
 
 # --- F-DOCS-010: DEB_PACKAGE_CHECKLIST.md ------------------------------------
 echo ""

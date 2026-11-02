@@ -1,7 +1,7 @@
 # build-deps.txt — the single source for the build-dependency lists
 # (issue #495, F-DEP-003/F-DEP-304).
 #
-# Five files install packages for this build, each for a different job, in
+# Six files install packages for this build, each for a different job, in
 # its own package manager's names. They used to be maintained by hand and
 # drifted from the code (an HTTP/2 library nothing calls, libxml2 for a
 # profile that never builds the engines). This file says what each list
@@ -77,3 +77,11 @@ list  bootstrap-deps                 apt     enablesec examples
 
 # The documented toolchain install line (docs/AGENT_ENVIRONMENT.md §1).
 list  AGENT_ENVIRONMENT.md           apt     build enablesec examples devtools
+
+# The human prerequisites (docs/Compilation-and-Installation-Instructions.md,
+# issue #580): build from a checkout and compile the examples, like the
+# one-command installer.
+list  prerequisites:apt              apt     build examples
+list  prerequisites:dnf              dnf     build examples
+list  prerequisites:zypper           zypper  build examples
+list  prerequisites:pacman           pacman  build examples

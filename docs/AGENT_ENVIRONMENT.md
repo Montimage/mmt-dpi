@@ -27,8 +27,10 @@ This is the **single source** for the toolchain install line: other documents
 link here instead of repeating it. Two kinds of apt line elsewhere in the
 repository are deliberately not copies of it — executable package lists, which
 have to be runnable (`install.sh`, `tools/ci/build-package.sh`, the CI
-workflows), and package sets for a different job (the CubieBoard/ARM notes,
-the QoE demo, the Debian packaging checklist).
+workflows), and package sets for a different job (the human prerequisites of
+`docs/Compilation-and-Installation-Instructions.md`, which build the SDK and
+the examples without the test tooling, the CubieBoard/ARM notes, the QoE demo,
+the Debian packaging checklist).
 
 ```bash
 sudo apt-get update
@@ -45,8 +47,9 @@ sudo apt-get install -y build-essential gcc g++ make git libxml2-dev libpcap-dev
 
 The build links no other third-party library (issue #495). This line and the
 executable lists — `install.sh`, `tools/ci/install-build-deps.sh`, the rpm
-`BuildRequires:` in `sdk/Makefile` and `.github/actions/bootstrap-deps` — are
-each checked against `tools/ci/build-deps.txt`, which records what every list
+`BuildRequires:` in `sdk/Makefile` and `.github/actions/bootstrap-deps` — and
+the human prerequisites (issue #580) are each checked against
+`tools/ci/build-deps.txt`, which records what every list
 must hold, by `tools/ci/check-dependency-lists.sh`: change a package there
 first. `mmt-dpi.spec`'s `BuildRequires:` (`gcc`, `make`: what `rpmbuild`
 needs in a distribution buildroot, issue #550) is not one of them — the

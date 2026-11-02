@@ -28,17 +28,14 @@ supported Linux.
 
 The source installer (`install.sh`):
 1. Detects your distribution and installs the default-profile build set
-   (compiler, `make`, `git`) plus libpcap for the example programs
-   (`install.sh:356-423`) — not libxml2, which only `ENABLESEC=1` needs. What
-   each package list holds is recorded in `tools/ci/build-deps.txt`; the
-   developer toolchain line is in
-   [Agent Environment Notes §1 Toolchain Requirements](./AGENT_ENVIRONMENT.md#1-toolchain-requirements).
+   (compiler, `make`, `git`) plus libpcap for the example programs[^deps] —
+   not libxml2, which only `ENABLESEC=1` needs.
 2. Clones the pinned release tag into a temporary directory and verifies it
-   (commit pin, plus the tag signature when present — issue #197).
+   (commit pin, plus the tag signature when present).[^verify]
 3. Runs `make ARCH=linux MMT_BASE=/opt/mmt -jN`.
 4. Installs to `/opt/mmt/dpi/` (override with `MMT_BASE=/custom/path` or
    `--prefix /custom/path`), elevating with `sudo` only when the prefix is not
-   writable by the current user (issue #211).
+   writable by the current user.[^sudo]
 5. Registers the libraries with the dynamic loader
    (`/etc/ld.so.conf.d/mmt-dpi.conf` + `ldconfig`) whenever the install ran
    as root — elevated or invoked by root — whatever the prefix, and then
@@ -47,7 +44,9 @@ The source installer (`install.sh`):
    `--prefix` for a custom prefix): the Quick Start's uninstall line.
 
 Manual build, from any directory (the block clones into `./mmt-dpi` and
-stays at the root of that checkout):
+stays at the root of that checkout), once the packages of the
+[prerequisites](./Compilation-and-Installation-Instructions.md#prerequisites)
+are installed:
 
 ```bash
 git clone https://github.com/montimage-projects/mmt-dpi.git
@@ -56,7 +55,7 @@ make -C sdk -j$(nproc)
 sudo make -C sdk install
 ```
 
-After installation (default `MMT_BASE=/opt/mmt`), the layout is:
+After installation (default `MMT_BASE=/opt/mmt`), the layout is:[^layout]
 
 ```
 /opt/mmt/
@@ -64,10 +63,12 @@ After installation (default `MMT_BASE=/opt/mmt`), the layout is:
 │   ├── include/      # Public C headers (mmt_core.h, ...)
 │   └── lib/          # Shared libraries (libmmt_core.so, libmmt_tcpip.so, ...)
 ├── plugins/          # Protocol plugin .so files loaded at runtime
-└── examples/         # Example sources (copied by make install, sdk/Makefile:110-113)
+└── examples/         # Example sources (copied by make install)
 ```
 
-Paths are defined in `rules/common.mk:3-8`.
+If a build, install, compile or run step fails, the
+[Troubleshooting](./troubleshooting.md) page lists each first-run error with
+its fix.
 
 ## 2. First run: extract attributes from a pcap
 
@@ -116,35 +117,30 @@ callbacks, statistics), one `mmt_handler_t` per packet stream. The order is:
 
 1. Initialise the global state once with `init_extraction()`, **before any
    handler exists**, and check its return value — it returns `false` on
-   failure (`src/mmt_core/src/packet_registry.c:626`). It builds the
-   protocol registry, loads the plugins and creates the map that tracks live
-   handlers (`src/mmt_core/src/packet_registry.c:668-669`,
-   `src/mmt_core/src/packet_registry_handler.c:414`); nothing else
-   in the API works before it. If it fails, do not call anything else,
+   failure.[^init] It builds the protocol registry, loads the plugins and
+   creates the map that tracks live handlers;[^init-state] nothing else in
+   the API works before it. If it fails, do not call anything else,
    including `close_extraction()`.
 2. Create a handler with `mmt_init_handler()` and check it for `NULL` — on
    failure it fills the `errbuf` you pass in (at least `MMT_ERRBUF_SIZE`
-   bytes) (`src/mmt_core/src/packet_registry_handler.c:116`). Each new handler is
-   recorded in the global handler map
-   (`src/mmt_core/src/packet_registry_handler.c:269`).
+   bytes).[^handler] Each new handler is recorded in the global handler
+   map.[^handler-map]
 3. Register the attributes you care about with
    `register_extraction_attribute()` (by protocol id and attribute id) or
    `register_extraction_attribute_by_name()`, and optionally packet-,
    attribute- or session-level callbacks. Each returns `false` on failure.
-4. Feed packets in with `packet_process()`
-   (`src/mmt_core/src/packet_pipeline.c:1576`); it returns `false` when a
-   packet could not be processed, and later packets can still be fed.
+4. Feed packets in with `packet_process()`;[^process] it returns `false`
+   when a packet could not be processed, and later packets can still be
+   fed.
 5. Release every handler with `mmt_close_handler()`: it expires the
    handler's sessions, frees everything the handler owns and removes it from
-   the global handler map (`src/mmt_core/src/packet_registry_handler.c:302`,
-   `src/mmt_core/src/packet_registry_handler.c:352`).
-6. Tear down the global state last, once, with `close_extraction()`
-   (`src/mmt_core/src/packet_registry.c:677`). It force-closes any handler
-   still registered (`src/mmt_core/src/packet_registry.c:680`,
-   `src/mmt_core/src/packet_registry_handler.c:420`) and then
-   unloads the plugins (`src/mmt_core/src/packet_registry.c:688`), so a
-   handler pointer is dangling afterwards: never call `mmt_close_handler()`
-   or `packet_process()` on it once `close_extraction()` has run.
+   the global handler map.[^close-handler]
+6. Tear down the global state last, once, with
+   `close_extraction()`.[^close] It force-closes any handler still
+   registered[^close-handlers] and then unloads the plugins,[^close-plugins]
+   so a handler pointer is dangling afterwards: never call
+   `mmt_close_handler()` or `packet_process()` on it once
+   `close_extraction()` has run.
 
 On an error part-way through, release only what was acquired, in reverse
 order: a failed `mmt_init_handler()` is followed by `close_extraction()`
@@ -161,13 +157,11 @@ thread. The full contract, the locks behind it and the ThreadSanitizer
 harness that checks it are in [THREADING.md](./THREADING.md).
 
 `src/examples/packet_handler.c` is the runnable reference for this order:
-it checks `init_extraction()` (`src/examples/packet_handler.c:63`) before
-creating its handler (`src/examples/packet_handler.c:69`), unwinds each
-failure path, processes a pcap (`src/examples/packet_handler.c:100`) and
-closes the handler (`src/examples/packet_handler.c:108`) before the global
-state (`src/examples/packet_handler.c:111`). Against an install prefix
-(`/opt/mmt` or your `MMT_BASE`, see
-[AGENT_ENVIRONMENT.md §4](./AGENT_ENVIRONMENT.md#4-mmt_base-install-prefix-behavior)):
+it checks `init_extraction()` before creating its handler, unwinds each
+failure path, processes a pcap and closes the handler before the global
+state.[^example] Against an install prefix (`/opt/mmt` or your `MMT_BASE`,
+the same for the build and the install — see the
+[Deployment Guide](./DEPLOYMENT.md#from-source)):
 
 ```bash
 gcc -o packet_handler "$MMT_BASE/examples/packet_handler.c" \
@@ -183,17 +177,14 @@ works too when passed by its full path.
 
 `init_extraction()` loads the protocol plugins only from
 `$MMT_BASE/plugins`, the directory compiled into the SDK, or from the
-absolute directory named by the `MMT_DPI_PLUGINS_DIR` environment variable
-(`src/mmt_core/src/plugins_engine.c:50-53`); the working directory is
-never scanned. A plugin that fails to load or initialise makes
-`init_extraction()` return `false`
-(`src/mmt_core/src/plugins_engine.c:94-96`), and so does a relative or
-unreadable `MMT_DPI_PLUGINS_DIR`.
+absolute directory named by the `MMT_DPI_PLUGINS_DIR` environment
+variable;[^plugins-dir] the working directory is never scanned. A plugin
+that fails to load or initialise makes `init_extraction()` return
+`false`,[^plugin-fail] and so does a relative or unreadable
+`MMT_DPI_PLUGINS_DIR`.
 
-The `docs_lifecycle` test suite builds and installs the SDK into a
-throwaway prefix, compiles and runs this example against it, and checks
-every `path:line` citation in this section. `src/examples/extract_all.c`
-is the most complete attribute-extraction reference.
+`src/examples/extract_all.c` is the most complete attribute-extraction
+reference.
 
 ## 4. Where to look next
 
@@ -209,3 +200,24 @@ is the most complete attribute-extraction reference.
 If you hit something this guide doesn't answer, open an issue using the
 [bug report template](https://github.com/montimage-projects/mmt-dpi/blob/main/.github/ISSUE_TEMPLATE/bug_report.md) or start
 a discussion on the repo.
+
+<!-- Sources of the statements above: the docs_lifecycle suite checks every
+     path:line citation of section 3 against the code (issue #392), and
+     tools/ci/check-doc-citations.py every citation of this page (#582). -->
+
+[^deps]: The package sets per distribution: `install.sh:356-423`; what each list must hold is recorded in `tools/ci/build-deps.txt`.
+[^verify]: Release-tag verification: issue #197.
+[^sudo]: Privilege elevation only for an unwritable prefix: issue #211.
+[^layout]: The prefix and its directories: `rules/common.mk:3-8`; `make install` copies the example sources at `sdk/Makefile:110-113`.
+[^init]: `src/mmt_core/src/packet_registry.c:626`.
+[^init-state]: `src/mmt_core/src/packet_registry.c:668-669`, `src/mmt_core/src/packet_registry_handler.c:414`.
+[^handler]: `src/mmt_core/src/packet_registry_handler.c:116`.
+[^handler-map]: `src/mmt_core/src/packet_registry_handler.c:269`.
+[^process]: `src/mmt_core/src/packet_pipeline.c:1576`.
+[^close-handler]: `src/mmt_core/src/packet_registry_handler.c:302`, `src/mmt_core/src/packet_registry_handler.c:352`.
+[^close]: `src/mmt_core/src/packet_registry.c:677`.
+[^close-handlers]: `src/mmt_core/src/packet_registry.c:680`, `src/mmt_core/src/packet_registry_handler.c:420`.
+[^close-plugins]: `src/mmt_core/src/packet_registry.c:688`.
+[^example]: `init_extraction()` at `src/examples/packet_handler.c:63`, the handler at `src/examples/packet_handler.c:69`, the pcap loop at `src/examples/packet_handler.c:100`, `mmt_close_handler()` at `src/examples/packet_handler.c:108` and `close_extraction()` at `src/examples/packet_handler.c:111`. The `docs_lifecycle` test suite compiles and runs this example against a throwaway install.
+[^plugins-dir]: `src/mmt_core/src/plugins_engine.c:50-53`.
+[^plugin-fail]: `src/mmt_core/src/plugins_engine.c:94-96`.

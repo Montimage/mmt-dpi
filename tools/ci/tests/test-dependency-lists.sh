@@ -3,7 +3,7 @@
 # test-dependency-lists.sh — self-test for tools/ci/check-dependency-lists.sh
 # (issue #495).
 #
-# The REAL lint runs against fixture trees (ROOT_DIR): a copy of the six files
+# The REAL lint runs against fixture trees (ROOT_DIR): a copy of the seven files
 # it reads, then that copy with exactly one list or manifest row changed.
 #
 #   this checkout                                              -> 0
@@ -12,6 +12,8 @@
 #   install-build-deps.sh rpm list loses a package             -> 1
 #   sdk/Makefile BuildRequires gains a package                 -> 1
 #   AGENT_ENVIRONMENT.md toolchain line loses a package        -> 1
+#   the human prerequisites' dnf command loses a package       -> 1
+#   a prerequisites command outside its section is not read    -> 0
 #   bootstrap-deps repeats a package                           -> 1
 #   install.sh grows a second apt-get install in the function  -> 1
 #   the best-effort `|| true` helper loses its `|| true`       -> 1
@@ -33,7 +35,8 @@ LINT="${REPO_ROOT}/tools/ci/check-dependency-lists.sh"
 
 FILES=(tools/ci/build-deps.txt install.sh tools/ci/install-build-deps.sh
        sdk/Makefile .github/actions/bootstrap-deps/action.yml
-       docs/AGENT_ENVIRONMENT.md)
+       docs/AGENT_ENVIRONMENT.md
+       docs/Compilation-and-Installation-Instructions.md)
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "${WORK}"' EXIT
@@ -107,6 +110,15 @@ expect 1 "AGENT_ENVIRONMENT.md toolchain line loses a package"
 expect_out "  ... and the lint names the missing package" "AGENT_ENVIRONMENT\.md .*missing .*jq"
 
 reset_fixture
+edit docs/Compilation-and-Installation-Instructions.md 's/^sudo dnf install -y gcc gcc-c++ make git libpcap-devel$/sudo dnf install -y gcc gcc-c++ make git/'
+expect 1 "the human prerequisites' dnf command loses a package"
+expect_out "  ... and the lint names the missing package" "prerequisites:dnf .*missing .*libpcap-devel"
+
+reset_fixture
+printf '\n# Elsewhere\n\n    sudo zypper install -y unrelated\n' >> "${FX}/docs/Compilation-and-Installation-Instructions.md"
+expect 0 "a prerequisites command outside its section is not read"
+
+reset_fixture
 edit .github/actions/bootstrap-deps/action.yml 's/install -y libxml2-dev libpcap-dev /install -y libxml2-dev libpcap-dev libpcap-dev /'
 expect 1 "bootstrap-deps repeats a package"
 expect_out "  ... and the lint reports the repetition" "bootstrap-deps .*repeated"
@@ -127,6 +139,7 @@ expect 1 "manifest adds a package to a role"
 expect_out "  ... install.sh:apt falls behind" "install\.sh:apt .*missing .*cmake"
 expect_out "  ... install-build-deps.sh:deb falls behind" "install-build-deps\.sh:deb .*missing .*cmake"
 expect_out "  ... AGENT_ENVIRONMENT.md falls behind" "AGENT_ENVIRONMENT\.md .*missing .*cmake"
+expect_out "  ... the human prerequisites fall behind" "prerequisites:apt .*missing .*cmake"
 
 reset_fixture
 printf 'list  Dockerfile  apt  build\n' >> "${FX}/tools/ci/build-deps.txt"

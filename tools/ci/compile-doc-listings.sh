@@ -10,7 +10,8 @@
 # an example had `return;` in `int main`. This gate compiles, against the
 # headers and libraries of an installed SDK:
 #
-#   * every ```c fenced listing of each DOC (default docs/Examples.md), with
+#   * every ```c fenced listing of each DOC (default docs/Examples.md and
+#     docs/index.html), with
 #     the first `gcc …` command of the ```sh fence that follows it, before the
 #     next listing — so the command the reader copies is checked too. /opt/mmt
 #     in that command is the install prefix, and only `-I`/`-L`/`-l`/`-o`/`-g`/
@@ -20,6 +21,10 @@
 #     A fence tagged ```C, ```cpp or ```c <anything> is refused (exit 2).
 #     A listing with no such command is compiled with the default command
 #     below; a listing without a `main(` is compiled with `-c` only.
+#   * every <pre class="code"> listing of an .html DOC (the landing page's
+#     syntax-highlighted API tiers, issue #580), its markup stripped and its
+#     entities decoded, with the default command — so the snippet a reader
+#     copies from the landing page compiles too.
 #   * every src/examples/*.c, with the default command:
 #         $CC <STRICT> -o <name> <file> -I <prefix>/dpi/include
 #             -L <prefix>/dpi/lib -lmmt_core -ldl -lpcap
@@ -66,7 +71,7 @@ while [ $# -gt 0 ]; do
     esac
     shift
 done
-[ "${#DOCS[@]}" -gt 0 ] || DOCS=(docs/Examples.md)
+[ "${#DOCS[@]}" -gt 0 ] || DOCS=(docs/Examples.md docs/index.html)
 
 CC="${CC:-gcc}"
 command -v python3 >/dev/null 2>&1 || { echo "✗ python3 is required" >&2; exit 2; }
@@ -114,6 +119,7 @@ done
 CC="$CC" PREFIX="$PREFIX" WORK="$WORK" STRICT="${STRICT[*]}" \
 python3 - "${DOCS[@]}" <<'PYEOF'
 import glob
+import html
 import os
 import re
 import shlex
@@ -141,8 +147,19 @@ def default_cmd(src, out, link):
     return [cc, *strict, *extra, "-o", out, src, "-I", inc, "-L", lib, *LIBS]
 
 
+def html_listings(doc):
+    """(line, code, None) for every <pre class="code"> block of an HTML doc."""
+    text = open(doc, encoding="utf-8").read()
+    return [(text.count("\n", 0, m.start()) + 1,
+             html.unescape(re.sub(r"<[^>]*>", "", m.group(1))).rstrip("\n") + "\n",
+             None)
+            for m in re.finditer(r'<pre class="code">(.*?)</pre>', text, re.S)]
+
+
 def listings(doc):
     """(line, code, command-or-None) for every ```c fence of doc."""
+    if doc.endswith(".html"):
+        return html_listings(doc)
     lines = open(doc, encoding="utf-8").read().split("\n")
     found, i = [], 0
     while i < len(lines):
@@ -221,7 +238,7 @@ fails, total = 0, 0
 for doc in sys.argv[1:]:
     found = listings(doc)
     if not found:
-        print(f"✗ {doc}: no ```c listing found", file=sys.stderr)
+        print(f"✗ {doc}: no C listing found", file=sys.stderr)
         sys.exit(2)
     print(f"-- {doc}: {len(found)} listing(s)")
     for n, (line, code, cmd) in enumerate(found, 1):

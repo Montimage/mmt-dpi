@@ -13,11 +13,13 @@
 #   [4/5] the *installed* example compiles against that prefix and runs: a
 #         pcap is processed, and bad input exits 1 through the cleanup paths
 #         instead of crashing;
-#   [5/5] every docs/Examples.md listing (with the command shown under it)
-#         and every src/examples/*.c compiles against that prefix under
+#   [5/5] every docs/Examples.md listing (with the command shown under it),
+#         every landing-page (docs/index.html) code listing (issue #580) and
+#         every src/examples/*.c compiles against that prefix under
 #         tools/ci/compile-doc-listings.sh, and the gate rejects a listing
-#         with `return;` in `int main` and a documented command that tries
-#         to disarm its strict flags (issue #581).
+#         with `return;` in `int main` — fenced in Markdown or in an HTML
+#         <pre class="code"> block — and a documented command that tries to
+#         disarm its strict flags (issue #581).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -245,7 +247,7 @@ fi
 # ---------------------------------------------------------------------------
 # [5/5] Every docs listing and example compiles (issue #581)
 # ---------------------------------------------------------------------------
-echo "  [5/5] compiling every docs/Examples.md listing and src/examples program ..."
+echo "  [5/5] compiling every docs/Examples.md and landing-page listing and src/examples program ..."
 GATE="${REPO_ROOT}/tools/ci/compile-doc-listings.sh"
 if bash "${GATE}" --prefix "${PREFIX}" >"${WORK}/listings.txt" 2>&1; then
     ok "$(tail -1 "${WORK}/listings.txt" | sed 's/^✓ //')"
@@ -272,6 +274,26 @@ if [ "$rc" -eq 1 ] && grep -q "return-type\|return-mismatch" "${WORK}/bad.txt"; 
 else
     fail "the gate accepted 'return;' in int main (exit ${rc})"
     tail -10 "${WORK}/bad.txt" >&2 || true
+fi
+# The same listing on an HTML page, highlighted as the landing page's are,
+# is extracted from its markup and fails the same way (issue #580).
+{ printf '%s\n' '<pre class="code"><span class="t-com">#include "mmt_core.h"</span>' \
+         '<span class="t-key">int</span> <span class="t-fn">main</span>(<span class="t-key">void</span>) {' \
+         '    <span class="t-key">if</span> (!init_extraction()) <span class="t-key">return</span>;' \
+         '    <span class="t-key">return</span> <span class="t-num">0</span>;' \
+         '}</pre>'; } >"${WORK}/bad/Bad.html"
+rc=0
+bash "${GATE}" --prefix "${PREFIX}" "${WORK}/bad/Bad.html" >"${WORK}/bad-html.txt" 2>&1 || rc=$?
+if [ "$rc" -eq 1 ] && grep -q "return-type\|return-mismatch" "${WORK}/bad-html.txt"; then
+    ok "an HTML <pre class=\"code\"> listing with 'return;' in int main fails the gate (exit 1)"
+else
+    fail "the gate accepted an HTML listing with 'return;' in int main (exit ${rc})"
+    tail -10 "${WORK}/bad-html.txt" >&2 || true
+fi
+if grep -q '^-- docs/index.html: [1-9][0-9]* listing(s)' "${WORK}/listings.txt"; then
+    ok "the landing page's listings are compiled ($(grep -o '^-- docs/index.html: [0-9]* listing(s)' "${WORK}/listings.txt" | cut -d' ' -f3) listing(s))"
+else
+    fail "tools/ci/compile-doc-listings.sh did not compile docs/index.html's listings"
 fi
 # A documented command cannot disarm the strict flags, directly or through
 # an option-valued -I/-L/-o (`-I -I -w`).

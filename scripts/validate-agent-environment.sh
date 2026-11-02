@@ -401,11 +401,28 @@ defined_once "clean-before-switching-BUILD rule" \
 
 # Documents that need one of those facts must link here rather than copy it, and
 # every anchor they link to must be a real heading in the doc.
-for ref in CLAUDE.md AGENTS.md CONTRIBUTING.md README.md \
-           docs/DEVELOPMENT.md docs/DEPLOYMENT.md docs/USER_GUIDE.md \
-           docs/Compilation-and-Installation-Instructions.md; do
+for ref in CLAUDE.md AGENTS.md CONTRIBUTING.md \
+           docs/DEVELOPMENT.md docs/DEPLOYMENT.md; do
     [ -f "$ROOT/$ref" ] || continue
     check "$ref links to $DOC_REL" "grep -qF 'AGENT_ENVIRONMENT.md' '$ROOT/$ref'"
+done
+
+# The user-facing install guides send people to the human prerequisites, not
+# to these agent notes (issue #580): the Compilation guide holds a
+# `# Prerequisites` section, README, CONTRIBUTING and the User Guide link it,
+# and README, the User Guide and the Compilation guide do not link here.
+PREREQ_DOC="docs/Compilation-and-Installation-Instructions.md"
+check "$PREREQ_DOC has a # Prerequisites section" \
+      "grep -qx '# Prerequisites' '$ROOT/$PREREQ_DOC'"
+for ref in README.md CONTRIBUTING.md docs/USER_GUIDE.md; do
+    [ -f "$ROOT/$ref" ] || continue
+    check "$ref links the human prerequisites" \
+          "grep -qF 'Compilation-and-Installation-Instructions.md#prerequisites' '$ROOT/$ref'"
+done
+for ref in README.md docs/USER_GUIDE.md "$PREREQ_DOC"; do
+    [ -f "$ROOT/$ref" ] || continue
+    check "$ref does not send readers to $DOC_REL" \
+          "! grep -qF 'AGENT_ENVIRONMENT.md' '$ROOT/$ref'"
 done
 
 # Heading slugs the doc actually offers (GitHub rules: lowercase, drop

@@ -3,11 +3,13 @@
 # check-dependency-lists.sh — every build-dependency list equals what its one
 # source says it must hold (issue #495, F-DEP-003/F-DEP-304).
 #
-# Five files install packages for this build, in several package managers'
+# Six files install packages for this build, in several package managers'
 # names: install.sh (six package-manager branches), the release containers'
 # tools/ci/install-build-deps.sh (deb + rpm), the rpm spec's BuildRequires:
-# in sdk/Makefile, the CI composite action .github/actions/bootstrap-deps and
-# the toolchain install line in docs/AGENT_ENVIRONMENT.md. Kept by hand they
+# in sdk/Makefile, the CI composite action .github/actions/bootstrap-deps,
+# the toolchain install line in docs/AGENT_ENVIRONMENT.md and the human
+# prerequisites of docs/Compilation-and-Installation-Instructions.md
+# (issue #580, one command per package manager). Kept by hand they
 # drifted from the code. tools/ci/build-deps.txt is now the single source: a
 # `role` row names the packages a role needs on one package manager, a
 # `list` row names the roles one extracted list must cover. This script
@@ -25,6 +27,9 @@
 #     expression (job-specific extras) is not part of the base list.
 #   - AGENT_ENVIRONMENT.md: the one `apt-get install` line naming
 #     build-essential.
+#   - Compilation-and-Installation-Instructions.md: the apt-get / dnf /
+#     zypper / pacman install commands of its `# Prerequisites` section (up
+#     to the next top-level heading), one per package manager.
 #   Option words (-y, --no-install-recommends, …), shell words ($SUDO, "$pm")
 #   and line continuations are dropped. A list found zero or several times,
 #   an extractor without a `list` row, a `list` row without an extractor, and
@@ -46,7 +51,8 @@ cd "$ROOT"
 
 for f in tools/ci/build-deps.txt install.sh tools/ci/install-build-deps.sh \
          sdk/Makefile .github/actions/bootstrap-deps/action.yml \
-         docs/AGENT_ENVIRONMENT.md; do
+         docs/AGENT_ENVIRONMENT.md \
+         docs/Compilation-and-Installation-Instructions.md; do
     [ -f "$f" ] || { echo "✗ required file missing: $f" >&2; exit 2; }
 done
 command -v python3 >/dev/null 2>&1 || { echo "✗ python3 is required" >&2; exit 2; }
@@ -219,6 +225,19 @@ found = [p for ln in text.split("\n")
          if re.search(r"apt-get\s+install\b", ln) and "build-essential" in ln
          for _, p, _ in install_commands(ln)]
 put("AGENT_ENVIRONMENT.md", found, "docs/AGENT_ENVIRONMENT.md")
+
+# docs/Compilation-and-Installation-Instructions.md — the human
+# prerequisites (issue #580): one command per package manager, in the
+# `# Prerequisites` section only.
+PREREQ = "docs/Compilation-and-Installation-Instructions.md"
+m = re.search(r"^# Prerequisites[ \t]*\n(.*?)(?=^# |\Z)", read(PREREQ), re.M | re.S)
+if not m:
+    broken(f"{PREREQ}: no `# Prerequisites` section")
+cmds = install_commands(m.group(1))
+for tool, suffix in (("apt-get", "apt"), ("dnf", "dnf"), ("zypper", "zypper"),
+                     ("pacman", "pacman")):
+    put(f"prerequisites:{suffix}", [p for t, p, _ in cmds if t == tool],
+        f"{PREREQ} (Prerequisites)")
 
 
 # --- comparison -------------------------------------------------------------

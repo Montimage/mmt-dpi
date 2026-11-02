@@ -13,9 +13,9 @@
 # changing the needle.
 
 # Append-only records: each entry describes the tree on its date, and the
-# log may not be rewritten (docs/DECISIONS.md, docs/troubleshooting.md headers).
+# log may not be rewritten (docs/DECISIONS.md, docs/doc-fix-log.md headers).
 exempt	docs/DECISIONS.md	append-only decision log
-exempt	docs/troubleshooting.md	append-only troubleshooting log
+exempt	docs/doc-fix-log.md	append-only documentation fix log
 
 # Pages whose citations their own validator anchors with a richer table:
 # a CITATIONS row per range (head, tail and body regexes) and a needle list
@@ -170,3 +170,7 @@ cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/protocols/proto_http.c:378-379	*
 cite	docs/llhttp-migration.md	rules/common.mk:173-178	# HTTP strict-mode (issue #204, F-BUG-060; issue #222, F-DEP-201): the	# llhttp_set_lenient_*() if a deployment ever needs it.
 cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/protocols/proto_http.c:370	} else if (err != HPE_OK) {	-
 cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/protocols/proto_http.c:378-380	* llhttp_reset() preserves type, settings and parser->data (the	llhttp_reset(parser);
+cite	docs/troubleshooting.md	sdk/Makefile:70-80	--check-built:	fi
+cite	docs/troubleshooting.md	sdk/Makefile:136-144	@ $(LDCONF_DECIDE); \	fi
+cite	docs/troubleshooting.md	src/mmt_core/src/packet_registry_handler.c:123	strcpy(errbuf, "Unsupported stack type");	-
+cite	docs/troubleshooting.md	src/mmt_core/src/plugins_engine.c:48-82	static const char *plugins_directory(int *from_env)	}

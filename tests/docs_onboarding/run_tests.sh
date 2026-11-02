@@ -8,14 +8,14 @@
 # program against an installed SDK and run it, plus the output to expect.
 # docs/index.html repeats the steps as copyable hero commands. This suite
 # keeps all of it true:
-#   [1/6] traffic.pcap is exactly what make_traffic_pcap.py generates, so the
+#   [1/7] traffic.pcap is exactly what make_traffic_pcap.py generates, so the
 #         fixture stays synthetic and redistributable;
-#   [2/6] the displayed source equals the published file and follows the
+#   [2/7] the displayed source equals the published file and follows the
 #         embedding lifecycle with a processing loop; the hero's copy
 #         controls copy exactly the displayed commands and stay keyboard
 #         accessible (real <button>s, visible focus, reduced motion), and
 #         its install control copies the quick start's hero-install command;
-#   [3/6] every install command docs/_includes/quick-start.md displays
+#   [3/7] every install command docs/_includes/quick-start.md displays
 #         belongs to a known route (issue #577): the bootstrap and source
 #         installer commands are exactly the ones the bootstrap-smoke and
 #         install-smoke workflows run before this same first run
@@ -24,11 +24,22 @@
 #         runs from an empty directory with --dry-run added (the installer
 #         fetched from this checkout), exits 0, shows the plan its options
 #         ask for and leaves the directory empty;
-#   [4/6] the SDK builds and installs into a throwaway MMT_BASE prefix;
-#   [5/6] the displayed commands, run verbatim in an empty directory, obtain
+#   [4/7] the SDK builds and installs into a throwaway MMT_BASE prefix;
+#   [5/7] the displayed commands, run verbatim in an empty directory, obtain
 #         both files, compile and print exactly the displayed output;
-#   [6/6] a missing capture exits 1 with a clear message; the fetch hint is
+#   [6/7] a missing capture exits 1 with a clear message; the fetch hint is
 #         given for the sample capture only.
+#   [7/7] docs/troubleshooting.md quotes the errors a first run really meets
+#         (issue #580): each is reproduced here — compiling without -I,
+#         linking without -L, without -lpcap or with the libraries before the
+#         source, running without the loader path, an empty, missing or
+#         relative plugin directory, an unreadable capture — and the page
+#         must quote the message the toolchain or the program prints; the
+#         install refusals it quotes are the ones sdk/Makefile prints; and
+#         the landing page's live-capture listing exits 1 with a usage line
+#         without an interface and with pcap_open_live's error (the
+#         permission message for a normal user, which the page quotes) when
+#         it cannot open one, instead of passing a NULL handle on.
 #
 # Only two substitutions are made to the displayed commands: the site URL
 # https://montimage-projects.github.io/mmt-dpi/ becomes file://$DOCS_SITE_DIR/
@@ -36,7 +47,7 @@
 # DOCS_SITE_DIR=docs/_site, relative to the repository root, to verify a built
 # site artifact instead; CI does, in the verify-helpers job, issue #396), and
 # /opt/mmt becomes the throwaway prefix. $EXTRA_CFLAGS (sanitizer modes) is
-# added to the compile line. The landing page checked in [2/6] is the one
+# added to the compile line. The landing page checked in [2/7] is the one
 # under $DOCS_SITE_DIR, so a built site is checked as rendered.
 set -euo pipefail
 
@@ -82,9 +93,9 @@ for lang, body in re.findall(r"^```(\w+)\n(.*?)^```$", text, re.S | re.M):
 PYEOF
 
 # ---------------------------------------------------------------------------
-# [1/6] Fixture
+# [1/7] Fixture
 # ---------------------------------------------------------------------------
-echo "  [1/6] checking the published capture ..."
+echo "  [1/7] checking the published capture ..."
 python3 "${SCRIPT_DIR}/make_traffic_pcap.py" "${WORK}/regen.pcap"
 if cmp -s "${WORK}/regen.pcap" "${FIXTURE}"; then
     ok "traffic.pcap is byte-identical to make_traffic_pcap.py output ($(wc -c < "${FIXTURE}") bytes)"
@@ -93,9 +104,9 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# [2/6] Displayed source, commands and copy controls
+# [2/7] Displayed source, commands and copy controls
 # ---------------------------------------------------------------------------
-echo "  [2/6] checking the displayed steps against the published files ..."
+echo "  [2/7] checking the displayed steps against the published files ..."
 for lang in bash text c; do
     [ -s "${WORK}/blocks/${lang}.block" ] || { echo "✗ ${FRAGMENT} has no \`\`\`${lang} block" >&2; exit 1; }
 done
@@ -214,9 +225,9 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# [3/6] Install routes (issue #577)
+# [3/7] Install routes (issue #577)
 # ---------------------------------------------------------------------------
-echo "  [3/6] checking the install routes the quick start displays ..."
+echo "  [3/7] checking the install routes the quick start displays ..."
 SOURCE_URL="$(sed -n 's/^PUBLISHED_INSTALLER="\(.*\)"$/\1/p' "${REPO_ROOT}/tools/ci/smoke-install.sh")"
 BOOTSTRAP_URL="$(sed -n 's/^PUBLISHED="\(.*\)"$/\1/p' "${REPO_ROOT}/tools/ci/smoke-bootstrap.sh")"
 for smoke in smoke-install.sh smoke-bootstrap.sh; do
@@ -321,7 +332,7 @@ if [ "$ERRORS" -ne 0 ]; then
 fi
 
 # ---------------------------------------------------------------------------
-# [4/6] Build + install into a throwaway prefix
+# [4/7] Build + install into a throwaway prefix
 # ---------------------------------------------------------------------------
 BUILD_LOG="${WORK}/build.log"
 JOBS="${JOBS:-$(nproc 2>/dev/null || echo 2)}"
@@ -332,9 +343,9 @@ else
 fi
 if [ "${MMT_SDK_PREBUILT:-0}" = "1" ]; then
     [ -e "${PREFIX}/dpi/lib/libmmt_core.so" ] || { echo "✗ MMT_SDK_PREBUILT=1 but MMT_PREFIX='${PREFIX}' holds no installed SDK" >&2; exit 1; }
-    echo "  [4/6] reusing the prebuilt SDK in ${PREFIX} (MMT_SDK_PREBUILT=1) ..."
+    echo "  [4/7] reusing the prebuilt SDK in ${PREFIX} (MMT_SDK_PREBUILT=1) ..."
 else
-    echo "  [4/6] building + installing SDK into ${PREFIX} ..."
+    echo "  [4/7] building + installing SDK into ${PREFIX} ..."
     make -C "${REPO_ROOT}/sdk" clean >/dev/null 2>&1 || true
     if ! make -C "${REPO_ROOT}/sdk" "$@" -j"${JOBS}" MMT_BASE="${PREFIX}" >"${BUILD_LOG}" 2>&1; then
         echo "✗ SDK build failed — last lines:" >&2; tail -20 "${BUILD_LOG}" >&2; exit 1
@@ -345,9 +356,9 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# [5/6] The displayed steps, from an empty directory
+# [5/7] The displayed steps, from an empty directory
 # ---------------------------------------------------------------------------
-echo "  [5/6] running the displayed steps in an empty directory ..."
+echo "  [5/7] running the displayed steps in an empty directory ..."
 RUN_DIR="${WORK}/empty"
 mkdir -p "${RUN_DIR}"
 python3 - "${WORK}/commands.txt" "${WORK}/steps.sh" "${SITE_URL}" "${SITE_DIR}" "${PREFIX}" <<'PYEOF'
@@ -386,9 +397,9 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# [6/6] Missing fixture
+# [6/7] Missing fixture
 # ---------------------------------------------------------------------------
-echo "  [6/6] checking the missing-capture error ..."
+echo "  [6/7] checking the missing-capture error ..."
 rm -f "${RUN_DIR}/traffic.pcap"
 rc=0
 (cd "${RUN_DIR}" && LD_LIBRARY_PATH="${PREFIX}/dpi/lib:${LD_LIBRARY_PATH:-}" ./hello_packet traffic.pcap) \
@@ -410,6 +421,165 @@ if [ "$rc" -eq 1 ] && grep -qF "hello_packet: cannot open capture 'other.pcap'" 
 else
     fail "missing other.pcap: expected exit 1 and no traffic.pcap fetch hint, got exit ${rc}"
     cat "${WORK}/err.txt" >&2 || true
+fi
+
+# ---------------------------------------------------------------------------
+# [7/7] Troubleshooting: the documented first-run errors are the real ones
+# ---------------------------------------------------------------------------
+echo "  [7/7] reproducing the first-run errors docs/troubleshooting.md documents ..."
+TROUBLE="${REPO_ROOT}/docs/troubleshooting.md"
+read -r -a extra_cflags <<< "${EXTRA_CFLAGS:-}"
+CC_LINE=("${CC:-gcc}" "${extra_cflags[@]}")
+INC=(-I "${PREFIX}/dpi/include")
+LIB=(-L "${PREFIX}/dpi/lib")
+LIBPATH="${PREFIX}/dpi/lib:${LD_LIBRARY_PATH:-}"
+documented() { grep -qF -- "$1" "${TROUBLE}"; }
+# repro <label> <printed> <quoted> <command...>: the command, run in the
+# first-run directory, fails and prints <printed>; the page quotes <quoted>.
+repro() {
+    local label="$1" printed="$2" quoted="$3" rc=0
+    shift 3
+    (cd "${RUN_DIR}" && "$@") >"${WORK}/repro.out" 2>&1 || rc=$?
+    if [ "$rc" -eq 0 ] || ! grep -qF -- "${printed}" "${WORK}/repro.out"; then
+        fail "${label}: expected a failure printing '${printed}', got exit ${rc}:"
+        head -5 "${WORK}/repro.out" >&2 || true
+    elif documented "${quoted}"; then
+        ok "${label}: prints '${printed}' (exit ${rc}); the page quotes it"
+    else
+        fail "${label}: prints '${printed}', but docs/troubleshooting.md does not quote '${quoted}'"
+    fi
+}
+
+if grep -qxF '# Troubleshooting the first run' "${TROUBLE}" && ! grep -qi 'append-only' "${TROUBLE}"; then
+    ok "docs/troubleshooting.md is the first-run error page, not a fix log"
+else
+    fail "docs/troubleshooting.md is not the first-run error page"
+fi
+
+repro "missing capture" "cannot open capture 'traffic.pcap': traffic.pcap: No such file or directory" \
+      "cannot open capture 'traffic.pcap': traffic.pcap: No such file or directory" \
+      env LD_LIBRARY_PATH="${LIBPATH}" ./hello_packet traffic.pcap
+cp "${FIXTURE}" "${RUN_DIR}/traffic.pcap"
+repro "compile without -I" "mmt_core.h: No such file or directory" "mmt_core.h: No such file or directory" \
+      "${CC_LINE[@]}" -o t hello_packet.c "${LIB[@]}" -lmmt_core -ldl -lpcap
+repro "link without -L" "cannot find -lmmt_core" "cannot find -lmmt_core" \
+      "${CC_LINE[@]}" -o t hello_packet.c "${INC[@]}" -lmmt_core -ldl -lpcap
+repro "link without -lpcap" "undefined reference to \`pcap_open_offline'" "undefined reference to \`pcap_open_offline'" \
+      "${CC_LINE[@]}" -o t hello_packet.c "${INC[@]}" "${LIB[@]}" -lmmt_core -ldl
+# The libraries-first order fails only where the linker runs with
+# --as-needed (Debian, Ubuntu: the CI toolchains).
+rc=0
+(cd "${RUN_DIR}" && "${CC_LINE[@]}" -o t "${INC[@]}" "${LIB[@]}" -lmmt_core -ldl -lpcap hello_packet.c) \
+    >"${WORK}/repro.out" 2>&1 || rc=$?
+if [ "$rc" -eq 0 ]; then
+    ok "libraries before the source: this linker resolves them anyway (no --as-needed) — not reproducible here"
+elif grep -qF "get_attribute_extracted_data_by_name" "${WORK}/repro.out" && documented "get_attribute_extracted_data_by_name"; then
+    ok "libraries before the source: undefined MMT-DPI references (exit ${rc}); the page quotes them"
+else
+    fail "libraries before the source: unexpected failure (exit ${rc}) or the page does not name get_attribute_extracted_data_by_name"
+    head -5 "${WORK}/repro.out" >&2 || true
+fi
+
+# The loader: without LD_LIBRARY_PATH the installed libraries are unknown,
+# unless this host registered an install whose SONAME matches.
+rc=0
+(cd "${RUN_DIR}" && env -u LD_LIBRARY_PATH ./hello_packet traffic.pcap) >"${WORK}/repro.out" 2>&1 || rc=$?
+soname="$(grep -o 'error while loading shared libraries: libmmt_core\.so[.0-9]*' "${WORK}/repro.out" | sed 's/.*: //' | head -1 || true)"
+if [ "$rc" -eq 0 ]; then
+    ok "loader: this host's loader resolves libmmt_core itself — not reproducible here"
+elif [ -n "${soname}" ] && documented "error while loading shared libraries: ${soname}: cannot open shared object file"; then
+    ok "loader: prints 'error while loading shared libraries: ${soname}' (exit ${rc}); the page quotes it"
+else
+    fail "loader: expected the page to quote 'error while loading shared libraries: ${soname:-libmmt_core.so*}: cannot open shared object file' (exit ${rc})"
+    head -3 "${WORK}/repro.out" >&2 || true
+fi
+
+mkdir -p "${WORK}/no-plugins"
+repro "empty plugin directory" "handler init failed: Unsupported stack type" "handler init failed: Unsupported stack type" \
+      env LD_LIBRARY_PATH="${LIBPATH}" MMT_DPI_PLUGINS_DIR="${WORK}/no-plugins" ./hello_packet traffic.pcap
+repro "relative MMT_DPI_PLUGINS_DIR" "MMT_DPI_PLUGINS_DIR must be an absolute directory" "MMT_DPI_PLUGINS_DIR must be an absolute directory" \
+      env LD_LIBRARY_PATH="${LIBPATH}" MMT_DPI_PLUGINS_DIR=plugins ./hello_packet traffic.pcap
+repro "missing MMT_DPI_PLUGINS_DIR" "Cannot read plugin directory" "Cannot read plugin directory" \
+      env LD_LIBRARY_PATH="${LIBPATH}" MMT_DPI_PLUGINS_DIR="${WORK}/no-such-dir" ./hello_packet traffic.pcap
+if grep -qF "Error while loading plugins" "${WORK}/repro.out" && documented "Error while loading plugins"; then
+    ok "a plugin-directory failure prints 'Error while loading plugins'; the page quotes it"
+else
+    fail "'Error while loading plugins' is not printed or not quoted by the page"
+fi
+if [ "$(id -u)" -ne 0 ]; then
+    cp "${FIXTURE}" "${RUN_DIR}/traffic.pcap" && chmod 000 "${RUN_DIR}/traffic.pcap"
+    repro "unreadable capture" "traffic.pcap: Permission denied" "The same message ending in \`Permission denied\` means the file exists" \
+          env LD_LIBRARY_PATH="${LIBPATH}" ./hello_packet traffic.pcap
+    chmod 644 "${RUN_DIR}/traffic.pcap"
+else
+    ok "unreadable capture: running as root, every file is readable — not reproducible here"
+fi
+
+# The install refusals the page quotes are the ones sdk/Makefile prints.
+for refusal in "ERROR: no SDK build under" "was built for plugin directory"; do
+    if grep -qF -- "${refusal}" "${REPO_ROOT}/sdk/Makefile" && documented "${refusal}"; then
+        ok "install refusal '${refusal}' is printed by sdk/Makefile and quoted by the page"
+    else
+        fail "install refusal '${refusal}' is not both in sdk/Makefile and on the page"
+    fi
+done
+
+# The landing page's live-capture listing (issue #580): it must check argc,
+# the handler and the pcap handle, not pass a NULL handle to pcap_loop().
+python3 - "$INDEX" "${WORK}/live_sessions.c" <<'PYEOF' || ERRORS=$((ERRORS + 1))
+import html
+import re
+import sys
+page = open(sys.argv[1], encoding="utf-8").read()
+live = [html.unescape(re.sub(r"<[^>]*>", "", m))
+        for m in re.findall(r'<pre class="code">(.*?)</pre>', page, re.S)
+        if "pcap_open_live" in m]
+if len(live) != 1:
+    print(f"    ✗ expected one landing listing calling pcap_open_live, found {len(live)}")
+    sys.exit(1)
+open(sys.argv[2], "w", encoding="utf-8").write(live[0])
+print("    ✓ the landing page shows one live-capture listing")
+PYEOF
+if [ -f "${WORK}/live_sessions.c" ] \
+   && "${CC_LINE[@]}" -Wall -o "${WORK}/live_sessions" "${WORK}/live_sessions.c" "${INC[@]}" "${LIB[@]}" \
+          -lmmt_core -ldl -lpcap >"${WORK}/live-cc.txt" 2>&1; then
+    rc=0
+    (cd "${RUN_DIR}" && env LD_LIBRARY_PATH="${LIBPATH}" timeout 30 "${WORK}/live_sessions") \
+        >"${WORK}/live.out" 2>&1 || rc=$?
+    if [ "$rc" -eq 1 ] && grep -q '^usage: .* <interface>$' "${WORK}/live.out"; then
+        ok "live listing without an interface exits 1 with a usage line"
+    else
+        fail "live listing without an interface: expected exit 1 with usage, got exit ${rc}"
+        head -5 "${WORK}/live.out" >&2 || true
+    fi
+    rc=0
+    (cd "${RUN_DIR}" && env LD_LIBRARY_PATH="${LIBPATH}" timeout 30 "${WORK}/live_sessions" mmt-nosuch0) \
+        >"${WORK}/live.out" 2>&1 || rc=$?
+    if [ "$rc" -eq 1 ] && grep -q '^pcap_open_live: ' "${WORK}/live.out"; then
+        ok "live listing on an interface it cannot open exits 1 with pcap_open_live's error"
+    else
+        fail "live listing on mmt-nosuch0: expected exit 1 with 'pcap_open_live: ...', got exit ${rc}"
+        head -5 "${WORK}/live.out" >&2 || true
+    fi
+    # Without CAP_NET_RAW, libpcap refuses the capture before it looks the
+    # interface up: the message after "pcap_open_live: mmt-nosuch0: " is its
+    # permission error, which the page must quote whole. The skip is keyed
+    # on privilege (root, or bit 13 of the effective capability set), never
+    # on the output, so a changed wording fails for a normal user.
+    capeff=$(awk '/^CapEff:/ { print $2 }' /proc/self/status 2>/dev/null || true)
+    if [ "$(id -u)" -eq 0 ] || { [ -n "${capeff}" ] && (( (16#${capeff} >> 13) & 1 )); }; then
+        ok "live capture: $(id -un) holds CAP_NET_RAW, no permission error — not reproducible here"
+    else
+        perm=$(sed -n 's/^pcap_open_live: mmt-nosuch0: //p' "${WORK}/live.out" | head -1)
+        if [[ "${perm}" == "You don't have permission to "* ]] && documented "${perm}"; then
+            ok "live capture as a normal user prints libpcap's permission error; the page quotes it"
+        else
+            fail "live capture as a normal user printed '${perm}': expected libpcap's permission error, quoted whole by docs/troubleshooting.md"
+        fi
+    fi
+else
+    fail "the landing page's live-capture listing does not compile:"
+    head -10 "${WORK}/live-cc.txt" >&2 || true
 fi
 
 if [ "$ERRORS" -ne 0 ]; then
