@@ -157,7 +157,7 @@ suite resource_bounds core,tcpip
 suite tcp_pending_order core,tcpip
 suite sdk_coverage build,tcpip,mobile,dicom,business_app
 suite docs_lifecycle docs,tcpip
-suite docs_onboarding docs,tcpip
+suite docs_onboarding docs,tcpip,mobile,dicom,business_app
 
 # --- phase0 harnesses (tools/phase0/tests/run_<stem>.sh) ---------------------
 # Whole-SDK harnesses (sessions, memory, L3/L4, the pcap and thread

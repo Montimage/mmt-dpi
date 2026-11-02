@@ -19,13 +19,20 @@
 #
 # This script asserts both halves: the marked README blocks equal the
 # fragment byte-for-byte, and index.html references each fragment through an
-# include tag instead of a hand copy.
+# include tag instead of a hand copy. It also asserts that install commands
+# live only in docs/_includes/quick-start.md (issue #577): no install.sh
+# command line in README outside its shared blocks, in docs/index.html or in
+# docs/*.md (docs/DECISIONS.md, the append-only record, excepted), and the
+# landing hero takes its install command from the fragment's hero-install
+# block at build time.
 #
-#   default (check)  exit 1 when a block differs from its fragment or an
-#                    include tag is missing, 0 when in sync.
+#   default (check)  exit 1 when a block differs from its fragment, an
+#                    include tag is missing or an install command is
+#                    restated, 0 when in sync.
 #   --write          rewrite the marked blocks in place, then exit 0.
 #
-# Exit codes: 0 = in sync / written, 1 = drift or missing include, 2 = broken.
+# Exit codes: 0 = in sync / written, 1 = drift, missing include or restated
+# install command, 2 = broken.
 #
 # Usage: bash tools/ci/check-doc-includes.sh [--write]
 
@@ -70,6 +77,7 @@ PYEOF
 fi
 
 python3 - <<'PYEOF'
+import glob
 import re
 import sys
 
@@ -112,6 +120,39 @@ if not seen:
     print("✗ no begin-shared/end-shared markers found in README.md",
           file=sys.stderr)
     sys.exit(2)
+
+# Install commands live only in docs/_includes/quick-start.md (issue #577,
+# F-UX-004): no other page restates an install.sh command line. README is
+# scanned outside its shared blocks; docs/DECISIONS.md is the append-only
+# record, which quotes past commands and is never rewritten.
+install_cmd = re.compile(r"(?:curl|wget)\b[^\n]*install\.sh|\b(?:ba)?sh +install\.sh\b")
+pages = {"README.md": pat.sub("", readme), "docs/index.html": site}
+for path in sorted(glob.glob("docs/*.md")):
+    if path != "docs/DECISIONS.md":
+        pages[path] = open(path, encoding="utf-8").read()
+restated = [(path, n, line.strip())
+            for path, text in pages.items()
+            for n, line in enumerate(text.splitlines(), 1)
+            if install_cmd.search(line)]
+for path, n, line in restated:
+    where = "outside its shared blocks" if path == "README.md" else f"line {n}"
+    print(f"  ✗ {path} ({where}) restates an install command — use the "
+          f"docs/_includes/quick-start.md one: {line[:100]}")
+    errors += 1
+if not restated:
+    print("  ✓ install commands appear only in docs/_includes/quick-start.md "
+          f"(README outside its shared blocks, docs/index.html, {len(pages) - 2} docs/*.md)")
+
+# The landing hero's install command is the fragment's hero-install block,
+# taken at build time rather than copied (issue #577).
+if ('split: "<!-- hero-install"' in site
+        and 'data-cmd="{{ hero_install | escape }}"' in site
+        and "<!-- hero-install" in open("docs/_includes/quick-start.md", encoding="utf-8").read()):
+    print("  ✓ docs/index.html takes its hero install command from quick-start.md")
+else:
+    print("  ✗ docs/index.html's hero install command is not taken from the "
+          "hero-install block of docs/_includes/quick-start.md")
+    errors += 1
 
 sys.exit(1 if errors else 0)
 PYEOF

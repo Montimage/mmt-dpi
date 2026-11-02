@@ -7,12 +7,17 @@ title: "Deployment Guide"
 
 ## Installation
 
+To install a release, use the command for your platform in the Quick Start
+— on the [landing page](index.html#quick-start), or in the
+[root README](https://github.com/montimage-projects/mmt-dpi/blob/main/README.md#install)
+on GitHub. This section builds and installs from a checkout instead: every
+block runs from the root of the checkout and leaves you there.
+
 ### From Source
 
 ```bash
-cd sdk
-make -j$(nproc)
-sudo make install
+make -C sdk -j$(nproc)
+sudo make -C sdk install
 ```
 
 Default installation directory: `/opt/mmt/dpi/`
@@ -21,16 +26,15 @@ To install to a custom directory, build and install with the same
 `MMT_BASE` (`make install` refuses a build made for another prefix):
 
 ```bash
-make -j$(nproc) MMT_BASE=/path/to/install
-sudo make install MMT_BASE=/path/to/install
+make -C sdk -j$(nproc) MMT_BASE=/path/to/install
+sudo make -C sdk install MMT_BASE=/path/to/install
 ```
 
 ### From Debian Package
 
 ```bash
-cd sdk
-make deb
-sudo dpkg -i mmt-dpi_*.deb
+make -C sdk deb
+sudo dpkg -i sdk/mmt-dpi_*.deb
 ```
 
 An `ENABLESEC=1` build also produces `mmt-dpi-security_*.deb`, which holds the
@@ -40,8 +44,7 @@ security and fuzz engines (GPL-3.0-or-later, issue #497). Install it alongside
 ### Uninstall
 
 ```bash
-cd sdk
-sudo make uninstall    # same MMT_BASE as the install; removes the loader drop-in too
+sudo make -C sdk uninstall    # same MMT_BASE as the install; removes the loader drop-in too
 ```
 
 ## Installed Files

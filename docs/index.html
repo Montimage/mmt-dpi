@@ -485,19 +485,25 @@
        </div>
 
        <div class="hero-code">
+        {%- comment -%} The install command is the source installer's block of
+          the shared quick-start fragment (the block after its hero-install
+          marker), never a hand copy (issue #577). {%- endcomment -%}
+        {%- capture hero_quick_start -%}{% include quick-start.md %}{%- endcapture -%}
+        {%- assign hero_blocks = hero_quick_start | split: "<!-- hero-install" | last | split: "```" -%}
+        {%- assign hero_install = hero_blocks[1] | remove_first: "bash" | strip -%}
         <div class="term">
         <div class="term-bar">
           <span class="tl r"></span><span class="tl y"></span><span class="tl g"></span>
-          <span class="term-title">first run — four steps</span>
+          <span class="term-title">install once, then a first run in three commands</span>
           <span id="copyStatus" class="sr-only" role="status" aria-live="polite"></span>
         </div>
         <div class="term-body">
           <div class="cmd-group">
             <div class="cmd-lines">
-              <div><span class="out"># 1 — install the library (or grab a .deb/.rpm from Releases)</span></div>
-              <div><span class="pr">$ </span><span class="cmd">curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash</span></div>
+              <div><span class="out"># 1 — install the library (every Linux; the other routes are under <a href="#quick-start">Install</a>)</span></div>
+              <div><span class="pr">$ </span><span class="cmd">{{ hero_install | escape }}</span></div>
             </div>
-            <button class="copy-btn" data-cmd="curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash" aria-label="Copy the install command">copy install</button>
+            <button class="copy-btn" data-cmd="{{ hero_install | escape }}" aria-label="Copy the install command">copy install</button>
           </div>
           <div class="cmd-group">
             <div class="cmd-lines">
@@ -831,7 +837,7 @@
         <a class="btn btn-ghost" href="https://github.com/montimage-projects/mmt-dpi/tree/main/src/examples" target="_blank" rel="noopener">Browse examples</a>
       </div>
       <p class="api-note" style="margin-top:22px;">
-        The install command above the fold installs to <code>/opt/mmt/dpi</code>, and the first-run steps beside it compile and run the published <a href="first-run/hello_packet.c">hello_packet.c</a> against that prefix. Prefer a package? Grab the
+        Every route above installs to <code>/opt/mmt/dpi</code> (the command above the fold is the source installer's), and the first-run steps beside it compile and run the published <a href="first-run/hello_packet.c">hello_packet.c</a> against that prefix. Prefer a package? Grab the
         <code>.deb</code>/<code>.rpm</code> from <a href="https://github.com/montimage-projects/mmt-dpi/releases" target="_blank" rel="noopener">Releases</a>;
         building from source is covered in the
         <a href="Compilation-and-Installation-Instructions.html">Compilation and Installation Instructions</a>. Every guide lives in the
@@ -876,7 +882,7 @@
     <!-- FINAL CTA -->
     <section class="final wrap">
       <h2>Stop writing byte-offset parsers.<br><span class="accent">Start querying packets by name.</span></h2>
-      <p>673 protocols, 7,484 attributes, plugin-extensible — open source under Apache-2.0. One command and you're running.</p>
+      <p>673 protocols, 7,484 attributes, plugin-extensible — open source under Apache-2.0. One command installs it; three more run your first program.</p>
       <div class="cta-row">
         <a class="btn btn-primary" href="#quick-start">▸ Install MMT-DPI</a>
         <a class="btn btn-ghost" href="https://github.com/montimage-projects/mmt-dpi" target="_blank" rel="noopener">★ Star on GitHub</a>

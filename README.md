@@ -23,11 +23,40 @@ A high-performance C library for deep packet inspection (DPI), designed to extra
 
 ## Quick Start
 
-### One-Line Install
+### Install
 
 <!-- begin-shared: docs/_includes/quick-start.md -->
 
-Install MMT-DPI with a single command (installs dependencies, builds, and installs automatically):
+Install MMT-DPI with one command. The routes below are listed in order of
+preference: use the first one that covers your platform. Every route
+installs under `/opt/mmt`, so the first run works after any of them, from an
+empty directory.
+
+<!-- Route order (issue #577): package repository, then the release
+     bootstrap, then the source installer. The signed APT and dnf
+     repositories (#575, #576) go first, here, once they are published. -->
+
+**Verified package bootstrap** — Ubuntu 22.04/24.04/26.04, Debian 12/13,
+Rocky Linux / AlmaLinux 9 and 10, CentOS Stream 9 and 10, amd64 or arm64. It
+installs the release's native `.deb`/`.rpm` after checking its sha256 and its
+build-provenance attestation. It is published from the first release after
+v1.9.1; until then, use the source installer on these platforms too.
+
+```bash
+curl -fsSL https://github.com/montimage-projects/mmt-dpi/releases/latest/download/install.sh | sh
+```
+
+Add `-s -- --with-security` after `sh` to install the GPL security engines
+too. To check the bootstrap before running it, download `install.sh`, run
+`gh attestation verify install.sh --repo montimage-projects/mmt-dpi`, then
+`sh install.sh`.
+
+**Source installer** — every supported Linux. It installs the build
+dependencies, then clones the pinned release tag (`v1.9.1`), verifies it after
+checkout, builds it and installs it; moving branches are refused unless
+explicitly opted in:
+
+<!-- hero-install: docs/index.html shows the command of the next block above the fold -->
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
@@ -39,28 +68,18 @@ or using `wget`:
 wget -qO- https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
 ```
 
-The installer clones the pinned release tag (`v1.9.1`) and verifies it after
-checkout; moving branches are refused unless explicitly opted in. It supports
-**Linux**: the one-liner and the first run below are smoke-tested in CI on
+The source installer and the first run are smoke-tested in CI on
 Ubuntu 22.04/24.04, Debian 12, Rocky Linux 9, CentOS Stream 9, Fedora 44 and
 openSUSE Leap 16.0. Arch, Alpine (musl: the SDK does not build there today)
 and RHEL itself (CodeReady Builder must be enabled through
-`subscription-manager` first) are **best-effort**.
-
-Pre-built `.deb`/`.rpm` packages are on the
-[Releases page](https://github.com/montimage-projects/mmt-dpi/releases); the
-full install walkthrough is the
-[User Guide](https://github.com/montimage-projects/mmt-dpi/blob/main/docs/USER_GUIDE.md).
-
-<!-- end-shared: docs/_includes/quick-start.md -->
-
-**Custom options** (via environment variables):
+`subscription-manager` first) are **best-effort**. Its options are variants
+of the same command:
 
 ```bash
 # Preview the install plan without changing anything
 curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash -s -- --dry-run
 
-# Install to a custom directory
+# Install to a custom directory (substitute it for /opt/mmt in the first run)
 curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | MMT_BASE=/usr/local/mmt bash
 
 # Build the tip of a branch (here main) instead of the pinned release (unverified — explicit opt-in)
@@ -68,7 +87,17 @@ curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/ins
 
 # Skip automatic dependency installation
 curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | SKIP_DEPS=1 bash
+
+# Uninstall (add --prefix <dir> for a custom prefix)
+curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash -s -- --uninstall
 ```
+
+Pre-built `.deb`/`.rpm` packages are on the
+[Releases page](https://github.com/montimage-projects/mmt-dpi/releases); the
+full install walkthrough, building from a checkout included, is the
+[User Guide](https://github.com/montimage-projects/mmt-dpi/blob/main/docs/USER_GUIDE.md).
+
+<!-- end-shared: docs/_includes/quick-start.md -->
 
 ### Pre-built packages
 
@@ -130,14 +159,7 @@ Install only after both checks pass.
 
 From the first release after v1.9.1, each release also publishes a bootstrap
 installer that does all of the above for you and installs the native
-package — Ubuntu 22.04/24.04/26.04, Debian 12/13, Rocky Linux / AlmaLinux 9
-and 10 and CentOS Stream 9 and 10, amd64 or arm64:
-
-```bash
-curl -fsSL https://github.com/montimage-projects/mmt-dpi/releases/latest/download/install.sh | sh
-# add the GPL security engines: … | sh -s -- --with-security
-```
-
+package: it is the first route of the [Install](#install) commands above.
 It is generated by the release job (`tools/ci/make-release-bootstrap.sh`)
 with the sha256 of every package of that release embedded. It picks the
 package for your distribution and architecture from the stable alias names
@@ -148,11 +170,8 @@ Sigstore bundle (`mmt-dpi.intoto.jsonl` — signed itself, so it is the one
 asset `SHA256SUMS` does not list), and only then installs the package with
 `apt-get` or `dnf`, which pulls its dependencies and registers
 `/opt/mmt/dpi/lib` with the loader. Any mismatch exits non-zero before
-anything is installed. To check the bootstrap itself before running it:
-download `install.sh`, run
-`gh attestation verify install.sh --repo montimage-projects/mmt-dpi`, then
-`sh install.sh`. Other distributions, or another prefix, use the source
-installer above.
+anything is installed. Other distributions, or another prefix, use the source
+installer.
 
 ### Manual Build and Install
 
@@ -162,27 +181,28 @@ If you prefer to build manually, install the build dependencies first — the
 The install prefix is configurable; see
 [§4 `MMT_BASE` Install-Prefix Behavior](docs/AGENT_ENVIRONMENT.md#4-mmt_base-install-prefix-behavior).
 
+From any directory (the block clones into `./mmt-dpi` and stays at the root
+of that checkout):
+
 ```bash
 git clone https://github.com/montimage-projects/mmt-dpi.git
 cd mmt-dpi
 
 # Build
-cd sdk
-make -j$(nproc)
+make -C sdk -j$(nproc)
 
 # Install (default: /opt/mmt/dpi/)
-sudo make install
+sudo make -C sdk install
 ```
 
-To uninstall: `sudo make uninstall` (same `MMT_BASE` as the install), or `curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash -s -- --uninstall` after a one-command install
+To uninstall, from the same checkout: `sudo make -C sdk uninstall` (same
+`MMT_BASE` as the install). A source-installer install is removed by its
+uninstall line in [Install](#install).
 
 ### Verify Installation
 
-```bash
-cd src/examples
-gcc -o extract_all extract_all.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap
-sudo ./extract_all -i eth0
-```
+Run the first program below ([Basic Packet Processing](#basic-packet-processing)):
+it starts from an empty directory and works after every install route.
 
 ## Usage
 

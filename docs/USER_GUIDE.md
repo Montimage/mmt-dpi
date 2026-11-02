@@ -18,13 +18,15 @@ For deeper dives into specific subsystems, see:
 
 ## 1. Install
 
-The fastest path is the one-liner installer (Linux only):
+Take the install command for your platform from the Quick Start — on the
+[landing page](index.html#quick-start), or in the
+[root README](https://github.com/montimage-projects/mmt-dpi/blob/main/README.md#install)
+on GitHub. Both show the one shared block, `docs/_includes/quick-start.md`
+(Linux only): the verified package bootstrap for the Debian, Ubuntu and
+Enterprise Linux releases it covers, then the source installer for every
+supported Linux.
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
-```
-
-This script (`install.sh`):
+The source installer (`install.sh`):
 1. Detects your distribution and installs the default-profile build set
    (compiler, `make`, `git`) plus libpcap for the example programs
    (`install.sh:356-423`) — not libxml2, which only `ENABLESEC=1` needs. What
@@ -41,16 +43,17 @@ This script (`install.sh`):
    (`/etc/ld.so.conf.d/mmt-dpi.conf` + `ldconfig`) whenever the install ran
    as root — elevated or invoked by root — whatever the prefix, and then
    prints no `LD_LIBRARY_PATH` advice; a user-local prefix skips it.
-   `LDCONF=0` opts out. Uninstall with `bash install.sh --uninstall`
-   (add `--prefix` for a custom prefix).
+   `LDCONF=0` opts out. Its `--uninstall` option removes the install (add
+   `--prefix` for a custom prefix): the Quick Start's uninstall line.
 
-Manual build:
+Manual build, from any directory (the block clones into `./mmt-dpi` and
+stays at the root of that checkout):
 
 ```bash
 git clone https://github.com/montimage-projects/mmt-dpi.git
-cd mmt-dpi/sdk
-make -j$(nproc)
-sudo make install
+cd mmt-dpi
+make -C sdk -j$(nproc)
+sudo make -C sdk install
 ```
 
 After installation (default `MMT_BASE=/opt/mmt`), the layout is:
@@ -69,7 +72,8 @@ Paths are defined in `rules/common.mk:3-8`.
 ## 2. First run: extract attributes from a pcap
 
 The `extract_all` example iterates over a pcap and prints every attribute
-the configured protocol stack can extract:
+the configured protocol stack can extract. From the root of a checkout (the
+manual build above leaves you there):
 
 ```bash
 cd src/examples

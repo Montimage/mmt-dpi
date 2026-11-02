@@ -546,8 +546,8 @@ documents link here.
   reconstructed from the checkout's `sdk/include` and `sdk/examples` when
   they exist; otherwise only the `libmmt_*` libraries and plugins go and the
   include/examples trees are kept with a warning. `dist-clean` is kept as an
-  alias. From the one-command installer:
-  `bash install.sh --uninstall [--prefix <dir>]`, which applies the same
+  alias. From the source installer: its `--uninstall [--prefix <dir>]`
+  option (the Quick Start's uninstall line), which applies the same
   manifest rules (and writes the manifest itself after installing from the
   pinned tag, whose Makefile predates it).
 - **Prefix guard.** `install` and `uninstall` refuse an unsafe layout before
