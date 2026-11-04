@@ -1,7 +1,7 @@
 # MMT-DPI
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
-[![C/C++ CI](https://github.com/montimage-projects/mmt-dpi/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/montimage-projects/mmt-dpi/actions/workflows/c-cpp.yml)
+[![C/C++ CI](https://github.com/montimage/mmt-dpi/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/montimage/mmt-dpi/actions/workflows/c-cpp.yml)
 
 A high-performance C library for deep packet inspection (DPI), designed to extract data attributes from network packets, server logs, and structured events for real-time traffic analysis (version 1.8.0 [`rules/common.mk:1`](rules/common.mk:1)).
 
@@ -22,26 +22,26 @@ A high-performance C library for deep packet inspection (DPI), designed to extra
 Install MMT-DPI with a single command (installs dependencies, builds, and installs automatically):
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/montimage/mmt-dpi/main/install.sh | bash
 ```
 
 or using `wget`:
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
+wget -qO- https://raw.githubusercontent.com/montimage/mmt-dpi/main/install.sh | bash
 ```
 
 **Custom options** (via environment variables):
 
 ```bash
 # Install to a custom directory
-curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | MMT_BASE=/usr/local/mmt bash
+curl -sSL https://raw.githubusercontent.com/montimage/mmt-dpi/main/install.sh | MMT_BASE=/usr/local/mmt bash
 
 # Use a specific branch
-curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | BRANCH=dev bash
+curl -sSL https://raw.githubusercontent.com/montimage/mmt-dpi/main/install.sh | BRANCH=dev bash
 
 # Skip automatic dependency installation
-curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | SKIP_DEPS=1 bash
+curl -sSL https://raw.githubusercontent.com/montimage/mmt-dpi/main/install.sh | SKIP_DEPS=1 bash
 ```
 
 Supports **Linux** distributions: Debian/Ubuntu, Fedora/RHEL, Arch, Alpine, and openSUSE.
@@ -51,7 +51,7 @@ Supports **Linux** distributions: Debian/Ubuntu, Fedora/RHEL, Arch, Alpine, and 
 Every tagged release publishes ready-to-install `.deb` and `.rpm` packages
 (amd64 and arm64) built in CI for the major Linux families. Download the one
 matching your distribution from the
-[Releases page](https://github.com/montimage-projects/mmt-dpi/releases) and
+[Releases page](https://github.com/montimage/mmt-dpi/releases) and
 install it with your native package manager:
 
 ```bash
@@ -71,7 +71,7 @@ Rocky Linux 9, and CentOS Stream 9.
 If you prefer to build manually:
 
 ```bash
-git clone https://github.com/montimage-projects/mmt-dpi.git
+git clone https://github.com/montimage/mmt-dpi.git
 cd mmt-dpi
 
 # Install dependencies (Debian/Ubuntu)
