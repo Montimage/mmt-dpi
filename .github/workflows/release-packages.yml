@@ -155,14 +155,14 @@ jobs:
         distro:
           - { name: ubuntu-22.04,   image: "ubuntu:22.04@sha256:076e7bf82319619f28dd0aa9c02ab34b055ad37100395b4f49a2ffba04fb5e11",                    pkg: deb }
           - { name: ubuntu-24.04,   image: "ubuntu:24.04@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852",                    pkg: deb }
-          - { name: debian-12,      image: "debian:12@sha256:d74df7598108a173a621eda4d58a2adbf850b2d9a9d81bc2cca1a6c21174a880",                       pkg: deb }
+          - { name: debian-12,      image: "debian:12@sha256:268fb24c39bca92d326dd83ea3abebe4a3f7751c804ffef23bb6d857dd343ff8",                       pkg: deb }
           - { name: rocky-9,        image: "rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6",                    pkg: rpm }
-          - { name: centos-stream9, image: "quay.io/centos/centos:stream9@sha256:6f8045fc4f552544d8a401d61848bafc8d06ca7c11897c5b54a2c37fc419a20a",   pkg: rpm }
+          - { name: centos-stream9, image: "quay.io/centos/centos:stream9@sha256:99a7748660352b7d87e5689805ddafa6209d6019d0c5b642b5354656dff02be3",   pkg: rpm }
           # Current generation (issue #515).
           - { name: ubuntu-26.04,    image: "ubuntu:26.04@sha256:6a06111c3b0a8600feadb270aec771dc239bf407b25625f93f44ab00e11f4d3c",                    pkg: deb }
-          - { name: debian-13,       image: "debian:13@sha256:2dc419c6d7fe3dad0a2f9fd469c34cc90b0f9ba642d8fde837fe3d7d34a0e7f1",                       pkg: deb }
+          - { name: debian-13,       image: "debian:13@sha256:9c6e381421d0f48d1b8133e573f33c185ee16cbf505eda9c4a8a4791b25ea8a6",                       pkg: deb }
           - { name: rocky-10,        image: "rockylinux/rockylinux:10@sha256:827d37bc128288ccf160ee318bb3cb92d591164cb217e92f8bc61e3982ae1834",        pkg: rpm }
-          - { name: centos-stream10, image: "quay.io/centos/centos:stream10@sha256:99b8fe27dd4958b5dc2630ce35f5f6a7ff7bf9b2b1a72078102fde50d3277550",  pkg: rpm }
+          - { name: centos-stream10, image: "quay.io/centos/centos:stream10@sha256:511d358446140e9c4ba16451affb103a14237cbf40059b18adeaef6e3080a72b",  pkg: rpm }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -346,9 +346,9 @@ jobs:
         distro:
           - { name: ubuntu-22.04,   image: "ubuntu:22.04@sha256:076e7bf82319619f28dd0aa9c02ab34b055ad37100395b4f49a2ffba04fb5e11" }
           - { name: ubuntu-24.04,   image: "ubuntu:24.04@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852" }
-          - { name: debian-12,      image: "debian:12@sha256:d74df7598108a173a621eda4d58a2adbf850b2d9a9d81bc2cca1a6c21174a880" }
+          - { name: debian-12,      image: "debian:12@sha256:268fb24c39bca92d326dd83ea3abebe4a3f7751c804ffef23bb6d857dd343ff8" }
           - { name: ubuntu-26.04,   image: "ubuntu:26.04@sha256:6a06111c3b0a8600feadb270aec771dc239bf407b25625f93f44ab00e11f4d3c" }
-          - { name: debian-13,      image: "debian:13@sha256:2dc419c6d7fe3dad0a2f9fd469c34cc90b0f9ba642d8fde837fe3d7d34a0e7f1" }
+          - { name: debian-13,      image: "debian:13@sha256:9c6e381421d0f48d1b8133e573f33c185ee16cbf505eda9c4a8a4791b25ea8a6" }
     env:
       IMAGE: ${{ matrix.distro.image }}
       TARBALL_LEG: ${{ matrix.distro.name == 'debian-13' && matrix.arch == 'amd64' }}
@@ -403,9 +403,9 @@ jobs:
         arch: [amd64, arm64]
         distro:
           - { name: rocky-9,         image: "rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6" }
-          - { name: centos-stream9,  image: "quay.io/centos/centos:stream9@sha256:6f8045fc4f552544d8a401d61848bafc8d06ca7c11897c5b54a2c37fc419a20a" }
+          - { name: centos-stream9,  image: "quay.io/centos/centos:stream9@sha256:99a7748660352b7d87e5689805ddafa6209d6019d0c5b642b5354656dff02be3" }
           - { name: rocky-10,        image: "rockylinux/rockylinux:10@sha256:827d37bc128288ccf160ee318bb3cb92d591164cb217e92f8bc61e3982ae1834" }
-          - { name: centos-stream10, image: "quay.io/centos/centos:stream10@sha256:99b8fe27dd4958b5dc2630ce35f5f6a7ff7bf9b2b1a72078102fde50d3277550" }
+          - { name: centos-stream10, image: "quay.io/centos/centos:stream10@sha256:511d358446140e9c4ba16451affb103a14237cbf40059b18adeaef6e3080a72b" }
     env:
       IMAGE: ${{ matrix.distro.image }}
     steps:
