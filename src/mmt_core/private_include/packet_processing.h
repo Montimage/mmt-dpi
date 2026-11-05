@@ -842,6 +842,18 @@ struct mmt_handler_struct {
     attribute_internal_t ** proto_registered_attributes[PROTO_MAX_IDENTIFIER];
     uint32_t proto_registered_attributes_len[PROTO_MAX_IDENTIFIER];
     uint32_t proto_registered_attributes_cap[PROTO_MAX_IDENTIFIER];
+    /* Issue #556 (F-PERF-003): direct attribute_id -> attribute_internal_t *
+     * index per protocol, so a fetch finds its attribute in O(1) instead of
+     * scanning proto_registered_attributes. Slot layout: mmt_attr_index_slot().
+     * Allocated on a protocol's first indexable registration, grown on
+     * demand (.len slots, unused ones NULL), and kept
+     * coherent with proto_registered_attributes by register/unregister in
+     * packet_registry_attr.c — an attribute leaves the index when it leaves
+     * the array, before its (possibly deferred, #501) free. */
+    struct {
+        attribute_internal_t ** slots; /**< slot -> registered attribute, or NULL */
+        uint32_t len;                  /**< number of slots */
+    } proto_attr_index[PROTO_MAX_IDENTIFIER];
     attribute_handler_element_t * proto_registered_attribute_handlers[PROTO_MAX_IDENTIFIER];
     uint32_t proto_registered_attribute_handlers_len[PROTO_MAX_IDENTIFIER];
     uint32_t proto_registered_attribute_handlers_cap[PROTO_MAX_IDENTIFIER];
@@ -1129,6 +1141,40 @@ int init_plugins(void);
 bool attribute_ids_comparison_fct(uint32_t l_id, uint32_t r_id);
 struct attribute_internal_struct * get_registered_attribute_internal_struct(const ipacket_t * ipacket, uint32_t proto_id, uint32_t attribute_id, unsigned index);
 struct attribute_internal_struct * get_registered_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t field_id);
+/* Issue #556: binary search of proto_registered_attributes (sorted by
+ * field_id) — the lookup for ids mmt_attr_index_slot() does not index. */
+attribute_internal_t * search_registered_attribute(const mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t field_id);
+
+/* Issue #556 (F-PERF-003): slot of an attribute id in the per-protocol
+ * index (mmt_handler_t.proto_attr_index). The generic statistics and
+ * session attributes (PROTO_HEADER .. PROTO_HEADER + 15, every protocol
+ * has them) take slots 0-15; protocol-specific ids below
+ * MMT_ATTR_INDEX_MAX_ID follow at 16 + id, so a protocol's table is as
+ * long as its largest registered id needs. Any other id is not indexed
+ * (MMT_ATTR_INDEX_NONE) and is looked up by search_registered_attribute(). */
+#define MMT_ATTR_INDEX_GENERIC_SLOTS 16u
+#define MMT_ATTR_INDEX_MAX_ID        1024u
+#define MMT_ATTR_INDEX_NONE          UINT32_MAX
+static inline uint32_t mmt_attr_index_slot(uint32_t field_id) {
+    uint32_t generic = field_id - (uint32_t) PROTO_HEADER; /* wraps below PROTO_HEADER */
+    if (generic < MMT_ATTR_INDEX_GENERIC_SLOTS) return generic;
+    if (field_id < MMT_ATTR_INDEX_MAX_ID) return MMT_ATTR_INDEX_GENERIC_SLOTS + field_id;
+    return MMT_ATTR_INDEX_NONE;
+}
+
+/* Issue #556: the registered attribute (proto_id, field_id) of a handler,
+ * or NULL — O(1) for indexed ids. Every lookup of the registration arrays
+ * goes through here. */
+static inline attribute_internal_t * mmt_find_registered_attribute(const mmt_handler_t *mmt_handler,
+        uint32_t proto_id, uint32_t field_id) {
+    if (proto_id >= PROTO_MAX_IDENTIFIER) return NULL;
+    uint32_t slot = mmt_attr_index_slot(field_id);
+    if (likely(slot != MMT_ATTR_INDEX_NONE)) {
+        return (slot < mmt_handler->proto_attr_index[proto_id].len)
+                ? mmt_handler->proto_attr_index[proto_id].slots[slot] : NULL;
+    }
+    return search_registered_attribute(mmt_handler, proto_id, field_id);
+}
 /* Issue #501: frees the attributes released during an attribute dispatch. */
 void flush_deferred_attribute_frees(mmt_handler_t *mmt_handler);
 

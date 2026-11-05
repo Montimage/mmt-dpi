@@ -37,20 +37,52 @@ static void * grow_registration_array(void *arr, uint32_t *cap, uint32_t elem_si
     return grown;
 }
 
-struct attribute_internal_struct * get_registered_attribute_internal_struct(const ipacket_t * ipacket, uint32_t proto_id, uint32_t attribute_id, unsigned index) {
-    mmt_handler_t * mmt_handler = ipacket->mmt_handler;
-    /* Issue #252 (F-PERF-017): contiguous frozen array — keep it sorted by
-     * field_id so a binary search would also be valid; a linear scan is what
-     * the old list walk did and the arrays are short. */
-    struct attribute_internal_struct ** attrs = mmt_handler->proto_registered_attributes[proto_id]; //This is safe as we are sure the protocol is registered
-    uint32_t n = mmt_handler->proto_registered_attributes_len[proto_id];
-
-    for (uint32_t i = 0; i < n; i++) {
-        if (attribute_id == attrs[i]->field_id) {
-            return attrs[i];
-        }
+/* Issue #556 (F-PERF-003): the per-protocol index of mmt_handler_t
+ * (proto_attr_index) maps an indexable attribute id straight to its slot in
+ * the registry; every helper below looks attributes up through
+ * mmt_find_registered_attribute() (packet_processing.h) instead of scanning
+ * proto_registered_attributes. Ids the index does not cover fall back to
+ * this binary search — the array is kept sorted by field_id (issue #252). */
+attribute_internal_t * search_registered_attribute(const mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t field_id) {
+    if (proto_id >= PROTO_MAX_IDENTIFIER) return NULL;
+    attribute_internal_t * const * attrs = mmt_handler->proto_registered_attributes[proto_id];
+    uint32_t lo = 0, hi = mmt_handler->proto_registered_attributes_len[proto_id];
+    while (lo < hi) {
+        uint32_t mid = lo + (hi - lo) / 2;
+        if (attrs[mid]->field_id < field_id) lo = mid + 1;
+        else hi = mid;
     }
-    return NULL;
+    return (lo < mmt_handler->proto_registered_attributes_len[proto_id] && attrs[lo]->field_id == field_id)
+            ? attrs[lo] : NULL;
+}
+
+/* Issue #556: make the index of proto_id cover `slot` (new slots NULL).
+ * Returns 0 when the growth failed, leaving the index untouched. */
+static int reserve_attribute_index_slot(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t slot) {
+    uint32_t len = mmt_handler->proto_attr_index[proto_id].len;
+    if (slot == MMT_ATTR_INDEX_NONE || slot < len) return 1;
+    uint32_t new_len = (slot + 8u) & ~7u; /* slot + 1, rounded up to 8 slots */
+    attribute_internal_t ** grown = (attribute_internal_t **) mmt_realloc(mmt_handler->proto_attr_index[proto_id].slots,
+            (size_t) new_len * sizeof(*grown));
+    if (grown == NULL) return 0;
+    memset(&grown[len], 0, (size_t) (new_len - len) * sizeof(*grown));
+    mmt_handler->proto_attr_index[proto_id].slots = grown;
+    mmt_handler->proto_attr_index[proto_id].len = new_len;
+    return 1;
+}
+
+/* Issue #556: point the index slot of field_id at attr (NULL to clear). */
+static void set_attribute_index_slot(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t field_id,
+        attribute_internal_t *attr) {
+    uint32_t slot = mmt_attr_index_slot(field_id);
+    if (slot != MMT_ATTR_INDEX_NONE && slot < mmt_handler->proto_attr_index[proto_id].len) {
+        mmt_handler->proto_attr_index[proto_id].slots[slot] = attr;
+    }
+}
+
+struct attribute_internal_struct * get_registered_attribute_internal_struct(const ipacket_t * ipacket, uint32_t proto_id, uint32_t attribute_id, unsigned index) {
+    (void) index;
+    return mmt_find_registered_attribute(ipacket->mmt_handler, proto_id, attribute_id);
 }
 
 bool is_registered_packet_handler(mmt_handler_t *mmt_handler, int packet_handler_id) {
@@ -61,59 +93,30 @@ bool is_registered_packet_handler(mmt_handler_t *mmt_handler, int packet_handler
 }
 
 bool is_registered_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t field_id) {
-    struct attribute_internal_struct ** attrs = mmt_handler->proto_registered_attributes[proto_id];
-    uint32_t n = mmt_handler->proto_registered_attributes_len[proto_id];
-    for (uint32_t i = 0; i < n; i++) {
-        if (proto_id == mmt_attr_get_proto_id_typed((const attribute_t *) attrs[i]) &&
-                field_id == attrs[i]->field_id) return 1;
-    }
-    return 0;
+    return mmt_find_registered_attribute(mmt_handler, proto_id, field_id) != NULL;
 }
 
 struct attribute_internal_struct * get_registered_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t field_id) {
     if (is_registered_protocol(proto_id) > 0) {
-        struct attribute_internal_struct ** attrs = mmt_handler->proto_registered_attributes[proto_id];
-        uint32_t n = mmt_handler->proto_registered_attributes_len[proto_id];
-        for (uint32_t i = 0; i < n; i++) {
-            if (proto_id == mmt_attr_get_proto_id_typed((const attribute_t *) attrs[i]) &&
-                    field_id == attrs[i]->field_id) return attrs[i];
-        }
+        return mmt_find_registered_attribute(mmt_handler, proto_id, field_id);
     }
     return NULL;
 }
 
 bool has_registered_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t attribute_id) {
-    if (!_is_valid_protocol_id(proto_id)) {
-        return 0;
-    }
-    attribute_internal_t ** attrs = mmt_handler->proto_registered_attributes[proto_id];
-    uint32_t n = mmt_handler->proto_registered_attributes_len[proto_id];
-    for (uint32_t i = 0; i < n; i++) {
-        if (proto_id == mmt_attr_get_proto_id_typed((const attribute_t *) attrs[i]) &&
-                attribute_id == attrs[i]->field_id &&
-                attrs[i]->handlers_count > 0 /* The attribute has at least one registered handler */) {
-            return 1;
-        }
-    }
-    return 0;
+    attribute_internal_t * attr = mmt_find_registered_attribute(mmt_handler, proto_id, attribute_id);
+    return attr != NULL && attr->handlers_count > 0 /* The attribute has at least one registered handler */;
 }
 
 bool is_registered_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id,
                                     uint32_t attribute_id, attribute_handler_function handler_fct) {
-    if (!_is_valid_protocol_id(proto_id)) {
+    attribute_internal_t * attr = mmt_find_registered_attribute(mmt_handler, proto_id, attribute_id);
+    if (attr == NULL) {
         return 0;
     }
-    attribute_internal_t ** attrs = mmt_handler->proto_registered_attributes[proto_id];
-    uint32_t n = mmt_handler->proto_registered_attributes_len[proto_id];
-    for (uint32_t i = 0; i < n; i++) {
-        if (proto_id == mmt_attr_get_proto_id_typed((const attribute_t *) attrs[i]) &&
-                attribute_id == attrs[i]->field_id &&
-                attrs[i]->handlers_count > 0 /* The attribute has at least one registered handler */) {
-            for (int j = 0; j < attrs[i]->handlers_count; j++) {
-                if (attrs[i]->attribute_handlers[j].handler_fct == handler_fct) {
-                    return 1;
-                }
-            }
+    for (int j = 0; j < attr->handlers_count; j++) {
+        if (attr->attribute_handlers[j].handler_fct == handler_fct) {
+            return 1;
         }
     }
     return 0;
@@ -157,6 +160,9 @@ void free_registered_extraction_attributes(mmt_handler_t *mmt_handler) {
         mmt_handler->proto_registered_attributes[i] = NULL;
         mmt_handler->proto_registered_attributes_len[i] = 0;
         mmt_handler->proto_registered_attributes_cap[i] = 0;
+        mmt_free(mmt_handler->proto_attr_index[i].slots); // issue #556: the attribute index
+        mmt_handler->proto_attr_index[i].slots = NULL;
+        mmt_handler->proto_attr_index[i].len = 0;
     }
 }
 
@@ -244,6 +250,7 @@ static void release_extraction_registration(mmt_handler_t *mmt_handler, uint32_t
                 safe_to_delete_attr_for_proto = attrs[i];
                 memmove(&attrs[i], &attrs[i + 1], (n - i - 1) * sizeof(*attrs));
                 mmt_handler->proto_registered_attributes_len[proto_id] = n - 1;
+                set_attribute_index_slot(mmt_handler, proto_id, field_id, NULL); // issue #556
                 break;
             }
         }
@@ -279,17 +286,8 @@ bool unregister_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id,
         return 1;
     }
 
-    //Get the attribute
-    {
-        attribute_internal_t ** attrs = mmt_handler->proto_registered_attributes[proto_id];
-        uint32_t n = mmt_handler->proto_registered_attributes_len[proto_id];
-        for (uint32_t i = 0; i < n; i++) {
-            if ((attrs[i]->field_id == attribute_id) && (attrs[i]->proto_id == proto_id)) {
-                temp_attr = attrs[i];
-                break;
-            }
-        }
-    }
+    //Get the attribute (registered: is_registered_attribute_handler() found it)
+    temp_attr = mmt_find_registered_attribute(mmt_handler, proto_id, attribute_id);
 
     /* Issue #252 (F-PERF-017): the handlers are a contiguous array on the
      * attribute — drop the matching slot with memmove. handlers_count is the
@@ -393,12 +391,19 @@ bool register_extraction_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id
         }
         struct attribute_internal_struct ** attrs = (struct attribute_internal_struct **) grown;
         mmt_handler->proto_registered_attributes[reg_proto] = attrs;
+        /* Issue #556: reserve the index slot before linking the attribute,
+         * so a failed growth leaves the registry as it was. */
+        if (!reserve_attribute_index_slot(mmt_handler, reg_proto, mmt_attr_index_slot(field_id))) {
+            mmt_free(extract_attribute);
+            return 0;
+        }
 
         uint32_t pos = 0;
         while (pos < n && attrs[pos]->field_id < field_id) pos++;
         memmove(&attrs[pos + 1], &attrs[pos], (n - pos) * sizeof(*attrs));
         attrs[pos] = extract_attribute;
         mmt_handler->proto_registered_attributes_len[reg_proto] = n + 1;
+        set_attribute_index_slot(mmt_handler, reg_proto, field_id, extract_attribute);
     }
     //Finally we increment the registration count of this attribute.
     extract_attribute->registration_count++;

@@ -191,7 +191,11 @@ static inline void rearm_attribute_scratch(struct attribute_internal_struct * at
  * @param index index of the protocol in the path
  * @return a positive value if the extraction was done, zero otherwise
  */
-int internal_extract_attribute(const ipacket_t * ipacket, struct attribute_internal_struct * tmp_attr_ref, unsigned index) {
+/* Issue #556 (F-PERF-003): the body of internal_extract_attribute(), inlined
+ * into the attribute getters below so a fetch does not pay a second call
+ * frame and re-validation per attribute. */
+static inline __attribute__((always_inline))
+int extract_attribute_at(const ipacket_t * ipacket, struct attribute_internal_struct * tmp_attr_ref, unsigned index) {
     if (ipacket == NULL || ipacket->p_hdr == NULL || ipacket->data == NULL || tmp_attr_ref == NULL) return 0;
 #if MMT_CAPLEN_GUARD_STATS
     __atomic_add_fetch(&mmt_caplen_guard_total, 1, __ATOMIC_RELAXED);
@@ -260,6 +264,24 @@ int internal_extract_attribute(const ipacket_t * ipacket, struct attribute_inter
     return 0;
 }
 
+int internal_extract_attribute(const ipacket_t * ipacket, struct attribute_internal_struct * tmp_attr_ref, unsigned index) {
+    return extract_attribute_at(ipacket, tmp_attr_ref, index);
+}
+
+/* Issue #556 (F-PERF-003): extract a registered on-demand attribute and
+ * return its data (ATTRIBUTE_CONSUMED), or NULL when the extraction failed. */
+static inline __attribute__((always_inline))
+void * extract_consumed_attribute_data(const ipacket_t * ipacket, struct attribute_internal_struct * tmp_attr_ref, unsigned index) {
+    if (extract_attribute_at(ipacket, tmp_attr_ref, index)) {
+        tmp_attr_ref->status = ATTRIBUTE_CONSUMED;
+        return tmp_attr_ref->data;
+    }
+#ifdef DEBUG
+    (void)mmt_debug_log("[error] get_attribute_extracted_data_at_index : packet - %"PRIu64", proto_id - %"PRIu32", attribute_id - %"PRIu32" - index: %u : unexpected failure\n",ipacket->packet_id, tmp_attr_ref->proto_id, tmp_attr_ref->field_id, index );
+#endif /*DEBUG*/
+    return NULL;
+}
+
 /**
  * Returns a pointer to the extracted data of the attribute identified by its protocol and field ids. The extracted
  * data is not NULL if the attribute existed in the last processed message.
@@ -297,7 +319,8 @@ static inline void * _get_attribute_extracted_data_at_index(const ipacket_t * ip
         return NULL;
     }
 
-    struct attribute_internal_struct * tmp_attr_ref = get_registered_attribute_internal_struct(ipacket, proto_id, attribute_id, index);
+    /* Issue #556 (F-PERF-003): O(1) through the per-protocol attribute index. */
+    struct attribute_internal_struct * tmp_attr_ref = mmt_find_registered_attribute(ipacket->mmt_handler, proto_id, attribute_id);
     if (tmp_attr_ref == NULL) {
 #ifdef DEBUG
         (void)mmt_debug_log("[error] get_attribute_extracted_data_at_index : packet - %"PRIu64", proto_id - %"PRIu32", attribute_id - %"PRIu32" - index: %u : can't retrieve attribute internal structure\n",ipacket->packet_id, proto_id, attribute_id, index );
@@ -306,19 +329,11 @@ static inline void * _get_attribute_extracted_data_at_index(const ipacket_t * ip
     }
 
     if (tmp_attr_ref->scope & SCOPE_ON_DEMAND) {
-        if (internal_extract_attribute(ipacket, tmp_attr_ref, index)) {
-            //return the attribute's data
-// #ifdef DEBUG
-//             (void)mmt_debug_log("[error] get_attribute_extracted_data_at_index : packet - %"PRIu64", proto_id - %"PRIu32", attribute_id - %"PRIu32" - index: %u : attribute data is null (1/2)\n",ipacket->packet_id, proto_id, attribute_id, index );
-// #endif /*DEBUG*/
-            tmp_attr_ref->status = ATTRIBUTE_CONSUMED;
-            return tmp_attr_ref->data;
-        }
-    } else {
-        /* THIS IS SCOPE_EVENT  should do nothing
-        LN: But we shoud return something not NULL ????
-        */
+        return extract_consumed_attribute_data(ipacket, tmp_attr_ref, index);
     }
+    /* THIS IS SCOPE_EVENT  should do nothing
+    LN: But we shoud return something not NULL ????
+    */
 #ifdef DEBUG
     if(!(tmp_attr_ref->scope & SCOPE_EVENT)){
         (void)mmt_debug_log("[error] get_attribute_extracted_data_at_index : packet - %"PRIu64", proto_id - %"PRIu32", attribute_id - %"PRIu32" - index: %u : unexpected failure\n",ipacket->packet_id, proto_id, attribute_id, index );
@@ -359,7 +374,8 @@ attribute_t * get_extracted_attribute_at_index(const ipacket_t * ipacket, uint32
         return NULL;
     }
 
-    struct attribute_internal_struct * tmp_attr_ref = get_registered_attribute_internal_struct(ipacket, proto_id, attribute_id, index);
+    /* Issue #556 (F-PERF-003): O(1) through the per-protocol attribute index. */
+    struct attribute_internal_struct * tmp_attr_ref = mmt_find_registered_attribute(ipacket->mmt_handler, proto_id, attribute_id);
     if (tmp_attr_ref == NULL) {
 #ifdef DEBUG
         (void)mmt_debug_log("[error] get_extracted_attribute_at_index: can't retrieve attribute internal structure: packet - %"PRIu64", proto_id - %"PRIu32" , attribute_id - %"PRIu32", index - %u \n", ipacket->packet_id,proto_id,attribute_id, index);
@@ -368,7 +384,7 @@ attribute_t * get_extracted_attribute_at_index(const ipacket_t * ipacket, uint32
     }
 
     if (tmp_attr_ref->scope & SCOPE_ON_DEMAND) {
-        if (internal_extract_attribute(ipacket, tmp_attr_ref, index)) {
+        if (extract_attribute_at(ipacket, tmp_attr_ref, index)) {
             //return the attribute's data
 // #ifdef DEBUG
 //             (void)mmt_debug_log("get_extracted_attribute_at_index: attribute data is not null (1/2): packet - %"PRIu64", proto_id - %"PRIu32" , attribute_id - %"PRIu32", index - %u \n", ipacket->packet_id,proto_id,attribute_id, index);

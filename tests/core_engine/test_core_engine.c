@@ -106,6 +106,7 @@ extern void *__real_realloc(void *ptr, size_t size);
 
 static long g_malloc_budget = -1; /* -1 unlimited; 0 fail; N = next N succeed */
 static long g_calloc_budget = -1;
+static long g_realloc_budget = -1; /* issue #556: fails a growth of the attribute index */
 
 /* Issue #255 (F-PERF-015): instrumentation proving the allocator no longer
  * adds the 8-byte size prefix — the sizes libc actually sees are recorded. */
@@ -125,6 +126,8 @@ void *__wrap_calloc(size_t nmemb, size_t size) {
 }
 void *__wrap_realloc(void *ptr, size_t size) {
     g_realloc_last_size = size;
+    if (g_realloc_budget == 0) return NULL;
+    if (g_realloc_budget > 0) g_realloc_budget--;
     return __real_realloc(ptr, size);
 }
 
@@ -2568,6 +2571,165 @@ static void test_attr_dispatch_safety(void) {
     g_ds_handler = NULL;
 }
 
+/* ===================== per-protocol attribute index ===================== */
+
+/* Issue #556 (F-PERF-003): attribute lookups go through the per-protocol
+ * index of mmt_handler_t (proto_attr_index) instead of scanning the
+ * registered array. The index must agree with the array through every
+ * registration change: indexed ids (generic PROTO_HEADER.. block, ids below
+ * MMT_ATTR_INDEX_MAX_ID) and ids it does not cover (binary-search fallback). */
+#define AI_ATTR_LOW     60u   /* indexed, protocol-specific */
+#define AI_ATTR_HIGH    1023u /* the largest indexed protocol-specific id */
+#define AI_ATTR_UNIDX1  1024u /* not indexed: binary search */
+#define AI_ATTR_UNIDX2  0x2000u
+static uint32_t g_ai_fetch[4];
+static int g_ai_fetch_ok[4];
+static int ai_packet_handler(const ipacket_t *ipacket, void *args) {
+    (void) args;
+    static const uint32_t ids[4] = { AI_ATTR_LOW, AI_ATTR_HIGH, AI_ATTR_UNIDX1, AI_ATTR_UNIDX2 };
+    for (int i = 0; i < 4; i++) {
+        uint32_t *v = (uint32_t *) get_attribute_extracted_data(ipacket, TEST_PROTO_A, ids[i]);
+        attribute_t *a = get_extracted_attribute(ipacket, TEST_PROTO_A, ids[i]);
+        g_ai_fetch_ok[i] = (v != NULL && a != NULL && a->data != NULL);
+        g_ai_fetch[i] = v ? *v : 0;
+    }
+    return 0;
+}
+
+/* The index and the sorted array name the same attributes, field for field. */
+static int ai_index_consistent(const mmt_handler_t *h, uint32_t proto) {
+    attribute_internal_t **attrs = h->proto_registered_attributes[proto];
+    uint32_t n = h->proto_registered_attributes_len[proto], indexed = 0;
+    for (uint32_t i = 0; i < n; i++) {
+        if (i > 0 && attrs[i - 1]->field_id >= attrs[i]->field_id) return 0; /* sorted, unique */
+        if (mmt_find_registered_attribute(h, proto, attrs[i]->field_id) != attrs[i]) return 0;
+        if (mmt_attr_index_slot(attrs[i]->field_id) != MMT_ATTR_INDEX_NONE) indexed++;
+    }
+    uint32_t used = 0;
+    for (uint32_t s = 0; s < h->proto_attr_index[proto].len; s++) {
+        if (h->proto_attr_index[proto].slots[s] != NULL) used++;
+    }
+    return used == indexed;
+}
+
+static void test_attribute_index(void) {
+    fprintf(stderr, "  test: per-protocol attribute index (issue #556)\n");
+    char errbuf[256];
+    u_char pkt[64];
+    pkthdr_t hdr;
+
+    /* Slot layout. */
+    CHECK(mmt_attr_index_slot(PROTO_HEADER) == 0, "PROTO_HEADER takes slot 0");
+    CHECK(mmt_attr_index_slot(PROTO_SESSION_ID) == PROTO_SESSION_ID - PROTO_HEADER, "generic ids are packed first");
+    CHECK(mmt_attr_index_slot(PROTO_HEADER + MMT_ATTR_INDEX_GENERIC_SLOTS) == MMT_ATTR_INDEX_NONE,
+          "past the generic block is not indexed");
+    CHECK(mmt_attr_index_slot(1) == MMT_ATTR_INDEX_GENERIC_SLOTS + 1, "protocol ids follow the generic block");
+    CHECK(mmt_attr_index_slot(AI_ATTR_HIGH) == MMT_ATTR_INDEX_GENERIC_SLOTS + AI_ATTR_HIGH, "1023 is indexed");
+    CHECK(mmt_attr_index_slot(AI_ATTR_UNIDX1) == MMT_ATTR_INDEX_NONE, "1024 is not indexed");
+    CHECK(mmt_attr_index_slot(0xFFFFFFFFu) == MMT_ATTR_INDEX_NONE, "UINT32_MAX is not indexed");
+
+    static const uint32_t ai_ids[4] = { AI_ATTR_LOW, AI_ATTR_HIGH, AI_ATTR_UNIDX1, AI_ATTR_UNIDX2 };
+    static const char *ai_alias[4] = { "ce_ai_low", "ce_ai_high", "ce_ai_unidx1", "ce_ai_unidx2" };
+    for (int i = 0; i < 4; i++) {
+        attribute_metadata_t meta;
+        memset(&meta, 0, sizeof(meta));
+        meta.id = ai_ids[i];
+        strncpy(meta.alias, ai_alias[i], Max_Alias_Len);
+        meta.data_type = MMT_U32_DATA;
+        meta.data_len = (int) sizeof(uint32_t);
+        meta.position_in_packet = 0;
+        meta.scope = SCOPE_PACKET;
+        meta.extraction_function = test_attr_extract;
+        CHECK(register_attribute_with_protocol(get_protocol_struct_by_id(TEST_PROTO_A), &meta) == 1,
+              "register an index-test attribute with the protocol");
+    }
+
+    mmt_handler_t *h = mmt_init_handler(TEST_STACK_ID, 0, errbuf);
+    CHECK(h != NULL, "handler init for the attribute-index test");
+    if (h == NULL) return;
+    CHECK(h->proto_attr_index[TEST_PROTO_A].slots == NULL && h->proto_attr_index[TEST_PROTO_A].len == 0,
+          "no index before the first registration");
+    CHECK(is_registered_attribute(h, PROTO_MAX_IDENTIFIER, AI_ATTR_LOW) == 0,
+          "an out-of-range protocol id is not registered (no out-of-bounds read)");
+    CHECK(search_registered_attribute(h, PROTO_MAX_IDENTIFIER, AI_ATTR_UNIDX1) == NULL,
+          "the fallback search rejects an out-of-range protocol id");
+
+    /* A failed index growth fails the registration and leaves the registry
+     * untouched: malloc #1 the attribute, #2 the array, #3 the index. */
+    g_malloc_budget = 2;
+    CHECK(register_extraction_attribute(h, TEST_PROTO_A, AI_ATTR_LOW) == 0,
+          "registration fails when the index cannot be allocated");
+    g_malloc_budget = -1;
+    CHECK(is_registered_attribute(h, TEST_PROTO_A, AI_ATTR_LOW) == 0 &&
+          h->proto_registered_attributes_len[TEST_PROTO_A] == 0, "nothing registered after the failure");
+
+    /* Registration in an order that exercises both growth and insertion. */
+    CHECK(register_extraction_attribute(h, TEST_PROTO_A, AI_ATTR_UNIDX2) == 1, "register 0x2000 (search)");
+    CHECK(h->proto_attr_index[TEST_PROTO_A].len == 0, "an unindexed id allocates no index");
+    CHECK(register_extraction_attribute(h, TEST_PROTO_A, AI_ATTR_LOW) == 1, "register 60");
+    uint32_t len_low = h->proto_attr_index[TEST_PROTO_A].len;
+    CHECK(len_low > MMT_ATTR_INDEX_GENERIC_SLOTS + AI_ATTR_LOW && len_low < MMT_ATTR_INDEX_GENERIC_SLOTS + AI_ATTR_HIGH,
+          "the index covers the registered id, not the whole id space");
+    /* A failed regrowth (realloc) also fails the registration cleanly. */
+    g_realloc_budget = 0;
+    int high_failed = register_extraction_attribute(h, TEST_PROTO_A, AI_ATTR_HIGH) == 0;
+    g_realloc_budget = -1;
+    CHECK(high_failed, "registration fails when the index cannot grow");
+    CHECK(h->proto_attr_index[TEST_PROTO_A].len == len_low && is_registered_attribute(h, TEST_PROTO_A, AI_ATTR_HIGH) == 0,
+          "the index is unchanged after the failed growth");
+    CHECK(ai_index_consistent(h, TEST_PROTO_A), "index consistent after the failed growth");
+    CHECK(register_extraction_attribute(h, TEST_PROTO_A, AI_ATTR_HIGH) == 1, "register 1023");
+    CHECK(register_extraction_attribute(h, TEST_PROTO_A, AI_ATTR_UNIDX1) == 1, "register 1024 (search)");
+    CHECK(register_extraction_attribute(h, TEST_PROTO_A, PROTO_SESSION_ID) == 1, "register a generic attribute");
+    CHECK(register_extraction_attribute(h, TEST_PROTO_A, AI_ATTR_LOW) == 1, "register 60 a second time");
+    CHECK(h->proto_registered_attributes_len[TEST_PROTO_A] == 5, "five attributes registered");
+    CHECK(ai_index_consistent(h, TEST_PROTO_A), "index consistent after the registrations");
+    for (int i = 0; i < 4; i++) {
+        attribute_internal_t *a = get_registered_attribute(h, TEST_PROTO_A, ai_ids[i]);
+        CHECK(a != NULL && a->field_id == ai_ids[i] && a->proto_id == TEST_PROTO_A,
+              "each registered id resolves to its own attribute");
+    }
+    CHECK(get_registered_attribute(h, TEST_PROTO_A, AI_ATTR_LOW + 1) == NULL, "an unregistered indexed id is absent");
+    CHECK(get_registered_attribute(h, TEST_PROTO_A, AI_ATTR_UNIDX1 + 1) == NULL, "an unregistered searched id is absent");
+    CHECK(get_registered_attribute(h, TEST_PROTO_A, PROTO_HEADER) == NULL, "an unregistered generic id is absent");
+
+    /* Fetch every kind of id through the packet path. */
+    CHECK(register_packet_handler(h, 556, ai_packet_handler, NULL) == 1, "register the fetch handler");
+    make_packet(&hdr, pkt, sizeof(pkt), 0x55655655u, 4000, 0);
+    CHECK(packet_process(h, &hdr, pkt) == 1, "index packet processed");
+    for (int i = 0; i < 4; i++) {
+        CHECK(g_ai_fetch_ok[i] && g_ai_fetch[i] == 0x55655655u, "fetched the attribute through the index");
+    }
+
+    /* Unregistration clears exactly the departing slot. */
+    CHECK(unregister_extraction_attribute(h, TEST_PROTO_A, AI_ATTR_LOW) == 1, "drop one of two registrations of 60");
+    CHECK(is_registered_attribute(h, TEST_PROTO_A, AI_ATTR_LOW) == 1, "60 still registered once");
+    CHECK(unregister_extraction_attribute(h, TEST_PROTO_A, AI_ATTR_LOW) == 1, "drop the last registration of 60");
+    CHECK(is_registered_attribute(h, TEST_PROTO_A, AI_ATTR_LOW) == 0 &&
+          h->proto_attr_index[TEST_PROTO_A].slots[mmt_attr_index_slot(AI_ATTR_LOW)] == NULL, "slot of 60 cleared");
+    CHECK(unregister_extraction_attribute(h, TEST_PROTO_A, AI_ATTR_UNIDX1) == 1, "drop 1024");
+    CHECK(get_registered_attribute(h, TEST_PROTO_A, AI_ATTR_UNIDX1) == NULL, "1024 gone from the search");
+    CHECK(ai_index_consistent(h, TEST_PROTO_A), "index consistent after the unregistrations");
+    make_packet(&hdr, pkt, sizeof(pkt), 0x12345678u, 4001, 0);
+    CHECK(packet_process(h, &hdr, pkt) == 1, "second index packet processed");
+    CHECK(!g_ai_fetch_ok[0] && !g_ai_fetch_ok[2], "unregistered attributes are no longer extracted");
+    CHECK(g_ai_fetch_ok[1] && g_ai_fetch[1] == 0x12345678u && g_ai_fetch_ok[3] && g_ai_fetch[3] == 0x12345678u,
+          "the remaining attributes still are");
+
+    /* An attribute handler's slot leaves the index with its last handler,
+     * and re-registration finds the new slot. */
+    CHECK(register_attribute_handler(h, TEST_PROTO_A, AI_ATTR_LOW, test_attr_handler, NULL, NULL) == 1,
+          "a handler re-registers 60");
+    CHECK(has_registered_attribute_handler(h, TEST_PROTO_A, AI_ATTR_LOW) == 1, "60 has a handler");
+    CHECK(ai_index_consistent(h, TEST_PROTO_A), "index consistent with a handler slot");
+    CHECK(unregister_attribute_handler(h, TEST_PROTO_A, AI_ATTR_LOW, test_attr_handler) == 1, "the handler leaves");
+    CHECK(is_registered_attribute(h, TEST_PROTO_A, AI_ATTR_LOW) == 0, "60 released with its handler");
+    CHECK(ai_index_consistent(h, TEST_PROTO_A), "index consistent after the handler left");
+
+    CHECK(unregister_packet_handler(h, 556) == 1, "drop the fetch handler");
+    mmt_close_handler(h);
+}
+
 /* ================================ main ==================================== */
 
 /* Issue #505 (F-BUG-014): configured_protocols[] slots are NULL before
@@ -2746,6 +2908,7 @@ int main(void) {
     test_iteration();
     test_direction_bound();
     test_attr_dispatch_safety();
+    test_attribute_index();
 
     /* Issue #242 part 2: classification utilities + offset memoization.
      * These run while ce_proto_a/b are still registered (the ranges-file

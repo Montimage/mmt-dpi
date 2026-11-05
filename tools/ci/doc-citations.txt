@@ -77,17 +77,17 @@ cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_ssl.c:1148	mmt_int
 cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/http.c:933	mmt_int_http_add_connection_by(ipacket, proto, MMT_CLASSIFICATION_METHOD_HOSTNAME);	-
 cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_ssl.c:705	mmt_int_ssl_add_connection_by(ipacket, proto, MMT_CLASSIFICATION_METHOD_HOSTNAME);	-
 cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_ssl.c:765	mmt_int_ssl_add_connection_by(ipacket, proto, MMT_CLASSIFICATION_METHOD_HOSTNAME);	-
-cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:653	ipacket->session->classification_method = MMT_CLASSIFICATION_METHOD_DPI;	-
+cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:669	ipacket->session->classification_method = MMT_CLASSIFICATION_METHOD_DPI;	-
 cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c:217	void mmt_change_internal_flow_protocol_by(ipacket_t * ipacket, uint16_t detected_protocol,	-
-cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:893	static inline void attr_dispatch_leave(mmt_handler_t * mmt_handler) {	-
-cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_registry_attr.c:125	static void release_registered_attribute(mmt_handler_t *mmt_handler, attribute_internal_t *attr) {	-
-cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:906	static inline int next_attribute_handler(const struct attribute_internal_struct * attr, int h,	-
-cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:954	static inline void dispatch_budget_update(uint32_t len, uint32_t * high, uint32_t * budget) {	-
-cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:933	static inline uint32_t next_attribute_element(const mmt_handler_t * mmt_handler, uint32_t proto,	-
-cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_registry_attr.c:325	int owned = (temp_attr->extraction_owner == handler_fct);	-
-cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:999	attr->data = NULL;	-
-cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:1590	if (mmt->packet_scratch_head != NULL) mmt_packet_scratch_release(mmt);	-
-cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_registry_attr.c:148	mmt_packet_scratch_destroy(mmt_handler); // issue #506: adopted attribute values	-
+cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:909	static inline void attr_dispatch_leave(mmt_handler_t * mmt_handler) {	-
+cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_registry_attr.c:128	static void release_registered_attribute(mmt_handler_t *mmt_handler, attribute_internal_t *attr) {	-
+cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:922	static inline int next_attribute_handler(const struct attribute_internal_struct * attr, int h,	-
+cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:970	static inline void dispatch_budget_update(uint32_t len, uint32_t * high, uint32_t * budget) {	-
+cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:949	static inline uint32_t next_attribute_element(const mmt_handler_t * mmt_handler, uint32_t proto,	-
+cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_registry_attr.c:323	int owned = (temp_attr->extraction_owner == handler_fct);	-
+cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:1015	attr->data = NULL;	-
+cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:1606	if (mmt->packet_scratch_head != NULL) mmt_packet_scratch_release(mmt);	-
+cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_registry_attr.c:151	mmt_packet_scratch_destroy(mmt_handler); // issue #506: adopted attribute values	-
 cite	docs/MMT-Attributes.md	src/mmt_core/public_include/proto_meta.h:34	META_CLASSIFICATION_METHOD, /**< How the session's application verdict was reached, an	-
 cite	docs/MMT-Attributes.md	src/mmt_core/public_include/data_defs.h:516	MMTAPI uint8_t MMTCALL get_session_classification_method(	-
 cite	docs/MMT-Attributes.md	src/mmt_core/public_include/data_defs.h:526	MMTAPI const char* MMTCALL get_classification_method_name(	-
@@ -109,10 +109,10 @@ cite	docs/MMT-Protocol.md	src/mmt_core/private_include/packet_processing.h:624	s
 cite	docs/MMT-Session.md	src/mmt_core/private_include/packet_processing.h:192	struct mmt_session_struct {	-
 cite	docs/MMT-Session.md	src/mmt_core/public_include/data_defs.h:63	typedef struct mmt_session_struct               mmt_session_t; ///< Opaque session (flow)	-
 cite	docs/Memory-Management.md	src/mmt_core/src/memory.c:9-18	// B5 (remote-DoS hardening): allocation failure used to call abort(), which	// block is left untouched (standard realloc semantics).
-cite	docs/Memory-Management.md	src/mmt_core/src/packet_pipeline.c:1625	bool mmt_packet_scratch_adopt(const ipacket_t *ipacket, mmt_opaque_t value,	-
-cite	docs/Memory-Management.md	src/mmt_core/src/packet_pipeline.c:1590	if (mmt->packet_scratch_head != NULL) mmt_packet_scratch_release(mmt);	-
-cite	docs/Memory-Management.md	src/mmt_core/src/packet_pipeline.c:1649	void mmt_packet_scratch_release(mmt_handler_t *mmt_handler) {	-
-cite	docs/Memory-Management.md	src/mmt_core/src/packet_registry_attr.c:148	mmt_packet_scratch_destroy(mmt_handler); // issue #506: adopted attribute values	-
+cite	docs/Memory-Management.md	src/mmt_core/src/packet_pipeline.c:1641	bool mmt_packet_scratch_adopt(const ipacket_t *ipacket, mmt_opaque_t value,	-
+cite	docs/Memory-Management.md	src/mmt_core/src/packet_pipeline.c:1606	if (mmt->packet_scratch_head != NULL) mmt_packet_scratch_release(mmt);	-
+cite	docs/Memory-Management.md	src/mmt_core/src/packet_pipeline.c:1665	void mmt_packet_scratch_release(mmt_handler_t *mmt_handler) {	-
+cite	docs/Memory-Management.md	src/mmt_core/src/packet_registry_attr.c:151	mmt_packet_scratch_destroy(mmt_handler); // issue #506: adopted attribute values	-
 cite	docs/Memory-Management.md	src/mmt_core/src/memory.c:40-45	if( unlikely( x == NULL )) {	}
 cite	docs/Memory-Management.md	src/mmt_core/src/memory.c:73-79	if( unlikely( x1 == NULL )) {	}
 cite	docs/Memory-Management.md	src/mmt_tcpip/lib/http_parser_integration.h:90-107	inline static stream_parser_t * init_http_parser() {	}
@@ -138,7 +138,7 @@ cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry.c:668-669	if (!init_plu
 cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry_handler.c:414	mmt_configured_handlers_map = init_map_space(pointer_comp_fn_pt, pointer_hash_fn);	-
 cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry_handler.c:116	mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * errbuf )	-
 cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry_handler.c:269	if(!insert_key_value(mmt_configured_handlers_map, (void *) new_handler, (void *) new_handler)){	-
-cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_pipeline.c:1576	bool packet_process(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet) {	-
+cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_pipeline.c:1592	bool packet_process(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet) {	-
 cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry_handler.c:302	void mmt_close_handler(mmt_handler_t *mmt_handler) {	-
 cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry_handler.c:352	delete_key_value(mmt_configured_handlers_map, mmt_handler);	-
 cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry.c:677	void close_extraction() {	-

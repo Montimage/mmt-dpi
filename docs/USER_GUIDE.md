@@ -213,7 +213,7 @@ a discussion on the repo.
 [^init-state]: `src/mmt_core/src/packet_registry.c:668-669`, `src/mmt_core/src/packet_registry_handler.c:414`.
 [^handler]: `src/mmt_core/src/packet_registry_handler.c:116`.
 [^handler-map]: `src/mmt_core/src/packet_registry_handler.c:269`.
-[^process]: `src/mmt_core/src/packet_pipeline.c:1576`.
+[^process]: `src/mmt_core/src/packet_pipeline.c:1592`.
 [^close-handler]: `src/mmt_core/src/packet_registry_handler.c:302`, `src/mmt_core/src/packet_registry_handler.c:352`.
 [^close]: `src/mmt_core/src/packet_registry.c:677`.
 [^close-handlers]: `src/mmt_core/src/packet_registry.c:680`, `src/mmt_core/src/packet_registry_handler.c:420`.

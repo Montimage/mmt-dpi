@@ -55,6 +55,7 @@ src/mmt_core/src/packet_pipeline.c mmt_tcp_reasm_insert_visits test
 src/mmt_core/src/packet_pipeline.c mmt_tcp_reasm_resident_bytes test
 src/mmt_core/src/packet_processing.c mmt_match_prefix test
 src/mmt_core/src/packet_processing.c mmt_memcmp test
+src/mmt_core/src/packet_registry_attr.c get_registered_attribute_internal_struct test
 src/mmt_mobile/nas/ies/nas_tracking_area_identity.c nas_check_pdu test
 src/mmt_mobile/nas/ies/nas_tracking_area_identity.c nas_decode_tracking_area_identity test
 src/mmt_mobile/ngap/ngap.c ASN__STACK_OVERFLOW_CHECK generated
