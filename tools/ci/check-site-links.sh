@@ -115,6 +115,22 @@ def fail(page, ref, why):
     print(f"  ✗ {page}: {ref} — {why}")
 
 
+PERMALINK = re.compile(r'\A---\n(?:.*\n)*?permalink:\s*["\']?(/[^"\'\s]*)', re.M)
+PERMALINKS = {}
+for _dir, _subdirs, _files in os.walk(root):
+    _subdirs[:] = [d for d in _subdirs if not d.startswith(("_", "."))]
+    for _f in _files:
+        if _f.endswith(".md"):
+            _src = os.path.join(_dir, _f)
+            try:
+                _m = PERMALINK.match(open(_src, encoding="utf-8", errors="replace").read(4096))
+            except OSError:
+                continue
+            if _m:
+                _rel = _m.group(1).strip("/")
+                PERMALINKS[os.path.normpath(os.path.join(root, _rel))] = _src
+
+
 def resolve(page, path):
     """Map a link path to a file under root. Returns (target, None) or
     (None, reason)."""
@@ -135,6 +151,11 @@ def resolve(page, path):
         if target.endswith(".md"):
             return None, "raw .md target — link the built .html page instead"
         return target, None
+    # source-tree run: a page published under its front-matter permalink
+    # (docs/README.md -> /docs/) has no directory of that name in the tree
+    perm = PERMALINKS.get(os.path.normpath(target))
+    if perm is not None:
+        return perm, None
     if target.endswith(".html"):
         # source-tree run: the built .html is produced from a .md sibling
         md = target[:-len(".html")] + ".md"
