@@ -7,7 +7,7 @@ name: Phase 0 baseline gate
 #      past the committed baseline's tolerance — issue #555
 # The BUILD=asan (ASan/UBSan) profile compile gate moved into c-cpp.yml's
 # sanitizer-tests (BUILD=asan, asan) leg (issue #659); its old context
-# `ASan/UBSan profile compiles` is a retired stub there.
+# `ASan/UBSan profile compiles` is retired and no longer reported.
 #
 # The classification, precision and instruction jobs are self-contained: they use the small
 # pcap subset vendored under tools/phase0/ci/pcaps/, so they need no access to

@@ -81,8 +81,8 @@ n=$(grep -cvE '^[[:space:]]*(#|$)' "$LIST")
 if [ "$n" -ge 25 ]; then ok "committed list holds $n >= 25 contexts"
 else bad "committed list holds $n contexts, want >= 25"; fi
 RETIRED_LIST="${REPO_ROOT}/.github/retired-checks.txt"
-expect 0 "repository retired contexts are reported by if: false stubs" \
-    "ok   ASan/UBSan profile compiles  <- c-cpp.yml:asan-build" -- \
+expect 0 "repository retired list resolves against the workflows" \
+    "Result: PASS" -- \
     --contexts "$LIST" --workflows "${REPO_ROOT}/.github/workflows" \
     --retired "$RETIRED_LIST"
 expect 0 "repository queue-only legs are gated by required contexts" \
@@ -93,8 +93,8 @@ expect 0 "repository variant-build legs are gated through the build aggregate" \
     --contexts "$LIST" --workflows "${REPO_ROOT}/.github/workflows"
 for ctx in enablesec 'ASan/UBSan profile compiles'; do
     if grep -qxF -- "$ctx" "$LIST"; then bad "committed list still requires retired $ctx"
-    elif grep -qxF -- "$ctx" "$RETIRED_LIST"; then ok "$ctx is retired, not required"
-    else bad "$ctx is in neither list (live protection still requires it)"; fi
+    elif grep -qxF -- "$ctx" "$RETIRED_LIST"; then bad "$ctx stub was deleted but is still listed as retired"
+    else ok "$ctx is retired and gone from both lists"; fi
 done
 for ctx in fuzz secret-scan packages-gate harness-gate; do
     if grep -qxF -- "$ctx" "$LIST"; then ok "committed list requires $ctx"

@@ -915,38 +915,6 @@ jobs:
         SUITES: ${{ needs.changes.outputs.suites }}
       run: bash tests/run_all_tests.sh $SUITES
 
-  # --- Retired contexts (issue #659) -----------------------------------------
-  # Each job below re-proved what another job proves, so it was folded into
-  # that job. Branch protection on main may still require its context, and a
-  # required context that no job reports blocks every pull request, so each
-  # keeps a stub under the same name: `if: false` skips it on every event and
-  # a skipped job reports success, using no runner. The contexts are listed
-  # in .github/retired-checks.txt, not .github/required-checks.txt;
-  # tools/ci/check-required-checks.sh checks both. Once a maintainer drops a
-  # context from protection, delete its stub and its retired-checks.txt line.
-  enablesec:
-    # Was: `make -C sdk ENABLESEC=1` (issue #126). Now proved by the shared
-    # ENABLESEC=1 SDK build tests/run_all_tests.sh makes for rule_engine and
-    # installed_consumer (the unit-tests and sanitizer legs; every suite in
-    # the merge queue), and by codeql, which traces an ENABLESEC=1 build.
-    if: false
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    steps:
-    - run: echo "retired (#659), see .github/retired-checks.txt"
-
-  asan-build:
-    # Was phase0-baseline.yml's BUILD=asan compile + `__asan_init` check. Now
-    # a step of sanitizer-tests (BUILD=asan, asan). Kept in this workflow so
-    # tools/phase0/ci/check_readme_gates.sh, which lists the phase0 gates,
-    # no longer shows it.
-    name: ASan/UBSan profile compiles
-    if: false
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    steps:
-    - run: echo "retired (#659), see .github/retired-checks.txt"
-
   secret-scan:
     # Secret scanning gate (issue #160 / F-SEC-006): fail the workflow if
     # gitleaks detects a committed secret. Scans the full git history so a
