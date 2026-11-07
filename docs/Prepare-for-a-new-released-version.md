@@ -125,6 +125,250 @@ Release order:
 6. **Run the smoke matrix** against the published one-liner once that PR is
    merged (step 4 of *Release order* above).
 
+### Landing 1.10.0 in Montimage/mmt-dpi (issue #751)
+
+The 1.10.0 cycle moves the `montimage-projects/mmt-dpi` tree into the public
+`Montimage/mmt-dpi` through the draft PR Montimage/mmt-dpi#41
+(`release/v1.10.0` → `main`, a fast-forward from the merge base `af338b16`).
+Every step below changes `Montimage/mmt-dpi` and is run by a maintainer, in
+this order. Each step lists its prerequisites, the command, and the check
+that proves it worked. Before step 1, confirm the `gh` admin access of
+[AGENT_ENVIRONMENT.md §8](./AGENT_ENVIRONMENT.md#8-working-tree-gate-and-access-notes)
+against `Montimage/mmt-dpi`. The commands run from a clone of the fork with
+both repositories as remotes:
+
+```bash
+git remote add upstream git@github.com:Montimage/mmt-dpi.git  # once
+git fetch origin && git fetch upstream --tags
+```
+
+State read on 2026-11-07, from GET calls only:
+
+- upstream `release/v1.10.0` is at `92121095`, which lags the fork;
+- the upstream tags `v1.9.0` (`ba757a84`) and `v1.9.1` (`7c150ef4`) name the
+  rewritten commits. The fork's own `v1.9.1` is `1b4aad29`, which has the same
+  tree (`256e1177`);
+- the upstream Releases stop at `v1.8.0`, which has been Latest since
+  2026-11-07. There is no `v1.9.1` Release;
+- the `v1.9.1` tag run failed and opened upstream issue #42;
+- `main` protection requires 1 review and no status check, with push
+  restricted to `luongnv89` and `nhnghia`. There are no rulesets, all three
+  merge methods are allowed, and Pages is not enabled.
+
+The recorded decisions are in [DECISIONS.md](DECISIONS.md) (the issue #751
+entries).
+
+**1. Push `release/v1.10.0` to upstream.**
+- **Prerequisites:** push access, and upstream's branch head an ancestor of
+  the fork's (`git merge-base --is-ancestor upstream/release/v1.10.0 origin/release/v1.10.0`).
+- **Command** (fast-forward only, never `--force`):
+  `git push upstream origin/release/v1.10.0:refs/heads/release/v1.10.0`
+- **Check:** `git ls-remote upstream refs/heads/release/v1.10.0` prints
+  `git rev-parse origin/release/v1.10.0`, and
+  `gh api repos/Montimage/mmt-dpi/compare/main...release/v1.10.0 --jq '[.ahead_by, .behind_by]'`
+  shows `0` behind.
+
+**2. Re-check #41 after the push.**
+- **Command:**
+  `gh pr view 41 --repo Montimage/mmt-dpi --json headRefOid --jq .headRefOid`
+  must print the pushed SHA. Then
+  `gh pr checks 41 --repo Montimage/mmt-dpi --watch`, and list what is not
+  green with
+  `gh pr checks 41 --repo Montimage/mmt-dpi | awk -F'\t' '$2 != "pass" && $2 != "skipping"'`.
+- **Expected:**
+  - `Labelled-pcap precision/recall …` passes: #747 skips the accuracy-corpus
+    ratchet when the base has no pending list.
+  - The open CodeQL alerts on the PR ref are exactly #8, #9, #10 and #15. The
+    asn1c results are filtered and the strcat is gone (#748, #749). Check with
+    `gh api "repos/Montimage/mmt-dpi/code-scanning/alerts?ref=refs/pull/41/merge&state=open&per_page=100" --jq '.[] | "\(.number) \(.rule.id) \(.rule.security_severity_level)"'`.
+    The default-branch list says nothing about #41.
+  - `abi-diff` stays red until step 3.
+  - The three `Bootstrap smoke` legs stay red. Steps 3–4 explain why.
+
+**3. Create the upstream v1.9.1 Release from the fork's 21 assets.**
+- **Why by hand:** this is a recorded one-time exception to *The release
+  workflow is the only publisher*.
+  - The upstream tag run cannot be repaired. `verify-tag` needs `7c150ef4` on
+    `main`. `release-gates` needs `Golden classification fingerprint unchanged`
+    check runs at `7c150ef4`, and `phase0-baseline.yml` never records them for
+    a tag. The tag's tree pins a `centos-stream9` digest that quay.io has
+    dropped, so its package build fails.
+  - Do not run `tools/ci/publish-release.sh` by hand either. It looks the
+    draft up by the `github-actions[bot]` author, so run by a person it strands
+    its draft and exits 2.
+- **Prerequisites:** step 1 is done; the trees are equal
+  (`git rev-parse '7c150ef4^{tree}' '1b4aad29^{tree}'` prints `256e1177…`
+  twice); no upstream Release for `v1.9.1` exists.
+- **Command:**
+
+  ```bash
+  d=$(mktemp -d)
+  gh release download v1.9.1 --repo montimage-projects/mmt-dpi --dir "$d"
+  (cd "$d" && ls | wc -l && sha256sum --check SHA256SUMS)   # 21, all OK
+  gh attestation verify "$d"/mmt-dpi_1.9.1_1b4aad29_ubuntu-24.04_x86_64.deb \
+    --repo montimage-projects/mmt-dpi
+  cat > "$d.notes" <<'EOF'
+  MMT-DPI 1.9.1. The assets are those of the montimage-projects/mmt-dpi
+  v1.9.1 Release, which its release workflow built from 1b4aad29. That commit
+  has the same tree as this tag, 7c150ef4. Their provenance is attested in that
+  repository: gh attestation verify <file> --repo montimage-projects/mmt-dpi
+  EOF
+  gh release create v1.9.1 "$d"/* --repo Montimage/mmt-dpi --verify-tag \
+    --title v1.9.1 --notes-file "$d.notes" --latest
+  ```
+
+- **Check:**
+  - `gh release view v1.9.1 --repo Montimage/mmt-dpi --json isDraft,assets --jq '[.isDraft, (.assets | length)]'`
+    prints `[false,21]`.
+  - The asset digests match the fork's:
+    `diff <(gh release view v1.9.1 --repo Montimage/mmt-dpi --json assets --jq '.assets[] | "\(.name) \(.digest)"' | sort) <(gh release view v1.9.1 --repo montimage-projects/mmt-dpi --json assets --jq '.assets[] | "\(.name) \(.digest)"' | sort)`
+    prints nothing.
+- **Limits:**
+  - The asset names carry `1b4aad29`.
+  - `gh attestation verify --repo Montimage/mmt-dpi` fails on these assets,
+    because their attestation lives in the fork only.
+  - The `Bootstrap smoke` fixture (`tools/ci/make-bootstrap-fixture.sh`)
+    downloads the Latest Release's bundle from the upstream attestations API,
+    which answers 404 for these digests and for v1.8.0's. The smoke stays red
+    on #41 and turns green with the first Release the upstream workflow
+    publishes (step 10). It is not a required check.
+  - A Release published by a person raises `release: published`. That runs
+    `install-smoke.yml` from the tag's tree, which pins images dropped since
+    then (at least the `centos-stream9` one). Expect that run to fail and to
+    open an upstream issue titled `Install smoke matrix failing`. Close that
+    issue with #42 in step 5.
+
+**4. Re-check #41 after the v1.9.1 Release.**
+- **Command:** re-run the failed jobs of the PR's latest `c-cpp.yml` run:
+
+  ```bash
+  run=$(gh run list --repo Montimage/mmt-dpi --workflow c-cpp.yml \
+    --branch release/v1.10.0 --event pull_request --limit 1 \
+    --json databaseId --jq '.[0].databaseId')
+  gh run rerun "$run" --repo Montimage/mmt-dpi --failed
+  ```
+
+- **Check:** `gh pr checks 41 --repo Montimage/mmt-dpi --watch` ends with
+  `abi-diff` passing. Its symbol leg now finds the `v1.9.1` `SHA256SUMS` and
+  the ubuntu-24.04 `.deb`. What is still not green is CodeQL (step 6) and the
+  three bootstrap legs (step 3).
+
+**5. Close the release alert, upstream issue #42** (and the
+`Install smoke matrix failing` issue of step 3, if it was opened).
+- **Prerequisites:** step 3 is done.
+- **Command:** `gh issue close 42 --repo Montimage/mmt-dpi --comment "v1.9.1 is published from the fork's assets, as a recorded exception (docs/DECISIONS.md, issue #751). The v1.9.1 tag run cannot pass upstream."`
+- **Check:** `gh issue view 42 --repo Montimage/mmt-dpi --json state --jq .state`
+  prints `CLOSED`.
+
+**6. Dismiss the four CodeQL alerts as "Won't fix".**
+- **Prerequisites:** step 2 lists exactly #8, #9, #10 and #15 as open. Their
+  reasons are in the issue #749 entry of [DECISIONS.md](DECISIONS.md). The
+  follow-up #756 (`secure_getenv`) is not a blocker.
+- **Command:**
+
+  ```bash
+  for a in 8 9 10 15; do
+    gh api -X PATCH "repos/Montimage/mmt-dpi/code-scanning/alerts/$a" \
+      -f state=dismissed -f "dismissed_reason=won't fix" \
+      -f "dismissed_comment=Operator-set path, outside the remote-input threat model: docs/DECISIONS.md, issue #749 entry"
+  done
+  ```
+
+- **Check:**
+  - The step 2 alert query prints nothing.
+  - `gh pr checks 41 --repo Montimage/mmt-dpi | grep CodeQL` passes. If it is
+    still red, re-run the `codeql` job of the PR's `c-cpp.yml` run
+    (recompute `run` as in step 4 in a new shell, then
+    `job=$(gh run view "$run" --repo Montimage/mmt-dpi --json jobs --jq '.jobs[] | select(.name == "codeql") | .databaseId'); gh run rerun --job "$job" --repo Montimage/mmt-dpi`).
+
+**7. Enable GitHub Pages (workflow build).**
+- **Why before the merge:** `pages.yml` deploys on the merge's push to `main`.
+- **Command:** `gh api -X POST repos/Montimage/mmt-dpi/pages -f build_type=workflow`
+- **Check:** `gh api repos/Montimage/mmt-dpi/pages --jq '[.build_type, .html_url]'`
+  prints `workflow` and `https://montimage.github.io/mmt-dpi/`. After step 8,
+  the `pages.yml` run on `main` succeeds, and
+  `curl -fsSI https://montimage.github.io/mmt-dpi/` answers 200. If Pages was
+  enabled after the merge, deploy with
+  `gh workflow run pages.yml --repo Montimage/mmt-dpi --ref main`.
+
+**8. Merge #41, never squash or rebase.**
+- **Why:** squash and rebase both create new commits. The tags would then
+  leave `main`'s ancestry, and `tools/ci/check-release-tag.sh` requires the
+  tagged commit to be an ancestor of `origin/main`.
+- **Prerequisites:**
+  - `gh pr ready 41 --repo Montimage/mmt-dpi`.
+  - `behind_by` is still `0` (step 1's compare).
+  - The fork's branch has not moved since #41 was tested:
+    `git rev-parse origin/release/v1.10.0` equals
+    `gh pr view 41 --repo Montimage/mmt-dpi --json headRefOid --jq .headRefOid`.
+  - The preferred push needs the admin bypass, with or without an approval:
+    `enforce_admins` off and the pusher on the push-restriction list
+    (`gh api repos/Montimage/mmt-dpi/branches/main/protection --jq '[.enforce_admins.enabled, [.restrictions.users[].login]]'`).
+    The fallback needs an approving review by a maintainer other than the
+    author.
+- **Command, preferred** (a true fast-forward of the tested head):
+  `git fetch upstream && git push upstream upstream/release/v1.10.0:refs/heads/main`.
+  GitHub marks #41 merged on its own.
+- **Command, fallback** (a merge commit, which keeps every commit and tag in
+  the ancestry):
+  `gh pr merge 41 --repo Montimage/mmt-dpi --merge`.
+- **Check:**
+  - `gh pr view 41 --repo Montimage/mmt-dpi --json state --jq .state` prints
+    `MERGED`.
+  - After `git fetch upstream`,
+    `git merge-base --is-ancestor 7c150ef4 upstream/main && echo "v1.9.1 on main"`
+    prints its message.
+
+**9. Require the status checks on `main`.**
+- **Prerequisites:** step 8 is done. The merge-queue ruleset of the same
+  `CONTRIBUTING.md` block uses `"merge_method": "SQUASH"`, so it is applied
+  only now, after #41 has landed. Steps 9 and 10 read
+  `.github/required-checks.txt`, the workflows and `tools/ci/base-images.txt`
+  from the working tree, so run them from the merged tree
+  (`git fetch upstream && git switch --detach upstream/main`), not from a
+  fork branch.
+- **Command:** the `jq … | gh api -X PATCH …/protection/required_status_checks`
+  line of `CONTRIBUTING.md` (*Required checks and review*), which reads
+  `.github/required-checks.txt`. Today no status check is required. If that
+  PATCH answers 404, add status checks with `PUT …/branches/main/protection`
+  instead, carrying the current review count, `enforce_admins` and push
+  restrictions read from the GET above, so nothing else changes. Then apply
+  the rest of that block: the merge-queue ruleset and the review settings.
+  Once protection no longer requires them, delete the stubs of
+  `.github/retired-checks.txt`.
+- **Check:**
+  - `bash tools/ci/check-required-checks.sh --live Montimage/mmt-dpi` passes.
+  - `gh api repos/Montimage/mmt-dpi/rules/branches/main --jq '.[].type'`
+    prints `merge_queue`.
+
+**10. Tag v1.10.0** (the *Release order* above, on upstream).
+- **Prerequisites:**
+  - A PR replaces `Version 1.10.0 (unreleased)` with the date at the sites
+    `bash scripts/validate-release-prep.sh` reads, and it merges.
+  - Every gate `release-gates` reads has a completed, green run on the new
+    `main` head:
+    `sha=$(gh api repos/Montimage/mmt-dpi/commits/main --jq .sha); GH_TOKEN=$(gh auth token) GITHUB_REPOSITORY=Montimage/mmt-dpi bash tools/ci/check-release-gates.sh --skip-same-run "$sha"`.
+    The v1.9.1 run failed partly because these were still queued.
+  - `bash tools/ci/refresh-base-images.sh --check` reports no `missing` pin.
+    A dropped quay.io digest is what broke v1.9.1's package build. The script
+    also exits 1 on `drift`, which still pulls, so read its verdicts: repin
+    first only when a pin is `missing`.
+- **Command:**
+  `git fetch upstream main && git tag -a v1.10.0 -m "MMT-DPI 1.10.0" upstream/main && git merge-base --is-ancestor v1.10.0 upstream/main && git push upstream v1.10.0`.
+  This starts `release-packages.yml`. Do not create this Release by hand.
+- **Check:**
+  - `verify-tag`, `release-gates` and `Publish GitHub Release` succeeded.
+  - `gh release view v1.10.0 --repo Montimage/mmt-dpi --json assets --jq '.assets | length'`
+    counts the packages, SBOMs, `SHA256SUMS` and the bootstrap set.
+  - `gh attestation verify <downloaded .deb> --repo Montimage/mmt-dpi` passes.
+  - The `Bootstrap smoke` run that follows the tag run is green.
+- **Then:** steps 3–4 of *Release order*. Run
+  `bash tools/ci/check-release-tag.sh --write-pin v1.10.0`, move
+  `ABI_BASELINE` and `baseline_ref` to `v1.10.0`, and update the README and
+  site pins, all in one PR. Then run the **Install smoke** workflow with
+  `source: published`. Its supported legs include `opensuse-leap-16.0`, whose
+  pin is one of the pins fork PR #743 refreshes.
+
 ## Verify the classification
 
 <!-- FLAG: unverified — `mmt-test/wall_e` and `mmt-test/data-sets/` directories
