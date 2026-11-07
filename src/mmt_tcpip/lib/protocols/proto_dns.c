@@ -76,7 +76,8 @@ static size_t dns_name_consumed(const u_char *p, const u_char *payload_end){
 
 uint16_t bytes_to_int_extraction(const u_char *payload,int nb_bytes){
     if(payload==NULL) return -1;
-    uint16_t ret = 0,i =0;
+    uint16_t ret = 0;
+    int i;
     for(i = 0;i < nb_bytes;i++){
         int current_byte = hex2int(payload[i]);
         ret = ret*16*16 + current_byte;

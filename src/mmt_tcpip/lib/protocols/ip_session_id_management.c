@@ -357,14 +357,23 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
         *is_new = 1;
 
         uint32_t isl_new = 0, ish_new = 0;
-        /* Initialize the memory for the session: 1024 bytes */
-        retval = (mmt_session_t *) malloc( sizeof (mmt_session_t) + sizeof (mmt_session_key_t) + sizeof (struct mmt_internal_tcpip_session_struct) );
-        if(retval == NULL){
+        /* One allocation holds the session, its key and the tcpip session
+         * state (issue #749, CodeQL cpp/suspicious-allocation-size): a
+         * struct gives each member its own aligned offset instead of byte
+         * offsets into a summed size. The session is the first member, so
+         * free(session) in the session cleanup still releases the block. */
+        struct mmt_tcpip_session_block {
+            mmt_session_t session;
+            mmt_session_key_t key;
+            struct mmt_internal_tcpip_session_struct internal;
+        } *block = malloc(sizeof (*block));
+        if(block == NULL){
             return NULL;
         }
-        memset(retval, 0, sizeof (mmt_session_t) + sizeof (mmt_session_key_t) + sizeof (struct mmt_internal_tcpip_session_struct) );
-        retval->session_key   = &retval[1]; //(mmt_session_key_t *) &((char *)retval)[sizeof(mmt_session_t)];
-        retval->internal_data = (struct mmt_internal_tcpip_session_struct *) &((char *)retval)[sizeof(mmt_session_t) + sizeof (mmt_session_key_t)];
+        memset(block, 0, sizeof (*block));
+        retval = (mmt_session_t *) block; /* == &block->session */
+        retval->session_key   = &block->key;
+        retval->internal_data = &block->internal;
         /*
                 memset(retval->internal_data, 0, sizeof (struct mmt_internal_tcpip_session_struct));
          */

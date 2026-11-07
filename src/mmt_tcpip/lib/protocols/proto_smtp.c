@@ -39,7 +39,7 @@ void mmt_classify_smtp(ipacket_t * ipacket, unsigned index) {
 
     if (packet->payload_packet_len > 2 && ntohs(get_u16(packet->payload, packet->payload_packet_len - 2)) == 0x0d0a) {
 
-        uint8_t a;
+        uint16_t a;
         uint8_t bit_count = 0;
 
         MMT_PARSE_PACKET_LINE_INFO(ipacket, packet);

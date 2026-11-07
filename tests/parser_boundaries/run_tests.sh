@@ -296,11 +296,20 @@
 #                               Ethernet/IPv4/UDP/GTPv1-U frames through
 #                               mmt_init_handler + packet_process.
 #
+# Issue #749 adds the "ddl" fixture: search_ddl_domains() must strip a
+# ":port" of any length from the Host line before matching the
+# direct-download suffixes — its digit counter wrapped after 255 digits.
+#
+#   test_ddl_host_port_unit.c — helper reproducer:
+#                               proto_direct_download_link.c is included
+#                               directly and search_ddl_domains() is driven
+#                               over fabricated Host lines (no SDK build).
+#
 # Usage: tests/parser_boundaries/run_tests.sh [fixture ...]
 #   no arguments runs every fixture; "udp"/"dtls"/"dns-soa"/"dns-txt"/"dns-names"/"nfs"/"int"/
 #   "tcp-options"/"radius-dns"/"quic"/"gre"/"classifier-audit"/"tcp-events"/"s1ap-integer"/
 #   "classify"/"registration"/"ftp-sessions"/"classification-method"/"chain"/
-#   "tls-hello"/"encap"/"gtp" select a fixture family.
+#   "tls-hello"/"encap"/"gtp"/"ddl" select a fixture family.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -308,7 +317,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # --- fixture selection -----------------------------------------------------
 FIXTURES=( "$@" )
-[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain tls-hello encap gtp)
+[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain tls-hello encap gtp ddl)
 UNIT_TESTS=()
 API_TESTS=()
 MOBILE_TESTS=()
@@ -385,8 +394,11 @@ for f in "${FIXTURES[@]}"; do
         gtp)
             API_TESTS+=(gtp_payload_guess_api)
             ;;
+        ddl)
+            UNIT_TESTS+=(ddl_host_port_unit)
+            ;;
         *)
-            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain tls-hello encap gtp)" >&2
+            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain tls-hello encap gtp ddl)" >&2
             exit 2
             ;;
     esac
@@ -527,4 +539,4 @@ if [ "${rc}" -ne 0 ]; then
     echo "✗ parser boundary tests failed" >&2
     exit 1
 fi
-echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455, #505, #513, #531, #542, #544, #560, #567, #568, #569, #570, #571, #572)"
+echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455, #505, #513, #531, #542, #544, #560, #567, #568, #569, #570, #571, #572, #749)"

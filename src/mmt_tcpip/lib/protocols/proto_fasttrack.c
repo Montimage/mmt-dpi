@@ -34,7 +34,7 @@ int mmt_check_fasttrack(ipacket_t * ipacket, unsigned index) {
             }
 
             if (packet->payload_packet_len > 50 && mmt_memcmp(packet->payload, "GET /", 5) == 0) {
-                uint8_t a = 0;
+                uint16_t a = 0;
                 mmt_parse_packet_line_info(ipacket);
                 for (a = 0; a < packet->parsed_lines; a++) {
                     if ((packet->line[a].len > 17 && mmt_memcmp(packet->line[a].ptr, "X-Kazaa-Username: ", 18) == 0)

@@ -131,7 +131,7 @@ uint8_t search_ddl_domains(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
     uint16_t filename_start = 0;
-    uint8_t i = 1;
+    uint32_t i = 1;
     uint16_t host_line_len_without_port;
 
     if (packet->payload_packet_len < 100) {

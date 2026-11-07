@@ -18,7 +18,7 @@ int mmt_check_icecast(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-        uint8_t i;
+        uint16_t i;
 
         if ((packet->payload_packet_len < 500 &&
                 packet->payload_packet_len >= 7 && mmt_mem_cmp(packet->payload, "SOURCE ", 7) == 0)

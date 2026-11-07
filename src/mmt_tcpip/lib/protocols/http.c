@@ -956,7 +956,7 @@ static inline void check_content_type_and_change_protocol(ipacket_t * ipacket) {
 #ifdef PROTO_AVI
 #endif
 
-    uint8_t a;
+    uint16_t a;
 
     if (packet->content_line.ptr != NULL && packet->content_line.len != 0) {
 #ifdef PROTO_MMS

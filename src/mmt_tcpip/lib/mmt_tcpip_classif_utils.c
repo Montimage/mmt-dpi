@@ -571,6 +571,9 @@ void mmt_tcpip_load_external_ip_ranges(void) {
     if (path == NULL || path[0] == '\0') {
         return; // default: byte-identical to the compiled-in baseline
     }
+    /* The env var IS the feature: an operator-supplied config path, read
+     * with the process's own privileges (CodeQL cpp/path-injection,
+     * dismissed with its reason in docs/DECISIONS.md, issue #749). */
     int n = mmt_tcpip_load_ip_ranges_file(path);
     if (n > 0) {
         mmt_stderr_log( "[mmt-dpi][M9] loaded %d external IP-range rule(s) from %s\n",

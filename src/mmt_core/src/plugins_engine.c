@@ -115,6 +115,10 @@ int load_plugin(char * plugin_path_name) {
     }
     char *error;
 //    plugin_handler->handler = dlopen(plugin_path_name, RTLD_LAZY);
+    /* plugin_path_name is a file of plugins_directory(): the compiled-in
+     * directory or an absolute MMT_DPI_PLUGINS_DIR read with secure_getenv()
+     * (CodeQL cpp/uncontrolled-process-operation, dismissed with its reason
+     * in docs/DECISIONS.md, issue #749). */
     plugin_handler->handler = dlopen(plugin_path_name, RTLD_NOW | RTLD_GLOBAL);
 
     if (!plugin_handler->handler) {

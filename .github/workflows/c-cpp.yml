@@ -486,8 +486,36 @@ jobs:
         trap-caching: false
     - name: Build the SDK for CodeQL extraction
       run: make -C sdk ENABLESEC=1 -j"$(nproc)"
+    # The asn1c tree is generated (src/mmt_mobile/asn1c/, regenerated from
+    # the ASN.1 specs, never hand-edited), so its results are dropped before
+    # upload (issue #749). A config-file paths-ignore would not do it: CodeQL
+    # honours it only for interpreted languages and build-mode none, never
+    # for this traced build. analyze writes the SARIF without uploading it
+    # (failure-only still uploads a failed run's diagnostics), the filter
+    # removes every result whose primary location is under the tree, and
+    # upload-sarif sends the rest under the same category, so the alert
+    # stream of the job is unchanged.
     - uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
       with:
+        category: "/language:c-cpp"
+        upload: failure-only
+        output: sarif-results
+    - name: Drop results located in the generated asn1c tree
+      run: |
+        set -euo pipefail
+        shopt -s nullglob
+        files=(sarif-results/*.sarif)
+        [ "${#files[@]}" -gt 0 ] || { echo "no SARIF file under sarif-results/" >&2; exit 1; }
+        for f in "${files[@]}"; do
+          before=$(jq '[.runs[].results[]?] | length' "$f")
+          jq '.runs |= map(if .results then .results |= map(select(((.locations[0].physicalLocation.artifactLocation.uri // "") | test("(^|/)src/mmt_mobile/asn1c/")) | not)) else . end)' "$f" > "$f.filtered"
+          mv "$f.filtered" "$f"
+          after=$(jq '[.runs[].results[]?] | length' "$f")
+          echo "$f: dropped $((before - after)) of ${before} results under src/mmt_mobile/asn1c/"
+        done
+    - uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+      with:
+        sarif_file: sarif-results
         category: "/language:c-cpp"
 
   verify-helpers:
