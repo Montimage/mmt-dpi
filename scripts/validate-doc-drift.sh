@@ -365,7 +365,7 @@ import re
 import sys
 
 DOC = "docs/Phase2-Heuristics.md"
-BASE = "https://github.com/montimage-projects/mmt-dpi/blob/main/"
+BASE = "https://github.com/Montimage/mmt-dpi/blob/main/"
 NEEDLES = {
     ("H1", "plugin_defs.h"): ["uint16_t status; /**< the status of the classified protocol"],
     ("H1", "proto_tcp.c"): ['Issue #87: the "different strategies"'],
@@ -465,7 +465,7 @@ check "tools/ci/check-protocol-count.sh passes (listing current, chip agrees)" \
 echo ""
 echo "-- #578: landing-page claims --"
 
-SMOKE_URL='https://github.com/montimage-projects/mmt-dpi/actions/workflows/install-smoke.yml'
+SMOKE_URL='https://github.com/Montimage/mmt-dpi/actions/workflows/install-smoke.yml'
 check "no unmeasured \"line rate\" claim in docs/index.html, docs/_config.yml or README.md" \
       "test -f docs/index.html && test -f docs/_config.yml && test -f README.md \
        && ! grep -qiE 'line[- ]?rate' docs/index.html docs/_config.yml README.md"
@@ -475,7 +475,7 @@ perf_out="$(python3 - <<'PYEOF' 2>&1
 import re
 import sys
 
-BASE = "https://github.com/montimage-projects/mmt-dpi/"
+BASE = "https://github.com/Montimage/mmt-dpi/"
 pps = {}
 for row in open("tools/phase0/baseline/perf/throughput.txt", encoding="utf-8"):
     f = row.rstrip("\n").split("\t")

@@ -34,7 +34,7 @@ Summary:        Deep packet inspection library
 # mmt-dpi package sdk/Makefile builds (PKG_LICENSE). The GPL-3.0-or-later
 # security engine (ENABLESEC=1) is not built here.
 License:        Apache-2.0 AND BSD-2-Clause AND MIT
-URL:            https://github.com/montimage-projects/mmt-dpi
+URL:            https://github.com/Montimage/mmt-dpi
 Source0:        %{url}/releases/download/v%{version}/%{name}-%{version}.tar.gz
 
 BuildRequires:  gcc

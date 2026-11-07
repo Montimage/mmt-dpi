@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #
 # MMT-DPI Installation Script
-# https://github.com/montimage-projects/mmt-dpi
+# https://github.com/Montimage/mmt-dpi
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
-#   wget -qO- https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | bash
+#   wget -qO- https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | bash
 #
 # By default the installer clones the pinned release tag below and verifies it
 # after checkout (commit pin, plus the tag signature when one is present) —
@@ -44,8 +44,8 @@ set -euo pipefail
 # Canonical repository — the organisation is declared in docs/DECISIONS.md
 # (issue #197). scripts/validate-install-origin.sh fails CI if this constant
 # and the README clone URL ever diverge again.
-REPO_URL="https://github.com/montimage-projects/mmt-dpi.git"
-INSTALLER_URL="https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh"
+REPO_URL="https://github.com/Montimage/mmt-dpi.git"
+INSTALLER_URL="https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh"
 
 # Default ref: the pinned release tag, never a moving branch (issue #197,
 # F-SEC-006 / F-BUG-118). RELEASE_TAG_SHA pins the commit the tag must resolve
@@ -55,7 +55,7 @@ INSTALLER_URL="https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main
 # `bash tools/ci/check-release-tag.sh --write-pin vX.Y.Z`, and
 # `bash tools/ci/check-release-tag.sh` fails CI when they disagree (issue #484).
 RELEASE_TAG="v1.9.1"
-RELEASE_TAG_SHA="1b4aad29aea50f24a25e2dbeee92c93b84146401"
+RELEASE_TAG_SHA="7c150ef4374b3edbbb625d08ea77f8316f635e65"
 
 BRANCH="${BRANCH:-}"           # opt-in moving ref (env BRANCH or --branch)
 UNVERIFIED_BRANCH=0            # set by --unverified-branch
@@ -105,7 +105,7 @@ validate_ldconf() {
 
 usage() {
     cat <<'EOF'
-MMT-DPI Installation Script — https://github.com/montimage-projects/mmt-dpi
+MMT-DPI Installation Script — https://github.com/Montimage/mmt-dpi
 
 Usage:
   bash install.sh [OPTIONS]
@@ -831,7 +831,7 @@ main() {
     printf "\n"
     printf '%b\n' "${BOLD}MMT-DPI Installer${NC}"
     printf "Deep Packet Inspection Library by Montimage\n"
-    printf "https://github.com/montimage-projects/mmt-dpi\n"
+    printf "https://github.com/Montimage/mmt-dpi\n"
     printf "\n"
 
     if [ "$UNINSTALL" = "1" ]; then

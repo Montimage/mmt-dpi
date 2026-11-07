@@ -298,7 +298,7 @@ MMT_PC_RPATH = 'rpath=-Wl,-rpath,$${libdir}'
 mmt_write_pc = umask 022 && printf '%s\n' \
 	'libdir=$(MMT_LIB)' 'includedir=$(MMT_INC)' 'plugindir=$(MMT_PLUGINS)' $(if $(2),$(MMT_PC_RPATH),'rpath=') '' \
 	'Name: mmt-dpi' 'Description: MMT-DPI deep packet inspection library' \
-	'URL: https://github.com/montimage-projects/mmt-dpi' 'Version: $(VERSION)' \
+	'URL: https://github.com/Montimage/mmt-dpi' 'Version: $(VERSION)' \
 	'Libs: -L$${libdir} $${rpath} -lmmt_core' 'Libs.private: -ldl -lpthread -lm' \
 	'Cflags: -I$${includedir}' > $(1) && chmod 0644 $(1)
 

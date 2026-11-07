@@ -42,7 +42,7 @@
 #         it cannot open one, instead of passing a NULL handle on.
 #
 # Only two substitutions are made to the displayed commands: the site URL
-# https://montimage-projects.github.io/mmt-dpi/ becomes file://$DOCS_SITE_DIR/
+# https://montimage.github.io/mmt-dpi/ becomes file://$DOCS_SITE_DIR/
 # (default: the docs/ source tree, whose files the site serves verbatim — set
 # DOCS_SITE_DIR=docs/_site, relative to the repository root, to verify a built
 # site artifact instead; CI does, in the verify-helpers job, issue #396), and
@@ -57,7 +57,7 @@ FRAGMENT="${REPO_ROOT}/docs/_includes/first-example.md"
 QUICK_START="${REPO_ROOT}/docs/_includes/quick-start.md"
 SOURCE="${REPO_ROOT}/docs/first-run/hello_packet.c"
 FIXTURE="${REPO_ROOT}/docs/first-run/traffic.pcap"
-SITE_URL="https://montimage-projects.github.io/mmt-dpi/"
+SITE_URL="https://montimage.github.io/mmt-dpi/"
 SITE_DIR="${DOCS_SITE_DIR:-docs}"
 case "${SITE_DIR}" in /*) ;; *) SITE_DIR="${REPO_ROOT}/${SITE_DIR}" ;; esac  # relative = repo root
 SITE_DIR="$(cd "${SITE_DIR}" && pwd)"

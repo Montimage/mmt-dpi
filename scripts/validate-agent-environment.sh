@@ -465,7 +465,7 @@ check "states the baseline-regeneration rule" \
 check "names --with-harnesses as the pre-push tier" \
       "grep -qE 'Pre-push tier.*bash tests/run_all_tests.sh --with-harnesses' '$DOC'"
 check "states the gh admin requirement" \
-      "grep -qF 'gh api repos/montimage-projects/mmt-dpi --jq .permissions.admin' '$DOC'"
+      "grep -qF 'gh api repos/Montimage/mmt-dpi --jq .permissions.admin' '$DOC'"
 check "states that no .env exists or is needed" \
       "grep -qF 'No \`.env\` file exists' '$DOC' && [ -z \"\$(git -C '$ROOT' ls-files '.env*' 2>/dev/null)\" ]"
 

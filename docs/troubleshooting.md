@@ -209,7 +209,7 @@ Fix, either:
 ## Still stuck?
 
 Open an issue with the
-[bug report template](https://github.com/montimage-projects/mmt-dpi/blob/main/.github/ISSUE_TEMPLATE/bug_report.md):
+[bug report template](https://github.com/Montimage/mmt-dpi/blob/main/.github/ISSUE_TEMPLATE/bug_report.md):
 include the command you ran, its complete output, your distribution,
 `gcc --version`, and how you installed MMT-DPI (package, installer or
 checkout, and the prefix).

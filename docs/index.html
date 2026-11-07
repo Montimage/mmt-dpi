@@ -17,7 +17,7 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="MMT-DPI — Deep packet inspection, in C">
   <meta property="og:description" content="Classify 677 protocols, extract 7,530 named attributes, track per-flow sessions. Open-source C library by Montimage.">
-  <meta property="og:url" content="https://montimage-projects.github.io/mmt-dpi/">
+  <meta property="og:url" content="https://montimage.github.io/mmt-dpi/">
   <meta name="theme-color" content="#1A1A1A">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -462,7 +462,7 @@
           <a href="#protocols">Protocols</a>
           <a href="#use-cases">Use cases</a>
           <a href="docs/">Docs</a>
-          <a class="nav-cta" href="https://github.com/montimage-projects/mmt-dpi" target="_blank" rel="noopener">★ GitHub</a>
+          <a class="nav-cta" href="https://github.com/Montimage/mmt-dpi" target="_blank" rel="noopener">★ GitHub</a>
         </div>
       </div>
     </nav>
@@ -508,10 +508,10 @@
           <div class="cmd-group">
             <div class="cmd-lines">
               <div><span class="out"># 2 — in an empty directory, get the <a href="first-run/hello_packet.c" download>source</a> and the <a href="first-run/traffic.pcap" download>capture</a></span></div>
-              <div><span class="pr">$ </span><span class="cmd">curl -fsSL -O https://montimage-projects.github.io/mmt-dpi/first-run/hello_packet.c \</span></div>
-              <div><span class="cmd">     -O https://montimage-projects.github.io/mmt-dpi/first-run/traffic.pcap</span></div>
+              <div><span class="pr">$ </span><span class="cmd">curl -fsSL -O https://montimage.github.io/mmt-dpi/first-run/hello_packet.c \</span></div>
+              <div><span class="cmd">     -O https://montimage.github.io/mmt-dpi/first-run/traffic.pcap</span></div>
             </div>
-            <button class="copy-btn" data-cmd="curl -fsSL -O https://montimage-projects.github.io/mmt-dpi/first-run/hello_packet.c -O https://montimage-projects.github.io/mmt-dpi/first-run/traffic.pcap" aria-label="Copy the download command">copy download</button>
+            <button class="copy-btn" data-cmd="curl -fsSL -O https://montimage.github.io/mmt-dpi/first-run/hello_packet.c -O https://montimage.github.io/mmt-dpi/first-run/traffic.pcap" aria-label="Copy the download command">copy download</button>
           </div>
           <div class="cmd-group">
             <div class="cmd-lines">
@@ -543,7 +543,7 @@
         <div class="stat"><div class="num">677</div><div class="lbl">protocols classified</div></div>
         <div class="stat"><div class="num">7,530</div><div class="lbl">named attributes</div></div>
         <div class="stat"><div class="num">5G</div><div class="lbl">LTE &amp; mobile core</div></div>
-        <div class="stat"><div class="num">6</div><div class="lbl"><a href="https://github.com/montimage-projects/mmt-dpi/actions/workflows/install-smoke.yml">Linux distros smoke-tested</a></div></div>
+        <div class="stat"><div class="num">6</div><div class="lbl"><a href="https://github.com/Montimage/mmt-dpi/actions/workflows/install-smoke.yml">Linux distros smoke-tested</a></div></div>
       </div>
     </section>
 
@@ -753,7 +753,7 @@
         Adding a protocol MMT doesn't cover yet is a library-level extension: a module implements
         <code>init_proto_&lt;name&gt;_struct()</code>, declares its fields, and registers with the core at
         build time — see <a href="Add-New-Protocol.html">Adding New Protocols</a>. Full runnable examples live in
-        <a href="https://github.com/montimage-projects/mmt-dpi/tree/main/src/examples" target="_blank" rel="noopener">src/examples/</a>.
+        <a href="https://github.com/Montimage/mmt-dpi/tree/main/src/examples" target="_blank" rel="noopener">src/examples/</a>.
       </p>
     </section>
 
@@ -833,7 +833,7 @@
           </div>
         </div>
         <p style="margin-top:28px;">
-          <a href="https://github.com/montimage-projects/mmt-dpi#related-publications">See the full publication list →</a>
+          <a href="https://github.com/Montimage/mmt-dpi#related-publications">See the full publication list →</a>
         </p>
       </div>
     </section>
@@ -849,16 +849,16 @@
         {%- comment -%} The fragment links the User Guide on GitHub so it
           resolves from README too; on the site, keep the reader on the site
           (issue #579, F-UX-017). {%- endcomment %}
-        {{ quick_start | replace: "https://github.com/montimage-projects/mmt-dpi/blob/main/docs/USER_GUIDE.md", "USER_GUIDE.html" | markdownify }}
+        {{ quick_start | replace: "https://github.com/Montimage/mmt-dpi/blob/main/docs/USER_GUIDE.md", "USER_GUIDE.html" | markdownify }}
       </div>
 
       <div class="cta-row" style="margin-top:28px;">
         <a class="btn btn-primary" href="USER_GUIDE.html">Read the User Guide ▸</a>
-        <a class="btn btn-ghost" href="https://github.com/montimage-projects/mmt-dpi/tree/main/src/examples" target="_blank" rel="noopener">Browse examples</a>
+        <a class="btn btn-ghost" href="https://github.com/Montimage/mmt-dpi/tree/main/src/examples" target="_blank" rel="noopener">Browse examples</a>
       </div>
       <p class="api-note" style="margin-top:22px;">
         Every route above installs to <code>/opt/mmt/dpi</code> (the command above the fold is the source installer's), and the first-run steps beside it compile and run the published <a href="first-run/hello_packet.c">hello_packet.c</a> against that prefix. Prefer a package? Grab the
-        <code>.deb</code>/<code>.rpm</code> from <a href="https://github.com/montimage-projects/mmt-dpi/releases" target="_blank" rel="noopener">Releases</a>;
+        <code>.deb</code>/<code>.rpm</code> from <a href="https://github.com/Montimage/mmt-dpi/releases" target="_blank" rel="noopener">Releases</a>;
         building from source is covered in the
         <a href="Compilation-and-Installation-Instructions.html">Compilation and Installation Instructions</a>, and an error on the
         way — a missing header or library, the loader, the plugin directory, a permission — in
@@ -876,11 +876,11 @@
       <div class="faq">
         <details open>
           <summary>What exactly is MMT-DPI?</summary>
-          <p>A high-performance C library for deep packet inspection. It classifies network traffic into 677 protocols and lets you extract 7,530 named, typed attributes from packets, server logs, and structured events — for real-time analysis. It's the extraction core inside the broader Montimage Monitoring Tool (MMT) suite. In the committed <a href="https://github.com/montimage-projects/mmt-dpi/blob/main/tools/phase0/baseline/perf/throughput.txt">replay benchmark</a> (one thread, one aarch64 host), <code>bigFlows.pcap</code> classifies at about 3.5 million packets per second with no attribute fetched and 3.0 million with eight fetched per packet, and the <a href="https://github.com/montimage-projects/mmt-dpi/actions/workflows/phase0-baseline.yml">instruction-count gate</a> fails a change that raises the replay's instructions per packet by more than 2%.</p>
+          <p>A high-performance C library for deep packet inspection. It classifies network traffic into 677 protocols and lets you extract 7,530 named, typed attributes from packets, server logs, and structured events — for real-time analysis. It's the extraction core inside the broader Montimage Monitoring Tool (MMT) suite. In the committed <a href="https://github.com/Montimage/mmt-dpi/blob/main/tools/phase0/baseline/perf/throughput.txt">replay benchmark</a> (one thread, one aarch64 host), <code>bigFlows.pcap</code> classifies at about 3.5 million packets per second with no attribute fetched and 3.0 million with eight fetched per packet, and the <a href="https://github.com/Montimage/mmt-dpi/actions/workflows/phase0-baseline.yml">instruction-count gate</a> fails a change that raises the replay's instructions per packet by more than 2%.</p>
         </details>
         <details>
           <summary>Which platforms are supported?</summary>
-          <p>Linux only. The one-command install is <a href="https://github.com/montimage-projects/mmt-dpi/actions/workflows/install-smoke.yml">smoke-tested in CI</a> on Ubuntu, Debian, Rocky Linux, CentOS Stream, Fedora and openSUSE; Arch, Alpine and RHEL itself are best-effort. Builds with GCC or Clang, on x86-64 and natively on arm64 (aarch64). macOS and Windows are not currently supported.</p>
+          <p>Linux only. The one-command install is <a href="https://github.com/Montimage/mmt-dpi/actions/workflows/install-smoke.yml">smoke-tested in CI</a> on Ubuntu, Debian, Rocky Linux, CentOS Stream, Fedora and openSUSE; Arch, Alpine and RHEL itself are best-effort. Builds with GCC or Clang, on x86-64 and natively on arm64 (aarch64). macOS and Windows are not currently supported.</p>
         </details>
         <details>
           <summary>How do I add a protocol that isn't covered?</summary>
@@ -907,7 +907,7 @@
       <p>677 protocols, 7,530 attributes, plugin-extensible — open source under Apache-2.0. One command installs it; three more run your first program.</p>
       <div class="cta-row">
         <a class="btn btn-primary" href="#quick-start">▸ Install MMT-DPI</a>
-        <a class="btn btn-ghost" href="https://github.com/montimage-projects/mmt-dpi" target="_blank" rel="noopener">★ Star on GitHub</a>
+        <a class="btn btn-ghost" href="https://github.com/Montimage/mmt-dpi" target="_blank" rel="noopener">★ Star on GitHub</a>
       </div>
     </section>
 
@@ -927,9 +927,9 @@
           <a href="USER_GUIDE.html">User Guide</a>
           <a href="Add-New-Protocol.html">Add a Protocol</a>
           <a href="ARCHITECTURE.html">Architecture</a>
-          <a href="https://github.com/montimage-projects/mmt-dpi" target="_blank" rel="noopener">GitHub</a>
-          <a href="https://github.com/montimage-projects/mmt-dpi/releases" target="_blank" rel="noopener">Releases</a>
-          <a href="https://github.com/montimage-projects/mmt-dpi/blob/main/LICENSE" target="_blank" rel="noopener">Apache-2.0</a>
+          <a href="https://github.com/Montimage/mmt-dpi" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://github.com/Montimage/mmt-dpi/releases" target="_blank" rel="noopener">Releases</a>
+          <a href="https://github.com/Montimage/mmt-dpi/blob/main/LICENSE" target="_blank" rel="noopener">Apache-2.0</a>
         </div>
       </div>
     </footer>

@@ -1,7 +1,7 @@
 A complete first program,
-[`hello_packet.c`](https://montimage-projects.github.io/mmt-dpi/first-run/hello_packet.c),
+[`hello_packet.c`](https://montimage.github.io/mmt-dpi/first-run/hello_packet.c),
 and a small capture to run it on,
-[`traffic.pcap`](https://montimage-projects.github.io/mmt-dpi/first-run/traffic.pcap),
+[`traffic.pcap`](https://montimage.github.io/mmt-dpi/first-run/traffic.pcap),
 are published with the documentation site. From an empty directory, with the
 SDK installed under `/opt/mmt` (the quick-start default — substitute your
 `MMT_BASE` prefix and add `LD_LIBRARY_PATH="$MMT_BASE/dpi/lib"` to the run
@@ -14,8 +14,8 @@ CentOS Stream 9, where `libpcap-devel` is in CRB; on RHEL 9 first run
 and drop `--enablerepo=crb`; plain `dnf install` on Fedora):
 
 ```bash
-curl -fsSL -O https://montimage-projects.github.io/mmt-dpi/first-run/hello_packet.c \
-     -O https://montimage-projects.github.io/mmt-dpi/first-run/traffic.pcap
+curl -fsSL -O https://montimage.github.io/mmt-dpi/first-run/hello_packet.c \
+     -O https://montimage.github.io/mmt-dpi/first-run/traffic.pcap
 gcc -o hello_packet hello_packet.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap
 ./hello_packet traffic.pcap
 ```
@@ -42,7 +42,7 @@ packet 10: 54 bytes, meta.ethernet.ip.tcp.http
 A missing capture fails with a clear message and the command that fetches
 it. The program follows the embedding lifecycle — global init, one handler,
 a `packet_process()` loop, handler teardown before the global teardown; the
-[`src/examples/packet_handler.c`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/examples/packet_handler.c)
+[`src/examples/packet_handler.c`](https://github.com/Montimage/mmt-dpi/blob/main/src/examples/packet_handler.c)
 reference that CI compiles on every build does the same. `META`/`PACKET_LEN`
 is a built-in meta attribute available on every packet:
 
@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "hello_packet: cannot open capture '%s': %s\n", argv[1], errbuf);
         if (strcmp(argv[1], "traffic.pcap") == 0) // only the sample has a download
             fprintf(stderr, "  to fetch the sample capture into the current directory:\n"
-                    "  curl -fsSLO https://montimage-projects.github.io/mmt-dpi/first-run/traffic.pcap\n");
+                    "  curl -fsSLO https://montimage.github.io/mmt-dpi/first-run/traffic.pcap\n");
         return 1;
     }
     if (pcap_datalink(pcap) != DLT_EN10MB) {

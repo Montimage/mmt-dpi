@@ -13,7 +13,7 @@ Historically MMT-DPI shipped ~10,000 IP ranges and a fixed set of L4 ports
 port hint meant editing C and rebuilding the library.
 
 Since issue #557 the compiled-in IPv4 ranges come from the versioned data file
-[`data/ip_ranges.txt`](https://github.com/montimage-projects/mmt-dpi/blob/main/data/ip_ranges.txt):
+[`data/ip_ranges.txt`](https://github.com/Montimage/mmt-dpi/blob/main/data/ip_ranges.txt):
 `python3 tools/gen-ip-range-table.py` flattens its prefixes into the const,
 sorted array of disjoint intervals the `.inc` holds (one binary search per
 address, longest prefix inside nested ranges), and the `core_engine` suite
@@ -77,13 +77,13 @@ separate set that is consulted *before* the built-in/extend tables. Use this to
 > file with no `override` rules) classification is byte-identical to the
 > compiled-in baseline, as gated by the golden classification fingerprint.
 
-See [`data/ip_ranges.example.txt`](https://github.com/montimage-projects/mmt-dpi/blob/main/data/ip_ranges.example.txt) (`data/ip_ranges.example.txt`).
+See [`data/ip_ranges.example.txt`](https://github.com/Montimage/mmt-dpi/blob/main/data/ip_ranges.example.txt) (`data/ip_ranges.example.txt`).
 
 ### Refreshing CDN/cloud ranges (issues #75, #565)
 
 CDN/cloud allocations change often, so their ranges are regenerated from each
 provider's own published, machine-readable feed by
-[`tools/refresh_cdn_ranges.sh`](https://github.com/montimage-projects/mmt-dpi/blob/main/tools/refresh_cdn_ranges.sh):
+[`tools/refresh_cdn_ranges.sh`](https://github.com/Montimage/mmt-dpi/blob/main/tools/refresh_cdn_ranges.sh):
 
 ```
 tools/refresh_cdn_ranges.sh               # download every feed, then rebuild
@@ -93,16 +93,16 @@ git diff data/                            # review, then rerun both phase0 gates
 
 The script downloads the feeds into a new empty directory and records, in its
 `MANIFEST`, each feed's URL, fetch date (UTC) and sha256. It then runs
-[`tools/gen-ip-range-data.py`](https://github.com/montimage-projects/mmt-dpi/blob/main/tools/gen-ip-range-data.py)
+[`tools/gen-ip-range-data.py`](https://github.com/Montimage/mmt-dpi/blob/main/tools/gen-ip-range-data.py)
 on that directory, which never touches the network and refuses a file whose
 sha256 differs from the `MANIFEST`. The builder rewrites:
 
 - the **feed entries** of
-  [`data/ip_ranges.txt`](https://github.com/montimage-projects/mmt-dpi/blob/main/data/ip_ranges.txt),
+  [`data/ip_ranges.txt`](https://github.com/Montimage/mmt-dpi/blob/main/data/ip_ranges.txt),
   the IPv4 prefixes the library compiles in. Its **hand-maintained entries**,
   for providers without a published feed, are kept verbatim. The script then
   regenerates the `.inc` with `tools/gen-ip-range-table.py`.
-- [`data/ip_ranges.cdn.txt`](https://github.com/montimage-projects/mmt-dpi/blob/main/data/ip_ranges.cdn.txt),
+- [`data/ip_ranges.cdn.txt`](https://github.com/Montimage/mmt-dpi/blob/main/data/ip_ranges.cdn.txt),
   the IPv6 prefixes of the same feeds under the same labels. The
   compiled-in table is IPv4 only, so this file is the IPv6 half; load it with
   `export MMT_DPI_IP_RANGES_FILE=/path/to/ip_ranges.cdn.txt`.
@@ -131,7 +131,7 @@ prefix `amazon`. Its pre-2017 Google, Amazon, AWS, Azure and Cloudflare
 entries were replaced by the feed entries. The providers with no published
 feed (Apple, Yahoo, Webex, Kakao, Facebook, Netflix, Twitter, Skype) keep their
 May 2017 entries as hand-maintained ones
-([DECISIONS.md](https://github.com/montimage-projects/mmt-dpi/blob/main/docs/DECISIONS.md),
+([DECISIONS.md](https://github.com/Montimage/mmt-dpi/blob/main/docs/DECISIONS.md),
 2026-11-02).
 
 IP allocation lists are factual data the providers publish for this purpose,
@@ -158,7 +158,7 @@ returns no match, so they never override a built-in mapping. A rule tagged
 `override` (issue #74) is consulted **before** the switch, so it can replace a
 built-in port→protocol mapping.
 
-See [`data/port_map.example.txt`](https://github.com/montimage-projects/mmt-dpi/blob/main/data/port_map.example.txt) (`data/port_map.example.txt`).
+See [`data/port_map.example.txt`](https://github.com/Montimage/mmt-dpi/blob/main/data/port_map.example.txt) (`data/port_map.example.txt`).
 
 ### Port attribution is a hint, not a verdict
 
@@ -214,18 +214,18 @@ any flow exists, so a memoised verdict always reflects them.
 ## Measuring accuracy — the precision/recall harness (issue #74)
 
 The golden classification fingerprint
-([`tools/phase0/ci/check_classification.sh`](https://github.com/montimage-projects/mmt-dpi/blob/main/tools/phase0/ci/check_classification.sh))
+([`tools/phase0/ci/check_classification.sh`](https://github.com/Montimage/mmt-dpi/blob/main/tools/phase0/ci/check_classification.sh))
 proves *that* per-packet classification decisions do not change, but it is
 unlabelled — it cannot say whether a change made classification more or less
 *correct*. The Phase 7 precision/recall harness adds ground truth:
 
-* [`tools/phase0/phase0_precision.c`](https://github.com/montimage-projects/mmt-dpi/blob/main/tools/phase0/phase0_precision.c) —
+* [`tools/phase0/phase0_precision.c`](https://github.com/Montimage/mmt-dpi/blob/main/tools/phase0/phase0_precision.c) —
   given a pcap and the application protocol it is known to carry, counts true
   positives / false positives / no-verdict packets from the classifier's
   deterministic decisions.
-* [`tools/phase0/ci/labels.txt`](https://github.com/montimage-projects/mmt-dpi/blob/main/tools/phase0/ci/labels.txt) — labels for the
+* [`tools/phase0/ci/labels.txt`](https://github.com/Montimage/mmt-dpi/blob/main/tools/phase0/ci/labels.txt) — labels for the
   single-application captures in the CI golden subset.
-* [`tools/phase0/ci/check_precision.sh`](https://github.com/montimage-projects/mmt-dpi/blob/main/tools/phase0/ci/check_precision.sh) —
+* [`tools/phase0/ci/check_precision.sh`](https://github.com/Montimage/mmt-dpi/blob/main/tools/phase0/ci/check_precision.sh) —
   runs the harness over the labelled set and diffs the micro-averaged
   precision/recall against the committed baseline
   (`tools/phase0/ci/baseline/precision.txt`). Wired into CI as the

@@ -102,7 +102,7 @@ done
 # manifest.json: every value matched a restricted pattern above (no quote,
 # backslash or control character), so plain printf is valid JSON.
 {
-    printf '{\n  "tag": "%s",\n  "version": "%s",\n  "repository": "montimage-projects/mmt-dpi",\n' "$TAG" "$VERSION"
+    printf '{\n  "tag": "%s",\n  "version": "%s",\n  "repository": "Montimage/mmt-dpi",\n' "$TAG" "$VERSION"
     printf '  "attestation_bundle": "mmt-dpi.intoto.jsonl",\n  "packages": [\n'
     n=0
     for row in "${rows[@]}"; do

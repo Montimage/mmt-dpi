@@ -22,7 +22,7 @@ install or first run fails, see [Troubleshooting](docs/troubleshooting.md).
 ### Build from Source
 
 ```bash
-git clone https://github.com/montimage-projects/mmt-dpi.git
+git clone https://github.com/Montimage/mmt-dpi.git
 cd mmt-dpi
 
 # Build
@@ -197,13 +197,13 @@ applies it (after the PR that changed it has merged, so every context exists):
 # strict (up to date before merging): the merge queue tests each merge result.
 jq -Rn '{strict: false, checks: [inputs | select(test("^\\s*(#|$)") | not)
         | {context: ., app_id: 15368}]}' .github/required-checks.txt \
-  | gh api -X PATCH repos/montimage-projects/mmt-dpi/branches/main/protection/required_status_checks --input -
+  | gh api -X PATCH repos/Montimage/mmt-dpi/branches/main/protection/required_status_checks --input -
 # Merge queue on main: a repository ruleset (classic protection has no merge
 # queue setting). Squash is the only merge method the repository allows; the
 # 120-minute response timeout clears the longest required job chains (80 min:
 # the packages chain, and c-cpp.yml's changes 5 + toolchain-floor or
 # assertions-live 45 + build 30).
-gh api -X POST repos/montimage-projects/mmt-dpi/rulesets --input - <<'JSON'
+gh api -X POST repos/Montimage/mmt-dpi/rulesets --input - <<'JSON'
 {"name": "main merge queue", "target": "branch", "enforcement": "active",
  "conditions": {"ref_name": {"include": ["refs/heads/main"], "exclude": []}},
  "rules": [{"type": "merge_queue", "parameters": {
@@ -213,12 +213,12 @@ gh api -X POST repos/montimage-projects/mmt-dpi/rulesets --input - <<'JSON'
    "check_response_timeout_minutes": 120}}]}
 JSON
 # Check: the merge queue applies to main (read-only; prints merge_queue).
-gh api repos/montimage-projects/mmt-dpi/rules/branches/main --jq '.[].type'
+gh api repos/Montimage/mmt-dpi/rules/branches/main --jq '.[].type'
 # Reviews: 1 approving code-owner review, stale approvals dismissed.
-gh api -X PATCH repos/montimage-projects/mmt-dpi/branches/main/protection/required_pull_request_reviews \
+gh api -X PATCH repos/Montimage/mmt-dpi/branches/main/protection/required_pull_request_reviews \
   -F required_approving_review_count=1 -F require_code_owner_reviews=true -F dismiss_stale_reviews=true
 # Check: live protection against the committed list (read-only).
-bash tools/ci/check-required-checks.sh --live montimage-projects/mmt-dpi
+bash tools/ci/check-required-checks.sh --live Montimage/mmt-dpi
 ```
 
 A deliberate relaxation of the review setting is recorded by editing the
@@ -251,8 +251,8 @@ See the [Add New Protocol](docs/Add-New-Protocol.md) guide for detailed instruct
 
 ## Reporting Issues
 
-- Use the [Bug Report](https://github.com/montimage-projects/mmt-dpi/issues/new?template=bug_report.md) template for bugs
-- Use the [Feature Request](https://github.com/montimage-projects/mmt-dpi/issues/new?template=feature_request.md) template for enhancements
+- Use the [Bug Report](https://github.com/Montimage/mmt-dpi/issues/new?template=bug_report.md) template for bugs
+- Use the [Feature Request](https://github.com/Montimage/mmt-dpi/issues/new?template=feature_request.md) template for enhancements
 - Include pcap samples (if possible) when reporting classification issues
 - For security vulnerabilities, see [SECURITY.md](SECURITY.md) — use **private** disclosure (Security → Report a vulnerability or `contact@montimage.eu`), never a public issue
 

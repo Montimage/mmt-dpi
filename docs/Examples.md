@@ -15,7 +15,7 @@ To run these examples, `mmt-dpi` must be installed first (see [Compilation and I
 All example source code is in `src/examples/` (root of the repo). This page
 walks through five of the seven examples there; `MAC_extraction.c` and
 `mmt_export_info.c` — the latter advertised in the
-[README](https://github.com/montimage-projects/mmt-dpi/blob/main/README.md) —
+[README](https://github.com/Montimage/mmt-dpi/blob/main/README.md) —
 are not covered by the walkthroughs below.
 
 Each listing is the code of the example file it compiles, from the first line

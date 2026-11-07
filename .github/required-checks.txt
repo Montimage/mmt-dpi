@@ -11,7 +11,7 @@
 # tools/ci/check-required-checks.sh (verify-helpers job, blocking) fails when
 # a context here names no job that reports on a pull request into main — a
 # renamed job, a path-filtered workflow, a tag- or schedule-only job — and
-# `--live montimage-projects/mmt-dpi` compares this list with the live one.
+# `--live Montimage/mmt-dpi` compares this list with the live one.
 #
 # Renaming a job listed here: update this file in the same PR, and swap the
 # context in branch protection when that PR merges (the old name is never

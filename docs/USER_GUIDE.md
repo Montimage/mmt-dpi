@@ -20,7 +20,7 @@ For deeper dives into specific subsystems, see:
 
 Take the install command for your platform from the Quick Start — on the
 [landing page](index.html#quick-start), or in the
-[root README](https://github.com/montimage-projects/mmt-dpi/blob/main/README.md#install)
+[root README](https://github.com/Montimage/mmt-dpi/blob/main/README.md#install)
 on GitHub. Both show the one shared block, `docs/_includes/quick-start.md`
 (Linux only): the verified package bootstrap for the Debian, Ubuntu and
 Enterprise Linux releases it covers, then the source installer for every
@@ -49,7 +49,7 @@ stays at the root of that checkout), once the packages of the
 are installed:
 
 ```bash
-git clone https://github.com/montimage-projects/mmt-dpi.git
+git clone https://github.com/Montimage/mmt-dpi.git
 cd mmt-dpi
 make -C sdk -j$(nproc)
 sudo make -C sdk install
@@ -166,7 +166,7 @@ the same for the build and the install — see the
 ```bash
 gcc -o packet_handler "$MMT_BASE/examples/packet_handler.c" \
     -I "$MMT_BASE/dpi/include" -L "$MMT_BASE/dpi/lib" -lmmt_core -ldl -lpcap
-curl -fsSL -O https://montimage-projects.github.io/mmt-dpi/first-run/traffic.pcap
+curl -fsSL -O https://montimage.github.io/mmt-dpi/first-run/traffic.pcap
 LD_LIBRARY_PATH="$MMT_BASE/dpi/lib" ./packet_handler traffic.pcap
 ```
 
@@ -198,7 +198,7 @@ reference.
 - Performance / runtime tuning: `docs/Deployment-Consideration.md`.
 
 If you hit something this guide doesn't answer, open an issue using the
-[bug report template](https://github.com/montimage-projects/mmt-dpi/blob/main/.github/ISSUE_TEMPLATE/bug_report.md) or start
+[bug report template](https://github.com/Montimage/mmt-dpi/blob/main/.github/ISSUE_TEMPLATE/bug_report.md) or start
 a discussion on the repo.
 
 <!-- Sources of the statements above: the docs_lifecycle suite checks every

@@ -89,7 +89,7 @@ their end of life (issue #516): the `# retire-by:` date on their
 warn 60 days ahead and fail from that date. The floor does not move with
 them — Rocky 9 (GCC 11, glibc 2.34) stays in the matrix; the schedule and
 the floor job's next image are in
-[DECISIONS.md](https://github.com/montimage-projects/mmt-dpi/blob/main/docs/DECISIONS.md).
+[DECISIONS.md](https://github.com/Montimage/mmt-dpi/blob/main/docs/DECISIONS.md).
 
 **C dialect and toolchain ceiling (issue #514, F-DEP-301/F-DEP-307):** the
 default GCC toolchain (`ARCH=linux`) compiles C as gnu17
@@ -459,7 +459,7 @@ The modernization task's **30-file coverage scope** refers to an audit-time
 instrumented subset, not all library sources and not a fixed runner limit.
 The 2026-09-22 audit at commit `2ab7b73516113009622cb3d32194d20121457010`
 reported 82.9% (5,660/6,831 lines) over those 30 files; this is historical
-evidence, not a new measurement (provenance recorded in [DECISIONS.md](https://github.com/montimage-projects/mmt-dpi/blob/main/docs/DECISIONS.md)).
+evidence, not a new measurement (provenance recorded in [DECISIONS.md](https://github.com/Montimage/mmt-dpi/blob/main/docs/DECISIONS.md)).
 Coverage includes only the `src/` files represented in emitted gcov data
 (`tests/run_all_tests.sh:397-401`); its percentage uses the lines in that
 subset, so it must not be reported as whole-library coverage. The current
@@ -748,7 +748,7 @@ Facts a later agent cannot infer from the build system alone (issue #480).
   `tools/ci/build-source-tarball.sh` came from the maintainer's #475 Debian
   work, which sat uncommitted in a local checkout (the docs half went through
   the closed PR #476); the layout and how it coexists with `make deb` are in
-  [DECISIONS.md](https://github.com/montimage-projects/mmt-dpi/blob/main/docs/DECISIONS.md)
+  [DECISIONS.md](https://github.com/Montimage/mmt-dpi/blob/main/docs/DECISIONS.md)
   (2026-10-29). Issue #475 stays open for the official-channel submission.
   Run `git status --short` before starting any task: never overwrite, reset,
   `git clean`, pop or drop work you did not create — and never pop, apply or
@@ -793,11 +793,11 @@ Facts a later agent cannot infer from the build system alone (issue #480).
   chosen harnesses locally.
 - **`gh` CLI with admin access.** The release and branch-protection tasks
   (plan phases 0.x/1.x) call `gh release …` and
-  `gh api repos/montimage-projects/mmt-dpi/branches/main/protection`, which
+  `gh api repos/Montimage/mmt-dpi/branches/main/protection`, which
   need a `gh` login with admin permission on the repository and a token with
   the `repo` and `workflow` scopes. Check before starting:
   `gh auth status` (scopes) and
-  `gh api repos/montimage-projects/mmt-dpi --jq .permissions.admin` (prints
+  `gh api repos/Montimage/mmt-dpi --jq .permissions.admin` (prints
   `true`). Without it, stop and hand those tasks back.
 - **No `.env`.** No `.env` file exists in the repository
   (`git ls-files '.env*'` prints nothing) and none is needed — the build is

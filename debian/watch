@@ -12,5 +12,5 @@
 version=4
 opts="searchmode=plain, repacksuffix=+ds, dversionmangle=auto, \
   filenamemangle=s%.*/mmt-dpi-(\d[\d.]*)\.tar\.gz%mmt-dpi-$1.tar.gz%" \
- https://api.github.com/repos/montimage-projects/mmt-dpi/releases?per_page=50 \
- https://github.com/montimage-projects/mmt-dpi/releases/download/v[\d.]+/mmt-dpi-(\d[\d.]*)\.tar\.gz
+ https://api.github.com/repos/Montimage/mmt-dpi/releases?per_page=50 \
+ https://github.com/Montimage/mmt-dpi/releases/download/v[\d.]+/mmt-dpi-(\d[\d.]*)\.tar\.gz

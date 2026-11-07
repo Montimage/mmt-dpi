@@ -15,7 +15,7 @@ We take security vulnerabilities seriously. Please use **private** disclosure so
 ### Preferred: GitHub private vulnerability reporting
 
 1. Go to the **Security** tab of this repository → **Report a vulnerability**  
-   Direct link: <https://github.com/montimage-projects/mmt-dpi/security/advisories/new>
+   Direct link: <https://github.com/Montimage/mmt-dpi/security/advisories/new>
 2. Fill in the advisory form (description, impact, reproduction steps). Only repository maintainers can see the draft advisory.
 3. We will triage the draft and respond within 48 hours.
 
@@ -70,4 +70,4 @@ In scope: the MMT-DPI library and its first-party SDK/plugins shipped in this re
 
 ## Past Advisories
 
-Published advisories and CVEs for this repository are listed under <https://github.com/montimage-projects/mmt-dpi/security/advisories>.
+Published advisories and CVEs for this repository are listed under <https://github.com/Montimage/mmt-dpi/security/advisories>.

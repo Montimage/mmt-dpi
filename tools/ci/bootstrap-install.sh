@@ -2,7 +2,7 @@
 #
 # install.sh — MMT-DPI verified package bootstrap (issue #498, F-CI-112).
 #
-#   curl -fsSL https://github.com/montimage-projects/mmt-dpi/releases/latest/download/install.sh | sh
+#   curl -fsSL https://github.com/Montimage/mmt-dpi/releases/latest/download/install.sh | sh
 #
 # This file is the TEMPLATE. tools/ci/make-release-bootstrap.sh renders it in
 # the release job of .github/workflows/release-packages.yml: it fills in the
@@ -46,7 +46,7 @@
 
 set -eu
 
-REPO="montimage-projects/mmt-dpi"
+REPO="Montimage/mmt-dpi"
 RELEASE_TAG="@RELEASE_TAG@"
 SIGNER_WORKFLOW="${REPO}/.github/workflows/release-packages.yml"
 BUNDLE_ASSET="mmt-dpi.intoto.jsonl"
@@ -275,7 +275,7 @@ main() {
         say "  (on RHEL 9 instead: sudo subscription-manager repos --enable codeready-builder-for-rhel-9-\$(arch)-rpms"
         say "   then sudo dnf install -y gcc libpcap-devel)"
     fi
-    say "  then follow the first run on https://montimage-projects.github.io/mmt-dpi/"
+    say "  then follow the first run on https://montimage.github.io/mmt-dpi/"
 }
 
 # Sourcing with MMT_BOOTSTRAP_SOURCE_ONLY=1 defines the functions without

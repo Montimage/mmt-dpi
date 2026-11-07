@@ -6,7 +6,7 @@ title: "Protocol coverage"
 # Protocol coverage
 
 Every protocol initializer registered with the core engine, generated from
-[`src/mmt_tcpip/lib/proto_init_list.def`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_tcpip/lib/proto_init_list.def)
+[`src/mmt_tcpip/lib/proto_init_list.def`](https://github.com/Montimage/mmt-dpi/blob/main/src/mmt_tcpip/lib/proto_init_list.def)
 by `tools/gen-protocol-list.sh` — do not edit by hand. Plugin protocols
 (5G/LTE NAS, S1AP, NGAP, GTPv2, Diameter, DICOM, business-app data) register
 through their own plugin entry points on top of this list, so the

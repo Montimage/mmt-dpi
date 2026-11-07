@@ -166,7 +166,7 @@ for want in '--repo "$REPO"' '--signer-workflow "$SIGNER_WORKFLOW"' \
             '--source-ref "refs/tags/${RELEASE_TAG}"' '--deny-self-hosted-runners' \
             '-u GH_TOKEN' '-u GITHUB_TOKEN' '-u GH_HOST' '-u GH_REPO' \
             'SIGNER_WORKFLOW="${REPO}/.github/workflows/release-packages.yml"' \
-            'REPO="montimage-projects/mmt-dpi"'; do
+            'REPO="Montimage/mmt-dpi"'; do
     check "install.sh verifies with ${want}" grep -qF -- "$want" "$good/install.sh"
 done
 check "the signer workflow it names exists" \

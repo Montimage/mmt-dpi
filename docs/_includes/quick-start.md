@@ -14,12 +14,12 @@ build-provenance attestation. It is published from the first release after
 v1.9.1; until then, use the source installer on these platforms too.
 
 ```bash
-curl -fsSL https://github.com/montimage-projects/mmt-dpi/releases/latest/download/install.sh | sh
+curl -fsSL https://github.com/Montimage/mmt-dpi/releases/latest/download/install.sh | sh
 ```
 
 Add `-s -- --with-security` after `sh` to install the GPL security engines
 too. To check the bootstrap before running it, download `install.sh`, run
-`gh attestation verify install.sh --repo montimage-projects/mmt-dpi`, then
+`gh attestation verify install.sh --repo Montimage/mmt-dpi`, then
 `sh install.sh`.
 
 **Source installer** — every supported Linux. It installs the build
@@ -30,13 +30,13 @@ explicitly opted in:
 <!-- hero-install: docs/index.html shows the command of the next block above the fold -->
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | bash
 ```
 
 or using `wget`:
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
+wget -qO- https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | bash
 ```
 
 The source installer and the first run are smoke-tested in CI on
@@ -48,22 +48,22 @@ of the same command:
 
 ```bash
 # Preview the install plan without changing anything
-curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash -s -- --dry-run
+curl -fsSL https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | bash -s -- --dry-run
 
 # Install to a custom directory (substitute it for /opt/mmt in the first run)
-curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | MMT_BASE=/usr/local/mmt bash
+curl -fsSL https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | MMT_BASE=/usr/local/mmt bash
 
 # Build the tip of a branch (here main) instead of the pinned release (unverified — explicit opt-in)
-curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | BRANCH=main bash -s -- --unverified-branch
+curl -fsSL https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | BRANCH=main bash -s -- --unverified-branch
 
 # Skip automatic dependency installation
-curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | SKIP_DEPS=1 bash
+curl -fsSL https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | SKIP_DEPS=1 bash
 
 # Uninstall (add --prefix <dir> for a custom prefix)
-curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash -s -- --uninstall
+curl -fsSL https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | bash -s -- --uninstall
 ```
 
 Pre-built `.deb`/`.rpm` packages are on the
-[Releases page](https://github.com/montimage-projects/mmt-dpi/releases); the
+[Releases page](https://github.com/Montimage/mmt-dpi/releases); the
 full install walkthrough, building from a checkout included, is the
-[User Guide](https://github.com/montimage-projects/mmt-dpi/blob/main/docs/USER_GUIDE.md).
+[User Guide](https://github.com/Montimage/mmt-dpi/blob/main/docs/USER_GUIDE.md).

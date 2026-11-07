@@ -5,7 +5,7 @@ name: Bootstrap smoke
 # Every release publishes install.sh — tools/ci/bootstrap-install.sh rendered
 # by tools/ci/make-release-bootstrap.sh in the release job of
 # release-packages.yml — so that
-#   curl -fsSL https://github.com/montimage-projects/mmt-dpi/releases/latest/download/install.sh | sh
+#   curl -fsSL https://github.com/Montimage/mmt-dpi/releases/latest/download/install.sh | sh
 # checks the embedded sha256 and the Sigstore attestation of the native
 # package for this distribution, then installs it with apt-get or dnf.
 # tools/ci/smoke-bootstrap.sh runs that in a fresh container per

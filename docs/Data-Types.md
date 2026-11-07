@@ -15,7 +15,7 @@ title: "MMT Data Types"
 MMT Data types are defined in order to provide an harmonized type definitions for [MMT Attributes](./MMT-Attributes.md). 
 ## API ##
 ### Supported Data Types ###
-The list of supported data types is defined in [types_defs.h](https://github.com/montimage-projects/mmt-dpi/blob/main/src/mmt_core/public_include/types_defs.h).
+The list of supported data types is defined in [types_defs.h](https://github.com/Montimage/mmt-dpi/blob/main/src/mmt_core/public_include/types_defs.h).
 ```c
    MMT_UNDEFINED_TYPE, /**< no type constant value */
 ```

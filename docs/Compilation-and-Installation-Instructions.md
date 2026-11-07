@@ -60,7 +60,7 @@ error.
 
 ### Get source code
 ```bash
-git clone https://github.com/montimage-projects/mmt-dpi.git
+git clone https://github.com/Montimage/mmt-dpi.git
 cd mmt-dpi
 ```
  
@@ -83,7 +83,7 @@ To uninstall run `sudo make uninstall` (pass the same `MMT_BASE` as the install)
 
 In this example, we are going to use `libpcap` to capture packets from a given NIC, so the libpcap headers of the [prerequisites](#prerequisites) must be installed.
 
-You can test `mmt-dpi` library with some examples in [`src/examples`](https://github.com/montimage-projects/mmt-dpi/tree/main/src/examples) to see how it works.
+You can test `mmt-dpi` library with some examples in [`src/examples`](https://github.com/Montimage/mmt-dpi/tree/main/src/examples) to see how it works.
 
 ```sh
 cd src/examples

@@ -61,8 +61,8 @@ fi
 
 REPO_DIR="${REPO_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
 FRAGMENT="${REPO_DIR}/docs/_includes/first-example.md"
-SITE_URL="https://montimage-projects.github.io/mmt-dpi/"
-PUBLISHED="https://github.com/montimage-projects/mmt-dpi/releases/latest/download/install.sh"
+SITE_URL="https://montimage.github.io/mmt-dpi/"
+PUBLISHED="https://github.com/Montimage/mmt-dpi/releases/latest/download/install.sh"
 [ -f "$FRAGMENT" ] || { echo "✗ no ${FRAGMENT}" >&2; exit 2; }
 [ "$(id -u)" -eq 0 ] || { echo "✗ run as root in a throwaway container" >&2; exit 2; }
 

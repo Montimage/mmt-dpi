@@ -9,7 +9,7 @@ title: "Deployment Guide"
 
 To install a release, use the command for your platform in the Quick Start
 — on the [landing page](index.html#quick-start), or in the
-[root README](https://github.com/montimage-projects/mmt-dpi/blob/main/README.md#install)
+[root README](https://github.com/Montimage/mmt-dpi/blob/main/README.md#install)
 on GitHub. This section builds and installs from a checkout instead: every
 block runs from the root of the checkout and leaves you there.
 

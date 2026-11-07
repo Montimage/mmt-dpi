@@ -30,7 +30,7 @@ help with a failing build, install or first run is on the
   Impact: Users would look for plugins and examples in the wrong directory.
 
 - **Fix**: `Compilation-and-Installation-Instructions.md` had wrong git clone URL.
-  Source: remote is `git@gh-work:montimage-projects/mmt-dpi.git`.
+  Source: remote was `montimage-projects/mmt-dpi` (the repository before 1.10.0).
   Impact: Clone would fail with 404.
 
 - **Fix**: `Compilation-and-Installation-Instructions.md` had wrong example directory path (`./examples` → `src/examples`).

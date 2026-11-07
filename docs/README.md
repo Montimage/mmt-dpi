@@ -8,7 +8,7 @@ permalink: /docs/
 
 Documentation for the MMT-DPI deep packet inspection library. For a project
 overview and quick start, see the [landing page](../#quick-start) (or the
-[root README](https://github.com/montimage-projects/mmt-dpi/blob/main/README.md)
+[root README](https://github.com/Montimage/mmt-dpi/blob/main/README.md)
 on GitHub).
 
 ## Getting Started ##

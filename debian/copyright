@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: mmt-dpi
 Upstream-Contact: Montimage <developer@montimage.eu>
-Source: https://github.com/montimage-projects/mmt-dpi
+Source: https://github.com/Montimage/mmt-dpi
 Files-Excluded:
  docs/images/1765138158-dnsgenformat.png
  docs/images/3103432425-dnsheaderformat.png

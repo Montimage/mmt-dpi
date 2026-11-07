@@ -70,7 +70,8 @@ else:
              f"points at {readme_org}/{readme_repo}")
 
 # Every github.com/<org>/mmt-dpi reference across the entry-point docs must
-# name one organisation (the canonical one, `montimage-projects`, recorded in
+# name one organisation (the canonical one, `Montimage` since 1.10.0 — the
+# 2026-11-07 entry of docs/DECISIONS.md; `montimage-projects` before, recorded in
 # docs/DECISIONS.md under 2026-09-12 and 2026-09-13 for issue #197).
 orgs = {}
 for doc in ("install.sh", "README.md", "CONTRIBUTING.md", "SECURITY.md",

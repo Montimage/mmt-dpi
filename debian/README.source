@@ -1,7 +1,7 @@
 Maintaining the Debian packaging of mmt-dpi
 ===========================================
 
-debian/ lives in the upstream repository (montimage-projects/mmt-dpi). It
+debian/ lives in the upstream repository (Montimage/mmt-dpi). It
 builds through `make -C sdk install-fhs` (FHS paths, upstream's SOVERSION) and is
 independent of the upstream `make deb` package, which installs under /opt/mmt.
 

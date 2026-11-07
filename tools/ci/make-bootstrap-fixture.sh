@@ -34,7 +34,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-REPO="montimage-projects/mmt-dpi"
+REPO="Montimage/mmt-dpi"
 API="https://api.github.com/repos/${REPO}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 

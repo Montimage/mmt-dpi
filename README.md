@@ -1,9 +1,9 @@
 # MMT-DPI
 
-**[Documentation site → montimage-projects.github.io/mmt-dpi](https://montimage-projects.github.io/mmt-dpi/)**
+**[Documentation site → montimage.github.io/mmt-dpi](https://montimage.github.io/mmt-dpi/)**
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
-[![C/C++ CI](https://github.com/montimage-projects/mmt-dpi/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/montimage-projects/mmt-dpi/actions/workflows/c-cpp.yml)
+[![C/C++ CI](https://github.com/Montimage/mmt-dpi/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/Montimage/mmt-dpi/actions/workflows/c-cpp.yml)
 
 A high-performance C library for deep packet inspection (DPI), designed to extract data attributes from network packets, server logs, and structured events for real-time traffic analysis. Current release: [v1.9.1](CHANGELOG.md).
 
@@ -43,12 +43,12 @@ build-provenance attestation. It is published from the first release after
 v1.9.1; until then, use the source installer on these platforms too.
 
 ```bash
-curl -fsSL https://github.com/montimage-projects/mmt-dpi/releases/latest/download/install.sh | sh
+curl -fsSL https://github.com/Montimage/mmt-dpi/releases/latest/download/install.sh | sh
 ```
 
 Add `-s -- --with-security` after `sh` to install the GPL security engines
 too. To check the bootstrap before running it, download `install.sh`, run
-`gh attestation verify install.sh --repo montimage-projects/mmt-dpi`, then
+`gh attestation verify install.sh --repo Montimage/mmt-dpi`, then
 `sh install.sh`.
 
 **Source installer** — every supported Linux. It installs the build
@@ -59,13 +59,13 @@ explicitly opted in:
 <!-- hero-install: docs/index.html shows the command of the next block above the fold -->
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | bash
 ```
 
 or using `wget`:
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
+wget -qO- https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | bash
 ```
 
 The source installer and the first run are smoke-tested in CI on
@@ -77,25 +77,25 @@ of the same command:
 
 ```bash
 # Preview the install plan without changing anything
-curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash -s -- --dry-run
+curl -fsSL https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | bash -s -- --dry-run
 
 # Install to a custom directory (substitute it for /opt/mmt in the first run)
-curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | MMT_BASE=/usr/local/mmt bash
+curl -fsSL https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | MMT_BASE=/usr/local/mmt bash
 
 # Build the tip of a branch (here main) instead of the pinned release (unverified — explicit opt-in)
-curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | BRANCH=main bash -s -- --unverified-branch
+curl -fsSL https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | BRANCH=main bash -s -- --unverified-branch
 
 # Skip automatic dependency installation
-curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | SKIP_DEPS=1 bash
+curl -fsSL https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | SKIP_DEPS=1 bash
 
 # Uninstall (add --prefix <dir> for a custom prefix)
-curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash -s -- --uninstall
+curl -fsSL https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | bash -s -- --uninstall
 ```
 
 Pre-built `.deb`/`.rpm` packages are on the
-[Releases page](https://github.com/montimage-projects/mmt-dpi/releases); the
+[Releases page](https://github.com/Montimage/mmt-dpi/releases); the
 full install walkthrough, building from a checkout included, is the
-[User Guide](https://github.com/montimage-projects/mmt-dpi/blob/main/docs/USER_GUIDE.md).
+[User Guide](https://github.com/Montimage/mmt-dpi/blob/main/docs/USER_GUIDE.md).
 
 <!-- end-shared: docs/_includes/quick-start.md -->
 
@@ -105,7 +105,7 @@ Every tagged release publishes ready-to-install `.deb` and `.rpm` packages
 (amd64 and arm64) — one per distribution in the release matrix: **Ubuntu
 22.04, Ubuntu 24.04, Ubuntu 26.04, Debian 12, Debian 13 (.deb), Rocky Linux 9,
 Rocky Linux 10, CentOS Stream 9 and CentOS Stream 10 (.rpm)**. Download the one matching your distribution from the
-[Releases page](https://github.com/montimage-projects/mmt-dpi/releases) and
+[Releases page](https://github.com/Montimage/mmt-dpi/releases) and
 install it with your native package manager:
 
 ```bash
@@ -150,7 +150,7 @@ sha256sum --check SHA256SUMS --ignore-missing
 
 # Provenance — the package must have been built by this repo's release workflow
 gh attestation verify mmt-dpi_*_ubuntu-24.04_x86_64.deb \
-  --repo montimage-projects/mmt-dpi
+  --repo Montimage/mmt-dpi
 ```
 
 Install only after both checks pass.
@@ -188,7 +188,7 @@ From any directory (the block clones into `./mmt-dpi` and stays at the root
 of that checkout):
 
 ```bash
-git clone https://github.com/montimage-projects/mmt-dpi.git
+git clone https://github.com/Montimage/mmt-dpi.git
 cd mmt-dpi
 
 # Build
@@ -214,9 +214,9 @@ it starts from an empty directory and works after every install route.
 <!-- begin-shared: docs/_includes/first-example.md -->
 
 A complete first program,
-[`hello_packet.c`](https://montimage-projects.github.io/mmt-dpi/first-run/hello_packet.c),
+[`hello_packet.c`](https://montimage.github.io/mmt-dpi/first-run/hello_packet.c),
 and a small capture to run it on,
-[`traffic.pcap`](https://montimage-projects.github.io/mmt-dpi/first-run/traffic.pcap),
+[`traffic.pcap`](https://montimage.github.io/mmt-dpi/first-run/traffic.pcap),
 are published with the documentation site. From an empty directory, with the
 SDK installed under `/opt/mmt` (the quick-start default — substitute your
 `MMT_BASE` prefix and add `LD_LIBRARY_PATH="$MMT_BASE/dpi/lib"` to the run
@@ -229,8 +229,8 @@ CentOS Stream 9, where `libpcap-devel` is in CRB; on RHEL 9 first run
 and drop `--enablerepo=crb`; plain `dnf install` on Fedora):
 
 ```bash
-curl -fsSL -O https://montimage-projects.github.io/mmt-dpi/first-run/hello_packet.c \
-     -O https://montimage-projects.github.io/mmt-dpi/first-run/traffic.pcap
+curl -fsSL -O https://montimage.github.io/mmt-dpi/first-run/hello_packet.c \
+     -O https://montimage.github.io/mmt-dpi/first-run/traffic.pcap
 gcc -o hello_packet hello_packet.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap
 ./hello_packet traffic.pcap
 ```
@@ -257,7 +257,7 @@ packet 10: 54 bytes, meta.ethernet.ip.tcp.http
 A missing capture fails with a clear message and the command that fetches
 it. The program follows the embedding lifecycle — global init, one handler,
 a `packet_process()` loop, handler teardown before the global teardown; the
-[`src/examples/packet_handler.c`](https://github.com/montimage-projects/mmt-dpi/blob/main/src/examples/packet_handler.c)
+[`src/examples/packet_handler.c`](https://github.com/Montimage/mmt-dpi/blob/main/src/examples/packet_handler.c)
 reference that CI compiles on every build does the same. `META`/`PACKET_LEN`
 is a built-in meta attribute available on every packet:
 
@@ -300,7 +300,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "hello_packet: cannot open capture '%s': %s\n", argv[1], errbuf);
         if (strcmp(argv[1], "traffic.pcap") == 0) // only the sample has a download
             fprintf(stderr, "  to fetch the sample capture into the current directory:\n"
-                    "  curl -fsSLO https://montimage-projects.github.io/mmt-dpi/first-run/traffic.pcap\n");
+                    "  curl -fsSLO https://montimage.github.io/mmt-dpi/first-run/traffic.pcap\n");
         return 1;
     }
     if (pcap_datalink(pcap) != DLT_EN10MB) {
@@ -407,7 +407,7 @@ mmt-dpi/
 
 ## Documentation
 
-- [Documentation site](https://montimage-projects.github.io/mmt-dpi/) — the rendered version of everything below
+- [Documentation site](https://montimage.github.io/mmt-dpi/) — the rendered version of everything below
 - [User Guide](docs/USER_GUIDE.md) — install, run the examples, write your first program
 - [Compilation and Installation](docs/Compilation-and-Installation-Instructions.md)
 - [Troubleshooting](docs/troubleshooting.md) — first-run build, install, compile and run errors, with the fix for each

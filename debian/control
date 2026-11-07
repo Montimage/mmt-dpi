@@ -5,9 +5,9 @@ Maintainer: Montimage <developer@montimage.eu>
 Build-Depends: debhelper-compat (= 13)
 Standards-Version: 4.7.2
 Rules-Requires-Root: no
-Homepage: https://github.com/montimage-projects/mmt-dpi
-Vcs-Git: https://github.com/montimage-projects/mmt-dpi.git
-Vcs-Browser: https://github.com/montimage-projects/mmt-dpi
+Homepage: https://github.com/Montimage/mmt-dpi
+Vcs-Git: https://github.com/Montimage/mmt-dpi.git
+Vcs-Browser: https://github.com/Montimage/mmt-dpi
 
 Package: libmmt-dpi1
 Architecture: any

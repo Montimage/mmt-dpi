@@ -39,8 +39,8 @@ echo "=== Compilation-and-Installation-Instructions.md validation ==="
 
 # Check 1: Git repo URL is correct
 remote_url=$(git -C "$ROOT" remote get-url origin 2>/dev/null || echo "")
-if echo "$remote_url" | grep -q 'montimage-projects/mmt-dpi'; then
-    echo "  ✓ Remote URL matches doc (montimage-projects/mmt-dpi)"
+if echo "$remote_url" | grep -qi 'Montimage/mmt-dpi'; then
+    echo "  ✓ Remote URL matches doc (Montimage/mmt-dpi)"
 else
     echo "  ✗ Remote URL does not match doc"
     ERRORS=$((ERRORS + 1))
