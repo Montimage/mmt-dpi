@@ -597,6 +597,41 @@
 
     <hr class="divider">
 
+    <!-- NEXT RELEASE — the measured figures are backed by docs/BENCHMARKS.md -->
+    <section class="sec wrap" id="next-release">
+      <div class="sec-tag">// coming in 1.10.0 (unreleased)</div>
+      <h2 class="sec-title">See into encrypted and tunneled traffic.</h2>
+      <p class="sec-lead">
+        1.10.0 is not tagged yet; the install below still delivers the current release. Here is what
+        it adds, from its <a href="https://github.com/Montimage/mmt-dpi/blob/main/CHANGELOG.md">changelog</a>.
+      </p>
+      <div class="uc-grid">
+        <div class="uc">
+          <span class="tag">[ tls / quic ]</span>
+          <h3>SNI, ALPN and JA4 from the first flight</h3>
+          <p>A TLS ClientHello split over several TCP segments is reassembled before it is read. QUIC v1 and v2 client Initials are decrypted in-tree, with no third-party crypto library, so QUIC flows yield the same SNI, ALPN and JA4 fingerprint as TLS.</p>
+        </div>
+        <div class="uc">
+          <span class="tag">[ tunnels ]</span>
+          <h3>Down to the inner flow</h3>
+          <p>MPLS label stacks, VXLAN, GENEVE and PPPoE are walked to the flow they carry, and a GTP-U payload is identified as IPv4, IPv6 or Ethernet instead of being assumed to be IPv4.</p>
+        </div>
+        <div class="uc">
+          <span class="tag">[ verdicts ]</span>
+          <h3>Know how each flow was classified</h3>
+          <p><code>meta.classification_method</code> reports whether a verdict came from a payload match, a hostname, a correlation, an IP range or a port guess. Four weak signatures, among them DICOM and version-less gQUIC, now need corroboration before they claim a flow.</p>
+        </div>
+        <div class="uc">
+          <span class="tag">[ measured ]</span>
+          <h3>Faster, leaner, harder to break</h3>
+          <p>Against <code>Montimage/mmt-dpi</code> main (<code>af338b16</code>), same aarch64 host: about 2.3–2.5× the packets per second on <code>bigFlows.pcap</code> with no attribute fetched, 56% less library memory, and 0 sanitizer findings on 2,011 hostile inputs, against 100. <a href="BENCHMARKS.html">Method and raw data →</a></p>
+        </div>
+      </div>
+      <p style="margin-top:28px;">Every library's SONAME moves to <code>lib&lt;name&gt;.so.1</code>: rebuild consumers and plugins once when you upgrade.</p>
+    </section>
+
+    <hr class="divider">
+
     <!-- API PROGRESSION -->
     <section class="sec wrap" id="api">
       <div class="sec-tag">// the api</div>

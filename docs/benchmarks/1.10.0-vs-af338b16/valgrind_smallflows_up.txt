@@ -1,0 +1,10 @@
+HEAP SUMMARY:
+in use at exit: 683 bytes in 5 blocks
+total heap usage: 50,895 allocs, 50,890 frees, 22,757,384 bytes allocated
+LEAK SUMMARY:
+definitely lost: 171 bytes in 4 blocks
+indirectly lost: 0 bytes in 0 blocks
+possibly lost: 0 bytes in 0 blocks
+still reachable: 512 bytes in 1 blocks
+suppressed: 0 bytes in 0 blocks
+ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

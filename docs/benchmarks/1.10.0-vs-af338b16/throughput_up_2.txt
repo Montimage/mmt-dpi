@@ -1,0 +1,19 @@
+# Phase 0 perf reference — in-memory replay, default (-O3) build (issues #251, #555).
+# Same-host figures: compare deltas on the host below, never across hosts.
+# Captured by tools/phase0/capture_perf.sh. Modes (PHASE0_MODE): bare = no
+# attribute or handler; attrs8 = 8 attributes fetched by a packet handler;
+# all = fetch-all, every attribute the packet carries fetched per packet.
+# ns_per_pkt = 1e9 / pps. RSS columns (issue #251): harness_rss_kib is the
+# trace-preload share, library_rss_kib the SDK share on top of it.
+# library_rss_kib is the peak over all iterations, so it rises with --iterations.
+# M4 budget reference (audit host, issues #555/#584): bigFlows bare
+# 3,106,798 pps and library_rss_kib 21,428; fetch-all 1,704 ns/pkt.
+# host: aarch64 | cpu: 10 | gcc: 13.3.0 | os: Ubuntu 24.04.5 LTS | commit: 54bdae50
+#
+# pcap	mode	attrs	packets	iterations	elapsed_s	pps	harness_rss_kib	library_rss_kib	peak_rss_kib	ns_per_pkt
+bigFlows.pcap	bare	0	791615	20	11.7539	1346984	403964	40700	449424	742.4
+bigFlows.pcap	attrs8	8	791615	20	13.3315	1187583	403968	40688	449520	842.0
+bigFlows.pcap	all	7429	791615	20	54.1666	292289	403976	55404	464544	3421.3
+smallFlows.pcap	bare	0	14261	20	0.3069	929492	10076	25368	40204	1075.9
+smallFlows.pcap	attrs8	8	14261	20	0.3196	892315	10076	25388	40204	1120.7
+smallFlows.pcap	all	7429	14261	20	1.0546	270449	10076	27204	41984	3697.6
