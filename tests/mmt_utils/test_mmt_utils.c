@@ -7,7 +7,7 @@
  *   - hex2dec
  *   - str_compare, str_index
  *   - str_sub, str_combine, str_copy
- *   - str_replace (incl. adjacent/edge matches, #505), str_subvalue
+ *   - str_replace (incl. adjacent/edge matches, #505; growing replacements, #748), str_subvalue
  *   - str_get_indexes, str_print_array
  *
  * Edge cases: NULL inputs, empty strings, odd-length hex strings,
@@ -373,6 +373,53 @@ static void test_str_replace_adjacent_edges(void) {
     }
 }
 
+/* ---- str_replace: replacements that grow the string (issue #748) ----
+ * The result is sized from the inputs and filled with bounded copies; under
+ * SANITIZE=asan any write past the allocation fails the suite. Each case
+ * checks the exact output and its length. */
+static void test_str_replace_grows(void) {
+    fprintf(stderr, "  test: str_replace growing replacements (#748)\n");
+    static const struct { const char *str, *pat, *rep, *want; } cases[] = {
+        { "abc",   "b",   "0123456789",  "a0123456789c"            },
+        { "bab",   "b",   "XYZW",        "XYZWaXYZW"               }, /* start + end */
+        { "bbbb",  "b",   "<long>",      "<long><long><long><long>"}, /* every byte */
+        { "x-y-z", "-",   " -> ",        "x -> y -> z"             },
+        { "aXbXc", "X",   "",            "abc"                     }, /* empty rep */
+        { "hello world", "world", "w",   "hello w"                 }, /* shrinks */
+    };
+    for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        char *r = str_replace((char *) cases[i].str, (char *) cases[i].pat,
+                              (char *) cases[i].rep);
+        char msg[128];
+        snprintf(msg, sizeof msg, "str_replace(\"%s\", \"%s\", \"%s\")",
+                 cases[i].str, cases[i].pat, cases[i].rep);
+        CHECK_STR_EQ(r, cases[i].want, msg);
+        CHECK(r != NULL && strlen(r) == strlen(cases[i].want), msg);
+        free(r);
+    }
+
+    /* 4096 one-byte matches, each replaced by 64 bytes: 256 KiB result. */
+    enum { N = 4096, REP = 64 };
+    char *src = malloc(N + 1);
+    char rep[REP + 1];
+    CHECK(src != NULL, "str_replace large input allocation");
+    if (src == NULL) return;
+    memset(src, '.', N);
+    src[N] = '\0';
+    memset(rep, 'r', REP);
+    rep[REP] = '\0';
+    char *r = str_replace(src, ".", rep);
+    CHECK(r != NULL && strlen(r) == (size_t) N * REP,
+          "str_replace 4096 matches x 64-byte rep has length 262144");
+    if (r != NULL) {
+        size_t bad = 0;
+        for (size_t i = 0; i < (size_t) N * REP; i++) bad += (r[i] != 'r');
+        CHECK(bad == 0, "str_replace large growth result holds only rep bytes");
+    }
+    free(r);
+    free(src);
+}
+
 /* ---- str_replace ---- */
 static void test_str_replace(void) {
     fprintf(stderr, "  test: str_replace\n");
@@ -388,8 +435,7 @@ static void test_str_replace(void) {
     CHECK(result != NULL, "str_replace with NULL rep should not crash");
     if (result) free(result);
 
-    /* Note: str_replace has potential buffer overflow issues in the implementation.
-       We just test that it doesn't crash for basic cases. */
+    /* Growing and shrinking replacements: test_str_replace_grows (#748). */
     result = str_replace("hello", "xyz", "abc");
     CHECK(result != NULL, "str_replace no match should not crash");
     if (result) free(result);
@@ -629,6 +675,7 @@ int main(int argc, char **argv) {
     test_str_get_indexes();
     test_str_replace();
     test_str_replace_adjacent_edges();
+    test_str_replace_grows();
     test_str_subvalue();
     test_str_print_array();
     test_hex2str_printable();

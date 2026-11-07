@@ -379,65 +379,47 @@ int * str_get_indexes_n(char *str, size_t str_len, char *str1, size_t str1_len){
     if(array_index == NULL) {
         return str_copy(str);
     }
-    int current_index = 0;
+    /* Issue #748: the result is sized in size_t from the inputs and filled
+     * with bounded copies at a write cursor. The old body computed the size
+     * in int (truncated for large inputs) and appended without a bound. The
+     * matches are non-overlapping, so nb_element * str1_len <= str_len. */
+    size_t str_len = strlen(str);
+    size_t str1_len = strlen(str1);
+    size_t rep_len = strlen(rep);
 
-    int nb_element =0;
+    size_t nb_element = 0;
     while(array_index[nb_element] != -1){
         nb_element++;
     }
 
-    int new_string_len = strlen(str) + nb_element * strlen(rep) - nb_element * strlen(str1)+1;
-    char * new_string;
-    new_string = (char * )malloc(new_string_len);
+    if(rep_len > str1_len &&
+       nb_element > (SIZE_MAX - 1 - str_len) / (rep_len - str1_len)){
+        free(array_index);
+        return NULL; /* result length does not fit in size_t */
+    }
+    size_t new_string_len = str_len - nb_element * str1_len + nb_element * rep_len;
+
+    char * new_string = (char *) malloc(new_string_len + 1);
     if(new_string == NULL) {
         free(array_index);
         return NULL;
     }
-    new_string[0] = '\0';
 
-    if(array_index[current_index] != 0){
-        char * str_substr = str_sub_n(str,strlen(str),0,array_index[current_index]-1);
-        if(str_substr == NULL){ /* allocation failure (#505) */
-            free(new_string);
-            free(array_index);
-            return NULL;
-        }
-        strcpy(new_string,str_substr);
-        free(str_substr);
+    size_t src = 0, dst = 0;
+    for(size_t i = 0; i < nb_element; i++){
+        size_t hit = (size_t) array_index[i];
+        memcpy(new_string + dst, str + src, hit - src);
+        dst += hit - src;
+        memcpy(new_string + dst, rep, rep_len);
+        dst += rep_len;
+        src = hit + str1_len;
     }
-
-    while(array_index[current_index + 1] != -1){
-
-        char * str_substr = str_sub_n(str,strlen(str),array_index[current_index] + strlen(str1),array_index[current_index + 1] -1);
-        
-        if(strlen(new_string)==0){
-            strcpy(new_string,rep);
-        }else{
-            strcat(new_string,rep);
-        }
-        /* Issue #505 (F-BUG-013): adjacent matches leave an empty gap, for
-         * which str_sub_n() returns NULL — strcat(…, NULL) crashed. */
-        if(str_substr != NULL){
-            strncat(new_string, str_substr, (size_t)new_string_len - 1 - strlen(new_string));
-            free(str_substr);
-        }
-        current_index ++;
-    }
-
-    // The spliter is at the end of string
-    if(strlen(str) >= array_index[current_index] + strlen(str1)){
-        char * str_substr = str_sub_n(str,strlen(str),array_index[current_index] + strlen(str1),strlen(str) -1);
-        strcat(new_string,rep);    
-        if(str_substr != NULL){
-            strcat(new_string,str_substr);
-            free(str_substr);
-        }
-    }
-
-    new_string[new_string_len-1] = '\0';
+    memcpy(new_string + dst, str + src, str_len - src);
+    dst += str_len - src;
+    new_string[dst] = '\0';
 
     free(array_index);
-    
+
     return new_string;
 
  }
