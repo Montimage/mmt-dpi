@@ -30,8 +30,10 @@ replays canned fingerprints, asserting that
     moving a covered classifier back to pending FAILS against the base (and,
     without --base, passes -- which is why CI passes --base), an unchanged
     corpus and a pending entry for a classifier the base does not register
-    pass, a base without coverage-pending.txt skips the ratchet, and a REF
-    that does not resolve or a base without the chain file exits 2.
+    pass, a base without coverage-pending.txt skips the ratchet -- also when
+    it lacks the chain file too (issue #747) -- and a REF that does not
+    resolve or a base with the pending list but without the chain file
+    exits 2.
 
 Usage: python3 tools/ci/tests/test-accuracy-corpus.py
 Exit: 0 = all checks passed, 1 = at least one failed.
@@ -593,6 +595,15 @@ with Scratch() as s:
           rc == 0 and "ratchet skipped" in out, out)
 
 with Scratch() as s:
+    # The base of Montimage/mmt-dpi#41 predates both files (issue #747).
+    rc, out = s.offline("--base", "HEAD", "--base-repo",
+                        s.base_repo(pending=False, chain=False))
+    check("base without the pending list or the chain definition skips "
+          "the ratchet",
+          rc == 0 and "ratchet skipped: the base HEAD has no "
+          "tools/phase0/ci/accuracy/coverage-pending.txt" in out, out)
+
+with Scratch() as s:
     rc, out = s.offline("--base", "no-such-ref", "--base-repo", s.base_repo())
     check("unresolvable base REF exits 2",
           rc == 2 and "does not resolve" in out, out)
@@ -600,7 +611,8 @@ with Scratch() as s:
 with Scratch() as s:
     rc, out = s.offline("--base", "HEAD", "--base-repo",
                         s.base_repo(chain=False))
-    check("base without the chain definition exits 2",
+    check("base with the pending list but without the chain definition "
+          "exits 2",
           rc == 2 and "inter_proto_classif_list.def" in out, out)
 
 print()

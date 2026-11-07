@@ -29,8 +29,10 @@ tools/phase0/ci/accuracy/coverage-pending.txt and the chain definition at REF
 (`git show`) and fails on a pending entry that REF's list lacks although REF's
 chains already register it -- a covered classifier cannot move back to
 pending; only a newly registered one may enter. A REF that does not resolve,
-or lacks the chain file, is an environment error; a REF without the pending
-file (it predates issue #527) skips this ratchet with a note.
+or has the pending file but lacks the chain file, is an environment error; a
+REF without the pending file (it predates issue #527, with or without the
+chain file -- issue #747) skips this ratchet with a note naming REF and the
+missing file.
 
 The oracle:
   0. checks classifier coverage against the chains and the pending list
@@ -412,14 +414,15 @@ def _git_show(repo, ref, path):
 def check_base_ratchet(pending, ref, repo):
     """The pending list only shrinks: an entry REF's list lacks is allowed
     only for a classifier REF's chains do not register yet. Returns a status
-    line, or None when REF predates the pending list."""
+    line, or None when REF predates the pending list -- checked first, so a
+    REF that also predates the chain file skips too (issue #747)."""
+    pending_text = _git_show(repo, ref, BASE_PENDING)
+    if pending_text is None:
+        return None
     chain_text = _git_show(repo, ref, BASE_CHAIN)
     if chain_text is None:
         raise EnvError("--base %s has no %s" % (ref, BASE_CHAIN))
     base_chain = parse_chain(chain_text, "%s:%s" % (ref, BASE_CHAIN))
-    pending_text = _git_show(repo, ref, BASE_PENDING)
-    if pending_text is None:
-        return None
     base_pending = parse_pending(pending_text, "%s:%s" % (ref, BASE_PENDING))
     added = [fn for fn in pending
              if fn not in base_pending and fn in base_chain]
@@ -753,8 +756,9 @@ def main(argv):
               % (coverage["covered"], coverage["classifiers"],
                  coverage["pending"], PENDING_FILE), flush=True)
         if ratchet is None:
-            print("note: shrink-only ratchet skipped: %s has no %s"
-                  % (args.base, BASE_PENDING), flush=True)
+            print("note: shrink-only ratchet skipped: the base %s has no %s "
+                  "(it predates the pending list)" % (args.base, BASE_PENDING),
+                  flush=True)
         elif ratchet:
             print(ratchet, flush=True)
         if args.offline:
