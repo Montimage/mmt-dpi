@@ -61,6 +61,7 @@ void cleanup_ftp_context(void *proto_context, void *args);
 int ftp_session_data_analysis(ipacket_t *ipacket, unsigned index);
 int init_proto_ftp_struct(void);
 int mmt_check_ftp(ipacket_t *ipacket, unsigned index);
+int ftp_get_packet_type(const ipacket_t *ipacket, unsigned index);
 uint16_t power_16(uint16_t nb, int t);
 
 #define IDX 4u                  /* FTP's position in the protocol path */
@@ -853,6 +854,19 @@ static void ip6(struct mmt_ipv6hdr *h, uint8_t s, uint8_t d) {
 	h->daddr.mmt_v6_u.u6_addr8[15] = d;
 }
 
+/* Issue #718: the packet-type extractor on a packet without a TCP header. */
+static void test_packet_type_without_tcp(void) {
+	use_ipv4();
+	set_payload("220 ready\r\n", 11);
+	g_ip.tcp = NULL;
+	CHECK(ftp_get_packet_type(&g_pkt, IDX) == MMT_FTP_PACKET_TYPE_UNKNOWN,
+	      "no TCP header: packet type unknown");
+	g_ip.tcp = (const void *) &g_tcp;
+	set_ports(21, CPORT);
+	CHECK(ftp_get_packet_type(&g_pkt, IDX) == MMT_FTP_PACKET_RESPONSE,
+	      "server packet: response");
+}
+
 static void test_ipv6_dialogue(void) {
 	void *ctl = NULL, *ctl2 = NULL;
 	use_ipv6();
@@ -867,6 +881,15 @@ static void test_ipv6_dialogue(void) {
 	packet(&ctl, 11, 0, CPORT, 0, 21, "EPRT |2|2001:db8::2|2010|\r\n");
 	CHECK(str_is(c->current_data_session->data_conn->c_addr_v6, "2001:db8::2"), "EPRT IPv6 client address");
 	CHECK(extract(ctl, FTP_CLIENT_DATA_PORT) && g_val.u16 == 2010, "EPRT IPv6 client port");
+	/* Issue #718: a new IPv6 data flow is compared with the EPRT data
+	 * connection, whose server address was never set (NULL). */
+	{
+		void *dat = NULL;
+		ip6(&g_ip6, 2, 1);
+		packet(&dat, 12, 0, 2010, 0, 50010, "v6 data");
+		CHECK(1, "an IPv6 data flow beside an EPRT data connection is analysed");
+		expire(&dat);
+	}
 	packet(&ctl, 11, 0, CPORT, 0, 21, "PORT 10,0,0,1,7,211\r\n");
 	CHECK(extract(ctl, FTP_CLIENT_DATA_PORT) && g_val.u16 == htons(7 * 256 + 211), "PORT port on IPv6");
 	ip6(&g_ip6, 1, 2);
@@ -1128,9 +1151,7 @@ static void oom_sessions(void) {
 	ftp_free_context(ftp_new_context());
 }
 
-/* An IPv4 dialogue, its data flow and the expiries. (IPv6 is left out: a
- * failed address-buffer calloc in ftp_get_tuple6() leaves a NULL buffer that
- * ftp_copy_tupl6() then copies from.) */
+/* An IPv4 dialogue, its data flow and the expiries. */
 static void oom_dialogue(void) {
 	void *ctl = NULL, *dat = NULL;
 	use_ipv4();
@@ -1152,6 +1173,30 @@ static void oom_dialogue(void) {
 	g_sess.session_data[IDX] = NULL;
 }
 
+/* Issue #718: an IPv6 dialogue with an EPRT data flow — every address-buffer
+ * calloc of ftp_get_tuple6() fails in turn, as does every other allocation. */
+static void oom_dialogue_v6(void) {
+	void *ctl = NULL, *dat = NULL;
+	use_ipv6();
+	ip6(&g_ip6, 1, 2);
+	packet(&ctl, 31, 0, 21, 0, CPORT, "220 v6 ready\r\n");
+	ip6(&g_ip6, 2, 1);
+	packet(&ctl, 31, 0, CPORT, 0, 21, "USER v6\r\n");
+	packet(&ctl, 31, 0, CPORT, 0, 21, "EPRT |2|2001:db8::2|2010|\r\n");
+	packet(&dat, 32, 0, 2010, 0, 50010, "v6 data");
+	ip6(&g_ip6, 1, 2);
+	packet(&ctl, 31, 0, 21, 0, CPORT, "226 done\r\n");
+	{
+		ftp_tuple6_t *t = ftp_get_tuple6(&g_pkt);
+		free_ftp_tuple6(ftp_copy_tupl6(t));
+		free_ftp_tuple6(t);
+	}
+	expire(&dat);
+	expire(&ctl);
+	g_sess.session_data[IDX] = NULL;
+	use_ipv4();
+}
+
 int main(void) {
 	printf("test_ftp_dialogue: FTP dissector parsing, sessions and classification (issue #563)\n");
 	int64_t out0 = fda_outstanding;
@@ -1168,12 +1213,14 @@ int main(void) {
 	test_tuples();
 	test_ipv4_dialogue();
 	test_ipv6_dialogue();
+	test_packet_type_without_tcp();
 	test_classification();
 
 	oom_sweep("parsers", oom_parse);
 	oom_sweep("address parameters", oom_addr);
 	oom_sweep("session constructors", oom_sessions);
 	oom_sweep("dialogue", oom_dialogue);
+	oom_sweep("IPv6 dialogue", oom_dialogue_v6);
 
 	scratch_flush();
 	handler_close();

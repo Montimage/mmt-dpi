@@ -34,6 +34,7 @@ ftp_tuple6_t * ftp_new_tuple6() {
 }
 
 ftp_tuple6_t *ftp_copy_tupl6(ftp_tuple6_t *tuple6) {
+    if(tuple6 == NULL) return NULL;
     ftp_tuple6_t * t = ftp_new_tuple6();
     if(t == NULL) return NULL;
     t->conn_type = tuple6->conn_type;
@@ -46,11 +47,13 @@ ftp_tuple6_t *ftp_copy_tupl6(ftp_tuple6_t *tuple6) {
     if(tuple6->is_ipv6){
         t->c_addr_v6 = (char*)malloc(33*sizeof(char));
         t->s_addr_v6 = (char*)malloc(33*sizeof(char));
+        /* Issue #718: an address the source does not hold (NULL) is copied
+         * as all-zero — memcpy() from NULL was undefined. */
         if (t->c_addr_v6 != NULL && t->s_addr_v6 !=NULL){
-            memcpy(t->s_addr_v6, tuple6->s_addr_v6, 32);
-            memcpy(t->c_addr_v6, tuple6->c_addr_v6, 32);
-            t->c_addr_v6[32] = '\0';
-            t->s_addr_v6[32] = '\0';
+            memset(t->s_addr_v6, 0, 33);
+            memset(t->c_addr_v6, 0, 33);
+            if (tuple6->s_addr_v6 != NULL) memcpy(t->s_addr_v6, tuple6->s_addr_v6, 32);
+            if (tuple6->c_addr_v6 != NULL) memcpy(t->c_addr_v6, tuple6->c_addr_v6, 32);
         } else {
             if(t->c_addr_v6 != NULL){ free(t->c_addr_v6); t->c_addr_v6 = NULL; }
             if(t->s_addr_v6 != NULL){ free(t->s_addr_v6); t->s_addr_v6 = NULL; }
@@ -96,6 +99,13 @@ ftp_tuple6_t *ftp_get_tuple6(const ipacket_t * ipacket) {
             }else{
                 t6->c_addr_v6 = (char*)calloc(33, sizeof(char));
                 t6->s_addr_v6 = (char*)calloc(33, sizeof(char));
+                /* Issue #718: a tuple whose address buffers could not be
+                 * allocated is no tuple — callers treat NULL as "no FTP
+                 * tuple"; ftp_copy_tupl6() used to copy from the NULL. */
+                if (t6->c_addr_v6 == NULL || t6->s_addr_v6 == NULL) {
+                    free_ftp_tuple6(t6);
+                    return NULL;
+                }
                 if (t6->c_addr_v6 != NULL && t6->s_addr_v6 != NULL){
                     memcpy(t6->s_addr_v6, &ipacket->internal_packet->iphv6->saddr.mmt_v6_u.u6_addr8, 16);
                     memcpy(t6->c_addr_v6, &ipacket->internal_packet->iphv6->daddr.mmt_v6_u.u6_addr8, 16);
@@ -115,6 +125,13 @@ ftp_tuple6_t *ftp_get_tuple6(const ipacket_t * ipacket) {
             }else{
                 t6->c_addr_v6 = (char*)calloc(33, sizeof(char));
                 t6->s_addr_v6 = (char*)calloc(33, sizeof(char));
+                /* Issue #718: a tuple whose address buffers could not be
+                 * allocated is no tuple — callers treat NULL as "no FTP
+                 * tuple"; ftp_copy_tupl6() used to copy from the NULL. */
+                if (t6->c_addr_v6 == NULL || t6->s_addr_v6 == NULL) {
+                    free_ftp_tuple6(t6);
+                    return NULL;
+                }
                 if (t6->c_addr_v6 != NULL && t6->s_addr_v6 != NULL)
                 {
                     memcpy(t6->s_addr_v6, &ipacket->internal_packet->iphv6->daddr.mmt_v6_u.u6_addr8, 16);
@@ -135,6 +152,13 @@ ftp_tuple6_t *ftp_get_tuple6(const ipacket_t * ipacket) {
             }else{
                 t6->c_addr_v6 = (char*)calloc(33, sizeof(char));
                 t6->s_addr_v6 = (char*)calloc(33, sizeof(char));
+                /* Issue #718: a tuple whose address buffers could not be
+                 * allocated is no tuple — callers treat NULL as "no FTP
+                 * tuple"; ftp_copy_tupl6() used to copy from the NULL. */
+                if (t6->c_addr_v6 == NULL || t6->s_addr_v6 == NULL) {
+                    free_ftp_tuple6(t6);
+                    return NULL;
+                }
                 if (t6->c_addr_v6 != NULL && t6->s_addr_v6 != NULL)
                 {
                     memcpy(t6->s_addr_v6, &ipacket->internal_packet->iphv6->saddr.mmt_v6_u.u6_addr8, 16);
@@ -387,6 +411,15 @@ void free_ftp_control_session(ftp_control_session_t *ftp_control) {
 *            7 if the client_port and client address of data connection is NULL and the other are equal (different direction) - convert direction of t1
 *            0 otherwise
 */
+/* Issue #718: compare two 32-byte IPv6 address buffers, either of which may
+ * be NULL — a data connection holds only the addresses its control dialogue
+ * announced (EPRT sets c_addr_v6, nothing sets s_addr_v6). NULL equals only
+ * NULL, as an unknown IPv4 address (0) equals only 0. Returns 0 if equal. */
+static int ftp_addr6_cmp(const char *a, const char *b) {
+    if (a == NULL || b == NULL) return a == b ? 0 : 1;
+    return mmt_memcmp(a, b, 32);
+}
+
 int ftp_compare_tuple6(ftp_tuple6_t *t1, ftp_tuple6_t * t2) {
 
     if(t1 == NULL || t2==NULL) return 0;
@@ -405,22 +438,22 @@ int ftp_compare_tuple6(ftp_tuple6_t *t1, ftp_tuple6_t * t2) {
         if (t1->s_port != t2->s_port) return 0;
 
         if(t1->is_ipv6==1){
-            if(mmt_memcmp(t1->c_addr_v6,t2->c_addr_v6,32)!=0) return 0;
-            if(mmt_memcmp(t1->s_addr_v6,t2->s_addr_v6,32)!=0) return 0;
+            if(ftp_addr6_cmp(t1->c_addr_v6,t2->c_addr_v6)!=0) return 0;
+            if(ftp_addr6_cmp(t1->s_addr_v6,t2->s_addr_v6)!=0) return 0;
         }
 
         return 1;
     } else {
         if(t1->is_ipv6==1){
-            if (mmt_memcmp(t1->c_addr_v6,t2->c_addr_v6,32)==0 && t1->c_port == t2->c_port && mmt_memcmp(t1->s_addr_v6,t2->s_addr_v6,32)==0 && t1->s_port == t2->s_port) return 2;
-            if (mmt_memcmp(t1->c_addr_v6,t2->s_addr_v6,32)==0 && t1->c_port == t2->s_port && mmt_memcmp(t1->s_addr_v6,t2->c_addr_v6,32)==0 && t1->s_port == t2->c_port) return 3; 
+            if (ftp_addr6_cmp(t1->c_addr_v6,t2->c_addr_v6)==0 && t1->c_port == t2->c_port && ftp_addr6_cmp(t1->s_addr_v6,t2->s_addr_v6)==0 && t1->s_port == t2->s_port) return 2;
+            if (ftp_addr6_cmp(t1->c_addr_v6,t2->s_addr_v6)==0 && t1->c_port == t2->s_port && ftp_addr6_cmp(t1->s_addr_v6,t2->c_addr_v6)==0 && t1->s_port == t2->c_port) return 3; 
 
             // Extended passive mode - 229 and 227 code
-            if (mmt_memcmp(t1->c_addr_v6,t2->c_addr_v6,32)==0 && t2->c_port == 0 && mmt_memcmp(t1->s_addr_v6,t2->s_addr_v6,32)==0 && t1->s_port == t2->s_port) return 4;
-            if (mmt_memcmp(t1->c_addr_v6,t2->s_addr_v6,32)==0 && t2->c_port == 0 && mmt_memcmp(t1->s_addr_v6,t2->c_addr_v6,32)==0 && t1->c_port == t2->s_port) return 5;
+            if (ftp_addr6_cmp(t1->c_addr_v6,t2->c_addr_v6)==0 && t2->c_port == 0 && ftp_addr6_cmp(t1->s_addr_v6,t2->s_addr_v6)==0 && t1->s_port == t2->s_port) return 4;
+            if (ftp_addr6_cmp(t1->c_addr_v6,t2->s_addr_v6)==0 && t2->c_port == 0 && ftp_addr6_cmp(t1->s_addr_v6,t2->c_addr_v6)==0 && t1->c_port == t2->s_port) return 5;
             // Active mode - PORT and EPRT command
-            if (mmt_memcmp(t1->c_addr_v6,t2->c_addr_v6,32)==0 && t1->c_port == t2->c_port && mmt_memcmp(t1->s_addr_v6,t2->s_addr_v6,32)==0 && t2->s_port == 0) return 6;
-            if (mmt_memcmp(t1->c_addr_v6,t2->s_addr_v6,32)==0 && mmt_memcmp(t1->s_addr_v6,t2->c_addr_v6,32)==0 && t1->s_port == t2->c_port && t2->s_port == 0) return 7;
+            if (ftp_addr6_cmp(t1->c_addr_v6,t2->c_addr_v6)==0 && t1->c_port == t2->c_port && ftp_addr6_cmp(t1->s_addr_v6,t2->s_addr_v6)==0 && t2->s_port == 0) return 6;
+            if (ftp_addr6_cmp(t1->c_addr_v6,t2->s_addr_v6)==0 && ftp_addr6_cmp(t1->s_addr_v6,t2->c_addr_v6)==0 && t1->s_port == t2->c_port && t2->s_port == 0) return 7;
         }
         if (t1->c_addr == t2->c_addr && t1->c_port == t2->c_port && t1->s_addr == t2->s_addr && t1->s_port == t2->s_port) return 2;
         if (t1->c_addr == t2->s_addr && t1->c_port == t2->s_port && t1->s_addr == t2->c_addr && t1->s_port == t2->c_port) return 3;

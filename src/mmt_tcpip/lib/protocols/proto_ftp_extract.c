@@ -75,6 +75,12 @@ int ftp_get_packet_type(const ipacket_t *ipacket, unsigned index) {
 
     ftp_tuple6_t *tuple6 = ftp_get_tuple6(ipacket);
 
+    /* Issue #718: no tuple without a TCP and an IP header (or when its
+     * allocation fails) — the packet type is then unknown. */
+    if (tuple6 == NULL) {
+        return MMT_FTP_PACKET_TYPE_UNKNOWN;
+    }
+
     if (tuple6->conn_type == MMT_FTP_CONTROL_CONNECTION) {
         if (tuple6->direction == MMT_FTP_PACKET_SERVER) {
             free_ftp_tuple6(tuple6);
