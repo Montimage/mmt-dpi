@@ -10,8 +10,8 @@ empty directory.
 **Verified package bootstrap** — Ubuntu 22.04/24.04/26.04, Debian 12/13,
 Rocky Linux / AlmaLinux 9 and 10, CentOS Stream 9 and 10, amd64 or arm64. It
 installs the release's native `.deb`/`.rpm` after checking its sha256 and its
-build-provenance attestation. It is published from the first release after
-v1.9.1; until then, use the source installer on these platforms too.
+build-provenance attestation. It is published with every release from
+v1.10.0 on.
 
 ```bash
 curl -fsSL https://github.com/Montimage/mmt-dpi/releases/latest/download/install.sh | sh
@@ -23,7 +23,7 @@ too. To check the bootstrap before running it, download `install.sh`, run
 `sh install.sh`.
 
 **Source installer** — every supported Linux. It installs the build
-dependencies, then clones the pinned release tag (`v1.9.1`), verifies it after
+dependencies, then clones the pinned release tag (`v1.10.0`), verifies it after
 checkout, builds it and installs it; moving branches are refused unless
 explicitly opted in:
 
