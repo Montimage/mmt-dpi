@@ -41,9 +41,6 @@ paths = [
     '''^tools/phase0/ci/pcaps/tcp_bbc-out-of-order\.pcap$''',
     '''^tools/phase0/ci/pcaps/tcp_ecn_sample\.pcap$''',
     '''^tools/phase0/ci/pcaps/tcp_tpncp_tcp\.pcap$''',
-    # Encapsulated PostScript diagrams: binary drawing data.
-    '''^docs/docs/.*\.ep$''',
-    '''^docs/images/.*\.ep$''',
 ]
 
 [[allowlists]]
