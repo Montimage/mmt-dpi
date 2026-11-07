@@ -40,7 +40,7 @@
 #                    --max-configs=1 with the build's own defines, -DNDEBUG
 #                    (rules/common.mk:41) and -D_MMT_BUILD_SDK
 #                    (rules/common.mk:276). About 10x faster cold; the lint job
-#                    runs it on pull requests (docs/ci-audit-2026-10.md §4).
+#                    runs it on pull requests (issue #653).
 # Macros a scanned header defines still apply in both modes.
 #
 # Pinned cppcheck version (issue #345): the ratchet baseline is only

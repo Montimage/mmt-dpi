@@ -61,6 +61,6 @@ Local check of the whole packaging
       bash tools/ci/build-debian-package.sh
   builds, lints, installs and runs the consumer against the installed files.
 
-Blockers before an upload to Debian: see debian/license-audit.md and the
-"Comment" of debian/copyright. The changelog still names a placeholder ITP
+Blockers before an upload to Debian: see issue #475 and the "Comment" of
+debian/copyright. The changelog still names a placeholder ITP
 bug (#ITP-BUG-NUMBER) and the distribution is UNRELEASED.

@@ -381,7 +381,7 @@ defined_once() {
 
 # The toolchain install line is identified by its package set on one apt-get
 # line, independent of order or indentation. Package sets installed for a
-# different job (the CubieBoard/ARM notes, the QoE demo, the Debian packaging
+# different job (the ARM cross-compilation notes, the QoE demo, the Debian packaging
 # checklist) are a different fact, not a copy of this one, and
 # executable package lists are exempt because they have to be runnable.
 defined_once "toolchain install line" \

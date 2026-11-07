@@ -16,7 +16,8 @@ Comment:
  f1dd240d). Statements are tagged [H] = verified from a header or notice in
  the tree, [G] = verified from git history of this repository, [W] =
  verified against the upstream project's published files, [A] = assumed.
- See license-audit.md for path:line evidence and the open questions.
+ The path:line evidence and the open questions are tracked in issue #475
+ (the audit file itself was retired from the tree in 1.10.0).
  .
  Files-Excluded rationale (all provisional, maintainer to confirm):
  the five docs/images/*dns*format.png files carry the visible watermark
@@ -29,7 +30,7 @@ Comment:
  Jekyll build output (bundles cayman CSS + normalize.css) and appear only in
  a working-tree snapshot.
  .
- Not excluded but still unresolved (see license-audit.md, sections 5 and 8):
+ Not excluded but still unresolved (see issue #475):
  pcaps of unknown provenance under tools/phase0/ci/pcaps/ and
  src/examples/google-fr.pcap; the Montimage logo docs/assets/montimage-logo.svg
  and docs/favicon.ico; the IP-range and hostname tables

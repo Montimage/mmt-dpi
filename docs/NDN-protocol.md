@@ -26,6 +26,4 @@ attributes. See the [packet format](./NDN-packet-format.md) and
 
 [Test case](./NDN-test-case.md)
 
-[ChronoChat application](./ChronoChat.md)
-
 [Documents](./NDN-documents.md)

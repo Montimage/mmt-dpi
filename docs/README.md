@@ -54,5 +54,4 @@ on GitHub).
 * [Documentation fix log](./doc-fix-log.md) — maintainer record of documentation errors found and fixed
 
 ## Additional References ##
-* [ChronoChat](./ChronoChat.md) — ChronoChat protocol notes
 * [Externally-updatable IP-range / port attribution](./External-Attribution.md) — third-party attributions

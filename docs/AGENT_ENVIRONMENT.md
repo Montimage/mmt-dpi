@@ -29,7 +29,7 @@ repository are deliberately not copies of it — executable package lists, which
 have to be runnable (`install.sh`, `tools/ci/build-package.sh`, the CI
 workflows), and package sets for a different job (the human prerequisites of
 `docs/Compilation-and-Installation-Instructions.md`, which build the SDK and
-the examples without the test tooling, the CubieBoard/ARM notes, the QoE demo,
+the examples without the test tooling, the ARM cross-compilation notes, the QoE demo,
 the Debian packaging checklist).
 
 ```bash

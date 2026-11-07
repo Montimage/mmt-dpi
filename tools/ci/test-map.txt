@@ -1,5 +1,5 @@
 # test-map.txt — which tests a pull request's changed paths select
-# (issue #656, docs/ci-audit-2026-10.md §5.4 and §6).
+# (issue #656).
 #
 # Read by tools/ci/classify-changes.sh (the `changes` jobs of c-cpp.yml and
 # phase0-baseline.yml) and checked by tools/ci/check-test-map.sh: every suite

@@ -153,7 +153,6 @@ cite	docs/USER_GUIDE.md	src/examples/packet_handler.c:111	close_extraction();	-
 cite	docs/USER_GUIDE.md	src/mmt_core/src/plugins_engine.c:50-53	const char *dir = secure_getenv(PLUGINS_DIR_ENV);	return PLUGINS_REPOSITORY_OPT;
 cite	docs/USER_GUIDE.md	src/mmt_core/src/plugins_engine.c:94-96	} else if( !load_plugin( path )) {	retval = 0;
 cite	docs/USER_GUIDE.md	sdk/Makefile:110-113	@ umask 022 && cp -R $(SDKXAM)/* $(MMT_EXAMS) \	@ echo "[MMT-]> Installed  "$(SDKXAM)" at "$(MMT_EXAMS)
-cite	docs/ci-audit-2026-10.md	src/mmt_tcpip/lib/llhttp_api.c:47-48	parser->type = type;	parser->settings = (void*) settings;
 cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/llhttp.h:14-16	#define LLHTTP_VERSION_MAJOR 9	#define LLHTTP_VERSION_PATCH 3
 cite	docs/llhttp-migration.md	rules/common.mk:492-494	MMT_GCC_MIN       := 11	MMT_LIBSTDCXX_MIN := $(MMT_GCC_MIN)
 cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/http_parser_integration.h:24	llhttp_t parser[2]; /** Array of two HTTP parsers. **/	-
