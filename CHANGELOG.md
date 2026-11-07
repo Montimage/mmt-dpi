@@ -1,7 +1,7 @@
 RELEASE NOTES
 ---
 
-Version 1.10.0 (unreleased)
+Version 1.10.0 (7 November 2026)
 ---
 
 ### ABI changes (every library's SONAME moves to `lib<name>.so.1`, #536)
