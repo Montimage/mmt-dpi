@@ -245,8 +245,8 @@ int main(void) {
 
     /* Guessing the payload must not widen GTP detection itself.
      *
-     * TODO: enable once the pre-existing false positive in mmt_check_gtp()
-     * is fixed. A 32-byte non-GTP UDP payload on port 2152 is currently
+     * Disabled until the pre-existing false positive in mmt_check_gtp()
+     * is fixed (carried over from upstream PR #40). A 32-byte non-GTP UDP payload on port 2152 is currently
      * classified as GTP, so this case fails on both HEAD and HEAD^ -- it
      * exercises mmt_check_gtp(), which the payload-guessing change did not
      * touch. Uncomment and set CASE_COUNT to 5 to re-enable it.
