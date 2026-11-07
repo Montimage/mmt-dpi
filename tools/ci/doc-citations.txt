@@ -42,10 +42,10 @@ cite	docs/DEPLOYMENT.md	src/mmt_core/src/plugins_engine.c:48-60	static const cha
 cite	docs/DEPLOYMENT.md	src/mmt_core/src/plugins_engine.c:50	const char *dir = secure_getenv(PLUGINS_DIR_ENV);	-
 cite	docs/DEPLOYMENT.md	src/mmt_core/private_include/plugins_engine.h:27	#define PLUGINS_DIR_ENV "MMT_DPI_PLUGINS_DIR"	-
 cite	docs/DEPLOYMENT.md	src/mmt_core/src/mmt_log.c:62	int initial = mmt_log_parse_level(getenv("MMT_DPI_LOG_LEVEL"));	-
-cite	docs/DEPLOYMENT.md	src/mmt_core/src/dpi_profiles.c:254	const char *profiles_path = getenv("MMT_DPI_PROFILES_FILE");	-
-cite	docs/DEPLOYMENT.md	src/mmt_core/src/dpi_profiles.c:265	const char *name = getenv("MMT_DPI_PROFILE");	-
-cite	docs/DEPLOYMENT.md	src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c:672	const char *path = getenv("MMT_DPI_PORT_MAP_FILE");	-
-cite	docs/DEPLOYMENT.md	src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c:570	const char *path = getenv("MMT_DPI_IP_RANGES_FILE");	-
+cite	docs/DEPLOYMENT.md	src/mmt_core/src/dpi_profiles.c:258	const char *profiles_path = secure_getenv("MMT_DPI_PROFILES_FILE");	-
+cite	docs/DEPLOYMENT.md	src/mmt_core/src/dpi_profiles.c:270	const char *name = getenv("MMT_DPI_PROFILE");	-
+cite	docs/DEPLOYMENT.md	src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c:676	const char *path = secure_getenv("MMT_DPI_PORT_MAP_FILE");	-
+cite	docs/DEPLOYMENT.md	src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c:574	const char *path = secure_getenv("MMT_DPI_IP_RANGES_FILE");	-
 cite	docs/DEPLOYMENT.md	src/mmt_core/src/hash_utils.c:253-255	const char * v = getenv("MMT_DETERMINISTIC_SEED");	return getauxval(AT_SECURE) == 0;
 cite	docs/DEPLOYMENT.md	src/mmt_security/tips_report.c:970	const char *d = secure_getenv("MMT_SEC_REACTION_DIR");	-
 cite	docs/DEPLOYMENT.md	rules/common.mk:8	MMT_EXAMS ?= $(MMT_BASE)/examples	-
@@ -82,7 +82,7 @@ cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/http.c:933	mmt_int_http_
 cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_ssl.c:705	mmt_int_ssl_add_connection_by(ipacket, proto, MMT_CLASSIFICATION_METHOD_HOSTNAME);	-
 cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_ssl.c:765	mmt_int_ssl_add_connection_by(ipacket, proto, MMT_CLASSIFICATION_METHOD_HOSTNAME);	-
 cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:669	ipacket->session->classification_method = MMT_CLASSIFICATION_METHOD_DPI;	-
-cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c:217	void mmt_change_internal_flow_protocol_by(ipacket_t * ipacket, uint16_t detected_protocol,	-
+cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c:221	void mmt_change_internal_flow_protocol_by(ipacket_t * ipacket, uint16_t detected_protocol,	-
 cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:909	static inline void attr_dispatch_leave(mmt_handler_t * mmt_handler) {	-
 cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_registry_attr.c:128	static void release_registered_attribute(mmt_handler_t *mmt_handler, attribute_internal_t *attr) {	-
 cite	docs/MMT-Attributes.md	src/mmt_core/src/packet_pipeline.c:922	static inline int next_attribute_handler(const struct attribute_internal_struct * attr, int h,	-

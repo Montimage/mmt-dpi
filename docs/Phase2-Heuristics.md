@@ -49,13 +49,13 @@ statuses were last re-verified against the sources for issue #559.
 - **Next step:** introduce a confidence/score concept. This is an ABI change to a
   public struct used across many plugins — large, must be staged. #75's
   payload-confirm predicate (`mmt_payload_confirms_proto`,
-  [`mmt_tcpip_plugin_internal.c:488`](https://github.com/Montimage/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c#L488)) is a side-effect-free building block
+  [`mmt_tcpip_plugin_internal.c:492`](https://github.com/Montimage/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c#L492)) is a side-effect-free building block
   toward this.
 
 ### H2 — Port-only attribution accepted without payload evidence — *mitigated by #75*
 - **Where:** `mmt_guess_protocol_by_port_number` in the fallbacks
   ([`proto_tcp.c:1230`](https://github.com/Montimage/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_tcp.c#L1230), [`proto_udp.c:165`](https://github.com/Montimage/mmt-dpi/blob/main/src/mmt_tcpip/lib/protocols/proto_udp.c#L165)); the demotion gate
-  [`mmt_tcpip_plugin_internal.c:565`](https://github.com/Montimage/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c#L565).
+  [`mmt_tcpip_plugin_internal.c:569`](https://github.com/Montimage/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c#L569).
 - **Why weak:** a port number alone is the weakest signal; services move ports
   and ports get squatted.
 - **Status:** addressed by the default-off `enable_port_classify_payload_confirm()`
@@ -73,7 +73,7 @@ statuses were last re-verified against the sources for issue #559.
 - **Why weak:** CDN/cloud allocations drift; compiled-in ranges go stale and
   misattribute.
 - **Status:** external `MMT_DPI_IP_RANGES_FILE` (extend/override, IPv4+IPv6,
-  read at [`mmt_tcpip_classif_utils.c:570`](https://github.com/Montimage/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c#L570)) plus the refreshable
+  read at [`mmt_tcpip_classif_utils.c:574`](https://github.com/Montimage/mmt-dpi/blob/main/src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c#L574)) plus the refreshable
   [`data/ip_ranges.cdn.txt`](https://github.com/Montimage/mmt-dpi/blob/main/data/ip_ranges.cdn.txt) and
   [`tools/refresh_cdn_ranges.sh`](https://github.com/Montimage/mmt-dpi/blob/main/tools/refresh_cdn_ranges.sh) (issue #75), which since issue #565 also regenerates
   the compiled-in cloud/CDN ranges from the providers' published feeds with

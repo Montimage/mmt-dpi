@@ -39,6 +39,10 @@
  * profile never changes the built-in defaults of later handlers.
  */
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE /* secure_getenv() */
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -251,11 +255,12 @@ void mmt_dpi_profile_apply_env(mmt_handler_t *mmt_handler) {
     }
     /* Custom names first so MMT_DPI_PROFILE can resolve them below. Unset
      * variables are no-ops — the default path stays byte-identical. */
-    const char *profiles_path = getenv("MMT_DPI_PROFILES_FILE");
+    const char *profiles_path = secure_getenv("MMT_DPI_PROFILES_FILE");
     if (profiles_path != NULL && profiles_path[0] != '\0') {
         /* The env var IS the feature — an operator-supplied config path,
          * the same deliberate contract as MMT_DPI_IP_RANGES_FILE /
-         * MMT_DPI_PORT_MAP_FILE (open alerts #26/#27 on main). */
+         * MMT_DPI_PORT_MAP_FILE (open alerts #26/#27 on main). Read with
+         * secure_getenv(), so a set-uid/set-gid process ignores it (#756). */
         int n = mmt_load_dpi_profiles_file(profiles_path); // codeql[cpp/path-injection]
         if (n > 0) {
             mmt_stderr_log("[mmt-dpi][profiles] loaded %d custom profile(s) from %s\n",

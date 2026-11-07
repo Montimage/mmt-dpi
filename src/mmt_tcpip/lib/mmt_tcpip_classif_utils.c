@@ -1,3 +1,7 @@
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE /* secure_getenv() */
+#endif
+
 #include "mmt_common_internal_include.h"
 #include "avltree.h"
 
@@ -567,13 +571,14 @@ int mmt_tcpip_load_ip_ranges_file(const char *path) {
 }
 
 void mmt_tcpip_load_external_ip_ranges(void) {
-    const char *path = getenv("MMT_DPI_IP_RANGES_FILE");
+    const char *path = secure_getenv("MMT_DPI_IP_RANGES_FILE");
     if (path == NULL || path[0] == '\0') {
         return; // default: byte-identical to the compiled-in baseline
     }
     /* The env var IS the feature: an operator-supplied config path, read
      * with the process's own privileges (CodeQL cpp/path-injection,
-     * dismissed with its reason in docs/DECISIONS.md, issue #749). */
+     * dismissed with its reason in docs/DECISIONS.md, issue #749), and with
+     * secure_getenv(), so a set-uid/set-gid process ignores it (#756). */
     int n = mmt_tcpip_load_ip_ranges_file(path);
     if (n > 0) {
         mmt_stderr_log( "[mmt-dpi][M9] loaded %d external IP-range rule(s) from %s\n",

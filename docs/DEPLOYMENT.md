@@ -96,10 +96,10 @@ in [Agent Environment Notes §4 `MMT_BASE` Install-Prefix Behavior](./AGENT_ENVI
 |----------|--------|---------|
 | `MMT_DPI_PLUGINS_DIR` | Absolute directory to load the plugins from instead of the compiled-in `$(MMT_BASE)/plugins`; a relative or unreadable value makes `init_extraction()` fail. Read with `secure_getenv()`, so a set-uid/set-gid process ignores it | `src/mmt_core/src/plugins_engine.c:50` (name: `src/mmt_core/private_include/plugins_engine.h:27`) |
 | `MMT_DPI_LOG_LEVEL` | Threshold of the stderr diagnostics logger (default `off`); levels and the `SHOWLOG` build in [Agent Environment Notes §2](./AGENT_ENVIRONMENT.md#useful-build-flags) | `src/mmt_core/src/mmt_log.c:62` |
-| `MMT_DPI_PROFILES_FILE` | File of custom DPI profiles, loaded before `MMT_DPI_PROFILE` is resolved — see [DPI Profiles](./DPI-Profiles.md) | `src/mmt_core/src/dpi_profiles.c:254` |
-| `MMT_DPI_PROFILE` | Name of the DPI profile each new handler applies; an unknown name keeps the built-in defaults — see [DPI Profiles](./DPI-Profiles.md) | `src/mmt_core/src/dpi_profiles.c:265` |
-| `MMT_DPI_PORT_MAP_FILE` | File of external port hints — see [External Attribution](./External-Attribution.md) | `src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c:672` |
-| `MMT_DPI_IP_RANGES_FILE` | File of external IP-range attribution rules — see [External Attribution](./External-Attribution.md) | `src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c:570` |
+| `MMT_DPI_PROFILES_FILE` | File of custom DPI profiles, loaded before `MMT_DPI_PROFILE` is resolved — see [DPI Profiles](./DPI-Profiles.md). Read with `secure_getenv()`, so a set-uid/set-gid process ignores it | `src/mmt_core/src/dpi_profiles.c:258` |
+| `MMT_DPI_PROFILE` | Name of the DPI profile each new handler applies; an unknown name keeps the built-in defaults — see [DPI Profiles](./DPI-Profiles.md) | `src/mmt_core/src/dpi_profiles.c:270` |
+| `MMT_DPI_PORT_MAP_FILE` | File of external port hints — see [External Attribution](./External-Attribution.md). Read with `secure_getenv()`, so a set-uid/set-gid process ignores it | `src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c:676` |
+| `MMT_DPI_IP_RANGES_FILE` | File of external IP-range attribution rules — see [External Attribution](./External-Attribution.md). Read with `secure_getenv()`, so a set-uid/set-gid process ignores it | `src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c:574` |
 | `MMT_DETERMINISTIC_SEED` | Test and reproducibility knob: any non-empty value but `0` makes the hash-table seeds the fixed legacy sequence instead of a per-process random one. ⚠ It gives up the seeds' resistance to hash flooding — never set it in production. A set-uid/set-gid process (`AT_SECURE`) ignores it | `src/mmt_core/src/hash_utils.c:253-255` |
 | `MMT_SEC_REACTION_DIR` | `ENABLESEC=1` security engine only: absolute folder for the reaction files, instead of the compiled-in `$(MMT_BASE)/probe/conf`; read with `secure_getenv()` | `src/mmt_security/tips_report.c:970` |
 

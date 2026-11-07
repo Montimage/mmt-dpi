@@ -80,7 +80,7 @@ The values, in ascending order of confidence
 | `MMT_CLASSIFICATION_METHOD_DPI` (5) | `dpi` | the protocol's own classifier matched the payload (`MMT_REAL_PROTOCOL`), or a dissector above the transport layer claimed the layer itself (DICOM, S1AP, QUIC, HTTP/2 — `src/mmt_core/src/packet_pipeline.c:669`); such a claim also covers layers that are not an application (SCTP chunks, tunnel headers such as GTP), so a tunnel or SCTP session reads `dpi` |
 
 The method follows the protocol at the top of the session's application stack
-(`src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c:217`): when a classifier puts a
+(`src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c:221`): when a classifier puts a
 new protocol there, its method replaces the previous one — HTTP matched by DPI
 and then attributed to a service from its `Host` header reads `hostname` — and
 re-asserting the protocol already on top only raises the method; a protocol
