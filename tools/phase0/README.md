@@ -122,8 +122,8 @@ What each gate asserts:
   Architecture-independent; protects the Phase 2 verification vehicle. No
   longer a job of this workflow (issue #659): it is a step of the
   `sanitizer-tests (BUILD=asan, asan)` leg of `c-cpp.yml`, and the old
-  `ASan/UBSan profile compiles` context is a retired stub there
-  (`.github/retired-checks.txt`).
+  `ASan/UBSan profile compiles` context is retired: branch protection no
+  longer requires it and no job reports it.
 - **`classification-gate`** — runs `tools/phase0/ci/check_classification.sh`,
   which builds+installs the library, classifies a small **self-contained** pcap
   subset (vendored under `ci/pcaps/`, ~0.6 MB, no dependency on the mmt-test

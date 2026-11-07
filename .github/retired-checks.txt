@@ -17,12 +17,3 @@
 # its job into a stub. A maintainer then removes it from protection (apply
 # required-checks.txt, CONTRIBUTING.md "Required checks and review"); after
 # that, delete the stub and its line here in a follow-up.
-
-# c-cpp.yml `enablesec`: the ENABLESEC=1 compile is made by the shared
-# enablesec SDK build of tests/run_all_tests.sh (rule_engine,
-# installed_consumer) and by codeql.
-enablesec
-# c-cpp.yml `asan-build` (formerly phase0-baseline.yml): the BUILD=asan
-# compile and `__asan_init` check are a step of
-# sanitizer-tests (BUILD=asan, asan).
-ASan/UBSan profile compiles

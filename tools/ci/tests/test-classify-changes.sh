@@ -41,7 +41,7 @@
 #         has to be classified;
 #     plus the issue #528 jobs (native ARM and x86 -funsigned-char suite
 #     legs, both required); the issue #659 folds (enablesec and the phase0
-#     asan-build are `if: false` stubs of retired contexts, the BUILD=asan
+#     asan-build are gone, their stubs deleted once unrequired, the BUILD=asan
 #     check is a sanitizer asan-leg step, site-onboarding is verify-helpers'
 #     last step, resource-budgets is arm64 only); and the issue #658
 #     queue-only legs (unit-tests-unsigned-char, the -fsigned-char leg,
@@ -430,7 +430,7 @@ WORKFLOWS = {
         "matrix": ["unit-tests", "sanitizer-tests", "resource-budgets"],
         "docs": ["build", "verify-helpers", "pre-commit", "doc-validators",
                  "version-agreement", "secret-scan"],
-        "retired": ["enablesec", "asan-build"],
+        "retired": [],
         "other": ["changes", "fuzz-alert"],
     },
     "phase0-baseline.yml": {
@@ -661,10 +661,10 @@ with open(os.path.join(root, ".github", "retired-checks.txt"),
           encoding="utf-8") as fh:
     retired_ctx = {ln.strip() for ln in fh
                    if ln.strip() and not ln.lstrip().startswith("#")}
-check("retired-checks.txt lists exactly the two stubs' contexts",
-      retired_ctx == {"enablesec", "ASan/UBSan profile compiles"}
-      and (cc.get("asan-build") or {}).get("name")
-      == "ASan/UBSan profile compiles")
+check("c-cpp.yml: the retired enablesec and asan-build stubs are gone",
+      "enablesec" not in cc and "asan-build" not in cc)
+check("retired-checks.txt no longer lists the deleted stubs' contexts",
+      not retired_ctx & {"enablesec", "ASan/UBSan profile compiles"})
 
 # Issue #659: the BUILD=asan profile check runs in the sanitizer asan leg.
 asan_steps = [st for st in san.get("steps") or []
