@@ -8,7 +8,7 @@
 # each; the unversioned symlinks are skipped).
 #
 # Modes:
-#   build (default)  `git worktree add --detach` the baseline ref (v1.9.1)
+#   build (default)  `git worktree add --detach` the baseline ref (v1.10.0)
 #                    and the head ref (HEAD) into a scratch directory and
 #                    build them one after the other in the RELEASE profile
 #                    plus DWARF: CC/CXX are overridden on the make command
@@ -47,7 +47,7 @@
 # the unrecorded INCOMPATIBLE verdicts; --fail-on change counts RECORDED too.
 #
 # Options:
-#   --baseline-ref REF   build mode baseline (default v1.9.1)
+#   --baseline-ref REF   build mode baseline (default v1.10.0)
 #   --head-ref REF       build mode head (default HEAD)
 #   --keep-libs DIR      build mode: copy each side's libraries and headers
 #                        to DIR/{baseline,head}/{lib,include} before cleanup
@@ -90,7 +90,7 @@ SUMMARY_MAX="${ABI_SUMMARY_MAX_BYTES:-61440}"
 usage() { sed -n '/^# Usage:/,/^$/s/^# \{0,1\}//p' "${BASH_SOURCE[0]}" >&2; exit 2; }
 die() { echo "✗ abi-diff: $*" >&2; exit 2; }
 
-baseline_ref=v1.9.1
+baseline_ref=v1.10.0
 head_ref=HEAD
 baseline_dir=""
 head_dir=""

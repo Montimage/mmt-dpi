@@ -299,6 +299,11 @@ run STUB_DEB_TREE="${EMPTY_TREE}" -- --release-deb "${WORK}/fixture.deb" --head-
 expect_rc 2 "a package without dpi/lib/libmmt_core.so.*"
 
 echo "=== abi-diff self-test: build mode (fixture repository) ==="
+# The fixture tags the script's own default baseline, so the test follows the
+# baseline as it moves with every release (version-agreement pins it to the
+# installer's release tag).
+BASE_REF="$(sed -n 's/^baseline_ref=//p' "${SCRIPT}")"
+[ -n "${BASE_REF}" ] || { echo "no baseline_ref= in ${SCRIPT}" >&2; exit 2; }
 FX="${WORK}/repo"
 g() { git -C "${FX}" -c user.name=fixture -c user.email=fixture@example.invalid \
         -c commit.gpgsign=false -c tag.gpgsign=false "$@"; }
@@ -306,15 +311,15 @@ mkdir -p "${FX}/sdk"
 git init -q "${FX}" || exit 2
 echo 'all:' > "${FX}/sdk/Makefile"
 g add -A && g commit -q -m released || exit 2
-g tag v1.9.1 || exit 2
+g tag "${BASE_REF}" || exit 2
 echo '# later' >> "${FX}/sdk/Makefile"
 g commit -q -am later || exit 2
 TMP_BUILD="${WORK}/tmp-build"; mkdir -p "${TMP_BUILD}"
 wt_count() { git -C "${FX}" worktree list --porcelain | grep -c '^worktree '; }
 
 run ROOT_DIR="${FX}" TMPDIR="${TMP_BUILD}" -- --keep-libs "${WORK}/kept" --summary "${WORK}/b.md"
-expect_rc 0 "build mode v1.9.1 -> HEAD"
-expect_out "ABI diff: v1.9.1 → HEAD (" "the title names both refs"
+expect_rc 0 "build mode ${BASE_REF} -> HEAD"
+expect_out "ABI diff: ${BASE_REF} → HEAD (" "the title names both refs"
 n="$(grep -c "CC=gcc -g CXX=g++ -std=c++11 -g" "${STUB_LOG}")"
 [ "$n" -eq 2 ] && ok "both refs build with the release-profile compilers plus -g" \
     || bad "release-profile CC/CXX on $n of 2 builds"
