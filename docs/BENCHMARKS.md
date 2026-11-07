@@ -52,6 +52,22 @@ The baseline's rate varied about 12% between rounds, the candidate's under
 [`throughput_cand_2.txt`](benchmarks/1.10.0-vs-af338b16/throughput_cand_2.txt)
 (the `smallFlows.pcap` and fetch-all rows are there too).
 
+All four files read `commit: 54bdae50` in their header, the baseline's
+included. That field names the tree `capture_perf.sh` ran from, not the SDK
+it measured: the script stamps `git rev-parse --short HEAD` of its own
+checkout (`tools/phase0/capture_perf.sh:103-106`), and both trees were
+driven from the candidate checkout. What a file measures is the SDK
+installed under its prefix, which the driver is compiled and run against
+(`tools/phase0/capture_perf.sh:86-88`). Without `MMT_SDK_PREBUILT=1` the
+script builds and installs its own checkout, so the baseline rounds can
+only have reused the baseline's install
+(`tools/phase0/capture_perf.sh:72-74`). Tell the
+files apart by name (`_up_` is the baseline, `_cand_` the candidate) or by
+the `attrs` column of the `all` rows, the number of attributes the
+installed SDK registers for fetch-all
+(`tools/phase0/phase0_throughput.c:355-361`): 7,429 for the baseline,
+7,530 for 1.10.0. The raw files are kept as captured.
+
 The committed same-host reference that the CI gates use is a separate file,
 `tools/phase0/baseline/perf/throughput.txt`; this run does not replace it.
 

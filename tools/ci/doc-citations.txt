@@ -26,6 +26,10 @@ delegate	docs/Phase2-Heuristics.md	scripts/validate-doc-drift.sh
 cite	docs/ARCHITECTURE.md	sdk/Makefile:249	MMT_LAYOUT_PLUGINS  := $(LIBTCPIP) $(LIBMOBILE) $(LIBBAPP) $(LIBDICOM)	-
 cite	docs/ARCHITECTURE.md	rules/common.mk:216-223	LIBCORE     := libmmt_core	LIBBAPP     := libmmt_business_app
 cite	docs/ARCHITECTURE.md	rules/common.mk:225-228	ifdef ENABLESEC	endif
+cite	docs/BENCHMARKS.md	tools/phase0/capture_perf.sh:103-106	printf '# host: %s | cpu: %s | gcc: %s | os: %s | commit: %s\n'	rev-parse --short HEAD
+cite	docs/BENCHMARKS.md	tools/phase0/capture_perf.sh:86-88	gcc -O2 -Wall -o "${BIN}" "${SCRIPT_DIR}/phase0_throughput.c"	export LD_LIBRARY_PATH="${PREFIX}/dpi/lib
+cite	docs/BENCHMARKS.md	tools/phase0/capture_perf.sh:72-74	if [ "${MMT_SDK_PREBUILT:-0}" = "1" ]; then	no installed SDK under
+cite	docs/BENCHMARKS.md	tools/phase0/phase0_throughput.c:355-361	if (g_attr_n > 0) {	fprintf(stderr, "mode
 cite	docs/Compilation-and-Installation-Instructions.md	rules/common.mk:76-84	# libxml2 (only the ENABLESEC security/fuzz engines need it): replace the	endif
 cite	docs/Compiling-mmt-sdk-for-ARM-architecture-by-cross-compiler.md	rules/arch-linux.mk:3-4	CC  := gcc	AR  := ar rcsD
 cite	docs/Compiling-mmt-sdk-for-ARM-architecture-by-cross-compiler.md	sdk/Makefile:1	ARCH         ?= linux	-
