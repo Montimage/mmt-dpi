@@ -287,11 +287,20 @@
 #                               Ethernet frames (exactly-sized heap copies)
 #                               through mmt_init_handler + packet_process.
 #
+# Upstream PR #40 adds the "gtp" fixture: a GTP-U G-PDU has no next-protocol
+# field, so its inner payload type is guessed from the bytes after the GTP
+# header — an IPv4 PDU classifies as IP, an IPv6 PDU as IPv6 and an
+# Ethernet-framed non-IP PDU (TS 29.281) as Ethernet.
+#
+#   test_gtp_payload_guess_api.c — packet/API path: crafted
+#                               Ethernet/IPv4/UDP/GTPv1-U frames through
+#                               mmt_init_handler + packet_process.
+#
 # Usage: tests/parser_boundaries/run_tests.sh [fixture ...]
 #   no arguments runs every fixture; "udp"/"dtls"/"dns-soa"/"dns-txt"/"dns-names"/"nfs"/"int"/
 #   "tcp-options"/"radius-dns"/"quic"/"gre"/"classifier-audit"/"tcp-events"/"s1ap-integer"/
 #   "classify"/"registration"/"ftp-sessions"/"classification-method"/"chain"/
-#   "tls-hello"/"encap" select a fixture family.
+#   "tls-hello"/"encap"/"gtp" select a fixture family.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -299,7 +308,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # --- fixture selection -----------------------------------------------------
 FIXTURES=( "$@" )
-[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain tls-hello encap)
+[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain tls-hello encap gtp)
 UNIT_TESTS=()
 API_TESTS=()
 MOBILE_TESTS=()
@@ -373,8 +382,11 @@ for f in "${FIXTURES[@]}"; do
         encap)
             API_TESTS+=(encap_walk_api)
             ;;
+        gtp)
+            API_TESTS+=(gtp_payload_guess_api)
+            ;;
         *)
-            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain tls-hello encap)" >&2
+            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain tls-hello encap gtp)" >&2
             exit 2
             ;;
     esac
