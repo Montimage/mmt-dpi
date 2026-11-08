@@ -109,7 +109,7 @@ cite	docs/MMT-Packet.md	src/mmt_core/public_include/data_defs.h:141-194	typedef 
 cite	docs/MMT-Packet.md	src/mmt_core/public_include/data_defs.h:197-224	Issue #535 (F-CLEAN-001): the public packet layout is pinned	#endif
 cite	docs/MMT-Packet.md	src/mmt_core/public_include/data_defs.h:373	#define MMT_NO_PROTO_ID    UINT32_MAX /**< get_protocol_id_at_index(): no protocol at that index */	-
 cite	docs/MMT-Packet.md	src/mmt_core/public_include/data_defs.h:374	#define MMT_NO_PROTO_INDEX UINT_MAX   /**< get_protocol_index_by_id/_by_name(): protocol not in the	-
-cite	docs/MMT-Protocol.md	src/mmt_core/private_include/packet_processing.h:624	struct protocol_struct {	-
+cite	docs/MMT-Protocol.md	src/mmt_core/private_include/packet_processing.h:631	struct protocol_struct {	-
 cite	docs/MMT-Session.md	src/mmt_core/private_include/packet_processing.h:192	struct mmt_session_struct {	-
 cite	docs/MMT-Session.md	src/mmt_core/public_include/data_defs.h:63	typedef struct mmt_session_struct               mmt_session_t; ///< Opaque session (flow)	-
 cite	docs/Memory-Management.md	src/mmt_core/src/memory.c:9-18	// B5 (remote-DoS hardening): allocation failure used to call abort(), which	// block is left untouched (standard realloc semantics).
@@ -122,13 +122,13 @@ cite	docs/Memory-Management.md	src/mmt_core/src/memory.c:73-79	if( unlikely( x1 
 cite	docs/Memory-Management.md	src/mmt_tcpip/lib/http_parser_integration.h:90-107	inline static stream_parser_t * init_http_parser() {	}
 cite	docs/Memory-Management.md	src/mmt_core/public_include/plugin_defs.h:58	MMTAPI bool MMTCALL mmt_packet_scratch_adopt(	-
 cite	docs/Memory-Management.md	src/mmt_core/public_include/mmt_core.h:1292-1293	/** Carve `size` aligned bytes from the arena (NULL on OOM). */	MMTAPI void*        MMTCALL mmt_arena_alloc  ( mmt_arena_t *arena, size_t size );
-cite	docs/Protocol-Modeling.md	src/mmt_core/private_include/packet_processing.h:624	struct protocol_struct {	-
-cite	docs/Protocol-Modeling.md	src/mmt_core/private_include/packet_processing.h:630	uint32_t proto_id; /**< unique identifier of the protocol. */	-
-cite	docs/Protocol-Modeling.md	src/mmt_core/private_include/packet_processing.h:631	const char * protocol_name; /**< The name of the protocol. Must be unique. */	-
-cite	docs/Protocol-Modeling.md	src/mmt_core/private_include/packet_processing.h:627	int has_session; /**< indicates if the protocol has a session context or not. */	-
-cite	docs/Protocol-Modeling.md	src/mmt_core/private_include/packet_processing.h:645	mmt_classify_next_t classify_next; /**< For internal use. MUST not be changed. */	-
-cite	docs/Protocol-Modeling.md	src/mmt_core/private_include/packet_processing.h:646	mmt_analyser_t data_analyser; /**< For internal use. Must not be chagned.*/	-
-cite	docs/Protocol-Modeling.md	src/mmt_core/private_include/packet_processing.h:648-649	void * attributes_map; /**< For internal use. MUST not be changed. */	void * attributes_names_map; /**< For internal use. MUST not be changed. */
+cite	docs/Protocol-Modeling.md	src/mmt_core/private_include/packet_processing.h:631	struct protocol_struct {	-
+cite	docs/Protocol-Modeling.md	src/mmt_core/private_include/packet_processing.h:637	uint32_t proto_id; /**< unique identifier of the protocol. */	-
+cite	docs/Protocol-Modeling.md	src/mmt_core/private_include/packet_processing.h:638	const char * protocol_name; /**< The name of the protocol. Must be unique. */	-
+cite	docs/Protocol-Modeling.md	src/mmt_core/private_include/packet_processing.h:634	int has_session; /**< indicates if the protocol has a session context or not. */	-
+cite	docs/Protocol-Modeling.md	src/mmt_core/private_include/packet_processing.h:652	mmt_classify_next_t classify_next; /**< For internal use. MUST not be changed. */	-
+cite	docs/Protocol-Modeling.md	src/mmt_core/private_include/packet_processing.h:653	mmt_analyser_t data_analyser; /**< For internal use. Must not be chagned.*/	-
+cite	docs/Protocol-Modeling.md	src/mmt_core/private_include/packet_processing.h:655-656	void * attributes_map; /**< For internal use. MUST not be changed. */	void * attributes_names_map; /**< For internal use. MUST not be changed. */
 cite	docs/Protocol-Statistics.md	src/mmt_core/public_include/data_defs.h:279-291	enum proto_stats_attr {	};
 cite	docs/Protocol-Statistics.md	src/mmt_core/public_include/mmt_core.h:1101	MMTAPI proto_statistics_t* MMTCALL get_protocol_stats(	-
 cite	docs/Protocol-Statistics.md	src/mmt_core/public_include/mmt_core.h:1121	MMTAPI void MMTCALL get_protocol_stats_path(	-

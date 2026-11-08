@@ -532,8 +532,9 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
         session->data_byte_volume += packet->payload_packet_len;
         session->data_packet_count_direction[session->last_packet_direction]++;
         session->data_byte_volume_direction[session->last_packet_direction] += packet->payload_packet_len;
-        mmt_session_t * p_session = session->parent_session;
-        while (p_session)
+        /* Montimage/mmt-dpi#17: the sessions that carried this packet. */
+        mmt_session_t * p_session = session->packet_parent;
+        for (unsigned depth = 0; p_session != NULL && depth < PROTO_PATH_SIZE; depth++)
         {
             /* Issue #255: children counters live in the lazily-allocated
              * tunnel-parent extension (NULL under OOM -> update skipped). */
@@ -545,7 +546,7 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
                 cs->sub_data_packet_count_direction[direction]++;
                 cs->sub_data_byte_volume_direction[direction] += packet->payload_packet_len;
             }
-            p_session = p_session->parent_session;
+            p_session = p_session->packet_parent;
         }
         if ((ipacket->internal_packet->iph == NULL) || (ntohs(ipacket->internal_packet->iph->tot_len) + ipacket->internal_packet->payload_packet_len + 14 != 60)) {
             session->s_last_data_packet_time[session->last_packet_direction].tv_sec = ipacket->p_hdr->ts.tv_sec;
