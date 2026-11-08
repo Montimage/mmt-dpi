@@ -138,7 +138,8 @@ tag to equal `v$(VERSION)` and, given the tag as an argument as the
 (issue #489 — fail-closed on a missing tag or base ref or a shallow clone)
 before the publish job runs. That job alone creates the GitHub Release
 (`tools/ci/publish-release.sh`: draft with every asset, then published;
-refused when a Release for the tag already exists), and the
+refused when a Release a person made exists for the tag; a re-run after
+the workflow's own publish exits 0, issue #595), and the
 `release-alert` job opens an issue when a tag run fails
 (`tools/ci/release-alert.sh`). Run without a tag
 it checks that `install.sh`'s `RELEASE_TAG_SHA` is the peeled commit of its

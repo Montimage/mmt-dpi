@@ -6,7 +6,8 @@
 # Runs both REAL scripts against a stub `gh` on PATH that records every call
 # and answers the release listing as the script's --jq filter would print
 # it: STUB_RELEASES ("<id> <draft> <author>" lines) before `release create`,
-# STUB_DRAFT_ID (the new draft's id, default 99) after it. Needs no network.
+# STUB_DRAFT_ID (the new draft's id, default 99) after it, and STUB_ASSET_NAMES
+# (one name per line) for a Release's .../assets listing. Needs no network.
 #
 # Scenario -> expected exit:
 #   no Release for the tag            -> 0: create --draft, then publish by id
@@ -14,6 +15,12 @@
 #   a published Release exists        -> 1: nothing created (manual upload)
 #   a draft made by a person exists   -> 1: nothing created
 #   a draft left by github-actions    -> 0: deleted, then recreated
+#   published by github-actions,      -> 0: "already published", nothing
+#     every asset present (a re-run)        created, deleted or patched
+#   published by github-actions,      -> 1: names the missing asset
+#     an asset missing
+#   a person's Release + a leftover   -> 1: nothing deleted (decides first)
+#     github-actions draft
 #   empty assets dir / non-v* tag     -> 2
 #   alert: no open issue / open issue -> 0: issue created / commented
 #
@@ -41,7 +48,9 @@ cat > "${WORK}/bin/gh" <<'STUB'
 echo "gh $*" >> "${STUB_LOG}"
 case "$1 $2" in
     "api --paginate")
-        if grep -q "release create" "${STUB_LOG}"; then
+        if [[ "$3" == */assets ]]; then
+            printf '%s' "${STUB_ASSET_NAMES:-}"
+        elif grep -q "release create" "${STUB_LOG}"; then
             printf '%s' "${STUB_DRAFT_ID-99}"
         else
             printf '%s' "${STUB_RELEASES:-}"
@@ -93,6 +102,21 @@ export STUB_RELEASES="44 true github-actions[bot]"
 run 0 "workflow's own leftover draft: replaced" "${PUBLISH}" v1.2.3 "${WORK}/assets"
 logged "gh api -X DELETE repos/owner/repo/releases/44"; check "  deletes the leftover draft" $?
 logged "gh release create v1.2.3"; check "  recreates the Release" $?
+
+export STUB_RELEASES="45 false github-actions[bot]"
+STUB_ASSET_NAMES=$'SHA256SUMS\nmmt-dpi_1.2.3_amd64.deb\nextra.sbom.json' \
+    run 0 "re-run after a successful publish: already published" "${PUBLISH}" v1.2.3 "${WORK}/assets"
+grep -q "already published" "${WORK}/out"; check "  says it is already published" $?
+! logged "release create" && ! logged "-X DELETE" && ! logged "X PATCH"
+check "  creates, deletes and patches nothing" $?
+STUB_ASSET_NAMES="SHA256SUMS" \
+    run 1 "workflow's published Release lacks an asset: refuses" "${PUBLISH}" v1.2.3 "${WORK}/assets"
+grep -q "mmt-dpi_1.2.3_amd64.deb" "${WORK}/out"; check "  names the missing asset" $?
+
+export STUB_RELEASES=$'46 true github-actions[bot]\n47 false someone'
+run 1 "person's Release next to a leftover workflow draft: refuses" "${PUBLISH}" v1.2.3 "${WORK}/assets"
+! logged "-X DELETE"; check "  deletes nothing before refusing" $?
+! logged "release create"; check "  creates nothing" $?
 unset STUB_RELEASES
 
 run 2 "empty assets dir: refuses" "${PUBLISH}" v1.2.3 "${WORK}/empty"
