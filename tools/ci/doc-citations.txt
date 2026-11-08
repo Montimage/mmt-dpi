@@ -34,7 +34,7 @@ cite	docs/Compilation-and-Installation-Instructions.md	rules/common.mk:76-84	# l
 cite	docs/Compiling-mmt-sdk-for-ARM-architecture-by-cross-compiler.md	rules/arch-linux.mk:3-4	CC  := gcc	AR  := ar rcsD
 cite	docs/Compiling-mmt-sdk-for-ARM-architecture-by-cross-compiler.md	sdk/Makefile:1	ARCH         ?= linux	-
 cite	docs/Compiling-mmt-sdk-for-ARM-architecture-by-cross-compiler.md	sdk/Makefile:17	include $(RULESDIR)/arch-$(ARCH).mk	-
-cite	docs/DEB_PACKAGE_CHECKLIST.md	rules/common.mk:1	VERSION  := 1.10.0	-
+cite	docs/DEB_PACKAGE_CHECKLIST.md	rules/common.mk:1	VERSION  := 	-
 cite	docs/DEPLOYMENT.md	sdk/Makefile:139	&& echo "$(MMT_LIB)" > $(LDCONF_FILE) && chmod 0644 $(LDCONF_FILE) \	-
 cite	docs/DEPLOYMENT.md	sdk/Makefile:374	umask 022 && echo "$(MMT_LIB)" > $(BUILD_DIR)/etc/ld.so.conf.d/mmt-dpi.conf \	-
 cite	docs/DEPLOYMENT.md	rules/common.mk:7	MMT_PLUGINS ?= $(MMT_BASE)/plugins	-
