@@ -247,7 +247,9 @@ jobs:
           retention-days: 7
 
   precision-gate:
-    name: Labelled-pcap precision/recall holds or improves (M9, issue #74)
+    # Labelled-pcap precision/recall holds or improves (M9, issue #74). No
+    # `name:`: the unquoted one was cut at `#74` (a YAML comment), so the
+    # context is the job id (issue #601).
     needs: changes
     if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.gates != 'false' }}
     runs-on: ubuntu-24.04
@@ -276,3 +278,25 @@ jobs:
           path: tools/phase0/ci/baseline/precision.actual.txt
           if-no-files-found: ignore
           retention-days: 7
+
+  precision-gate-context:
+    # Issue #601: precision-gate reported `Labelled-pcap precision/recall
+    # holds or improves (M9, issue` — its unquoted name was cut at the `#74`
+    # YAML comment. It now reports its job id; branch protection may still
+    # require the old context, so this aggregate keeps reporting it with the
+    # gate's own verdict (a skipped gate — docs or tooling tier — reported
+    # success, so it still does). Both contexts are in
+    # .github/required-checks.txt; once protection requires only
+    # `precision-gate`, delete this job and its line.
+    name: Labelled-pcap precision/recall holds or improves (M9, issue
+    needs: precision-gate
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: precision-gate must succeed or be skipped
+        env:
+          RESULT: ${{ needs.precision-gate.result }}
+        run: |
+          echo "precision-gate: ${RESULT}"
+          [ "${RESULT}" = success ] || [ "${RESULT}" = skipped ]

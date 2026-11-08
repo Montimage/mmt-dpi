@@ -110,9 +110,12 @@ jobs:
           # then fails) instead of reading as "no packaging change", and
           # --no-renames lists a file moved out of a packaging path under its
           # old name too, as the former workflow-level paths filter did.
-          files=$(git diff --no-renames --name-only HEAD^1 HEAD)
+          # -z with core.quotePath=false lists every path verbatim: a quoted
+          # name (non-ASCII, control, quote or backslash bytes) used to match
+          # no glob and skip the package builds (issue #601).
+          git -c core.quotePath=false diff --no-renames --name-only -z HEAD^1 HEAD > "$RUNNER_TEMP/changed.z"
           packaging=false
-          while IFS= read -r f; do
+          while IFS= read -r -d '' f; do
             case "$f" in
               sdk/*|src/*|rules/*|tools/ci/tests/*|\
               tools/ci/build-package.sh|tools/ci/install-build-deps.sh|\
@@ -131,7 +134,7 @@ jobs:
                 echo "packaging path changed: $f"
                 packaging=true ;;
             esac
-          done <<< "$files"
+          done < "$RUNNER_TEMP/changed.z"
           echo "packaging=${packaging}" >> "$GITHUB_OUTPUT"
 
   build:

@@ -431,7 +431,7 @@ WORKFLOWS = {
         "docs": ["build", "verify-helpers", "pre-commit", "doc-validators",
                  "version-agreement", "secret-scan"],
         "retired": [],
-        "other": ["changes", "fuzz-alert"],
+        "other": ["changes", "fuzz-alert", "unit-tests-signed-char-context"],
     },
     "phase0-baseline.yml": {
         "single": ["classification-gate", "leak-gate", "precision-gate",
@@ -439,7 +439,8 @@ WORKFLOWS = {
         "matrix": [],
         "docs": [],
         "retired": [],
-        "other": ["changes", "harness", "harness-gate"],
+        "other": ["changes", "harness", "harness-gate",
+                  "precision-gate-context"],
     },
 }
 
@@ -665,6 +666,35 @@ check("c-cpp.yml: the retired enablesec and asan-build stubs are gone",
       "enablesec" not in cc and "asan-build" not in cc)
 check("retired-checks.txt no longer lists the deleted stubs' contexts",
       not retired_ctx & {"enablesec", "ASan/UBSan profile compiles"})
+# Issue #601: the two fragile required contexts were renamed; their old
+# names stay as stubs until protection swaps them.
+check("c-cpp.yml: the -fsigned-char leg reports `unit-tests (-fsigned-char)`",
+      ut.get("name") == "unit-tests${{ matrix.context_suffix }}"
+      and [leg.get("context_suffix") for leg in
+           ((ut.get("strategy") or {}).get("matrix") or {}).get("include") or []]
+      == ["", " (-fsigned-char)"])
+check("phase0-baseline.yml: precision-gate reports its job id",
+      "name" not in (load("phase0-baseline.yml").get("precision-gate") or {}))
+with open(os.path.join(root, ".github", "required-checks.txt"),
+          encoding="utf-8") as fh:
+    required_ctx = {ln.strip() for ln in fh
+                    if ln.strip() and not ln.lstrip().startswith("#")}
+p0 = load("phase0-baseline.yml")
+for job_id, wf_jobs, old, new_job in (
+        ("unit-tests-signed-char-context", cc,
+         "unit-tests (-fsigned-char, hashmap memory hexdump mmt_utils mmt_inet_ntop)",
+         "unit-tests"),
+        ("precision-gate-context", p0,
+         "Labelled-pcap precision/recall holds or improves (M9, issue",
+         "precision-gate")):
+    agg = wf_jobs.get(job_id) or {}
+    steps = agg.get("steps") or []
+    check(f"{job_id}: reports the former context and fails unless {new_job} passed",
+          agg.get("name") == old and needs(agg) == [new_job]
+          and cond(agg).strip() == "always()"
+          and any(f"needs.{new_job}.result" in str((st.get("env") or {}).get("RESULT", ""))
+                  for st in steps)
+          and old in required_ctx and old not in retired_ctx)
 
 # Issue #659: the BUILD=asan profile check runs in the sanitizer asan leg.
 asan_steps = [st for st in san.get("steps") or []

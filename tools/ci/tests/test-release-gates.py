@@ -57,7 +57,7 @@ def run(name, status="completed", conclusion="success", head_sha=SHA,
 # A fully green evidence set: every required group present at the SHA.
 GREEN_RUNS = [
     run("unit-tests", completed_at=T2),
-    run("unit-tests (-fsigned-char, hashmap memory hexdump mmt_utils mmt_inet_ntop)",
+    run("unit-tests (-fsigned-char)",
         completed_at=T1),
     run("sanitizer-tests (BUILD=asan, asan)", completed_at=T3),
     run("sanitizer-tests (BUILD=tsan, tsan)", completed_at=T3),

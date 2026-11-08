@@ -106,9 +106,11 @@ jobs:
     # A matrix job: on a docs-only change its steps skip (see `changes`);
     # otherwise the first leg runs the suites `changes` names (all on full).
     # The -fsigned-char leg repeats x86's default signedness, so it is a
-    # merge-queue leg (issue #658): on a pull request its steps skip. A new
-    # matrix key would rename its required context, so the steps test
-    # extra_cflags instead.
+    # merge-queue leg (issue #658): on a pull request its steps skip. The
+    # explicit name keeps the contexts `unit-tests` and
+    # `unit-tests (-fsigned-char)` whatever the suite list or a new matrix
+    # key (issue #601: the suite list used to be part of the context).
+    name: unit-tests${{ matrix.context_suffix }}
     needs: changes
     if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
@@ -119,8 +121,10 @@ jobs:
         include:
           - extra_cflags: ""
             suites: ""
+            context_suffix: ""
           - extra_cflags: "-fsigned-char"
             suites: "hashmap memory hexdump mmt_utils mmt_inet_ntop"
+            context_suffix: " (-fsigned-char)"
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       if: needs.changes.outputs.code != 'false' && (matrix.extra_cflags == '' || github.event_name != 'pull_request')
@@ -914,6 +918,27 @@ jobs:
         NDEBUG: "1"
         SUITES: ${{ needs.changes.outputs.suites }}
       run: bash tests/run_all_tests.sh $SUITES
+
+  # --- Former context of the -fsigned-char leg (issue #601) ---------------
+  # The leg now reports `unit-tests (-fsigned-char)`. Branch protection may
+  # still require its old context, whose suffix was the leg's suite list, so
+  # this aggregate keeps reporting it with the same verdict: it fails unless
+  # every unit-tests leg succeeded (a docs-only change skips their steps, and
+  # the legs then succeed). Both contexts are in .github/required-checks.txt;
+  # once protection requires only the new one, delete this job and its line.
+  unit-tests-signed-char-context:
+    name: unit-tests (-fsigned-char, hashmap memory hexdump mmt_utils mmt_inet_ntop)
+    needs: unit-tests
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+    - name: Every unit-tests leg must succeed
+      env:
+        RESULT: ${{ needs.unit-tests.result }}
+      run: |
+        echo "unit-tests: ${RESULT}"
+        [ "${RESULT}" = success ]
 
   secret-scan:
     # Secret scanning gate (issue #160 / F-SEC-006): fail the workflow if
