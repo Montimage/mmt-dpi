@@ -129,17 +129,19 @@ while IFS=$'\t' read -r cite head tail claim body; do
         continue
     fi
 
-    if ! sed -n "${start}p" "$ROOT/$file" | grep -Eq -- "$head"; then
+    # Capture, then match (issue #735): in `sed | grep -q`, grep exits on an
+    # early match and sed dies of SIGPIPE, which pipefail reported as stale.
+    if ! grep -Eq -- "$head" <<< "$(sed -n "${start}p" "$ROOT/$file")"; then
         fail "$cite — stale: line $start does not match /$head/ (cited for: $claim)"
         continue
     fi
     if [ "$start" != "$end" ] && [ "$tail" != "-" ] \
-       && ! sed -n "${end}p" "$ROOT/$file" | grep -Eq -- "$tail"; then
+       && ! grep -Eq -- "$tail" <<< "$(sed -n "${end}p" "$ROOT/$file")"; then
         fail "$cite — stale: line $end does not match /$tail/ (cited for: $claim)"
         continue
     fi
     if [ -n "$body" ] && [ "$body" != "-" ] \
-       && ! sed -n "${start},${end}p" "$ROOT/$file" | grep -Eq -- "$body"; then
+       && ! grep -Eq -- "$body" <<< "$(sed -n "${start},${end}p" "$ROOT/$file")"; then
         fail "$cite — stale: nothing in that range matches /$body/ (cited for: $claim)"
         continue
     fi
@@ -212,13 +214,13 @@ registered="$(printf '%s' "$registered" | grep -v '^$' | sort -u)"
 
 while IFS= read -r cite; do
     [ -n "$cite" ] || continue
-    printf '%s\n' "$registered" | grep -qxF -- "$cite" \
+    grep -qxF -- "$cite" <<< "$registered" \
         || fail "$cite — cited by the doc but not registered in CITATIONS (add an anchor)"
 done <<< "$doc_citations"
 
 while IFS= read -r cite; do
     [ -n "$cite" ] || continue
-    printf '%s\n' "$doc_citations" | grep -qxF -- "$cite" \
+    grep -qxF -- "$cite" <<< "$doc_citations" \
         || fail "$cite — registered in CITATIONS but no longer cited by the doc"
 done <<< "$registered"
 
@@ -439,7 +441,7 @@ anchors="$(md_files | while IFS= read -r f; do
 anchor_errors=0
 while IFS= read -r anchor; do
     [ -n "$anchor" ] || continue
-    if ! printf '%s\n' "$slugs" | grep -qxF -- "$anchor"; then
+    if ! grep -qxF -- "$anchor" <<< "$slugs"; then
         fail "link target #$anchor has no matching heading in $DOC_REL"
         anchor_errors=1
     fi

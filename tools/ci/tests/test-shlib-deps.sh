@@ -39,7 +39,7 @@ payload() {
     gcc -shared -fPIC -Wl,-soname,"$1" -o "$d/stub/$1" "$d/stub.c"
     gcc -shared -fPIC -Wl,--no-as-needed -o "$d/lib/libuse.so" "$d/use.c" \
         "$d/stub/$1"
-    objdump -p "$d/lib/libuse.so" | grep -q "NEEDED *$1\$" \
+    grep -q "NEEDED *$1\$" <<< "$(objdump -p "$d/lib/libuse.so")" \
         || { echo "✗ fixture for $1 has no NEEDED $1" >&2; exit 2; }
     printf '%s\n' "$d/lib"
 }

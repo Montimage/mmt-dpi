@@ -132,7 +132,7 @@ else
 fi
 
 n="$(bash "${DECLS_HELPER}" --list | wc -l | tr -d ' ')"
-if [ "${n}" -gt 0 ] && bash "${DECLS_HELPER}" --list | grep -qx "mmt_init_handler"; then
+if [ "${n}" -gt 0 ] && grep -qx "mmt_init_handler" <<< "$(bash "${DECLS_HELPER}" --list)"; then
     echo "✓ check-public-decls.sh --list prints the declared set (${n} names)"
 else
     echo "✗ check-public-decls.sh --list printed ${n} names, mmt_init_handler missing"

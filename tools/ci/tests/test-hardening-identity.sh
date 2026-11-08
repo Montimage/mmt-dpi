@@ -23,7 +23,8 @@
 # Part 2 runs tools/ci/check-hardening-flags.sh --built DIR on two fixture
 # shared objects compiled here: one with full RELRO and FORTIFY (must pass)
 # and one with lazy binding and no FORTIFY (must fail, naming BIND_NOW and
-# the _FORTIFY_SOURCE floor).
+# the _FORTIFY_SOURCE floor) — then both again with a stub readelf that dies
+# of SIGPIPE after an early match, whose verdicts must not change (#735).
 #
 # Usage: bash tools/ci/tests/test-hardening-identity.sh
 # Exit: 0 = all checks passed, 1 = at least one failed, 2 = self-test broke.
@@ -204,6 +205,31 @@ else
     fail "a lazy-binding, unfortified object fails on BIND_NOW and the FORTIFY floor (exit $rc)"
     printf '%s\n' "$out" | sed 's/^/      /'
 fi
+# SIGPIPE (issue #735): a readelf still writing after the match grep -q stops
+# at dies of SIGPIPE, which pipefail used to turn into a ✗ for a hardened
+# object. The stub prints the real output (match early), then 1 MiB of
+# filler — more than a pipe buffer holds, so a piped writer always gets
+# SIGPIPE. The verdicts must be the ones the real readelf gives.
+REAL_READELF="$(command -v readelf)"
+mkdir -p "${WORK}/stubbin"
+{
+    printf '#!/usr/bin/env bash\n'
+    printf '"%s" "$@" || exit $?\n' "${REAL_READELF}"
+    printf 'head -c 1048576 /dev/zero | tr "\\\\0" x | fold -w 64\n'
+} >"${WORK}/stubbin/readelf"
+chmod +x "${WORK}/stubbin/readelf"
+verdicts() { printf '%s\n' "$1" | grep -E '^  [✓✗·]' || true; }
+for fx in good bad; do
+    rc_real=0; out_real="$(bash "${CHECKER}" --built "${WORK}/${fx}" 2>&1)" || rc_real=$?
+    rc=0; out="$(PATH="${WORK}/stubbin:${PATH}" bash "${CHECKER}" --built "${WORK}/${fx}" 2>&1)" || rc=$?
+    if [ "$rc" -eq "$rc_real" ] && [ "$(verdicts "$out")" = "$(verdicts "$out_real")" ]; then
+        pass "a readelf killed by SIGPIPE after an early match keeps the ${fx} fixture's verdicts (exit $rc)"
+    else
+        fail "a readelf killed by SIGPIPE after an early match keeps the ${fx} fixture's verdicts (exit $rc, want $rc_real)"
+        diff <(verdicts "$out_real") <(verdicts "$out") | sed 's/^/      /' || true
+    fi
+done
+
 rc=0; out="$(bash "${CHECKER}" --built "${WORK}/missing" 2>&1)" || rc=$?
 if [ "$rc" -eq 2 ]; then pass "a missing directory is a helper error (exit 2)"
 else fail "a missing directory is a helper error (exit 2, got $rc)"; fi
