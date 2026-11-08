@@ -25,7 +25,10 @@ every gate passes, the `release` job of
 `tools/ci/publish-release.sh` — as a draft carrying every package, SBOM and
 `SHA256SUMS` (each covered by the build-provenance attestation), then
 published — and it **refuses to
-run when a Release for the tag already exists**. When any job of a tag run
+run when a Release a person made for the tag already exists**, deleting
+nothing. Re-running a tag run after the workflow published exits 0 ("already
+published") when the Release holds every asset, so it raises no alert
+(issue #595). When any job of a tag run
 fails, the `release-alert` job opens (or comments on) an issue titled
 `Release workflow failed for vx.y.z`; nothing is published, so fix the
 cause and re-run the workflow, or delete the tag and push it again. Do not

@@ -8,20 +8,26 @@
 # job of .github/workflows/release-packages.yml now creates the Release
 # itself, through this script, after every gate passed:
 #
-#   1. Refuse when a Release for the tag already exists — published, or a
-#      draft a person made. Only the workflow publishes; a pre-existing
-#      Release means someone published by hand, and is never overwritten.
-#      The one exception is a DRAFT authored by github-actions[bot]: the
-#      leftover of an earlier attempt of this same job that failed between
-#      create and publish, deleted and recreated so a re-run can finish.
+#   1. Decide from every Release for the tag before changing anything
+#      (issue #595), in this order:
+#      - any Release a person made (published or draft) -> refuse: only the
+#        workflow publishes, and a hand-made Release is never overwritten.
+#        Nothing is deleted, not even a leftover draft of this workflow;
+#      - a PUBLISHED Release by github-actions[bot] -> this job already
+#        published it (a re-run, or a publish that succeeded on GitHub but
+#        reported an error): exit 0 when it holds every asset of this run,
+#        so a re-run raises no alert;
+#      - DRAFTS by github-actions[bot] -> leftovers of an earlier attempt that
+#        failed between create and publish: deleted, so a re-run can finish.
 #   2. Create the Release as a draft, with every asset attached.
 #   3. Publish it (draft=false) — only after all assets uploaded,
 #      so a Release is never visible with a partial asset set.
 #
 # Usage: bash tools/ci/publish-release.sh <tag> <assets-dir>
 # Needs `gh` with GH_TOKEN (contents: write) and GH_REPO in the environment.
-# Exit: 0 = published, 1 = a Release already exists (manual publication),
-#       2 = usage or gh failure.
+# Exit: 0 = published (or already published by this workflow with every
+#       asset), 1 = a Release a person made exists, or the workflow's own
+#       published Release lacks an asset of this run, 2 = usage or gh failure.
 
 set -euo pipefail
 
@@ -42,20 +48,49 @@ existing="$(gh api --paginate "repos/${GH_REPO}/releases" \
     --jq ".[] | select(.tag_name == \"${TAG}\") | \"\(.id) \(.draft) \(.author.login)\"")" \
     || { echo "✗ could not list the releases of ${GH_REPO}" >&2; exit 2; }
 
+# Pass 1 classifies every entry; pass 2 acts. Nothing is deleted in a run
+# that then refuses (issue #595).
+bot_drafts=(); bot_published=""; foreign=()
 while read -r id draft author; do
     [ -n "${id:-}" ] || continue
-    if [ "$draft" = "true" ] && [ "$author" = "$BOT" ]; then
-        echo "○ deleting draft Release ${id} left by an earlier attempt of this workflow"
-        gh api -X DELETE "repos/${GH_REPO}/releases/${id}" >/dev/null \
-            || { echo "✗ could not delete draft Release ${id}" >&2; exit 2; }
-        continue
+    if [ "$author" = "$BOT" ] && [ "$draft" = "true" ]; then
+        bot_drafts+=("$id")
+    elif [ "$author" = "$BOT" ]; then
+        bot_published="$id"
+    else
+        kind="published"; [ "$draft" = "true" ] && kind="draft"
+        foreign+=("a ${kind} Release (id ${id}, by ${author})")
     fi
-    kind="published"; [ "$draft" = "true" ] && kind="draft"
-    echo "✗ a ${kind} Release for ${TAG} already exists (id ${id}, by ${author})." >&2
+done <<< "${existing}"
+
+if [ "${#foreign[@]}" -gt 0 ]; then
+    for f in "${foreign[@]}"; do echo "✗ ${f} for ${TAG} already exists." >&2; done
     echo "  The release workflow is the only publisher: delete that Release" >&2
     echo "  (gh release delete ${TAG} --repo ${GH_REPO}) and re-run this job." >&2
     exit 1
-done <<< "${existing}"
+fi
+
+if [ -n "$bot_published" ]; then
+    names="$(gh api --paginate "repos/${GH_REPO}/releases/${bot_published}/assets" --jq '.[].name')" \
+        || { echo "✗ could not list the assets of Release ${bot_published}" >&2; exit 2; }
+    missing=()
+    for a in "${assets[@]}"; do
+        grep -qxF -- "$(basename "$a")" <<< "$names" || missing+=("$(basename "$a")")
+    done
+    if [ "${#missing[@]}" -gt 0 ]; then
+        echo "✗ Release ${TAG} (id ${bot_published}) was published by this workflow but lacks ${#missing[@]} asset(s) of this run:" >&2
+        printf '    %s\n' "${missing[@]}" >&2
+        exit 1
+    fi
+    echo "✓ Release ${TAG} is already published by this workflow (id ${bot_published}) with all ${#assets[@]} asset(s) — nothing to do"
+    exit 0
+fi
+
+for id in ${bot_drafts[@]+"${bot_drafts[@]}"}; do
+    echo "○ deleting draft Release ${id} left by an earlier attempt of this workflow"
+    gh api -X DELETE "repos/${GH_REPO}/releases/${id}" >/dev/null \
+        || { echo "✗ could not delete draft Release ${id}" >&2; exit 2; }
+done
 
 gh release create "$TAG" "${assets[@]}" --draft --verify-tag \
     --title "$TAG" --generate-notes \
