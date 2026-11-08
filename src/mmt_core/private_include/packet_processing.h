@@ -263,6 +263,13 @@ struct mmt_session_struct {
     mmt_handler_t *mmt_handler;              /**< opaque pointer to the mmt handler that processed this session */
 
     struct mmt_session_struct *parent_session; /**< pointer to the parent session */
+    /** Session that carried this session's current packet (NULL when the
+     *  packet's outermost session), set on every packet before the counters
+     *  are updated. A tunnelled flow can ride two outer flows (a GTP flow's
+     *  uplink and downlink use different UDP ports), so the creation-time
+     *  parent_session is not the session to credit the sub_* counters to
+     *  (Montimage/mmt-dpi#17). Only read within the packet that set it. */
+    struct mmt_session_struct *packet_parent;
     struct mmt_session_struct * next;        /**< pointer to the next session in the expiry list --- for internal use must not be changed */
     struct mmt_session_struct * previous;    /**< pointer to the previous session in the expiry list --- for internal use must not be changed */
 

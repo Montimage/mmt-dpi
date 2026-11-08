@@ -142,11 +142,19 @@ void session_timer_handler_callback(void * timeout_milestone, void * milestone_s
 }
 
 /* 1 when `session` is one the packet being processed still uses: its
- * current session or one of that session's tunnel ancestors. */
+ * current session, one of that session's tunnel ancestors, or one of the
+ * sessions that carried this packet (Montimage/mmt-dpi#17: the counter walks
+ * read the packet_parent chain, which can leave the parent_session chain
+ * when a tunnelled flow rides a second outer flow). */
 static int is_packet_session(const ipacket_t * ipacket, const mmt_session_t * session) {
     const mmt_session_t * p;
+    unsigned depth;
     if (ipacket == NULL) return 0;
     for (p = ipacket->session; p != NULL; p = p->parent_session) {
+        if (p == session) return 1;
+    }
+    for (p = ipacket->session, depth = 0; p != NULL && depth < PROTO_PATH_SIZE;
+            p = p->packet_parent, depth++) {
         if (p == session) return 1;
     }
     return 0;
@@ -335,6 +343,7 @@ static void init_new_session_fields(mmt_handler_t * mmt_handler, mmt_session_t *
     session->session_id = mmt_handler->sessions_count + 1;
     session->next = NULL;
     session->previous = NULL;
+    session->packet_parent = NULL;
 
     session->fragmented_packet_count = 0;
     session->fragment_count = 0;
@@ -603,6 +612,11 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
 
             ipacket->proto_hierarchy = &session->proto_path;
             ipacket->proto_classif_status = &session->proto_classif_status;
+            /* Montimage/mmt-dpi#17: the session carrying this packet, which
+             * need not be the one this session was created under. */
+            if (ipacket->session != session) {
+                session->packet_parent = ipacket->session;
+            }
             ipacket->session = session;
 
             //update the session basic statistics
@@ -610,8 +624,10 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
             session->data_volume      += ipacket->p_hdr->len;
             session->data_cap_volume  += ipacket->total_caplen;
             session->packet_cap_count += ipacket->nb_reassembled_packets[index];
-            mmt_session_t * p_session = session->parent_session;
-            while(p_session) {
+            /* Montimage/mmt-dpi#17: credit the sessions that carried this
+             * packet, at most one per protocol layer. */
+            mmt_session_t * p_session = session->packet_parent;
+            for (unsigned depth = 0; p_session != NULL && depth < PROTO_PATH_SIZE; depth++) {
                 /* Issue #255: children counters live in the lazily-allocated
                  * extension; a parent that still has none gets it now (NULL
                  * under OOM -> the counter update is skipped). */
@@ -622,7 +638,7 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
                     cs->sub_data_cap_volume  += ipacket->total_caplen;
                     cs->sub_packet_cap_count += ipacket->nb_reassembled_packets[index];
                 }
-                p_session = p_session->parent_session;
+                p_session = p_session->packet_parent;
             }
 
             session->s_last_activity_time.tv_sec  = ipacket->p_hdr->ts.tv_sec;

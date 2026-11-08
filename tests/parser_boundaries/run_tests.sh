@@ -295,6 +295,11 @@
 #   test_gtp_payload_guess_api.c — packet/API path: crafted
 #                               Ethernet/IPv4/UDP/GTPv1-U frames through
 #                               mmt_init_handler + packet_process.
+#   test_gtp_session_counts_api.c — packet/API path: one inner ICMP flow
+#                               carried by two outer GTP-U flows (uplink and
+#                               downlink on different UDP ports) must not wrap
+#                               the outer sessions' per-direction counters
+#                               (Montimage/mmt-dpi#17), checked at expiry.
 #
 # Issue #749 adds the "ddl" fixture: search_ddl_domains() must strip a
 # ":port" of any length from the Host line before matching the
@@ -392,7 +397,7 @@ for f in "${FIXTURES[@]}"; do
             API_TESTS+=(encap_walk_api)
             ;;
         gtp)
-            API_TESTS+=(gtp_payload_guess_api)
+            API_TESTS+=(gtp_payload_guess_api gtp_session_counts_api)
             ;;
         ddl)
             UNIT_TESTS+=(ddl_host_port_unit)

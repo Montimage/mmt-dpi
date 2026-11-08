@@ -1071,8 +1071,10 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
     session->data_cap_volume_direction[session->last_packet_direction] += ipacket->total_caplen;
     session->packet_count_direction[session->last_packet_direction]++;
     session->data_volume_direction[session->last_packet_direction] += ipacket->p_hdr->len;
-    mmt_session_t *p_session = session->parent_session;
-    while (p_session)
+    /* Montimage/mmt-dpi#17: the sessions that carried this packet, each in
+     * its own direction for it — not the creation-time parent chain. */
+    mmt_session_t *p_session = session->packet_parent;
+    for (unsigned depth = 0; p_session != NULL && depth < PROTO_PATH_SIZE; depth++)
     {
         /* Issue #255: children counters live in the lazily-allocated
          * tunnel-parent extension (NULL under OOM -> update skipped). */
@@ -1084,7 +1086,7 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
             cs->sub_packet_count_direction[direction]++;
             cs->sub_data_volume_direction[direction] += ipacket->p_hdr->len;
         }
-        p_session = p_session->parent_session;
+        p_session = p_session->packet_parent;
     }
 
     return 1;
