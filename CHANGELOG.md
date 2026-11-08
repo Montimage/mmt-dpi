@@ -1,6 +1,20 @@
 RELEASE NOTES
 ---
 
+Version 1.10.1 (unreleased)
+---
+
+### Core and protocols
+- credit a tunnelled session's packets to the outer session that carried each one (Montimage/mmt-dpi#17): the `sub_*` counters went to the outer session the inner one was created under, so when a GTP-U flow's uplink and downlink ride different outer UDP flows (eNB:57672 -> UPF:2152, UPF:2152 -> eNB:2152), the second packet was subtracted from an outer session that never counted it and `get_session_ul_packet_count()` returned 2^64 - 1. Each session now records, per packet, the session that carried it (`packet_parent`, private), and the four counter walks (`packet_session.c`, `proto_ip.c`, `proto_ipv6.c`, the TCP/UDP payload counters) follow that chain, bounded by the protocol-path depth; the out-of-memory sweep's guard on the in-flight packet's sessions (`is_packet_session()`) now also spares every session that carried the packet; `get_session_parent()` and the tunnel-parent pinning keep the creation-time parent. so the outer session that carried only the second packet no longer counts that G-PDU as its own: with uplink and downlink on different outer ports, each outer GTP session now reports 0 own packets and bytes, where one reported 2^64 - 1 and the other 1 — a consumer such as mmt-probe sees different per-direction numbers on every such tunnel, not only the end of the wraparound; `tests/parser_boundaries/test_gtp_session_counts_api.c` checks both shapes at expiry; no export and no public layout changed (`mmt_session_t` is opaque)
+
+### Build, CI and packaging
+- stop `check-hardening-flags.sh --built` failing hardened libraries at random (#735): `readelf | grep -q` under `pipefail` failed when grep exited on an early match and readelf died of SIGPIPE, which ejected PRs from the merge queue through the required `packages-gate`; the output is now captured and then matched (`readelf_has`), and the hardening self-test reruns both fixtures with a stub readelf that always gets SIGPIPE
+- make `publish-release.sh` safe to re-run (#595): a Release the workflow already published for the tag exits 0 ("already published") when it holds every asset of the run, instead of exit 1 and a false `release-alert` issue; the script now classifies every Release for the tag before acting, so a run that refuses because of a person's Release deletes nothing, not even the workflow's own leftover draft
+- keep the packaging path filter and two required contexts from drifting (#601): the `changes` job of `release-packages.yml` reads the PR diff NUL-separated with `core.quotePath=false`, so a C-quoted path no longer skips the package builds; the -fsigned-char unit leg reports `unit-tests (-fsigned-char)` and the precision gate `precision-gate`, and their old contexts are reported, until branch protection swaps them, by the aggregates `unit-tests-signed-char-context` and `precision-gate-context`, which fail when the renamed job failed, so neither gate weakens in between
+
+### Documentation
+- state the exact asset set of a Release in the release runbook (#603): the check compares the Release with its `manifest.json` (alias, package and SBOM per package, plus the bootstrap files, `SHA256SUMS`, the provenance bundle and the source tarball) instead of "at least 12" assets, which passed a Release missing most SBOMs (v1.10.0: 18 legs, 36 packages, 113 assets); the tag commands take the merged commit's SHA; the `install-smoke.yml` comment points at the README sections that label best-effort platforms
+
 Version 1.10.0 (7 November 2026)
 ---
 

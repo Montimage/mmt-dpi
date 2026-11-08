@@ -96,7 +96,7 @@ typedef enum {
                             the packet will be skipped afterwards. */
 #define MMT_PRINT_INFO "\n\t* * * * * * * * * * * * * * * *\n\t*     M M T - L I B R A R Y   *\n\t* * * * * * * * * * * * * * * *\n\t\n\tWebsite: http://montimage.eu\n\tContact: contact@montimage.eu\n\n\n" ///< Banner printed by mmt_print_info().
 #ifndef VERSION
-#define VERSION "1.10.0" ///< SDK version string, unless the build defines VERSION.
+#define VERSION "1.10.1" ///< SDK version string, unless the build defines VERSION.
 #endif
 
 #ifdef GIT_VERSION
