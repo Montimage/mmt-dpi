@@ -75,7 +75,26 @@ Release order:
    in a pull request, merge it, then tag that merged commit **on `main`**
    `vx.y.z` (never a release branch: a tag that is not an ancestor of
    `origin/main` fails `verify-tag`) and push the tag. The workflow
-   publishes the Release.
+   publishes the Release. Tag the merged commit by its SHA
+   (`sha=$(gh pr view <N> --json mergeCommit --jq .mergeCommit.oid)`, then
+   `git tag -a vx.y.z -m "MMT-DPI x.y.z" "$sha"`), not the `main` tip, which
+   may have moved since. Then check that the Release holds **exactly** the
+   expected assets: for each package in its `manifest.json`, the alias
+   (`file`), the package (`source`) and its `.sbom.json`; plus `install.sh`,
+   `manifest.json`, `SHA256SUMS`, `mmt-dpi.intoto.jsonl` and the source
+   tarball (and its `.asc` once the signing key is provisioned). There are two
+   packages (`mmt-dpi`, `mmt-dpi-security`) per leg of the `package` matrix of
+   `release-packages.yml`. v1.10.0 had 18 legs, 36 packages and 113 assets,
+   so a count floor would pass a Release missing most of its SBOMs:
+
+   ```bash
+   t=vx.y.z; d=$(mktemp -d)
+   gh release download "$t" --repo Montimage/mmt-dpi -p manifest.json -D "$d"
+   diff <(gh release view "$t" --repo Montimage/mmt-dpi --json assets --jq '.assets[].name' | LC_ALL=C sort) \
+        <({ jq -r '.packages[] | .file, .source, .source + ".sbom.json"' "$d/manifest.json"
+            printf '%s\n' install.sh manifest.json SHA256SUMS mmt-dpi.intoto.jsonl "mmt-dpi-${t#v}.tar.gz"; } | LC_ALL=C sort) \
+     && echo "asset set complete: $(jq '.packages | length' "$d/manifest.json") packages"
+   ```
 3. After the tag is published, update the published-release sites in one
    follow-up PR: run `bash tools/ci/check-release-tag.sh --write-pin vx.y.z`,
    which writes `RELEASE_TAG` and `RELEASE_TAG_SHA` from the peeled tag
@@ -102,15 +121,16 @@ Release order:
 
 1. **Date the changelog.** A PR replacing `(unreleased)` with the release
    date in `CHANGELOG.md`; merge it once `version-agreement` is green.
-2. **Tag that merged commit on `main`:**
-   `git fetch origin main && git tag -a v1.9.1 -m "MMT-DPI 1.9.1" origin/main`,
+2. **Tag that merged commit on `main`** by its SHA, not the `main` tip:
+   `sha=$(gh pr view <N> --json mergeCommit --jq .mergeCommit.oid)` for the
+   step-1 PR, `git fetch origin main && git tag -a v1.9.1 -m "MMT-DPI 1.9.1" "$sha"`,
    then `git merge-base --is-ancestor v1.9.1 origin/main && echo "on main"`.
 3. **Push the tag:** `git push origin v1.9.1`. This starts
    `release-packages.yml`; do not create the Release by hand.
 4. **Check the tag run:** `verify-tag`, `release-gates` and
    `Publish GitHub Release` all succeeded (none skipped);
-   `gh release view v1.9.1 --json assets --jq '.assets | length'` is at
-   least 12 (10 packages, `SHA256SUMS`, the SBOM); and
+   the Release holds exactly the expected assets (the check in step 2 of
+   *Release order* above, with `t=v1.9.1`); and
    `gh attestation verify mmt-dpi_*_ubuntu-24.04_x86_64.deb --repo Montimage/mmt-dpi`
    passes on a downloaded `.deb`. The verified bootstrap set (issue #498) is
    there too: `install.sh`, `manifest.json`, `mmt-dpi.intoto.jsonl` and one

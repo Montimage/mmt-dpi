@@ -23,7 +23,8 @@ name: Install smoke
 #   workflow_dispatch   either (input `source`, default published)
 #
 # Tiers: `supported` legs must pass; `best-effort` legs (distributions the
-# docs label best-effort — README "Supported Platforms") run their smoke step
+# docs label best-effort — README "Key Features" and the One-Line Install text
+# of README "Install" / docs/_includes/quick-start.md) run their smoke step
 # with continue-on-error, so a regression there is a warning, never red.
 #
 # Not a required check: the pull_request trigger is path-filtered, so it does
