@@ -67,7 +67,7 @@ for tool in gcc gcov make jq; do
     command -v "${tool}" >/dev/null 2>&1 \
         || { echo "✗ test-sdk-coverage.sh requires '${tool}'" >&2; exit 2; }
 done
-gcov --help 2>/dev/null | grep -q -- '--json-format' \
+grep -q -- '--json-format' <<< "$(gcov --help 2>/dev/null)" \
     || { echo "✗ gcov has no --json-format (needs GCC >= 9)" >&2; exit 2; }
 
 unset SDK_BUILD_PROFILE EXTRA_CFLAGS

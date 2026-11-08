@@ -122,7 +122,7 @@ fi
 arm_job=$(awk '/^  unit-tests-arm:/ { in_job = 1; next }
                in_job && /^  [A-Za-z0-9_-]+:/ { exit }
                in_job' "$ROOT/.github/workflows/c-cpp.yml")
-if printf '%s\n' "$arm_job" | grep -qE '^ +runs-on: *ubuntu-24\.04-arm *$'; then
+if grep -qE '^ +runs-on: *ubuntu-24\.04-arm *$' <<< "$arm_job"; then
     echo "  ✓ c-cpp.yml unit-tests-arm runs on ubuntu-24.04-arm"
 else
     echo "  ✗ c-cpp.yml has no unit-tests-arm job on ubuntu-24.04-arm"

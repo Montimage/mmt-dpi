@@ -109,9 +109,21 @@ else
     [ "${#sos[@]}" -gt 0 ] || { echo "✗ no shared objects under: ${SO_DIRS[*]}" >&2; exit 2; }
 fi
 
+# readelf_has PATTERN READELF-ARGS...: true when the readelf output matches.
+# The output is captured before it is matched: in `readelf | grep -q`, grep
+# exits on an early match, readelf then dies of SIGPIPE while still writing,
+# and pipefail failed the pipeline, so a hardened object was reported ✗ at
+# random (issue #735). A readelf error still counts as no match.
+readelf_has() {
+    local pattern="$1" out
+    shift
+    out="$(readelf "$@" 2>/dev/null)" || return 1
+    grep -qE -- "$pattern" <<<"$out"
+}
+
 check_so() {
     local desc="$1" file="$2" pattern="$3" opt="$4"
-    if readelf "$opt" "$file" 2>/dev/null | grep -qE -- "$pattern"; then
+    if readelf_has "$pattern" "$opt" "$file"; then
         echo "  ✓ $desc: $(basename "$file")"
     else
         echo "  ✗ $desc: $(basename "$file")"
@@ -135,7 +147,7 @@ trap 'rm -rf "$CF_PROBE_DIR"' EXIT
 printf 'int mmt_cf_probe(int x){return x + 1;}\n' >"$CF_PROBE_DIR/probe.c"
 if "${CC:-cc}" -shared -fPIC -fcf-protection -Werror -o "$CF_PROBE_DIR/libprobe.so" \
         "$CF_PROBE_DIR/probe.c" >/dev/null 2>&1 \
-   && readelf -nW "$CF_PROBE_DIR/libprobe.so" 2>/dev/null | grep -qE 'IBT|SHSTK|BTI|PAC'; then
+   && readelf_has 'IBT|SHSTK|BTI|PAC' -nW "$CF_PROBE_DIR/libprobe.so"; then
     CF_PROBE_OK=1
 fi
 rm -rf "$CF_PROBE_DIR"
