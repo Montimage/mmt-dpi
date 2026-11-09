@@ -54,8 +54,8 @@ INSTALLER_URL="https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.
 # the annotated tag object: write both lines with
 # `bash tools/ci/check-release-tag.sh --write-pin vX.Y.Z`, and
 # `bash tools/ci/check-release-tag.sh` fails CI when they disagree (issue #484).
-RELEASE_TAG="v1.10.0"
-RELEASE_TAG_SHA="7c931a72cf6ec3ca985662544f987145bc0eaded"
+RELEASE_TAG="v1.10.1"
+RELEASE_TAG_SHA="97860a0196338a329fd3eb0d3264a758c4a62b63"
 
 BRANCH="${BRANCH:-}"           # opt-in moving ref (env BRANCH or --branch)
 UNVERIFIED_BRANCH=0            # set by --unverified-branch
