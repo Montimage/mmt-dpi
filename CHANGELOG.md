@@ -1,7 +1,7 @@
 RELEASE NOTES
 ---
 
-Version 1.10.1 (unreleased)
+Version 1.10.1 (9 November 2026)
 ---
 
 ### Core and protocols
