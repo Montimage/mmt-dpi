@@ -1,4 +1,4 @@
-mmt-dpi (1.10.1+ds-1) UNRELEASED; urgency=medium
+mmt-dpi (1.10.2+ds-1) UNRELEASED; urgency=medium
 
   * Initial packaging for Debian.
     (Closes: #ITP-BUG-NUMBER)
