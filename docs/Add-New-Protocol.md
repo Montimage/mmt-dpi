@@ -103,3 +103,7 @@ lowercased in the hostname trie and lookups fold the wire hostname, so write
 them in lowercase — the generator rejects an uppercase suffix.
 
 ## 4- Voilà Voilà
+
+## Classes in a plugin of your own
+
+A plugin outside `mmt_tcpip` gives its protocols an application or content class by calling `mmt_register_class_provider()` from its `init_proto()` (`mmt_class_provider.h`), filling in only the callbacks it needs. Consumers read the classes with `mmt_application_class()` and its siblings, or the `get_*_class_*` names of `mmt_tcpip.h`, and link `libmmt_core` alone. The core forgets every provider in `close_extraction()`, before it unloads the plugins.

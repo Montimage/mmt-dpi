@@ -26,6 +26,8 @@ extern "C" {
 #endif
 #define PLUGINS_DIR_ENV "MMT_DPI_PLUGINS_DIR"
 
+#include "mmt_class_provider.h"
+
 #define PLUGIN_INIT_FUNCTION_NAME "init_proto"
 #define PLUGIN_CLEANUP_FUNCTION_NAME "cleanup_proto"
 

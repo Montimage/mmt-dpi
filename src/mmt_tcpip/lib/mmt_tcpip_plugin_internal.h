@@ -556,6 +556,11 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
     }
 }
 
+#include "mmt_class_provider.h"
+
+/* The class lookups init_tcpip_plugin() registers with the core. */
+extern const mmt_class_provider_t mmt_tcpip_class_provider;
+
 #ifdef  __cplusplus
 }
 #endif

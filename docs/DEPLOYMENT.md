@@ -76,8 +76,12 @@ For TCP/IP protocol attributes:
 gcc -o myapp myapp.c \
     -I /opt/mmt/dpi/include \
     -L /opt/mmt/dpi/lib \
-    -lmmt_core -lmmt_tcpip -ldl -lpcap
+    -lmmt_core -ldl -lpcap
 ```
+
+A consumer links `libmmt_core` only. The core loads the protocol plugins at run
+time, and `mmt_tcpip.h`'s class lookups go through it, so linking a plugin as
+well makes it a hard start-up dependency and maps a second copy of it.
 
 ## Runtime Configuration
 

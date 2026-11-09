@@ -41,6 +41,7 @@
 #include "proto_meta.h"
 #include "data_defs.h"
 #include "plugin_defs.h"
+#include "mmt_class_provider.h"
 #include "extraction_lib.h"
 #include "mmt_utils.h"
 #include "packet_processing.h" /* private: handler/session/attribute layouts */
@@ -2804,6 +2805,96 @@ static void e_unregister_protocol_stack(void) {
     CHECK(get_protocol_stack_name(AC_STACK_ID) != NULL, "registered stacks untouched");
 }
 
+/* Class providers (Montimage/mmt-probe#18). Provider A knows the positive
+ * keys, B only key 2 and the labels of A's unknowns, C offers nothing. */
+#define AC_CLASS_A 3
+#define AC_CLASS_B 7
+static int ac_class_a(mmt_proto_id_t id) { return id == 1 ? AC_CLASS_A : MMT_CLASS_UNKNOWN; }
+static char *ac_name_a(mmt_proto_id_t id) { (void) id; return (char *) "class-a"; }
+static int ac_class_b(mmt_proto_id_t id) { return id == 1 || id == 2 ? AC_CLASS_B : MMT_CLASS_UNKNOWN; }
+static char *ac_name_b(mmt_proto_id_t id) { (void) id; return (char *) "class-b"; }
+static int ac_type_a(char *t) { return strcmp(t, "a/x") == 0 ? AC_CLASS_A : MMT_CLASS_UNKNOWN; }
+static char *ac_type_name_a(char *t) { (void) t; return (char *) "type-a"; }
+static int ac_flags_a(uint32_t f) { return f == 1 ? AC_CLASS_A : MMT_CLASS_UNKNOWN; }
+static char *ac_flags_name_a(uint32_t f) { (void) f; return (char *) "flags-a"; }
+static const mmt_class_provider_t ac_provider_a = {
+    ac_class_a, ac_name_a, ac_type_a, ac_type_name_a, ac_flags_a, ac_flags_name_a };
+static const mmt_class_provider_t ac_provider_b = { ac_class_b, ac_name_b, NULL, NULL, NULL, NULL };
+static const mmt_class_provider_t ac_provider_c = { NULL, NULL, NULL, NULL, NULL, NULL };
+static void ac_register_class_providers(void) {
+    CHECK(mmt_register_class_provider(&ac_provider_a), "provider A registered");
+    CHECK(mmt_register_class_provider(&ac_provider_c), "an empty provider is accepted");
+    CHECK(mmt_register_class_provider(&ac_provider_b), "provider B registered");
+}
+static void b_mmt_register_class_provider(void) {
+    ac_register_class_providers();
+    CHECK(mmt_register_class_provider(&ac_provider_a), "registering again is not a failure");
+    CHECK(mmt_application_class(1) == AC_CLASS_A, "registration order decides: A answers before B");
+    CHECK(mmt_application_class(2) == AC_CLASS_B, "a key A does not know falls through to B");
+}
+static void e_mmt_register_class_provider(void) {
+    static mmt_class_provider_t filler[32];
+    size_t i;
+    bool accepted = true;
+    CHECK(!mmt_register_class_provider(NULL), "NULL provider -> false");
+    ac_register_class_providers();
+    for (i = 0; accepted && i < sizeof(filler) / sizeof(filler[0]); i++)
+        accepted = mmt_register_class_provider(&filler[i]);
+    CHECK(!accepted, "a full registry -> false");
+    CHECK(mmt_application_class(1) == AC_CLASS_A, "registered providers survive a refused one");
+}
+static void b_mmt_application_class(void) {
+    ac_register_class_providers();
+    CHECK(mmt_application_class(1) == AC_CLASS_A, "known id");
+}
+static void e_mmt_application_class(void) {
+    ac_register_class_providers();
+    CHECK(mmt_application_class(999) == MMT_CLASS_UNKNOWN, "id no provider knows -> unknown");
+}
+static void b_mmt_application_class_name(void) {
+    ac_register_class_providers();
+    CHECK(strcmp(mmt_application_class_name(1), "class-a") == 0, "label of the provider that answers");
+    CHECK(strcmp(mmt_application_class_name(2), "class-b") == 0, "not the label of a provider that passed");
+}
+static void e_mmt_application_class_name(void) {
+    ac_register_class_providers();
+    CHECK(mmt_application_class_name(999) == NULL, "id no provider knows -> NULL");
+}
+static void b_mmt_content_class_by_type(void) {
+    ac_register_class_providers();
+    CHECK(mmt_content_class_by_type((char *) "a/x") == AC_CLASS_A, "known type");
+}
+static void e_mmt_content_class_by_type(void) {
+    ac_register_class_providers();
+    CHECK(mmt_content_class_by_type(NULL) == MMT_CLASS_UNKNOWN, "NULL type -> unknown, no provider called");
+    CHECK(mmt_content_class_by_type((char *) "b/y") == MMT_CLASS_UNKNOWN, "unknown type");
+}
+static void b_mmt_content_class_name_by_type(void) {
+    ac_register_class_providers();
+    CHECK(strcmp(mmt_content_class_name_by_type((char *) "a/x"), "type-a") == 0, "known type");
+}
+static void e_mmt_content_class_name_by_type(void) {
+    ac_register_class_providers();
+    CHECK(mmt_content_class_name_by_type(NULL) == NULL, "NULL type -> NULL");
+    CHECK(mmt_content_class_name_by_type((char *) "b/y") == NULL, "unknown type -> NULL");
+}
+static void b_mmt_content_class_by_flags(void) {
+    ac_register_class_providers();
+    CHECK(mmt_content_class_by_flags(1) == AC_CLASS_A, "known flags");
+}
+static void e_mmt_content_class_by_flags(void) {
+    ac_register_class_providers();
+    CHECK(mmt_content_class_by_flags(0) == MMT_CLASS_UNKNOWN, "unknown flags");
+}
+static void b_mmt_content_class_name_by_flags(void) {
+    ac_register_class_providers();
+    CHECK(strcmp(mmt_content_class_name_by_flags(1), "flags-a") == 0, "known flags");
+}
+static void e_mmt_content_class_name_by_flags(void) {
+    ac_register_class_providers();
+    CHECK(mmt_content_class_name_by_flags(0) == NULL, "unknown flags -> NULL");
+}
+
 static void b_is_free_protocol_id_for_registration(void) {
     CHECK(is_free_protocol_id_for_registration(AC_FREE_ID) == 1, "unused id is free");
     CHECK(is_free_protocol_id_for_registration(AC_PROTO_A) == 0, "registered id is taken");
@@ -3273,6 +3364,13 @@ static const api_contract_t k_contracts[] = {
     CONTRACT(register_protocol_stack, b_register_protocol_stack, e_register_protocol_stack),
     CONTRACT(register_protocol_stack_full, b_register_protocol_stack_full, e_register_protocol_stack_full),
     CONTRACT(unregister_protocol_stack, b_unregister_protocol_stack, e_unregister_protocol_stack),
+    CONTRACT(mmt_register_class_provider, b_mmt_register_class_provider, e_mmt_register_class_provider),
+    CONTRACT(mmt_application_class, b_mmt_application_class, e_mmt_application_class),
+    CONTRACT(mmt_application_class_name, b_mmt_application_class_name, e_mmt_application_class_name),
+    CONTRACT(mmt_content_class_by_type, b_mmt_content_class_by_type, e_mmt_content_class_by_type),
+    CONTRACT(mmt_content_class_name_by_type, b_mmt_content_class_name_by_type, e_mmt_content_class_name_by_type),
+    CONTRACT(mmt_content_class_by_flags, b_mmt_content_class_by_flags, e_mmt_content_class_by_flags),
+    CONTRACT(mmt_content_class_name_by_flags, b_mmt_content_class_name_by_flags, e_mmt_content_class_name_by_flags),
     CONTRACT(is_free_protocol_id_for_registration, b_is_free_protocol_id_for_registration,
              e_is_free_protocol_id_for_registration),
     CONTRACT(is_free_protocol_id_for_registractionl, b_is_free_protocol_id_for_registractionl,

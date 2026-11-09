@@ -60,7 +60,9 @@ These are written only at these moments:
 Each global has a dedicated `pthread_mutex_t`:
 
 - `plugin_handlers_list_mutex` guards the list mutations in `load_plugin()` and
-  `close_plugins()`.
+  `close_plugins()`, and the class-provider registry's writes in
+  `mmt_register_class_provider()` and `close_plugins()`; the class lookups read
+  it without the lock, like the other load-time registries.
 - `configured_protocols_mutex` guards the registry mutations in
   `register_protocol()`, `unregister_protocol_by_id()` and
   `unregister_protocol_by_name()`.

@@ -124,29 +124,35 @@ done
 # Header namespace (issue #537, F-BUG-010/F-CLEAN-011): a consumer that
 # defines its own debug/check/likely/unlikely and includes EVERY installed
 # header compiles with -Werror (no redefinition), no dbg.h macro leaks out,
-# and the class-table lookups link from libmmt_tcpip instead of being
-# compiled into the consumer.
+# and the class lookups need libmmt_core alone (Montimage/mmt-probe#18): the
+# plugin answers through the core when loaded, and they report the unknown
+# class when it is not.
 check "installed headers carry no dbg.h" \
     test -z "$(find "${PREFIX}/dpi/include" -name dbg.h)"
-check_fail "installed mmt_tcpip.h carries no static inline bodies" \
-    grep -n 'static inline' "${PREFIX}/dpi/include/tcpip/mmt_tcpip.h"
+check_fail "installed mmt_tcpip.h carries no class tables" \
+    grep -nE 'MMT_CONTENT_FAMILY_VIDEO|PROTO_CLASS_CDN' "${PREFIX}/dpi/include/tcpip/mmt_tcpip.h"
 ALL_HEADERS="${WORK}/all_installed_headers.h"
 (cd "${PREFIX}/dpi/include" && find . -name '*.h' | sed 's|^\./||' | LC_ALL=C sort \
     | sed 's|.*|#include "&"|') > "${ALL_HEADERS}"
 check "every installed header is listed for the namespace consumer" \
     test "$(wc -l < "${ALL_HEADERS}")" -ge 20
+LOG_ONLY_PLUGINS="${WORK}/log_only_plugins"
+mkdir -p "${LOG_ONLY_PLUGINS}"
+cp "${PREFIX}/plugins/libmmt_business_app.so" "${LOG_ONLY_PLUGINS}/"
 header_macros_consumer() {
-    local own="$1" bin="${WORK}/header_macros$1"
+    local own="$1" plugins="${2:-${PREFIX}/plugins}" tcpip="${3:-present}" bin="${WORK}/header_macros$1"
     "${CC:-gcc}" "${extra_cflags[@]}" -Wall -Wextra -Werror -DMMT_OWN_MACROS="${own}" \
         -DMMT_ALL_HEADERS_FILE="\"${ALL_HEADERS}\"" -o "${bin}" \
         "${SCRIPT_DIR}/test_header_macros.c" \
-        -I "${PREFIX}/dpi/include" -L "${PREFIX}/dpi/lib" -lmmt_tcpip -lmmt_core -ldl \
-        && LD_LIBRARY_PATH="${PREFIX}/dpi/lib" "${bin}"
+        -I "${PREFIX}/dpi/include" -L "${PREFIX}/dpi/lib" -lmmt_core -ldl \
+        && LD_LIBRARY_PATH="${PREFIX}/dpi/lib" MMT_DPI_PLUGINS_DIR="${plugins}" MMT_TEST_TCPIP="${tcpip}" "${bin}"
 }
 check "header-namespace consumer with its own debug/check/likely compiles -Werror and passes" \
     header_macros_consumer 1
 check "header-namespace consumer sees no internal macro and passes" \
     header_macros_consumer 0
+check "class lookups and a log line work with no TCP/IP plugin, linking libmmt_core alone" \
+    header_macros_consumer 0 "${LOG_ONLY_PLUGINS}" absent
 
 # Provenance: a real file is hashed and every log line is tagged.
 : > "${WORK}/mmt-dpi_test.deb"

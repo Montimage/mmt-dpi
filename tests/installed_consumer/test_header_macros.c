@@ -18,8 +18,11 @@
  *   -DMMT_OWN_MACROS=0  no consumer macro: after the headers, none of the
  *                       internal macro names may be defined at all.
  *
- * Both modes then call the six class-table lookups, which link from
- * libmmt_tcpip (-lmmt_tcpip) instead of being compiled into the consumer.
+ * Both modes then call the six class lookups. The program links libmmt_core
+ * alone: the TCP/IP plugin answers them through the core when it is loaded
+ * (Montimage/mmt-probe#18). With MMT_TEST_TCPIP=absent the plugin directory
+ * holds only libmmt_business_app: the lookups report the unknown class and a
+ * log line still goes through its own, non-network, protocol stack.
  */
 #ifndef MMT_OWN_MACROS
 #error "compile with -DMMT_OWN_MACROS=0 or -DMMT_OWN_MACROS=1"
@@ -36,6 +39,7 @@ static int consumer_check(int cond) { return cond ? 11 : 12; }
 #include MMT_ALL_HEADERS_FILE
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* No installed header may leave one of dbg.h's internal macros behind. */
@@ -63,7 +67,71 @@ static int failures;
 		} \
 	} while (0)
 
+/* How many times the process has the TCP/IP plugin's code mapped. */
+static int tcpip_mappings(void) {
+	char line[1024];
+	int n = 0;
+	FILE *maps = fopen("/proc/self/maps", "r");
+	if (maps == NULL)
+		return -1;
+	while (fgets(line, sizeof(line), maps) != NULL)
+		if (strstr(line, "r-xp") != NULL && strstr(line, "libmmt_tcpip") != NULL)
+			n++;
+	fclose(maps);
+	return n;
+}
+
+static int log_lines_seen;
+static void on_log_attribute(const ipacket_t *packet, attribute_t *attribute, void *user) {
+	(void) packet;
+	(void) attribute;
+	(void) user;
+	log_lines_seen++;
+}
+
+/* Without the TCP/IP plugin: unknown classes, and logs are still dissected. */
+static void expect_tcpip_absent(void) {
+	static const char *content_labels[] = {MMT_CONTENT_LONG_LABELS};
+	static const char *class_labels[] = {PROTO_CLASS_LABELS};
+	static const char line[] = "TrolleyPos: 32.981, Hoistpos: 38.042, NoOfMarkers: 0";
+	char error[1024];
+	struct pkthdr header;
+	mmt_handler_t *handler;
+
+	EXPECT(tcpip_mappings() == 0, "the TCP/IP plugin is not in the process");
+	EXPECT(get_application_class_by_protocol_id(PROTO_STACKPATH) == PROTO_CLASS_UNKOWN,
+	       "without the plugin a protocol has the unknown class");
+	EXPECT(strcmp(get_application_class_name_by_protocol_id(PROTO_STACKPATH),
+	              class_labels[PROTO_CLASS_UNKOWN]) == 0,
+	       "without the plugin the application label is the unknown one");
+	EXPECT(get_content_class_by_content_type("video/mp4") == MMT_CONTENT_FAMILY_UNSPECIFIED,
+	       "without the plugin a content type is unspecified");
+	EXPECT(strcmp(get_content_class_name_by_content_type("video/mp4"),
+	              content_labels[MMT_CONTENT_FAMILY_UNSPECIFIED]) == 0,
+	       "without the plugin the content-type label is the unspecified one");
+	EXPECT(get_content_class_by_content_flags(MMT_CONTENT_AUDIO) == MMT_CONTENT_FAMILY_UNSPECIFIED,
+	       "without the plugin content flags are unspecified");
+	EXPECT(strcmp(get_content_class_name_by_content_flags(MMT_CONTENT_AUDIO),
+	              content_labels[MMT_CONTENT_FAMILY_UNSPECIFIED]) == 0,
+	       "without the plugin the content-flags label is the unspecified one");
+
+	handler = mmt_init_handler(PROTO_IPS_DATA, 0, error);
+	EXPECT(handler != NULL, "the log protocol stack opens a handler");
+	if (handler == NULL)
+		return;
+	EXPECT(register_attribute_handler(handler, PROTO_IPS_DATA, IPS_DATA_TROLLEY_POS,
+	                                  on_log_attribute, NULL, NULL),
+	       "the log attribute takes a handler");
+	memset(&header, 0, sizeof(header));
+	header.caplen = header.len = sizeof(line) - 1;
+	EXPECT(packet_process(handler, &header, (const u_char *) line) != 0,
+	       "the log line is processed");
+	EXPECT(log_lines_seen > 0, "the log line is dissected without the TCP/IP plugin");
+	mmt_close_handler(handler);
+}
+
 int main(void) {
+	const char *tcpip = getenv("MMT_TEST_TCPIP");
 	static const char *content_labels[] = {MMT_CONTENT_LONG_LABELS};
 	static const char *class_labels[] = {PROTO_CLASS_LABELS};
 
@@ -76,7 +144,15 @@ int main(void) {
 	/* <stdbool.h> semantics, not a private macro copy. */
 	EXPECT(true == 1 && false == 0, "true/false keep their <stdbool.h> values");
 
-	/* The class tables now resolve from libmmt_tcpip. */
+	EXPECT(init_extraction(), "the plugins load");
+	if (tcpip != NULL && strcmp(tcpip, "absent") == 0) {
+		expect_tcpip_absent();
+		goto done;
+	}
+
+	/* The class tables answer from the loaded plugin, mapped exactly once:
+	 * a consumer linked against it would hold a second copy. */
+	EXPECT(tcpip_mappings() == 1, "the TCP/IP plugin is mapped once");
 	EXPECT(get_content_class_by_content_type("video/mp4") == MMT_CONTENT_FAMILY_VIDEO,
 	       "video/mp4 is a video content type");
 	EXPECT(get_content_class_by_content_type("application/json") == MMT_CONTENT_FAMILY_TEXT,
@@ -126,6 +202,8 @@ int main(void) {
 	              class_labels[PROTO_CLASS_CDN]) == 0,
 	       "StackPath is labelled as a CDN");
 
+done:
+	close_extraction();
 	if (failures) {
 		fprintf(stderr, "header-macros consumer: %d/%d checks failed\n", failures, checks);
 		return 1;
