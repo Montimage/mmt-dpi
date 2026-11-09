@@ -23,7 +23,7 @@ too. To check the bootstrap before running it, download `install.sh`, run
 `sh install.sh`.
 
 **Source installer** — every supported Linux. It installs the build
-dependencies, then clones the pinned release tag (`v1.10.0`), verifies it after
+dependencies, then clones the pinned release tag (`v1.10.1`), verifies it after
 checkout, builds it and installs it; moving branches are refused unless
 explicitly opted in:
 
