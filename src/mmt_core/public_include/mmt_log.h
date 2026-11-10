@@ -29,10 +29,12 @@
  *     line is formatted locally and written with a single fwrite().
  *
  * mmt_log_debug() compiles to nothing unless the translation unit that
- * calls it is compiled with DEBUG defined (make SHOWLOG=1 for the SDK,
- * -DDEBUG for a plugin): debug lines may carry decoded,
- * subscriber-identifying fields (F-SEC-016), so a release build cannot be
- * made to print them. Arguments of a disabled call are not evaluated.
+ * calls it opts in: a plugin defines MMT_LOG_ENABLE_DEBUG (-DMMT_LOG_ENABLE_DEBUG);
+ * the SDK's own sources (_MMT_BUILD_SDK) keep their convention, DEBUG, which
+ * make SHOWLOG=1 sets. A plugin's own DEBUG does not enable it: debug lines
+ * may carry decoded, subscriber-identifying fields (F-SEC-016), so they need
+ * an opt-in nothing else sets, and a release build cannot be made to print
+ * them. Arguments of a disabled call are not evaluated.
  *
  * The macros use a GNU statement expression and a per-call-site static, so
  * they need GCC or Clang (the SDK's supported toolchains).
@@ -54,28 +56,43 @@ typedef enum mmt_log_level_e {
     MMT_LOG_LEVEL_ERROR = 1, /**< failures */
     MMT_LOG_LEVEL_WARN  = 2, /**< recoverable anomalies, e.g. a malformed PDU */
     MMT_LOG_LEVEL_INFO  = 3, /**< notable events */
-    MMT_LOG_LEVEL_DEBUG = 4  /**< traces; compiled in only with DEBUG defined */
+    MMT_LOG_LEVEL_DEBUG = 4  /**< traces; compiled in only on opt-in (see mmt_log_debug()) */
 } mmt_log_level_t;
 
 /** Number of levels in mmt_log_level_t, MMT_LOG_LEVEL_OFF included. */
 #define MMT_LOG_LEVEL_COUNT 5
 
+/**
+ * Slots of mmt_log_stats_t::events, at least #MMT_LOG_LEVEL_COUNT: the slots
+ * past the last level are reserved for levels a later release may add, and
+ * are 0.
+ */
+#define MMT_LOG_EVENT_SLOTS 8
+
 /** Lines one call site may write per second before it is rate-limited. */
 #define MMT_LOG_SITE_BURST 10
 
-/** Per-call-site rate-limit state; a zero-initialised static per site. */
+/**
+ * Per-call-site rate-limit state; a zero-initialised static per site. Its
+ * layout is compiled into every plugin that logs, so it carries reserved
+ * words for a later release.
+ */
 typedef struct mmt_log_site_s {
-    uint64_t window;     /**< monotonic second the count belongs to */
-    uint32_t count;      /**< lines attempted in that second */
-    uint32_t suppressed; /**< lines dropped since the site last wrote one */
+    uint64_t window;      /**< monotonic second the count belongs to */
+    uint32_t count;       /**< lines attempted in that second */
+    uint32_t suppressed;  /**< lines dropped since the site last wrote one */
+    uint64_t reserved[2]; /**< 0; reserved, never read or written by the logger */
 } mmt_log_site_t;
 
 /** Logger counters, copied out by mmt_log_get_stats(). */
 typedef struct mmt_log_stats_s {
-    uint64_t events[MMT_LOG_LEVEL_COUNT]; /**< calls per level, written or not */
+    /** Calls per level, written or not, indexed by mmt_log_level_t; the
+     *  slots from #MMT_LOG_LEVEL_COUNT on are reserved and 0. */
+    uint64_t events[MMT_LOG_EVENT_SLOTS];
     uint64_t written;      /**< lines written to stderr */
     uint64_t rate_limited; /**< lines dropped by the per-site rate limit */
     uint64_t write_errors; /**< lines whose write to stderr failed */
+    uint64_t reserved[4];  /**< reserved for later counters; 0 */
 } mmt_log_stats_t;
 
 /**
@@ -116,7 +133,8 @@ MMTAPI int MMTCALL mmt_log_set_level(int level);
 MMTAPI int MMTCALL mmt_log_get_level(void);
 
 /**
- * Copies the logger counters.
+ * Copies the logger counters; the reserved event slots and words are set
+ * to 0.
  * @param out destination; NULL copies nothing
  */
 MMTAPI void MMTCALL mmt_log_get_stats(mmt_log_stats_t *out);
@@ -142,11 +160,11 @@ MMTAPI void MMTCALL mmt_log_get_stats(mmt_log_stats_t *out);
 /** Logs one printf-style line at the info level. */
 #define mmt_log_info(...)  mmt_log_at(MMT_LOG_LEVEL_INFO, __VA_ARGS__)
 
-#ifdef DEBUG
-/** Logs one printf-style line at the debug level; nothing without DEBUG. */
+#if defined(MMT_LOG_ENABLE_DEBUG) || (defined(_MMT_BUILD_SDK) && defined(DEBUG))
+/** Logs one printf-style line at the debug level; nothing without the opt-in. */
 #define mmt_log_debug(...) mmt_log_at(MMT_LOG_LEVEL_DEBUG, __VA_ARGS__)
 #else
-/** Logs one printf-style line at the debug level; nothing without DEBUG. */
+/** Logs one printf-style line at the debug level; nothing without the opt-in. */
 #define mmt_log_debug(...) ((void)0)
 #endif
 

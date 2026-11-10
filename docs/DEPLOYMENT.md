@@ -99,7 +99,7 @@ in [Agent Environment Notes §4 `MMT_BASE` Install-Prefix Behavior](./AGENT_ENVI
 | Variable | Effect | Read at |
 |----------|--------|---------|
 | `MMT_DPI_PLUGINS_DIR` | Absolute directory to load the plugins from instead of the compiled-in `$(MMT_BASE)/plugins`; a relative or unreadable value makes `init_extraction()` fail. Read with `secure_getenv()`, so a set-uid/set-gid process ignores it | `src/mmt_core/src/plugins_engine.c:50` (name: `src/mmt_core/private_include/plugins_engine.h:27`) |
-| `MMT_DPI_LOG_LEVEL` | Threshold of the stderr diagnostics logger (default `off`); levels and the `SHOWLOG` build in [Agent Environment Notes §2](./AGENT_ENVIRONMENT.md#useful-build-flags) | `src/mmt_core/src/mmt_log.c:62` |
+| `MMT_DPI_LOG_LEVEL` | Threshold of the stderr diagnostics logger (default `off`); levels and the `SHOWLOG` build in [Agent Environment Notes §2](./AGENT_ENVIRONMENT.md#useful-build-flags) | `src/mmt_core/src/mmt_log.c:68` |
 | `MMT_DPI_PROFILES_FILE` | File of custom DPI profiles, loaded before `MMT_DPI_PROFILE` is resolved — see [DPI Profiles](./DPI-Profiles.md). Read with `secure_getenv()`, so a set-uid/set-gid process ignores it | `src/mmt_core/src/dpi_profiles.c:258` |
 | `MMT_DPI_PROFILE` | Name of the DPI profile each new handler applies; an unknown name keeps the built-in defaults — see [DPI Profiles](./DPI-Profiles.md) | `src/mmt_core/src/dpi_profiles.c:270` |
 | `MMT_DPI_PORT_MAP_FILE` | File of external port hints — see [External Attribution](./External-Attribution.md). Read with `secure_getenv()`, so a set-uid/set-gid process ignores it | `src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c:676` |

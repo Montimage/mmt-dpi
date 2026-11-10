@@ -15,6 +15,12 @@
 
 #include "mmt_log.h"
 
+_Static_assert(MMT_LOG_EVENT_SLOTS >= MMT_LOG_LEVEL_COUNT,
+               "mmt_log_stats_t.events needs a slot per level");
+/* Layouts compiled into out-of-tree plugins (issue #66): pinned. */
+_Static_assert(sizeof(mmt_log_site_t) == 32, "mmt_log_site_t layout is ABI");
+_Static_assert(sizeof(mmt_log_stats_t) == 120, "mmt_log_stats_t layout is ABI");
+
 #define MMT_LOG_UNSET (-1)
 #define MMT_LOG_MSG_MAX 512
 #define MMT_LOG_LINE_MAX (MMT_LOG_MSG_MAX + 160)
@@ -91,6 +97,7 @@ int mmt_log_get_level(void) {
 void mmt_log_get_stats(mmt_log_stats_t *out) {
     if (out == NULL)
         return;
+    memset(out, 0, sizeof(*out)); /* the reserved slots and words */
     for (int i = 0; i < MMT_LOG_LEVEL_COUNT; i++)
         out->events[i] = __atomic_load_n(&mmt_log_events[i], __ATOMIC_RELAXED);
     out->written      = __atomic_load_n(&mmt_log_written, __ATOMIC_RELAXED);
@@ -109,7 +116,8 @@ static uint64_t mmt_log_now_seconds(void) {
     return (uint64_t) time(NULL);
 }
 
-/* Admits a line from site under the per-second burst. On admission *dropped
+/* Admits a line from site under the per-second burst. site->reserved is
+ * neither read nor written (issue #66). On admission *dropped
  * receives the lines the site dropped since it last wrote one. The window
  * reset is approximate under contention (a concurrent increment can land in
  * either window) but every access is atomic. */

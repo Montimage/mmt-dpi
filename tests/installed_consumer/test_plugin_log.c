@@ -10,7 +10,8 @@
  * maps them in the plugin itself, as the two defines below do.
  *
  * tests/installed_consumer/run_tests.sh compiles it with -fPIC -shared
- * -Wall -Wextra -Werror against $(MMT_INC), with and without -DDEBUG, loads
+ * -Wall -Wextra -Werror against $(MMT_INC) with -DMMT_LOG_ENABLE_DEBUG, with
+ * -DDEBUG alone (which must not enable mmt_log_debug()) and with neither, loads
  * it through init_extraction() (test_plugin_log_host.c) and checks the
  * lines it writes to stderr.
  */
@@ -25,8 +26,8 @@
 int init_proto(void);
 int cleanup_proto(void);
 
-/* Called only from debug(): without DEBUG mmt_log_debug() drops its
- * arguments, so the helper is unused in a release build. */
+/* Called only from debug(): without MMT_LOG_ENABLE_DEBUG mmt_log_debug()
+ * drops its arguments, so the helper is unused in a release build. */
 __attribute__((unused)) static int debug_argument(void) {
     return 4;
 }

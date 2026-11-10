@@ -117,15 +117,15 @@ Since 1.10.0 (issue #537) the installed headers no longer define `debug()`, `log
 | `log_err(fmt, ...)` | `mmt_log_error(fmt, ...)` | `mmt_log.h` (opt-in) |
 | `log_warn(fmt, ...)` | `mmt_log_warn(fmt, ...)` | `mmt_log.h` (opt-in) |
 | `log_info(fmt, ...)` | `mmt_log_info(fmt, ...)` | `mmt_log.h` (opt-in) |
-| `debug(fmt, ...)` | `mmt_log_debug(fmt, ...)` | `mmt_log.h` (opt-in) |
+| `debug(fmt, ...)` | `mmt_log_debug(fmt, ...)`, compiled in with `-DMMT_LOG_ENABLE_DEBUG` | `mmt_log.h` (opt-in) |
 | `likely(x)` / `unlikely(x)` | `MMT_LIKELY(x)` / `MMT_UNLIKELY(x)` | `mmt_utils.h` (through `mmt_core.h`) |
 
-`mmt_log.h` is installed with the other headers but no installed header includes it, so a consumer that does not include it gets none of its names, and every name it defines starts with `mmt_log` or `MMT_LOG` (`src/mmt_core/public_include/mmt_log.h:130-150`). `MMT_LIKELY()`/`MMT_UNLIKELY()` wrap `__builtin_expect()` and evaluate to `!!(x)` (`src/mmt_core/public_include/mmt_utils.h:32-39`).
+`mmt_log.h` is installed with the other headers but no installed header includes it, so a consumer that does not include it gets none of its names, and every name it defines starts with `mmt_log` or `MMT_LOG` (`src/mmt_core/public_include/mmt_log.h:148-168`). `MMT_LIKELY()`/`MMT_UNLIKELY()` wrap `__builtin_expect()` and evaluate to `!!(x)` (`src/mmt_core/public_include/mmt_utils.h:32-39`).
 
 The logger behaves differently from the old macros, which wrote to stderr whenever they were reached — `debug()` unless the plugin was built with `-DNDEBUG`:
 
 - it is off by default: lines are written only when `MMT_DPI_LOG_LEVEL=error|warn|info|debug` (or `mmt_log_set_level()`) raises the threshold, and each call site writes at most 10 lines per second;
-- `mmt_log_debug()` compiles to nothing unless the plugin itself is compiled with `-DDEBUG`, and its arguments are then not evaluated: a helper called only from it is unused in a release build (`-Wunused-function`);
+- `mmt_log_debug()` compiles to nothing unless the plugin itself is compiled with `-DMMT_LOG_ENABLE_DEBUG`, and its arguments are then not evaluated: a helper called only from it is unused in a release build (`-Wunused-function`). A plugin's own `DEBUG` does not enable it — debug lines may carry subscriber-identifying fields, so they need an opt-in no build system sets for another reason; `DEBUG` (`make SHOWLOG=1`) enables it only in the SDK's own sources;
 - each line reads `[mmt-dpi][E|W|I|D] <file>:<line>: <message>`, and a trailing newline in the format is dropped;
 - the `errno: <strerror>` suffix of `log_err()`/`log_warn()` is gone: pass `strerror(errno)` in the message where it matters.
 
@@ -134,6 +134,9 @@ The logger behaves differently from the old macros, which wrote to stderr whenev
 Plugin code that keeps the old names maps them in the plugin itself, never in a header other code includes:
 
 ```c
+#ifdef DEBUG                 /* only if the plugin's DEBUG should keep enabling debug() */
+#define MMT_LOG_ENABLE_DEBUG
+#endif
 #include "mmt_log.h"
 
 #define debug(...)   mmt_log_debug(__VA_ARGS__)
@@ -143,8 +146,8 @@ Plugin code that keeps the old names maps them in the plugin itself, never in a 
 Build it, put the `.so` in the plugin directory (`$(MMT_BASE)/plugins`, or the absolute directory named by `MMT_DPI_PLUGINS_DIR`) and raise the threshold to see the lines:
 
 ```bash
-gcc -Wall -fPIC -shared -DDEBUG -o libmmt_myproto.so -I /opt/mmt/dpi/include myproto_plugin.c
+gcc -Wall -fPIC -shared -DMMT_LOG_ENABLE_DEBUG -o libmmt_myproto.so -I /opt/mmt/dpi/include myproto_plugin.c
 MMT_DPI_LOG_LEVEL=debug ./my_probe
 ```
 
-The `installed_consumer` suite builds such a plugin against an installed SDK, with and without `-DDEBUG`, and checks the lines it writes (`tests/installed_consumer/test_plugin_log.c`).
+The `installed_consumer` suite builds such a plugin against an installed SDK with `-DMMT_LOG_ENABLE_DEBUG`, with `-DDEBUG` alone and with neither, and checks the lines it writes (debug lines only from the first) (`tests/installed_consumer/test_plugin_log.c`).
