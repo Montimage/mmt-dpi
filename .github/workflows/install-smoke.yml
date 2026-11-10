@@ -89,12 +89,12 @@ jobs:
           - { name: ubuntu-24.04, tier: supported, image: "ubuntu:24.04@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852" }
           - { name: debian-12, tier: supported, image: "debian:12@sha256:268fb24c39bca92d326dd83ea3abebe4a3f7751c804ffef23bb6d857dd343ff8" }
           - { name: rocky-9, tier: supported, image: "rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6" }
-          - { name: centos-stream9, tier: supported, image: "quay.io/centos/centos:stream9@sha256:99a7748660352b7d87e5689805ddafa6209d6019d0c5b642b5354656dff02be3" }
+          - { name: centos-stream9, tier: supported, image: "quay.io/centos/centos:stream9@sha256:280add9b43d478ff06de6ccc6285afa7f1d81d8a0ea0d63e292a2f87f1d5aedf" }
           - { name: fedora-44, tier: supported, image: "fedora:44@sha256:15da97ed9aa94dd3d92c3925eb89520f6c80e07ea7ee24cba848d1f8b6912b3e" }
           - { name: opensuse-leap-16.0, tier: supported, image: "registry.opensuse.org/opensuse/leap:16.0@sha256:9c88da273b41600dfd12790849dfb198ddefed3a109eaf42ada944afb4282a9d" }
           # Best-effort: Arch is rolling (no arm64 image upstream); Alpine is
           # musl, which the SDK does not build on today.
-          - { name: archlinux, tier: best-effort, image: "archlinux:base@sha256:b1c2fe6e717bfd5673af8fc217e1e1c3ce0dcbb1d53c3414c8425e7ce79fc6d9" }
+          - { name: archlinux, tier: best-effort, image: "archlinux:base@sha256:d4594bb2300cba11f41c2f27923eb56f63d9988909c402f9c95517d1e362c899" }
           - { name: alpine-3.23, tier: best-effort, image: "alpine:3.23@sha256:469c9ea410b9215eaee7976ba6c0639039b444be8e5d638f7abbada189971eb2" }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
