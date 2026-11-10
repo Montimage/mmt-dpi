@@ -35,7 +35,10 @@ cite	docs/Add-New-Protocol.md	src/mmt_core/src/plugins_engine.c:122-138	plugin_h
 cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry_classify.c:209-219	bool register_classification_function_with_parent_protocol(	return 0;
 cite	docs/Add-New-Protocol.md	rules/common.mk:217-223	LIBTCPIP    := libmmt_tcpip	LIBBAPP     := libmmt_business_app
 cite	docs/Add-New-Protocol.md	src/mmt_dicom/dicom.c:576-579	if(!register_classification_function_with_parent_protocol(PROTO_TCP	};
-cite	docs/Add-New-Protocol.md	src/mmt_core/src/plugins_engine.c:84-86	Issue #503 (F-BUG-006)	entries are only freed
+cite	docs/Add-New-Protocol.md	src/mmt_core/src/plugins_engine.c:84-99	Issue #503 (F-BUG-006)	free( entries[i] );
+cite	docs/Add-New-Protocol.md	src/mmt_core/src/plugins_engine.c:129-136	dlerror(); /* Clear any existing error */	return 0;
+cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry.c:188-196	protocol_t * get_protocol_struct_by_protocol_id(uint32_t proto_id) {	}
+cite	docs/Add-New-Protocol.md	src/mmt_business_app/proto_ips_data.c:251-270	int init_proto_ips_data(){	}
 cite	docs/Add-New-Protocol.md	src/mmt_core/src/plugins_engine.c:149-151	if (retval <= 0) {	return 0;
 cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry.c:381-388	bool is_free_protocol_id_for_registration(uint32_t proto_id) {	return 1; // Cool
 cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry.c:449-458	protocol_t *init_protocol_struct_for_registration(	return NULL;
