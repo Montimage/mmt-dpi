@@ -131,7 +131,7 @@ static void test_s1ap_outer_ok_inner_fail(void) {
 /* Issue #545: malformed PDUs write nothing — S1AP_ERROR/S1AP_WARN     */
 /* used to print one stdout line per malformed PDU. They go through    */
 /* the SDK logger now: off by default, stderr only, rate-limited per   */
-/* call site, every event counted (src/mmt_core/private_include/       */
+/* call site, every event counted (src/mmt_core/public_include/        */
 /* mmt_log.h).                                                         */
 /* ------------------------------------------------------------------ */
 static char *read_and_unlink(const char *path) {

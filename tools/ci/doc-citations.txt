@@ -26,6 +26,8 @@ delegate	docs/Phase2-Heuristics.md	scripts/validate-doc-drift.sh
 cite	docs/ARCHITECTURE.md	sdk/Makefile:249	MMT_LAYOUT_PLUGINS  := $(LIBTCPIP) $(LIBMOBILE) $(LIBBAPP) $(LIBDICOM)	-
 cite	docs/ARCHITECTURE.md	rules/common.mk:216-223	LIBCORE     := libmmt_core	LIBBAPP     := libmmt_business_app
 cite	docs/ARCHITECTURE.md	rules/common.mk:225-228	ifdef ENABLESEC	endif
+cite	docs/Add-New-Protocol.md	src/mmt_core/public_include/mmt_log.h:148-168	#define mmt_log_at(level, ...)	#define mmt_log_debug(...) ((void)0)
+cite	docs/Add-New-Protocol.md	src/mmt_core/public_include/mmt_utils.h:32-39	#define MMT_LIKELY(x)   __builtin_expect(!!(x), 1)	#define MMT_UNLIKELY(x) (!!(x))
 cite	docs/BENCHMARKS.md	tools/phase0/capture_perf.sh:103-106	printf '# host: %s | cpu: %s | gcc: %s | os: %s | commit: %s\n'	rev-parse --short HEAD
 cite	docs/BENCHMARKS.md	tools/phase0/capture_perf.sh:86-88	gcc -O2 -Wall -o "${BIN}" "${SCRIPT_DIR}/phase0_throughput.c"	export LD_LIBRARY_PATH="${PREFIX}/dpi/lib
 cite	docs/BENCHMARKS.md	tools/phase0/capture_perf.sh:72-74	if [ "${MMT_SDK_PREBUILT:-0}" = "1" ]; then	no installed SDK under
@@ -41,7 +43,7 @@ cite	docs/DEPLOYMENT.md	rules/common.mk:7	MMT_PLUGINS ?= $(MMT_BASE)/plugins	-
 cite	docs/DEPLOYMENT.md	src/mmt_core/src/plugins_engine.c:48-60	static const char *plugins_directory(int *from_env)	}
 cite	docs/DEPLOYMENT.md	src/mmt_core/src/plugins_engine.c:50	const char *dir = secure_getenv(PLUGINS_DIR_ENV);	-
 cite	docs/DEPLOYMENT.md	src/mmt_core/private_include/plugins_engine.h:27	#define PLUGINS_DIR_ENV "MMT_DPI_PLUGINS_DIR"	-
-cite	docs/DEPLOYMENT.md	src/mmt_core/src/mmt_log.c:62	int initial = mmt_log_parse_level(getenv("MMT_DPI_LOG_LEVEL"));	-
+cite	docs/DEPLOYMENT.md	src/mmt_core/src/mmt_log.c:68	int initial = mmt_log_parse_level(getenv("MMT_DPI_LOG_LEVEL"));	-
 cite	docs/DEPLOYMENT.md	src/mmt_core/src/dpi_profiles.c:258	const char *profiles_path = secure_getenv("MMT_DPI_PROFILES_FILE");	-
 cite	docs/DEPLOYMENT.md	src/mmt_core/src/dpi_profiles.c:270	const char *name = getenv("MMT_DPI_PROFILE");	-
 cite	docs/DEPLOYMENT.md	src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c:676	const char *path = secure_getenv("MMT_DPI_PORT_MAP_FILE");	-

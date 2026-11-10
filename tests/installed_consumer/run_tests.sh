@@ -11,6 +11,9 @@
 #   2. the script compiles the consumer against only the installed
 #      headers/libraries, then every vendored fixture must classify to its
 #      known label through the installed plugins;
+#      an out-of-tree plugin built against the installed headers only logs
+#      through the opt-in mmt_log.h and uses MMT_LIKELY()/MMT_UNLIKELY()
+#      (issue #66);
 #      the installed headers leave ntohl/ntohs to <arpa/inet.h> and a
 #      consumer gets single-evaluation, host-correct byte order (#504);
 #   3. failure legs: a missing required plugin, an absent ENABLESEC engine,
@@ -153,6 +156,78 @@ check "header-namespace consumer sees no internal macro and passes" \
     header_macros_consumer 0
 check "class lookups and a log line work with no TCP/IP plugin, linking libmmt_core alone" \
     header_macros_consumer 0 "${LOG_ONLY_PLUGINS}" absent
+
+# Out-of-tree plugin logging (issue #66): the replacement for the debug()/
+# log_err()/likely() macros #537 made private. A plugin compiled against the
+# installed headers only logs through the opt-in mmt_log.h and uses
+# MMT_LIKELY()/MMT_UNLIKELY(); mmt_core.h alone still pulls in neither the
+# logger nor an unprefixed macro (the host's #error, the namespace consumer
+# above). The plugin's lines reach stderr only when MMT_DPI_LOG_LEVEL raises
+# the threshold, and its debug line only when it is built with
+# -DMMT_LOG_ENABLE_DEBUG: a plugin's own -DDEBUG does not compile it in.
+check "installed headers carry the opt-in logger mmt_log.h" \
+    test -f "${PREFIX}/dpi/include/mmt_log.h"
+PLUGIN_LOG_HOST="${WORK}/plugin_log_host"
+check "plugin-log host compiles -Werror against mmt_core.h without the logger" \
+    "${CC:-gcc}" "${extra_cflags[@]}" -Wall -Wextra -Werror -o "${PLUGIN_LOG_HOST}" \
+        "${SCRIPT_DIR}/test_plugin_log_host.c" \
+        -I "${PREFIX}/dpi/include" -L "${PREFIX}/dpi/lib" -lmmt_core -ldl
+plugin_log_build() {
+    local mode="$1" dir="${WORK}/plugin_log_$1" defs=()
+    case "${mode}" in
+        debug) defs=(-DMMT_LOG_ENABLE_DEBUG) ;;
+        plain_debug) defs=(-DDEBUG) ;;
+    esac
+    mkdir -p "${dir}"
+    "${CC:-gcc}" "${extra_cflags[@]}" "${defs[@]}" -Wall -Wextra -Werror -fPIC -shared \
+        -o "${dir}/test_plugin_log.so" "${SCRIPT_DIR}/test_plugin_log.c" \
+        -I "${PREFIX}/dpi/include"
+}
+# $1: debug|plain_debug|release build, $2: MMT_DPI_LOG_LEVEL (unset when empty).
+plugin_log_run() {
+    local err="${WORK}/plugin_log_$1_${2:-unset}.err" level=()
+    [ -z "$2" ] || level=("MMT_DPI_LOG_LEVEL=$2")
+    env -u MMT_DPI_LOG_LEVEL "${level[@]}" LD_LIBRARY_PATH="${PREFIX}/dpi/lib" \
+        MMT_DPI_PLUGINS_DIR="${WORK}/plugin_log_$1" "${PLUGIN_LOG_HOST}" 2> "${err}" \
+        || { cat "${err}"; return 1; }
+    cat "${err}"
+}
+plugin_log_has() { grep -qE "^\[mmt-dpi\]\[$1\] test_plugin_log\.c:[0-9]+: test plugin $2 line $3\$"; }
+plugin_log_debug_build() {
+    local out
+    out="$(plugin_log_run debug debug)" || return 1
+    printf '%s\n' "${out}"
+    plugin_log_has E error 1 <<< "${out}" && plugin_log_has W warn 2 <<< "${out}" \
+        && plugin_log_has I info 3 <<< "${out}" && plugin_log_has D debug 4 <<< "${out}"
+}
+# $1: a build without the debug opt-in (release, or plain_debug: -DDEBUG).
+plugin_log_no_debug_build() {
+    local out
+    out="$(plugin_log_run "$1" debug)" || return 1
+    printf '%s\n' "${out}"
+    plugin_log_has E error 1 <<< "${out}" && plugin_log_has W warn 2 <<< "${out}" \
+        && plugin_log_has I info 3 <<< "${out}" && ! grep -q 'test plugin debug' <<< "${out}"
+}
+plugin_log_off() {
+    local out
+    out="$(plugin_log_run release '')" || return 1
+    printf '%s\n' "${out}"
+    ! grep -q 'test plugin' <<< "${out}"
+}
+check "out-of-tree plugin with mmt_log.h and MMT_LIKELY compiles -Werror (-DMMT_LOG_ENABLE_DEBUG)" \
+    plugin_log_build debug
+check "out-of-tree plugin with mmt_log.h and MMT_LIKELY compiles -Werror (-DDEBUG alone)" \
+    plugin_log_build plain_debug
+check "out-of-tree plugin with mmt_log.h and MMT_LIKELY compiles -Werror (release)" \
+    plugin_log_build release
+check "plugin logs error/warn/info/debug lines at MMT_DPI_LOG_LEVEL=debug (-DMMT_LOG_ENABLE_DEBUG)" \
+    plugin_log_debug_build
+check "plugin built with -DDEBUG alone writes no debug line (the opt-in is prefixed)" \
+    plugin_log_no_debug_build plain_debug
+check "plugin built without the debug opt-in writes no debug line" \
+    plugin_log_no_debug_build release
+check "plugin writes nothing with MMT_DPI_LOG_LEVEL unset (logger off by default)" \
+    plugin_log_off
 
 # Provenance: a real file is hashed and every log line is tagged.
 : > "${WORK}/mmt-dpi_test.deb"

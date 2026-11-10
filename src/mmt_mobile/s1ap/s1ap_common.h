@@ -382,7 +382,7 @@
  * out unless the build defines DEBUG (make SHOWLOG=1), as before: they print
  * decoded, subscriber-identifying fields (F-SEC-016).
  */
-#include "../../mmt_core/private_include/mmt_log.h" /* issue #545 */
+#include "../../mmt_core/public_include/mmt_log.h" /* issue #545 */
 
 # define S1AP_TRAF(x, args...)  mmt_log_debug("[S1AP][T] " x, ##args)
 # define S1AP_INFO(x, args...)  mmt_log_debug("[S1AP][I] " x, ##args)

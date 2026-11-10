@@ -44,6 +44,7 @@
 #include "mmt_class_provider.h"
 #include "extraction_lib.h"
 #include "mmt_utils.h"
+#include "mmt_log.h"
 #include "packet_processing.h" /* private: handler/session/attribute layouts */
 #include "hash_utils.h"        /* private: session store of the sessionizer */
 #include "cfg_defaults.h"      /* private: CFG_CLASSIFICATION_THRESHOLD */
@@ -2410,6 +2411,107 @@ static void b_mmt_print_info(void) {
 }
 
 /* ======================================================================== */
+/*                                 mmt_log.h                                */
+/* ======================================================================== */
+
+/* Issue #66: the logger header is installed, so its five functions are
+ * public. Each contract restores the threshold it found; the lines it
+ * writes go to the suite log (stderr). */
+
+static void ac_log_stats(mmt_log_stats_t *s) {
+    memset(s, 0, sizeof(*s));
+    mmt_log_get_stats(s);
+}
+static uint64_t ac_log_events_total(const mmt_log_stats_t *s) {
+    uint64_t n = 0;
+    for (int i = 0; i < MMT_LOG_LEVEL_COUNT; i++)
+        n += s->events[i];
+    return n;
+}
+
+static void b_mmt_log_event(void) {
+    mmt_log_stats_t before, after;
+    int saved = mmt_log_set_level(MMT_LOG_LEVEL_WARN);
+    ac_log_stats(&before);
+    CHECK(mmt_log_event(MMT_LOG_LEVEL_ERROR) != 0, "error is enabled at the warn threshold");
+    CHECK(mmt_log_event(MMT_LOG_LEVEL_DEBUG) == 0, "debug is disabled at the warn threshold");
+    ac_log_stats(&after);
+    CHECK(after.events[MMT_LOG_LEVEL_ERROR] == before.events[MMT_LOG_LEVEL_ERROR] + 1
+          && after.events[MMT_LOG_LEVEL_DEBUG] == before.events[MMT_LOG_LEVEL_DEBUG] + 1,
+          "enabled and disabled events are both counted");
+    mmt_log_set_level(saved);
+}
+static void e_mmt_log_event(void) {
+    mmt_log_stats_t before, after;
+    int saved = mmt_log_set_level(MMT_LOG_LEVEL_DEBUG);
+    ac_log_stats(&before);
+    CHECK(mmt_log_event(MMT_LOG_LEVEL_OFF) == 0 && mmt_log_event(MMT_LOG_LEVEL_COUNT) == 0
+          && mmt_log_event(-1) == 0, "an out-of-range level -> 0");
+    ac_log_stats(&after);
+    CHECK(ac_log_events_total(&after) == ac_log_events_total(&before),
+          "an out-of-range level is not counted");
+    mmt_log_set_level(saved);
+}
+static void b_mmt_log_write(void) {
+    mmt_log_stats_t before, after;
+    int saved = mmt_log_set_level(MMT_LOG_LEVEL_ERROR);
+    ac_log_stats(&before);
+    mmt_log_write(NULL, MMT_LOG_LEVEL_ERROR, "api_contract.c", 1, "%s", "contract line");
+    mmt_log_write(NULL, MMT_LOG_LEVEL_WARN, "api_contract.c", 2, "%s", "above the threshold");
+    ac_log_stats(&after);
+    CHECK(after.written == before.written + 1, "one enabled line is written, the other is not");
+    mmt_log_set_level(saved);
+}
+static void e_mmt_log_write(void) {
+    mmt_log_stats_t before, after;
+    const char *volatile no_fmt = NULL;
+    int saved = mmt_log_set_level(MMT_LOG_LEVEL_DEBUG);
+    ac_log_stats(&before);
+    mmt_log_write(NULL, MMT_LOG_LEVEL_COUNT, "api_contract.c", 1, "%s", "bad level");
+    mmt_log_write(NULL, MMT_LOG_LEVEL_ERROR, "api_contract.c", 2, no_fmt);
+    ac_log_stats(&after);
+    CHECK(after.written == before.written && after.write_errors == before.write_errors,
+          "an out-of-range level or a NULL format writes nothing");
+    mmt_log_set_level(saved);
+}
+static void b_mmt_log_set_level(void) {
+    int saved = mmt_log_set_level(MMT_LOG_LEVEL_INFO);
+    CHECK(mmt_log_set_level(MMT_LOG_LEVEL_ERROR) == MMT_LOG_LEVEL_INFO,
+          "returns the previous threshold");
+    CHECK(mmt_log_get_level() == MMT_LOG_LEVEL_ERROR, "the new threshold is in force");
+    mmt_log_set_level(saved);
+}
+static void e_mmt_log_set_level(void) {
+    int before = mmt_log_get_level();
+    CHECK(mmt_log_set_level(MMT_LOG_LEVEL_COUNT) == -1 && mmt_log_set_level(-1) == -1,
+          "an out-of-range level -> -1");
+    CHECK(mmt_log_get_level() == before, "an out-of-range level changes nothing");
+}
+static void b_mmt_log_get_level(void) {
+    int saved = mmt_log_set_level(MMT_LOG_LEVEL_DEBUG);
+    CHECK(mmt_log_get_level() == MMT_LOG_LEVEL_DEBUG, "reports the threshold");
+    mmt_log_set_level(saved);
+    CHECK(mmt_log_get_level() == saved, "reports the restored threshold");
+}
+static void b_mmt_log_get_stats(void) {
+    mmt_log_stats_t before, after;
+    ac_log_stats(&before);
+    (void) mmt_log_event(MMT_LOG_LEVEL_WARN);
+    ac_log_stats(&after);
+    CHECK(after.events[MMT_LOG_LEVEL_WARN] == before.events[MMT_LOG_LEVEL_WARN] + 1,
+          "copies the per-level event counters");
+}
+static void e_mmt_log_get_stats(void) {
+    mmt_log_stats_t before, after;
+    ac_log_stats(&before);
+    mmt_log_get_stats(NULL);
+    ac_log_stats(&after);
+    CHECK(ac_log_events_total(&after) == ac_log_events_total(&before)
+          && after.written == before.written,
+          "a NULL destination copies nothing and changes no counter");
+}
+
+/* ======================================================================== */
 /*                                mmt_utils.h                               */
 /* ======================================================================== */
 
@@ -3310,6 +3412,13 @@ static const api_contract_t k_contracts[] = {
     CONTRACT(mmt_arena_reset, b_mmt_arena_reset, e_mmt_arena_reset),
     CONTRACT(mmt_arena_destroy, b_mmt_arena_destroy, e_mmt_arena_destroy),
     NO_ERROR_PATH(mmt_print_info, b_mmt_print_info, W_NOARGS),
+
+    /* ------------------------------ mmt_log.h ---------------------------- */
+    CONTRACT(mmt_log_event, b_mmt_log_event, e_mmt_log_event),
+    CONTRACT(mmt_log_write, b_mmt_log_write, e_mmt_log_write),
+    CONTRACT(mmt_log_set_level, b_mmt_log_set_level, e_mmt_log_set_level),
+    NO_ERROR_PATH(mmt_log_get_level, b_mmt_log_get_level, W_NOARGS),
+    CONTRACT(mmt_log_get_stats, b_mmt_log_get_stats, e_mmt_log_get_stats),
 
     /* ----------------------------- mmt_utils.h --------------------------- */
     NO_ERROR_PATH(hex2int, b_hex2int, W_TOTAL),

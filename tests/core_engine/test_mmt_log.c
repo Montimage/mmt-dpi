@@ -1,17 +1,19 @@
 /*
  * test_mmt_log.c — unit tests of the SDK logger (issue #545,
- * src/mmt_core/src/mmt_log.c, contract in private_include/mmt_log.h).
+ * src/mmt_core/src/mmt_log.c, contract in public_include/mmt_log.h).
  *
  * Checks: off by default with every event still counted and the arguments
  * of a disabled call never evaluated; MMT_DPI_LOG_LEVEL parsing (in forked
  * children, since the threshold is read once); mmt_log_set_level();
  * stderr-only output and the line format; the per-site rate limit and its
- * "suppressed" report; truncation; and exact counter accounting under
- * concurrent writers (the suite's SANITIZE=tsan mode runs this under TSan).
+ * "suppressed" report; truncation; exact counter accounting under
+ * concurrent writers (the suite's SANITIZE=tsan mode runs this under TSan);
+ * and the reserved words of the two public layouts (issue #66).
  */
 
 #include <errno.h>
 #include <fcntl.h>
+#include <stddef.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -331,6 +333,56 @@ static void test_concurrency(void) {
     mmt_log_set_level(MMT_LOG_LEVEL_OFF);
 }
 
+/* Issue #66: the layouts out-of-tree plugins compile in, and their
+ * reserved words — zeroed in the stats copy, ignored in a site. */
+static void test_reserved_layout(void) {
+    printf("reserved layout:\n");
+    CHECK("mmt_log_site_t is 32 bytes, reserved words at offset 16",
+          sizeof(mmt_log_site_t) == 32 && offsetof(mmt_log_site_t, window) == 0
+          && offsetof(mmt_log_site_t, count) == 8
+          && offsetof(mmt_log_site_t, suppressed) == 12
+          && offsetof(mmt_log_site_t, reserved) == 16);
+    CHECK("mmt_log_stats_t is 120 bytes, MMT_LOG_EVENT_SLOTS event slots first",
+          sizeof(mmt_log_stats_t) == 120 && MMT_LOG_EVENT_SLOTS >= MMT_LOG_LEVEL_COUNT
+          && offsetof(mmt_log_stats_t, written) == 8 * MMT_LOG_EVENT_SLOTS
+          && offsetof(mmt_log_stats_t, reserved) == 88);
+
+    mmt_log_stats_t st;
+    memset(&st, 0xff, sizeof(st));
+    mmt_log_get_stats(&st);
+    int zero = 1;
+    for (int i = MMT_LOG_LEVEL_COUNT; i < MMT_LOG_EVENT_SLOTS; i++)
+        zero = zero && st.events[i] == 0;
+    for (size_t i = 0; i < sizeof(st.reserved) / sizeof(st.reserved[0]); i++)
+        zero = zero && st.reserved[i] == 0;
+    CHECK("mmt_log_get_stats() zeroes the reserved slots and words", zero);
+
+    mmt_log_set_level(MMT_LOG_LEVEL_WARN);
+    mmt_log_site_t site;
+    capture_t c;
+    char *out = NULL, *err = NULL;
+    /* Retry until the burst falls inside one clock second. */
+    for (int attempt = 0; attempt < 5; attempt++) {
+        free(out);
+        free(err);
+        site = (mmt_log_site_t) { 0, 0, 0, { 7, 9 } };
+        uint64_t t0 = coarse_now();
+        capture_begin(&c);
+        for (int i = 0; i < MMT_LOG_SITE_BURST + 2; i++)
+            mmt_log_write(&site, MMT_LOG_LEVEL_WARN, __FILE__, __LINE__, "reserved %d", i);
+        capture_end(&c, &out, &err);
+        if (coarse_now() == t0)
+            break;
+    }
+    CHECK("a site with non-zero reserved words is rate-limited as usual",
+          count_lines(err) == MMT_LOG_SITE_BURST && site.suppressed == 2);
+    CHECK("the logger leaves a site's reserved words untouched",
+          site.reserved[0] == 7 && site.reserved[1] == 9);
+    free(out);
+    free(err);
+    mmt_log_set_level(MMT_LOG_LEVEL_OFF);
+}
+
 int main(void) {
     /* The threshold is read from the environment once: start from default. */
     unsetenv("MMT_DPI_LOG_LEVEL");
@@ -342,6 +394,7 @@ int main(void) {
     test_output_format();
     test_rate_limit();
     test_concurrency();
+    test_reserved_layout();
     printf("\n%d checks, %d failure(s)\n", checks, failures);
     return failures ? 1 : 0;
 }

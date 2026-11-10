@@ -67,7 +67,7 @@
  *                               stream is supplied by the caller.
  */
 #ifdef DEBUG
-#include "mmt_log.h"
+#include "../public_include/mmt_log.h"
 #define mmt_debug_log(...) mmt_log_debug(__VA_ARGS__)
 #else
 #define mmt_debug_log(...) ((void)0)

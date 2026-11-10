@@ -83,6 +83,7 @@ iterate_through_mmt_handlers
 iterate_through_protocols
 mmt_close_handler
 mmt_drop_packet
+mmt_log_get_level
 mmt_print_all_protocols
 mmt_print_info
 mmt_strcasecmp

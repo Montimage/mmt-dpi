@@ -7,7 +7,7 @@
 # stdout/stderr unconditionally: stderr is unbuffered, so each call is a
 # syscall and retransmission-heavy flows collapse throughput toward the
 # syscall ceiling. Logging belongs behind the SDK logger
-# (src/mmt_core/private_include/mmt_log.h, issue #545): off by default,
+# (src/mmt_core/public_include/mmt_log.h, issue #545): off by default,
 # stderr only, rate-limited per call site.
 #
 # Counted (1): lines in the packet-path trees — src/mmt_core/src,
@@ -22,7 +22,9 @@
 # generated release build.
 #
 # Counted (2), issue #545: a macro definition line, in a .c or .h file of
-# the same trees or of src/mmt_core/private_include, that writes to stdout
+# the same trees, of src/mmt_core/private_include or of the logger header
+# src/mmt_core/public_include/mmt_log.h (installed since issue #66), that
+# writes to stdout
 # (printf(, puts(, putchar(, fprintf(stdout / xer_fprint(stdout, or
 # fputs/fputc/putc/fwrite naming stdout). Only the #define line itself is
 # read, not its continuation lines. The macro-definition
@@ -65,7 +67,7 @@ hits="$(git ls-files "${c_specs[@]}" "${vendor_excludes[@]}" \
     | xargs grep -nE '^[^/]*\b(printf|fprintf)[[:space:]]*\(' \
     | grep -vE '^[^:]+:[0-9]+:[[:space:]]*#[[:space:]]*define' || true)"
 # (2) stdout-writing macro definitions, headers included.
-h_specs=("src/mmt_core/private_include/*.h")
+h_specs=("src/mmt_core/private_include/*.h" "src/mmt_core/public_include/mmt_log.h")
 for d in "${PACKET_PATH_DIRS[@]}"; do h_specs+=("$d/*.c" "$d/*.h"); done
 stdout_macros="$(git ls-files "${h_specs[@]}" "${vendor_excludes[@]}" \
     | xargs grep -nE '^[[:space:]]*#[[:space:]]*define.*(\b(printf|puts|putchar)[[:space:]]*\(|\b(fprintf|xer_fprint)[[:space:]]*\([[:space:]]*stdout\b|\b(fputs|fputc|putc|fwrite)[[:space:]]*\(.*\bstdout\b)' \
