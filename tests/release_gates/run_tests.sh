@@ -111,6 +111,11 @@
 # on fixture pages and registries (slid, out-of-range, unregistered, stale,
 # basename-only and sdk/include/ citations, an undeclared append-only
 # exemption, a missing delegate) and then on the real docs tree.
+# It also runs the protocol-id-range self-test beside
+# scripts/validate-proto-id-range.sh (issue #73), which drives the real
+# validator on fixture trees (space- and tab-separated, indented, hex and
+# suffixed ids in 950-999, a PROTO_MAX_IDENTIFIER of 999, a page that no
+# longer names the range) and then on the real tree.
 set -e
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/ci/tests"
 python3 "${TESTS_DIR}/test-release-gates.py" "$@"
@@ -141,3 +146,4 @@ bash "${TESTS_DIR}/test-shape-ratchet.sh"
 bash "${TESTS_DIR}/test-unreachable-sections.sh"
 bash "${TESTS_DIR}/test-site-links.sh"
 bash "${TESTS_DIR}/test-doc-citations.sh"
+bash "${TESTS_DIR}/test-proto-id-range.sh"

@@ -21,7 +21,7 @@ In the TCP/IP header file **`src/mmt_tcpip/include/mmt_tcpip_protocols.h`** add:
 
 ```c
 // Add the following line to the end of the protocol numbers definitions
-#define PROTO_LEMONDE XXX //XXX is the highest existing protocol number + 1
+#define PROTO_LEMONDE XXX //XXX is the highest existing protocol number + 1, below 950
 
 // Update the value of LAST_IMPLEMENTED_PROTOCOL
 #define LAST_IMPLEMENTED_PROTOCOL PROTO_LEMONDE
@@ -29,6 +29,8 @@ In the TCP/IP header file **`src/mmt_tcpip/include/mmt_tcpip_protocols.h`** add:
 // Add an alias for Lemonde protocol
 #define PROTO_LEMONDE_ALIAS "lemonde"
 ```
+
+Never give a built-in protocol an id in 950–999: that range is [reserved for third-party plugins](#protocol-ids-for-a-plugin-of-your-own), and `scripts/validate-proto-id-range.sh` (the `doc-validators` CI job) fails on a `#define PROTO_<NAME> <n>` under `src/` that falls in it.
 
 **lemonde** only needs to be registered — it is classified by hostname (section 3) and has no attributes or classifier of its own — so it needs **no source file**: its `MMT_PROTO_SIMPLE` row in `proto_init_list.def` (section 2) registers it (issue #542). A protocol that does need its own code (attributes, a classifier, session context) gets a file **`src/mmt_tcpip/lib/protocols/proto_<name>.c`** defining `int init_proto_<name>_struct()` (see existing `src/mmt_tcpip/lib/protocols/proto_dns.c` for a reference) and an `MMT_PROTO_INIT` row instead.
 
@@ -167,6 +169,12 @@ A plugin that loads too early still registers its protocol, and `init_extraction
 - A taken protocol id is refused: `init_protocol_struct_for_registration()` returns NULL for an id another protocol registered (`src/mmt_core/src/packet_registry.c:381-388`, `src/mmt_core/src/packet_registry.c:449-458`). The plugin that loads second — yours, or `libmmt_tcpip.so` if yours took one of its ids and loaded first — fails `init_proto()`, and `init_extraction()` fails with it.
 - A duplicate name is not refused, and nothing reports it. The protocol registers under its own id, but the name index keeps the first protocol registered with that name, compared case-insensitively (`src/mmt_core/src/packet_registry.c:74-75`, `src/mmt_core/src/packet_registry.c:552-557`), so `get_protocol_id_by_name()` returns the other protocol's id.
 
-**Picking a free id and name.** An id must be below `PROTO_MAX_IDENTIFIER`, 1000 (`src/mmt_core/public_include/mmt_core.h:40`). The installed headers define only the SDK's own ids, and any other plugin in the directory takes ids too, so check at run time, with every plugin you deploy in the plugin directory except yours: after `init_extraction()`, a free id gives `is_registered_protocol(id) == 0` and a free name `get_protocol_id_by_name("myproto") == 0`. The installed `$(MMT_EXAMS)/proto_attributes_iterator.c` example (`$(MMT_BASE)/examples` for a `make install` prefix), built and run against that directory, prints the id and name of every registered protocol. Once yours is deployed, `get_protocol_id_by_name("myproto") == PROTO_MYPROTO` confirms both.
+**Picking a free id and name.** An id must be below `PROTO_MAX_IDENTIFIER`, 1000 (`src/mmt_core/public_include/mmt_core.h:40`); take yours from 950–999, the range [reserved for third-party plugins](#protocol-ids-for-a-plugin-of-your-own). The installed headers define only the SDK's own ids, and any other plugin in the directory takes ids too, so check at run time, with every plugin you deploy in the plugin directory except yours: after `init_extraction()`, a free id gives `is_registered_protocol(id) == 0` and a free name `get_protocol_id_by_name("myproto") == 0`. The installed `$(MMT_EXAMS)/proto_attributes_iterator.c` example (`$(MMT_BASE)/examples` for a `make install` prefix), built and run against that directory, prints the id and name of every registered protocol. Once yours is deployed, `get_protocol_id_by_name("myproto") == PROTO_MYPROTO` confirms both.
 
 The full guidance for plugin authors is in the mmt-plugin-generator README: its [*Use plugin*](https://github.com/Montimage/mmt-plugin-generator#use-plugin) section covers install, load order and the id and name rules, and [*NDN example and the built-in NDN dissector*](https://github.com/Montimage/mmt-plugin-generator#ndn-example-and-the-built-in-ndn-dissector) a worked example. Both arrive with Montimage/mmt-plugin-generator#2; until it merges, *Use plugin* holds only the copy step.
+
+## Protocol ids for a plugin of your own
+
+Protocol ids **950–999** are reserved for third-party plugins, the plugins of your own that the core loads out of tree. No built-in protocol is ever assigned an id in that range: the SDK's own ids stay below 950, and `scripts/validate-proto-id-range.sh`, run by the required `doc-validators` CI job, fails when a `#define PROTO_<NAME> <n>` under `src/` falls in it. The range ends at 999 because an id must be below `PROTO_MAX_IDENTIFIER`, 1000 (`src/mmt_core/public_include/mmt_core.h:40`); the same check fails if that bound ever drops below 1000.
+
+The range keeps your plugin clear of the SDK, not of other plugins: every third-party plugin draws from it and nothing assigns ids within it. So a plugin must still check at run time that its id and name are free, with every plugin deployed beside it, as [*Picking a free id and name*](#loading-a-plugin-of-your-own) describes. The mmt-plugin-generator README's [*Use plugin*](https://github.com/Montimage/mmt-plugin-generator#use-plugin) section gives the id and name rules for a generated plugin, and its [*NDN example and the built-in NDN dissector*](https://github.com/Montimage/mmt-plugin-generator#ndn-example-and-the-built-in-ndn-dissector) uses 980, an id from this range.
