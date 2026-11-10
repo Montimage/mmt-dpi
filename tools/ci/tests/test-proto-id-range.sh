@@ -15,6 +15,9 @@
 #   a tab-separated id of 999                                      -> 1
 #   `  #  define` with a hex id 0x3C0 (960)                        -> 1
 #   an id of 980U with a trailing comment, in a .c file            -> 1
+#   a parenthesised id (960)                                       -> 1
+#   an octal id 01734 (988)                                        -> 1
+#   an octal 0750 (488) and a 0 just below and above the range     -> 0
 #   PROTO_MAX_IDENTIFIER 999                                       -> 1
 #   a page that no longer names the range                          -> 1
 #   no id define at all                                            -> 2
@@ -95,6 +98,18 @@ expect "an indented '#  define' with a hex id 0x3C0" 1 "${d}" "PROTO_HEXED = 960
 d="$(fixture suffix)"
 printf '/* a source file */\n#define PROTO_IN_C 980U // taken\n' > "${d}/src/tcpip/lib/proto_in_c.c"
 expect "an id of 980U in a .c file" 1 "${d}" "src/tcpip/lib/proto_in_c.c:2: PROTO_IN_C = 980"
+
+d="$(fixture parens)"
+printf '#define PROTO_PARENS ( 960 )\n' >> "${d}/src/tcpip/protocols.h"
+expect "a parenthesised id (960)" 1 "${d}" "PROTO_PARENS = 960"
+
+d="$(fixture octal)"
+printf '#define PROTO_OCTAL 01734\n' >> "${d}/src/tcpip/protocols.h"
+expect "an octal id 01734 (988)" 1 "${d}" "PROTO_OCTAL = 988"
+
+d="$(fixture octal_free)"
+printf '#define PROTO_OCT_A 0750\n#define PROTO_ZERO 0\n#define PROTO_ABOVE (1000)\n' >> "${d}/src/tcpip/protocols.h"
+expect "an octal 0750 (488), a 0 and (1000)" 0 "${d}" "range 950–999 free"
 
 d="$(fixture bound)"
 printf '#define PROTO_MAX_IDENTIFIER 999\n' > "${d}/src/core/core.h"

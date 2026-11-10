@@ -10,7 +10,10 @@
 #   - a `#define PROTO_<NAME> <n>` anywhere under src/ gives a value in the
 #     range — any spacing, spaces or tabs, around `#`, `define`, the name and
 #     the value (src/mmt_tcpip/include/mmt_tcpip_protocols.h defines
-#     PROTO_HTTP2 with tabs), decimal or hex, with or without a U/L suffix;
+#     PROTO_HTTP2 with tabs), decimal, hex or octal, with or without a U/L
+#     suffix or parentheses. Every numeric PROTO_ define is checked, not only
+#     protocol ids, so no other PROTO_ constant may take a value in the range
+#     either (none does);
 #   - `PROTO_MAX_IDENTIFIER` (src/mmt_core/public_include/mmt_core.h) is no
 #     longer above the range's last id, so part of the range is unusable;
 #   - the page no longer names the range the guard checks.
@@ -41,33 +44,43 @@ DOC="${MMT_PROTO_ID_DOC:-${ROOT}/docs/Add-New-Protocol.md}"
 [ -f "${HEADER}" ] || { echo "✗ no header ${HEADER}" >&2; exit 2; }
 [ -f "${DOC}" ] || { echo "✗ no page ${DOC}" >&2; exit 2; }
 
-DEFINE_RE='^[[:space:]]*#[[:space:]]*define[[:space:]]+PROTO_[A-Za-z0-9_]+[[:space:]]+(0[xX][0-9A-Fa-f]+|[0-9]+)[uUlL]*([[:space:]]|/[/*]|$)'
+LIT='\(*[[:space:]]*(0[xX][0-9A-Fa-f]+|[0-9]+)[uUlL]*[[:space:]]*\)*'
+DEFINE_RE="^[[:space:]]*#[[:space:]]*define[[:space:]]+PROTO_[A-Za-z0-9_]+[[:space:]]+${LIT}([[:space:]]|/[/*]|\$)"
 
-# to_int <literal> — the integer value of a decimal or hex literal (a leading
-# zero is not octal: no protocol id is written in octal).
+# to_int <literal> — the integer value of a C integer literal: hex, octal
+# (a leading zero, as in C) or decimal.
 to_int() {
     case "$1" in
         0[xX]*) echo $(( $1 )) ;;
+        0*)     echo $(( 8#$1 )) ;;
         *)      echo $(( 10#$1 )) ;;
     esac
 }
 
 failures=0
 checked=0
+HITS="$(mktemp)"
+trap 'rm -f "${HITS}"' EXIT
 
 # --- 1. no id define under src/ in the reserved range ------------------------
+grep_exit=0
+grep -rnIE -- "${DEFINE_RE}" "${SRC}" > "${HITS}" || grep_exit=$?
+if [ "${grep_exit}" -gt 1 ]; then
+    echo "✗ grep failed (exit ${grep_exit}) while scanning ${SRC}" >&2
+    exit 2
+fi
 while IFS= read -r hit; do
     file="${hit%%:*}"; rest="${hit#*:}"
     line="${rest%%:*}"; text="${rest#*:}"
     name="$(sed -E 's/^[[:space:]]*#[[:space:]]*define[[:space:]]+(PROTO_[A-Za-z0-9_]+).*/\1/' <<<"${text}")"
-    lit="$(sed -E 's/^[[:space:]]*#[[:space:]]*define[[:space:]]+PROTO_[A-Za-z0-9_]+[[:space:]]+(0[xX][0-9A-Fa-f]+|[0-9]+).*/\1/' <<<"${text}")"
+    lit="$(sed -E 's/^[[:space:]]*#[[:space:]]*define[[:space:]]+PROTO_[A-Za-z0-9_]+[[:space:]]+\(*[[:space:]]*(0[xX][0-9A-Fa-f]+|[0-9]+).*/\1/' <<<"${text}")"
     val="$(to_int "${lit}")"
     checked=$((checked + 1))
     if [ "${val}" -ge "${RESERVED_FIRST}" ] && [ "${val}" -le "${RESERVED_LAST}" ]; then
         echo "✗ ${file#"${ROOT}/"}:${line}: ${name} = ${val} is in the third-party range ${RESERVED_FIRST}–${RESERVED_LAST} (docs/Add-New-Protocol.md); give the built-in protocol an id below ${RESERVED_FIRST}" >&2
         failures=$((failures + 1))
     fi
-done < <(grep -rnIE -- "${DEFINE_RE}" "${SRC}" || true)
+done < "${HITS}"
 
 if [ "${checked}" -eq 0 ]; then
     echo "✗ no '#define PROTO_<NAME> <n>' found under ${SRC}: the scan is broken" >&2
@@ -95,4 +108,4 @@ fi
 if [ "${failures}" -gt 0 ]; then
     exit 1
 fi
-echo "✓ protocol id range ${RESERVED_FIRST}–${RESERVED_LAST} free: ${checked} id defines checked, PROTO_MAX_IDENTIFIER ${max}"
+echo "✓ protocol id range ${RESERVED_FIRST}–${RESERVED_LAST} free: ${checked} numeric PROTO_ defines checked, PROTO_MAX_IDENTIFIER ${max}"
