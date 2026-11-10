@@ -28,6 +28,20 @@ cite	docs/ARCHITECTURE.md	rules/common.mk:216-223	LIBCORE     := libmmt_core	LIB
 cite	docs/ARCHITECTURE.md	rules/common.mk:225-228	ifdef ENABLESEC	endif
 cite	docs/Add-New-Protocol.md	src/mmt_core/public_include/mmt_log.h:148-168	#define mmt_log_at(level, ...)	#define mmt_log_debug(...) ((void)0)
 cite	docs/Add-New-Protocol.md	src/mmt_core/public_include/mmt_utils.h:32-39	#define MMT_LIKELY(x)   __builtin_expect(!!(x), 1)	#define MMT_UNLIKELY(x) (!!(x))
+cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry.c:668	if (!init_plugins()) return 0;	-
+cite	docs/Add-New-Protocol.md	src/mmt_core/src/plugins_engine.c:50-53	secure_getenv(PLUGINS_DIR_ENV)	return PLUGINS_REPOSITORY_OPT;
+cite	docs/Add-New-Protocol.md	src/mmt_core/src/plugins_engine.c:71	int n = scandir( dir, &entries, load_filter, alphasort );	-
+cite	docs/Add-New-Protocol.md	src/mmt_core/src/plugins_engine.c:122-138	plugin_handler->handler = dlopen(plugin_path_name, RTLD_NOW | RTLD_GLOBAL);	retval = init_proto_fct();
+cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry_classify.c:209-219	bool register_classification_function_with_parent_protocol(	return 0;
+cite	docs/Add-New-Protocol.md	rules/common.mk:217-223	LIBTCPIP    := libmmt_tcpip	LIBBAPP     := libmmt_business_app
+cite	docs/Add-New-Protocol.md	src/mmt_dicom/dicom.c:576-579	if(!register_classification_function_with_parent_protocol(PROTO_TCP	};
+cite	docs/Add-New-Protocol.md	src/mmt_core/src/plugins_engine.c:84-86	Issue #503 (F-BUG-006)	entries are only freed
+cite	docs/Add-New-Protocol.md	src/mmt_core/src/plugins_engine.c:149-151	if (retval <= 0) {	return 0;
+cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry.c:381-388	bool is_free_protocol_id_for_registration(uint32_t proto_id) {	return 1; // Cool
+cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry.c:449-458	protocol_t *init_protocol_struct_for_registration(	return NULL;
+cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry.c:74-75	bool protocol_names_comparison_fct(	mmt_strncasecmp
+cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry.c:552-557	// Issue #19: index this protocol's name	insert_key_value(configured_protocols_names_map
+cite	docs/Add-New-Protocol.md	src/mmt_core/public_include/mmt_core.h:40	#define PROTO_MAX_IDENTIFIER    1000	-
 cite	docs/BENCHMARKS.md	tools/phase0/capture_perf.sh:103-106	printf '# host: %s | cpu: %s | gcc: %s | os: %s | commit: %s\n'	rev-parse --short HEAD
 cite	docs/BENCHMARKS.md	tools/phase0/capture_perf.sh:86-88	gcc -O2 -Wall -o "${BIN}" "${SCRIPT_DIR}/phase0_throughput.c"	export LD_LIBRARY_PATH="${PREFIX}/dpi/lib
 cite	docs/BENCHMARKS.md	tools/phase0/capture_perf.sh:72-74	if [ "${MMT_SDK_PREBUILT:-0}" = "1" ]; then	no installed SDK under
