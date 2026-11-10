@@ -237,6 +237,11 @@ int init_tcpip_plugin() {
     mmt_tcpip_load_external_ip_ranges();
     mmt_tcpip_load_external_port_map();
 
+    if (!mmt_register_class_provider(&mmt_tcpip_class_provider)) {
+        mmt_stderr_log("Error registering the TCP/IP class lookups\n Exiting\n");
+        return 0;
+    }
+
     return 1;
 }
 

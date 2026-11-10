@@ -1,6 +1,12 @@
 RELEASE NOTES
 ---
 
+Version 1.10.2 (unreleased)
+---
+
+### Core and protocols
+- let a consumer use the class lookups of `mmt_tcpip.h` while linking `libmmt_core` alone (Montimage/mmt-probe#18): v1.10.0 moved them into `libmmt_tcpip`, so a default dynamic build of mmt-probe failed to link, and linking the plugin would have made it mandatory for log-only deployments and loaded it twice. A plugin now registers its lookups with the core (`mmt_register_class_provider()`, `mmt_class_provider.h`), and consumers get them through `mmt_application_class()` and its siblings or the unchanged `get_*_class_*` names. Without the TCP/IP plugin, and before `init_extraction()`, they report the unknown class. `libmmt_tcpip` keeps its six exports for binaries built against v1.10.0.
+
 Version 1.10.1 (9 November 2026)
 ---
 

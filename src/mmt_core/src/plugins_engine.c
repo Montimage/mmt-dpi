@@ -153,10 +153,23 @@ int load_plugin(char * plugin_path_name) {
     return 1;
 }
 
+/*
+ * Application/content class lookups (Montimage/mmt-probe#18): the tables stay
+ * in the plugins, and a consumer reaches them through the core, so it never
+ * links a plugin. Written at plugin load and teardown under
+ * plugin_handlers_list_mutex, read without it: the threading contract above
+ * has loading finish before any worker starts.
+ */
+#define MMT_CLASS_PROVIDERS_MAX 8
+static const mmt_class_provider_t *class_providers[MMT_CLASS_PROVIDERS_MAX];
+static size_t class_providers_count;
+
 void close_plugins() {
     /* Issue #22: guard the whole teardown so it cannot race a concurrent
      * load_plugin appending to the list head. */
     pthread_mutex_lock(&plugin_handlers_list_mutex);
+    /* The providers live in the plugins about to be unloaded. */
+    class_providers_count = 0;
     struct plugin_handler_struct * temp_plugin = plugin_handlers_list;
     while (temp_plugin != NULL) {
         struct plugin_handler_struct * temp_plugin_to_free = temp_plugin;
@@ -176,4 +189,73 @@ void close_plugins() {
     //Finally set the plugins list pointer to NULL
     plugin_handlers_list = NULL;
     pthread_mutex_unlock(&plugin_handlers_list_mutex);
+}
+
+bool mmt_register_class_provider(const mmt_class_provider_t *provider) {
+    bool done = false;
+    size_t i;
+    if (provider == NULL)
+        return false;
+    pthread_mutex_lock(&plugin_handlers_list_mutex);
+    for (i = 0; i < class_providers_count && class_providers[i] != provider; i++)
+        ;
+    if (i < class_providers_count) {
+        done = true;
+    } else if (class_providers_count < MMT_CLASS_PROVIDERS_MAX) {
+        class_providers[class_providers_count++] = provider;
+        done = true;
+    }
+    pthread_mutex_unlock(&plugin_handlers_list_mutex);
+    return done;
+}
+
+/* Defines the static class and label lookups of one kind of key. */
+#define MMT_DEFINE_CLASS_LOOKUPS(kind, key_type, class_field, name_field, key_is_valid)      \
+    static int find_##kind##_class(key_type key) {                                   \
+        size_t i;                                                                    \
+        for (i = 0; (key_is_valid) && i < class_providers_count; i++) {              \
+            const mmt_class_provider_t *p = class_providers[i];                      \
+            int found = p->class_field ? p->class_field(key) : MMT_CLASS_UNKNOWN;    \
+            if (found != MMT_CLASS_UNKNOWN)                                          \
+                return found;                                                        \
+        }                                                                            \
+        return MMT_CLASS_UNKNOWN;                                                    \
+    }                                                                                \
+    static char *find_##kind##_name(key_type key) {                                  \
+        size_t i;                                                                    \
+        for (i = 0; (key_is_valid) && i < class_providers_count; i++) {              \
+            const mmt_class_provider_t *p = class_providers[i];                      \
+            if (p->class_field && p->name_field                                      \
+                    && p->class_field(key) != MMT_CLASS_UNKNOWN)                     \
+                return p->name_field(key);                                           \
+        }                                                                            \
+        return NULL;                                                                 \
+    }
+
+MMT_DEFINE_CLASS_LOOKUPS(application, mmt_proto_id_t, application_class, application_class_name, true)
+MMT_DEFINE_CLASS_LOOKUPS(content_type, char *, content_class_by_type, content_class_name_by_type, key != NULL)
+MMT_DEFINE_CLASS_LOOKUPS(content_flags, uint32_t, content_class_by_flags, content_class_name_by_flags, true)
+
+int mmt_application_class(mmt_proto_id_t proto_id) {
+    return find_application_class(proto_id);
+}
+
+char *mmt_application_class_name(mmt_proto_id_t proto_id) {
+    return find_application_name(proto_id);
+}
+
+int mmt_content_class_by_type(char *content_type) {
+    return find_content_type_class(content_type);
+}
+
+char *mmt_content_class_name_by_type(char *content_type) {
+    return find_content_type_name(content_type);
+}
+
+int mmt_content_class_by_flags(uint32_t content_flags) {
+    return find_content_flags_class(content_flags);
+}
+
+char *mmt_content_class_name_by_flags(uint32_t content_flags) {
+    return find_content_flags_name(content_flags);
 }

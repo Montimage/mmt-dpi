@@ -183,6 +183,9 @@ get_proto_attribute_id
 get_proto_attribute_type
 get_proto_attribute_scope
 get_data_link_type
+mmt_application_class
+mmt_content_class_by_type
+mmt_content_class_by_flags
 mmt_strcasecmp
 mmt_strncasecmp
 mmt_strcmp

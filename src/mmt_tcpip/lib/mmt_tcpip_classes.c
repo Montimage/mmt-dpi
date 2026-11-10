@@ -6,9 +6,11 @@
  * inline` bodies in the installed mmt_tcpip.h, so every consumer compiled its
  * own frozen copy of the classification tables and a table update needed a
  * consumer rebuild. They are defined once here and exported from
- * libmmt_tcpip through the MMTAPI declarations of mmt_tcpip.h; the bodies are
- * unchanged.
+ * libmmt_tcpip through the MMTAPI declarations of mmt_tcpip.h. Consumers reach
+ * them through the core: init_tcpip_plugin() registers
+ * mmt_tcpip_class_provider (Montimage/mmt-probe#18).
  */
+#define MMT_TCPIP_CLASSES_DEFINITIONS
 #include <string.h>
 
 #include "mmt_core.h"
@@ -791,3 +793,20 @@ char * get_application_class_name_by_protocol_id(int id) {
     int class_id = get_application_class_by_protocol_id(id);
     return classes[class_id];
 }
+
+static int application_class(mmt_proto_id_t proto_id) {
+    return get_application_class_by_protocol_id((int) proto_id);
+}
+
+static char * application_class_name(mmt_proto_id_t proto_id) {
+    return get_application_class_name_by_protocol_id((int) proto_id);
+}
+
+const mmt_class_provider_t mmt_tcpip_class_provider = {
+    .application_class           = application_class,
+    .application_class_name      = application_class_name,
+    .content_class_by_type       = get_content_class_by_content_type,
+    .content_class_name_by_type  = get_content_class_name_by_content_type,
+    .content_class_by_flags      = get_content_class_by_content_flags,
+    .content_class_name_by_flags = get_content_class_name_by_content_flags,
+};
