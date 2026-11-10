@@ -412,8 +412,11 @@ prose above each table is kept as written.
 are declared in `src/mmt_tcpip/include/mmt_tcpip_plugin.h`; the six
 `get_content_class_*` / `get_application_class_*` lookups are declared in
 `src/mmt_tcpip/include/mmt_tcpip.h` and defined in
-`src/mmt_tcpip/lib/mmt_tcpip_classes.c` (issue #537 — they were `static inline`
-header bodies, so a consumer calling them now links `-lmmt_tcpip`). The misspelled
+`src/mmt_tcpip/lib/mmt_tcpip_classes.c` (issue #537 moved them out of
+`static inline` header bodies). Since Montimage/mmt-probe#18 (#62) a consumer
+does not link `-lmmt_tcpip` for them: the installed `mmt_tcpip.h` forwards each
+one inline to `libmmt_core` (`mmt_class_provider.h`), and the plugin keeps the
+six exports for binaries built against v1.10.0. The misspelled
 `mmt_search_irc_ssl_detect_ninty_percent_but_very_fast` stays exported until
 2.0.0 (the #237 note above).
 
