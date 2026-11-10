@@ -49,6 +49,11 @@
 #                  assignment-compatible with an int-returning
 #                  function-pointer typedef (general_*_extraction,
 #                  silent_extraction, debug_extracted_attributes_printout_handler)
+#                - the logger of mmt_log.h, public since issue #66:
+#                  mmt_log_set_level/mmt_log_get_level return a level (or
+#                  -1), and mmt_log_event keeps the `int` it was exported
+#                  with for libmmt_tmobile in 1.10.0 (#545), an ABI the
+#                  installed mmt_log_at() macro expansions now depend on
 #
 # Modes:
 #   default      exit 1 when any count rises above its committed baseline
@@ -211,6 +216,9 @@ general_short_extraction
 general_short_extraction_with_ordering_change
 silent_extraction
 debug_extracted_attributes_printout_handler
+mmt_log_event
+mmt_log_set_level
+mmt_log_get_level
 EOF
 
 int_bool_count="$(

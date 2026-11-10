@@ -1,5 +1,5 @@
 /*
- * mmt_log.c — the SDK's internal logger (issue #545). Contract: mmt_log.h.
+ * mmt_log.c — the SDK's logger (issue #545). Contract: mmt_log.h.
  *
  * All shared state is plain integers updated with GCC __atomic builtins, so
  * concurrent packet-processing threads never race (TSan-clean) and the

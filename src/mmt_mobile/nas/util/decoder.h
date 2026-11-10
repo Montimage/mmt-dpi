@@ -14,7 +14,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include "branch_optimization.h"
-#include "../../../mmt_core/private_include/mmt_log.h" /* issue #545 */
+#include "../../../mmt_core/public_include/mmt_log.h" /* issue #545 */
 
 #define DECODE_U8(buffer, value, size)                   \
     value = *(uint8_t*)(buffer);                         \

@@ -26,6 +26,8 @@ delegate	docs/Phase2-Heuristics.md	scripts/validate-doc-drift.sh
 cite	docs/ARCHITECTURE.md	sdk/Makefile:249	MMT_LAYOUT_PLUGINS  := $(LIBTCPIP) $(LIBMOBILE) $(LIBBAPP) $(LIBDICOM)	-
 cite	docs/ARCHITECTURE.md	rules/common.mk:216-223	LIBCORE     := libmmt_core	LIBBAPP     := libmmt_business_app
 cite	docs/ARCHITECTURE.md	rules/common.mk:225-228	ifdef ENABLESEC	endif
+cite	docs/Add-New-Protocol.md	src/mmt_core/public_include/mmt_log.h:130-150	#define mmt_log_at(level, ...)	#define mmt_log_debug(...) ((void)0)
+cite	docs/Add-New-Protocol.md	src/mmt_core/public_include/mmt_utils.h:32-39	#define MMT_LIKELY(x)   __builtin_expect(!!(x), 1)	#define MMT_UNLIKELY(x) (!!(x))
 cite	docs/BENCHMARKS.md	tools/phase0/capture_perf.sh:103-106	printf '# host: %s | cpu: %s | gcc: %s | os: %s | commit: %s\n'	rev-parse --short HEAD
 cite	docs/BENCHMARKS.md	tools/phase0/capture_perf.sh:86-88	gcc -O2 -Wall -o "${BIN}" "${SCRIPT_DIR}/phase0_throughput.c"	export LD_LIBRARY_PATH="${PREFIX}/dpi/lib
 cite	docs/BENCHMARKS.md	tools/phase0/capture_perf.sh:72-74	if [ "${MMT_SDK_PREBUILT:-0}" = "1" ]; then	no installed SDK under

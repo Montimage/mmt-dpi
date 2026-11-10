@@ -24,6 +24,21 @@ extern "C" {
  #include <limits.h> /* ULONG_MAX: MMT_HEX2DEC_ERROR */
  #include "mmt_exports.h"
 
+/* Issue #66: the prefixed branch hints for consumers and out-of-tree
+ * plugins. The unprefixed likely()/unlikely() this header defined before
+ * 1.10.0 stay private to the SDK sources (dbg.h, issue #537). */
+#if defined(__GNUC__)
+/** Branch hint: x is expected to be true. Evaluates to !!(x). */
+#define MMT_LIKELY(x)   __builtin_expect(!!(x), 1)
+/** Branch hint: x is expected to be false. Evaluates to !!(x). */
+#define MMT_UNLIKELY(x) __builtin_expect(!!(x), 0)
+#else
+/** Branch hint: x is expected to be true. Evaluates to !!(x). */
+#define MMT_LIKELY(x)   (!!(x))
+/** Branch hint: x is expected to be false. Evaluates to !!(x). */
+#define MMT_UNLIKELY(x) (!!(x))
+#endif
+
 /**
  * Convert a hexa character to an integer number
  * @param  hc hexa character

@@ -1,6 +1,6 @@
 /*
  * test_mmt_log.c — unit tests of the SDK logger (issue #545,
- * src/mmt_core/src/mmt_log.c, contract in private_include/mmt_log.h).
+ * src/mmt_core/src/mmt_log.c, contract in public_include/mmt_log.h).
  *
  * Checks: off by default with every event still counted and the arguments
  * of a disabled call never evaluated; MMT_DPI_LOG_LEVEL parsing (in forked

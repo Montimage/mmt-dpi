@@ -145,10 +145,13 @@ rm -rf -- "$GEN_DIR"
     -c "$CORE_SRC/mmt_attr_sprintf_compat.c" -o "$SCRIPT_DIR/mmt_attr_sprintf_compat.o"
 "$CC" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${INCS[@]}" \
     -c "$CORE_SRC/mmt_utils.c" -o "$SCRIPT_DIR/mmt_utils.o"
+# Issue #66 adds mmt_log.c: the logger header is public now.
+"$CC" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${INCS[@]}" \
+    -c "$CORE_SRC/mmt_log.c" -o "$SCRIPT_DIR/mmt_log.o"
 "$CC" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${INCS[@]}" \
     -c "$SCRIPT_DIR/test_api_contracts.c" -o "$SCRIPT_DIR/test_api_contracts.o"
 "$CC" "${extra_cflags[@]}" -o "$SCRIPT_DIR/test_api_contracts" "${lib_objects[@]}" \
-    "$SCRIPT_DIR/mmt_attr_sprintf_compat.o" "$SCRIPT_DIR/mmt_utils.o" \
+    "$SCRIPT_DIR/mmt_attr_sprintf_compat.o" "$SCRIPT_DIR/mmt_utils.o" "$SCRIPT_DIR/mmt_log.o" \
     "$SCRIPT_DIR/test_api_contracts.o" -lm -lpthread -ldl
 
 # Issue #545: the logger and its unit test.

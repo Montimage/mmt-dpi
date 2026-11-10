@@ -34,6 +34,10 @@ no core object calls them: `src/mmt_core/src/mmt_init.c` references them so
 that a consumer linking `libmmt_core.a` (the STATIC_LINK mode of 5Greplay and
 NetworkFuzzer) holds them too, and `tools/ci/check-static-link.sh` fails when a
 plugin imports a core symbol such a consumer lacks (issue #675).
+Since issue #66 the five `mmt_log_*` functions are `public = Y`: their header,
+`src/mmt_core/public_include/mmt_log.h`, is installed for out-of-tree plugins
+(opt-in, no other installed header includes it), with no symbol added or
+removed.
 `scripts/validate-exported-symbols.sh` also fails when `nm -D --defined-only`
 lists more symbols than the `MMTAPI` declarations in
 `src/mmt_core/{public,private}_include/*.h` plus 5, any symbol that is not
@@ -285,11 +289,11 @@ Symbol table
 |193|`mmt_inet_ntop`|**Y**|
 |194|`mmt_init_handler`|**Y**|
 |195|`mmt_load_dpi_profiles_file`|**Y**|
-|196|`mmt_log_event`|N|
-|197|`mmt_log_get_level`|N|
-|198|`mmt_log_get_stats`|N|
-|199|`mmt_log_set_level`|N|
-|200|`mmt_log_write`|N|
+|196|`mmt_log_event`|**Y**|
+|197|`mmt_log_get_level`|**Y**|
+|198|`mmt_log_get_stats`|**Y**|
+|199|`mmt_log_set_level`|**Y**|
+|200|`mmt_log_write`|**Y**|
 |201|`mmt_malloc`|**Y**|
 |202|`mmt_packet_scratch_adopt`|**Y**|
 |203|`mmt_print_all_protocols`|**Y**|

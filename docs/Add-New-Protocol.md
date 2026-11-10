@@ -107,3 +107,44 @@ them in lowercase — the generator rejects an uppercase suffix.
 ## Classes in a plugin of your own
 
 A plugin outside `mmt_tcpip` gives its protocols an application or content class by calling `mmt_register_class_provider()` from its `init_proto()` (`mmt_class_provider.h`), filling in only the callbacks it needs. Consumers read the classes with `mmt_application_class()` and its siblings, or the `get_*_class_*` names of `mmt_tcpip.h`, and link `libmmt_core` alone. The core forgets every provider in `close_extraction()`, before it unloads the plugins.
+
+## Logging and branch hints in a plugin of your own
+
+Since 1.10.0 (issue #537) the installed headers no longer define `debug()`, `log_err()`, `log_warn()`, `log_info()`, `check()`, `likely()` or `unlikely()`: those names collided with consumers' own macros, so they stay private to the SDK sources (`src/mmt_core/private_include/dbg.h`). An out-of-tree plugin uses these instead (issue #66):
+
+| Removed macro | Replacement | Header |
+|---------------|-------------|--------|
+| `log_err(fmt, ...)` | `mmt_log_error(fmt, ...)` | `mmt_log.h` (opt-in) |
+| `log_warn(fmt, ...)` | `mmt_log_warn(fmt, ...)` | `mmt_log.h` (opt-in) |
+| `log_info(fmt, ...)` | `mmt_log_info(fmt, ...)` | `mmt_log.h` (opt-in) |
+| `debug(fmt, ...)` | `mmt_log_debug(fmt, ...)` | `mmt_log.h` (opt-in) |
+| `likely(x)` / `unlikely(x)` | `MMT_LIKELY(x)` / `MMT_UNLIKELY(x)` | `mmt_utils.h` (through `mmt_core.h`) |
+
+`mmt_log.h` is installed with the other headers but no installed header includes it, so a consumer that does not include it gets none of its names, and every name it defines starts with `mmt_log` or `MMT_LOG` (`src/mmt_core/public_include/mmt_log.h:130-150`). `MMT_LIKELY()`/`MMT_UNLIKELY()` wrap `__builtin_expect()` and evaluate to `!!(x)` (`src/mmt_core/public_include/mmt_utils.h:32-39`).
+
+The logger behaves differently from the old macros, which wrote to stderr whenever they were reached — `debug()` unless the plugin was built with `-DNDEBUG`:
+
+- it is off by default: lines are written only when `MMT_DPI_LOG_LEVEL=error|warn|info|debug` (or `mmt_log_set_level()`) raises the threshold, and each call site writes at most 10 lines per second;
+- `mmt_log_debug()` compiles to nothing unless the plugin itself is compiled with `-DDEBUG`, and its arguments are then not evaluated: a helper called only from it is unused in a release build (`-Wunused-function`);
+- each line reads `[mmt-dpi][E|W|I|D] <file>:<line>: <message>`, and a trailing newline in the format is dropped;
+- the `errno: <strerror>` suffix of `log_err()`/`log_warn()` is gone: pass `strerror(errno)` in the message where it matters.
+
+`check()`, `check_mem()`, `check_debug()`, `sentinel()` and `clean_errno()` have no replacement: write the test yourself, e.g. `if (p == NULL) { mmt_log_error("out of memory"); goto error; }`.
+
+Plugin code that keeps the old names maps them in the plugin itself, never in a header other code includes:
+
+```c
+#include "mmt_log.h"
+
+#define debug(...)   mmt_log_debug(__VA_ARGS__)
+#define log_err(...) mmt_log_error(__VA_ARGS__)
+```
+
+Build it, put the `.so` in the plugin directory (`$(MMT_BASE)/plugins`, or the absolute directory named by `MMT_DPI_PLUGINS_DIR`) and raise the threshold to see the lines:
+
+```bash
+gcc -Wall -fPIC -shared -DDEBUG -o libmmt_myproto.so -I /opt/mmt/dpi/include myproto_plugin.c
+MMT_DPI_LOG_LEVEL=debug ./my_probe
+```
+
+The `installed_consumer` suite builds such a plugin against an installed SDK, with and without `-DDEBUG`, and checks the lines it writes (`tests/installed_consumer/test_plugin_log.c`).
