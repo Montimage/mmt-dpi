@@ -65,6 +65,7 @@ WORKFLOW=".github/workflows/release-packages.yml"
 case "${1:-}" in
     --workflow)
         [ -n "${2:-}" ] || { echo "✗ --workflow needs a file" >&2; exit 2; }
+        [ -f "$2" ] || { echo "✗ workflow not found: $2" >&2; exit 2; }
         WORKFLOW="$(cd "$(dirname "$2")" && pwd)/$(basename "$2")" ;;
     "") ;;
     *) echo "✗ unknown argument: $1" >&2; exit 2 ;;

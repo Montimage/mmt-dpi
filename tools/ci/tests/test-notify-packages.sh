@@ -12,7 +12,8 @@
 #     network, no token): an empty token warns, calls nothing and exits 0;
 #     a token sends one POST to repos/Montimage/packages/dispatches with
 #     event_type=mmt-dpi-release and the tag, the token only as GH_TOKEN and
-#     never printed; a refused dispatch warns and exits 0; no tag exits 2.
+#     never printed, nor traced under an inherited xtrace; a refused
+#     dispatch warns and exits 0; no tag exits 2.
 #
 # Usage: bash tools/ci/tests/test-notify-packages.sh
 set -u
@@ -165,6 +166,23 @@ if [ "$rc" -eq 0 ] \
     ok "refused dispatch: warning, exit 0, token not printed"
 else
     bad "refused dispatch: rc=$rc, out: $out"
+fi
+
+# Inherited xtrace (bash -x): the helper turns it off before the token is
+# read. Control: a copy without that line must trace the token, so the probe
+# is shown to detect a leak.
+traced() {   # traced <script>: 0 when bash -x output holds the token
+    : > "$STUB_GH_LOG"
+    PATH="$WORK/bin:$PATH" PACKAGES_DISPATCH_TOKEN="$SECRET" \
+        bash -x "$1" v9.9.9 2>&1 | grep -qF "$SECRET"
+}
+grep -v '^{ set +x; } 2>/dev/null$' "$HELPER" > "$WORK/no-set-x.sh"
+if ! traced "$WORK/no-set-x.sh"; then
+    bad "inherited xtrace: the control copy leaked nothing — the probe tests nothing"
+elif traced "$HELPER"; then
+    bad "inherited xtrace: the helper traced the token"
+else
+    ok "inherited xtrace: the token is not traced (a copy without set +x leaks it)"
 fi
 
 run_helper "$SECRET" 0

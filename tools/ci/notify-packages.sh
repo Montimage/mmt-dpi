@@ -25,6 +25,9 @@
 #
 # Usage: PACKAGES_DISPATCH_TOKEN=... bash tools/ci/notify-packages.sh <tag>
 
+# Nothing below may echo the token, even with xtrace inherited: turn it off
+# before any line expands the token.
+{ set +x; } 2>/dev/null
 set -uo pipefail
 
 PACKAGES_REPO="Montimage/packages"
@@ -38,8 +41,6 @@ if [ -z "$tag" ]; then
 fi
 
 token="${PACKAGES_DISPATCH_TOKEN:-}"
-# Nothing below may echo the token, even with xtrace inherited.
-set +x
 unset PACKAGES_DISPATCH_TOKEN
 
 if [ -z "$token" ]; then
