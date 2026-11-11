@@ -47,8 +47,12 @@
 #     publish-release.sh runs tools/ci/notify-packages.sh on the tag, gated
 #     to tag runs by a step `if:` that keeps the implicit success() (no
 #     always()/failure()/cancelled()/success()), with continue-on-error:
-#     true and no `exit` of its own, and secrets.PACKAGES_DISPATCH_TOKEN is
-#     referenced once in the workflow — in that step's `env:` block
+#     true, a step timeout-minutes below the job's (a hung dispatch is then
+#     a step failure continue-on-error absorbs, not a job timeout), a run:
+#     that is exactly `bash src/tools/ci/notify-packages.sh
+#     "$GITHUB_REF_NAME"` (no other command), and
+#     secrets.PACKAGES_DISPATCH_TOKEN is referenced once in the workflow —
+#     in that step's `env:` block
 #
 # Exit codes: 0 = verifiable wiring present, 1 = a violation, 2 = helper
 # broken.
@@ -353,6 +357,16 @@ else:
     else:
         fail("notify step lacks continue-on-error: true — a dispatch "
              "problem could fail a published release")
+    job_tmo = re.search(r"(?m)^    timeout-minutes:\s*(\d+)\s*$", release_job)
+    step_tmo = re.search(r"(?m)^        timeout-minutes:\s*(\d+)\s*$", st)
+    if step_tmo and job_tmo \
+            and 0 < int(step_tmo.group(1)) < int(job_tmo.group(1)):
+        ok(f"notify step has timeout-minutes: {step_tmo.group(1)}, below the "
+           f"job's {job_tmo.group(1)} (a hung dispatch stays a step failure)")
+    else:
+        fail("notify step lacks a timeout-minutes below the release job's — "
+             "a hung dispatch would reach the job timeout, which fails the "
+             "job whatever continue-on-error says")
     run = re.search(r"(?m)^        run:(.*(?:\n          .*)*)", st)
     run = run.group(1) if run else ""
     if re.search(r"\bexit\b|\bfalse\b", run):
@@ -360,6 +374,12 @@ else:
              "to notify-packages.sh, which never fails the release")
     else:
         ok("notify step's run: has no exit of its own")
+    if run.strip() == 'bash src/tools/ci/notify-packages.sh "$GITHUB_REF_NAME"':
+        ok("notify step's run: is exactly the helper call")
+    else:
+        fail("notify step's run: must be exactly `bash "
+             "src/tools/ci/notify-packages.sh \"$GITHUB_REF_NAME\"` — no "
+             "other command may run beside the token")
     env = re.search(r"(?m)^        env:\n((?:          .*\n?)*)", st)
     env = env.group(1) if env else ""
     if re.search(r"(?m)^          PACKAGES_DISPATCH_TOKEN:\s*\$\{\{\s*"

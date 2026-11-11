@@ -120,9 +120,10 @@
 # tools/ci/notify-packages.sh (issue #76), which drives
 # tools/ci/check-release-verification.sh on mutated copies of the release
 # workflow (no notify step, a step before the publish, not tag-gated, under
-# always() or failure(), without continue-on-error, with its own exit, the
-# token outside the step's env:) and the helper against a stub gh (no token,
-# a dispatch, a refused dispatch; no network).
+# always() or failure(), without continue-on-error, without a step timeout
+# below the job's, with its own exit or an extra command in run:, the token
+# outside the step's env:) and the helper against a stub gh (no token, a
+# dispatch, a refused dispatch, a tag not of the form vX.Y.Z; no network).
 set -e
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/ci/tests"
 python3 "${TESTS_DIR}/test-release-gates.py" "$@"

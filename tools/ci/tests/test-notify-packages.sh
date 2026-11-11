@@ -5,15 +5,18 @@
 # (1) tools/ci/check-release-verification.sh passes on the repository's
 #     release workflow and fails on mutated copies of it: no notify step, a
 #     step before the publish, a step not gated to tags or run under
-#     always(), a step without continue-on-error, a run: with its own exit,
-#     the token in run: instead of env:, the token in a second step, and a
-#     sparse checkout without the helper.
+#     always(), a step without continue-on-error, a step without a
+#     timeout-minutes below the job's, a run: with its own exit or with an
+#     extra command (inline or in a block), the token in run: instead of
+#     env:, the token in a second step, and a sparse checkout without the
+#     helper.
 # (2) tools/ci/notify-packages.sh, driven with a stub `gh` on PATH (no
 #     network, no token): an empty token warns, calls nothing and exits 0;
 #     a token sends one POST to repos/Montimage/packages/dispatches with
 #     event_type=mmt-dpi-release and the tag, the token only as GH_TOKEN and
 #     never printed, nor traced under an inherited xtrace; a refused
-#     dispatch warns and exits 0; no tag exits 2.
+#     dispatch warns and exits 0; a tag not of the form vX.Y.Z warns, calls
+#     nothing and exits 0; no tag exits 2.
 #
 # Usage: bash tools/ci/tests/test-notify-packages.sh
 set -u
@@ -53,6 +56,7 @@ wf = open(src, encoding="utf-8").read()
 NAME = "      - name: Notify Montimage/packages (APT repository rebuild)\n"
 IF = "        if: startsWith(github.ref, 'refs/tags/v')\n"
 COE = "        continue-on-error: true\n"
+TMO = "        timeout-minutes: 2\n"
 ENV = ("        env:\n"
        "          PACKAGES_DISPATCH_TOKEN: ${{ secrets.PACKAGES_DISPATCH_TOKEN }}\n")
 RUN = '        run: bash src/tools/ci/notify-packages.sh "$GITHUB_REF_NAME"\n'
@@ -62,8 +66,8 @@ SPARSE = "            tools/ci/notify-packages.sh\n"
 mutations = {
     "removed": [(RUN, "        run: echo skipped\n")],
     "before-publish": [
-        (NAME + IF + COE + ENV + RUN, ""),
-        (PUBLISH, NAME + IF + COE + ENV + RUN + PUBLISH),
+        (NAME + IF + COE + TMO + ENV + RUN, ""),
+        (PUBLISH, NAME + IF + COE + TMO + ENV + RUN + PUBLISH),
     ],
     "not-tag-gated": [(NAME + IF, NAME)],
     "always": [(NAME + IF, NAME +
@@ -71,6 +75,13 @@ mutations = {
     "failure-or": [(NAME + IF, NAME +
                     "        if: failure() || startsWith(github.ref, 'refs/tags/v')\n")],
     "no-continue-on-error": [(IF + COE, IF)],
+    "no-timeout": [(COE + TMO, COE)],
+    "timeout-not-below-job": [(COE + TMO, COE + "        timeout-minutes: 15\n")],
+    "extra-command": [(RUN, '        run: echo "$PACKAGES_DISPATCH_TOKEN";'
+                       ' bash src/tools/ci/notify-packages.sh "$GITHUB_REF_NAME"\n')],
+    "extra-command-block": [(RUN, "        run: |\n"
+                             "          env | sort\n"
+                             '          bash src/tools/ci/notify-packages.sh "$GITHUB_REF_NAME"\n')],
     "own-exit": [(RUN, RUN[:-1] + " || exit 1\n")],
     "token-in-run": [(ENV + RUN,
                       '        run: PACKAGES_DISPATCH_TOKEN="${{ secrets.PACKAGES_DISPATCH_TOKEN }}"'
@@ -98,8 +109,8 @@ for fixture in "$WORK"/fixtures/*.yml; do
         printf '%s\n' "$out" | tail -5 | sed 's/^/      /'
     fi
 done
-[ "$(find "$WORK/fixtures" -name '*.yml' | wc -l)" -eq 10 ] \
-    || bad "expected 10 fixtures, got $(find "$WORK/fixtures" -name '*.yml' | wc -l)"
+[ "$(find "$WORK/fixtures" -name '*.yml' | wc -l)" -eq 14 ] \
+    || bad "expected 14 fixtures, got $(find "$WORK/fixtures" -name '*.yml' | wc -l)"
 
 # --- (2) the helper, against a stub gh -------------------------------------
 mkdir -p "$WORK/bin"
@@ -184,6 +195,29 @@ elif traced "$HELPER"; then
 else
     ok "inherited xtrace: the token is not traced (a copy without set +x leaks it)"
 fi
+
+run_helper "$SECRET" 0 v1.10.2
+if [ "$rc" -eq 0 ] && grep -qx 'ARG client_payload\[tag\]=v1.10.2' "$STUB_GH_LOG"; then
+    ok "multi-digit tag v1.10.2: dispatched"
+else
+    bad "multi-digit tag v1.10.2: rc=$rc, gh calls:"; sed 's/^/      /' "$STUB_GH_LOG"
+fi
+
+# Tags not of the form vX.Y.Z: warned, never sent, exit 0 — with a token set,
+# and the token still not printed.
+for badtag in 1.10.2 v1.10 v1.10.2-rc1 v1.10.2.1 'v1.2.3 x' 'v1.2.3;id' \
+        $'v1.2.3\n::error::injected' refs/tags/v1.2.3; do
+    run_helper "$SECRET" 0 "$badtag"
+    label="$(printf '%q' "$badtag")"
+    if [ "$rc" -eq 0 ] && [ ! -s "$STUB_GH_LOG" ] \
+            && printf '%s\n' "$out" | grep -q '^::warning title=APT repository not notified::the tag .* is not of the form vX.Y.Z' \
+            && [ "$(printf '%s\n' "$out" | wc -l)" -eq 1 ] \
+            && ! printf '%s\n' "$out" | grep -qF "$SECRET"; then
+        ok "malformed tag ${label}: one-line warning, no API call, exit 0"
+    else
+        bad "malformed tag ${label}: rc=$rc, out: $out"
+    fi
+done
 
 run_helper "$SECRET" 0
 if [ "$rc" -eq 2 ] && [ ! -s "$STUB_GH_LOG" ]; then

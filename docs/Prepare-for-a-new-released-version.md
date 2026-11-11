@@ -448,13 +448,21 @@ The signed APT repository is built in
 [Montimage/packages](https://github.com/Montimage/packages), which alone
 holds the APT signing key (decided in issue #24). This repository only
 notifies it: the last step of the `release` job, *Notify Montimage/packages
-(APT repository rebuild)* (`.github/workflows/release-packages.yml:709-714`),
+(APT repository rebuild)* (`.github/workflows/release-packages.yml:712-718`),
 runs `tools/ci/notify-packages.sh` once the Release is published. It sends a
 `repository_dispatch` event of type `mmt-dpi-release` with the tag in its
 payload (`{"tag": "vx.y.z"}`) to Montimage/packages, using the repository
 secret `PACKAGES_DISPATCH_TOKEN` (issue #76). Re-running the tag run
 dispatches again, which is harmless: the packages build rebuilds the
 repository from the Releases each time.
+
+`PACKAGES_DISPATCH_TOKEN` is a fine-grained token limited to
+Montimage/packages with Contents: read and write, the permission the
+dispatches endpoint requires. Contents: write also lets the token push to
+the unprotected branches of Montimage/packages, not just dispatch; no
+narrower permission exists for the endpoint. The safeguard is the ruleset on
+its `main` branch: pull request, approval and required checks, no
+force-push, no deletion. Keep that ruleset in place while the token exists.
 
 After the tag run:
 

@@ -15,13 +15,17 @@
 # re-run of a published tag dispatches again harmlessly.
 #
 # Credential: PACKAGES_DISPATCH_TOKEN, a fine-grained token limited to
-# Montimage/packages (Contents: read and write). The workflow passes it
+# Montimage/packages (Contents: read and write). Contents: write also lets
+# it push to the unprotected branches of Montimage/packages; the ruleset on
+# its `main` (pull request, approval, required checks, no force-push, no
+# deletion) is the safeguard. The workflow passes it
 # through the step's `env:` only; this script hands it to `gh` as GH_TOKEN
 # for the one API call and never prints it.
 #
 # Never fails the release: the Release is already public when this runs.
-# A missing token or a refused dispatch prints a `::warning::` naming the
-# manual trigger and exits 0. Only a usage error (no tag) exits 2.
+# A tag not of the form vX.Y.Z, a missing token or a refused dispatch
+# prints a `::warning::` naming the manual trigger and exits 0. Only a
+# usage error (no tag) exits 2.
 #
 # Usage: PACKAGES_DISPATCH_TOKEN=... bash tools/ci/notify-packages.sh <tag>
 
@@ -38,6 +42,15 @@ tag="${1:-}"
 if [ -z "$tag" ]; then
     echo "usage: notify-packages.sh <tag>" >&2
     exit 2
+fi
+
+# The tag goes into the request body; the workflow passes $GITHUB_REF_NAME,
+# which verify-tag has already matched to v$(VERSION). Anything else is not
+# sent. printf %q keeps a stray character out of the workflow command.
+if ! [[ $tag =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    unset PACKAGES_DISPATCH_TOKEN
+    echo "::warning title=APT repository not notified::the tag $(printf '%q' "$tag") is not of the form vX.Y.Z, so nothing was dispatched to ${PACKAGES_REPO} and the APT repository was not rebuilt. Trigger the rebuild by hand: ${MANUAL}"
+    exit 0
 fi
 
 token="${PACKAGES_DISPATCH_TOKEN:-}"
