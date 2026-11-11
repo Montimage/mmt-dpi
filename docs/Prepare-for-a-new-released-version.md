@@ -442,6 +442,42 @@ Checkout a tag:
 git checkout -b new_branch_name v1.5
 ```
 
+## Check the APT repository rebuild
+
+The signed APT repository is built in
+[Montimage/packages](https://github.com/Montimage/packages), which alone
+holds the APT signing key (decided in issue #24). This repository only
+notifies it: the last step of the `release` job, *Notify Montimage/packages
+(APT repository rebuild)* (`.github/workflows/release-packages.yml:709-714`),
+runs `tools/ci/notify-packages.sh` once the Release is published. It sends a
+`repository_dispatch` event of type `mmt-dpi-release` with the tag in its
+payload (`{"tag": "vx.y.z"}`) to Montimage/packages, using the repository
+secret `PACKAGES_DISPATCH_TOKEN` (issue #76). Re-running the tag run
+dispatches again, which is harmless: the packages build rebuilds the
+repository from the Releases each time.
+
+After the tag run:
+
+1. Open the step's log in the `Publish GitHub Release` job. It reads
+   `Dispatched mmt-dpi-release for vx.y.z to Montimage/packages.` on
+   success. A `::warning::` titled *APT repository not notified* means the
+   secret is missing, expired or lacks access; the release itself is not
+   failed by it.
+2. Check that the *APT repository* workflow (`apt-repo.yml`) of
+   Montimage/packages started a `repository_dispatch` run for the tag and
+   that it succeeded:
+
+   ```
+   gh run list -R Montimage/packages --workflow apt-repo.yml --event repository_dispatch --limit 3
+   ```
+
+If no run started, trigger the rebuild by hand (it rebuilds from the latest
+Releases, so it needs no tag):
+
+```
+gh workflow run apt-repo.yml -R Montimage/packages
+```
+
 ## Update the documents
 
 - Update `ChangeLog` (`CHANGELOG.md` is the single canonical changelog — the

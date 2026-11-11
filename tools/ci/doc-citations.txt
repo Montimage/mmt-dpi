@@ -198,3 +198,4 @@ cite	docs/troubleshooting.md	src/mmt_core/src/packet_registry_handler.c:123	strc
 cite	docs/troubleshooting.md	src/mmt_core/src/plugins_engine.c:48-82	static const char *plugins_directory(int *from_env)	}
 cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_quic_ietf.c:853	session->app_method = MMT_CLASSIFICATION_METHOD_HOSTNAME;	-
 cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_quic_ietf.c:714	session->app_method = MMT_CLASSIFICATION_METHOD_IP;	-
+cite	docs/Prepare-for-a-new-released-version.md	.github/workflows/release-packages.yml:709-714	- name: Notify Montimage/packages (APT repository rebuild)	run: bash src/tools/ci/notify-packages.sh "$GITHUB_REF_NAME"
