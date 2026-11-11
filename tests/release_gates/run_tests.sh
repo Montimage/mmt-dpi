@@ -116,6 +116,14 @@
 # validator on fixture trees (space- and tab-separated, indented, hex and
 # suffixed ids in 950-999, a PROTO_MAX_IDENTIFIER of 999, a page that no
 # longer names the range) and then on the real tree.
+# It also runs the release-notification self-test beside
+# tools/ci/notify-packages.sh (issue #76), which drives
+# tools/ci/check-release-verification.sh on mutated copies of the release
+# workflow (no notify step, a step before the publish, not tag-gated, under
+# always() or failure(), without continue-on-error, without a step timeout
+# below the job's, with its own exit or an extra command in run:, the token
+# outside the step's env:) and the helper against a stub gh (no token, a
+# dispatch, a refused dispatch, a tag not of the form vX.Y.Z; no network).
 set -e
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/ci/tests"
 python3 "${TESTS_DIR}/test-release-gates.py" "$@"
@@ -147,3 +155,4 @@ bash "${TESTS_DIR}/test-unreachable-sections.sh"
 bash "${TESTS_DIR}/test-site-links.sh"
 bash "${TESTS_DIR}/test-doc-citations.sh"
 bash "${TESTS_DIR}/test-proto-id-range.sh"
+bash "${TESTS_DIR}/test-notify-packages.sh"

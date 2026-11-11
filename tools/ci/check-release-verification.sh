@@ -43,18 +43,41 @@
 #     SHA256SUMS and the attestation, publishes the attestation's bundle as
 #     release/mmt-dpi.intoto.jsonl before publish-release.sh, and a
 #     bootstrap-dry-run job behind packages-gate renders it on pull requests
+#   - APT repository notification (issue #76): a release-job step after
+#     publish-release.sh runs tools/ci/notify-packages.sh on the tag, gated
+#     to tag runs by a step `if:` that keeps the implicit success() (no
+#     always()/failure()/cancelled()/success()), with continue-on-error:
+#     true, a step timeout-minutes below the job's (a hung dispatch is then
+#     a step failure continue-on-error absorbs, not a job timeout), a run:
+#     that is exactly `bash src/tools/ci/notify-packages.sh
+#     "$GITHUB_REF_NAME"` (no other command), and
+#     secrets.PACKAGES_DISPATCH_TOKEN is referenced once in the workflow —
+#     in that step's `env:` block
 #
 # Exit codes: 0 = verifiable wiring present, 1 = a violation, 2 = helper
 # broken.
 #
-# Usage: bash tools/ci/check-release-verification.sh
+# Usage: bash tools/ci/check-release-verification.sh [--workflow FILE]
+#   --workflow FILE   the release workflow to check (default
+#                     .github/workflows/release-packages.yml; the
+#                     self-test tools/ci/tests/test-notify-packages.sh
+#                     passes mutated copies)
 
 set -euo pipefail
+
+WORKFLOW=".github/workflows/release-packages.yml"
+case "${1:-}" in
+    --workflow)
+        [ -n "${2:-}" ] || { echo "✗ --workflow needs a file" >&2; exit 2; }
+        [ -f "$2" ] || { echo "✗ workflow not found: $2" >&2; exit 2; }
+        WORKFLOW="$(cd "$(dirname "$2")" && pwd)/$(basename "$2")" ;;
+    "") ;;
+    *) echo "✗ unknown argument: $1" >&2; exit 2 ;;
+esac
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
 
-WORKFLOW=".github/workflows/release-packages.yml"
 README="README.md"
 
 [ -f "$WORKFLOW" ] || { echo "✗ workflow not found: $WORKFLOW" >&2; exit 2; }
@@ -294,6 +317,90 @@ if "make-release-bootstrap.sh" in dry_job \
 else:
     fail("no bootstrap-dry-run job behind packages-gate — a generator "
          "refusal would first surface on the tag (issue #498)")
+
+# --- APT repository notification (issue #76) ---------------------------------
+# The step that notifies Montimage/packages: one `      - ` item of the
+# release job's steps whose run: calls notify-packages.sh.
+steps = re.split(r"(?m)^(?=      - )", release_job)
+notify = [st for st in steps if re.search(r"notify-packages\.sh", st)
+          and re.search(r"(?m)^        run:", st)]
+if len(notify) != 1:
+    fail(f"{len(notify)} release-job steps run notify-packages.sh — exactly "
+         "one must notify Montimage/packages after the publish (issue #76)")
+else:
+    st = notify[0]
+    if re.search(r'notify-packages\.sh"?\s+"\$GITHUB_REF_NAME"', st):
+        ok("notify step passes the tag to notify-packages.sh")
+    else:
+        fail("notify step does not pass \"$GITHUB_REF_NAME\" to "
+             "notify-packages.sh")
+    if 0 <= publish < release_job.find(st):
+        ok("notify step runs after publish-release.sh")
+    else:
+        fail("notify step does not come after the publish-release.sh step — "
+             "it could dispatch for an unpublished tag")
+    cond = re.search(r"(?m)^        if:\s*(.+)$", st)
+    cond = cond.group(1) if cond else ""
+    if re.search(r"startsWith\(\s*github\.ref\s*,\s*'refs/tags/v'\s*\)",
+                 cond) and not re.search(
+                     r"always\(\)|failure\(\)|cancelled\(\)|success\(\)|\|\|",
+                     cond):
+        ok("notify step is tag-only and keeps the implicit success() "
+           "(runs only after a successful publish)")
+    else:
+        fail("notify step `if:` must be startsWith(github.ref, "
+             "'refs/tags/v') without always()/failure()/cancelled()/"
+             "success() or `||` — it must run only on a tag run whose "
+             "publish succeeded")
+    if re.search(r"(?m)^        continue-on-error:\s*true\s*$", st):
+        ok("notify step has continue-on-error: true")
+    else:
+        fail("notify step lacks continue-on-error: true — a dispatch "
+             "problem could fail a published release")
+    job_tmo = re.search(r"(?m)^    timeout-minutes:\s*(\d+)\s*$", release_job)
+    step_tmo = re.search(r"(?m)^        timeout-minutes:\s*(\d+)\s*$", st)
+    if step_tmo and job_tmo \
+            and 0 < int(step_tmo.group(1)) < int(job_tmo.group(1)):
+        ok(f"notify step has timeout-minutes: {step_tmo.group(1)}, below the "
+           f"job's {job_tmo.group(1)} (a hung dispatch stays a step failure)")
+    else:
+        fail("notify step lacks a timeout-minutes below the release job's — "
+             "a hung dispatch would reach the job timeout, which fails the "
+             "job whatever continue-on-error says")
+    run = re.search(r"(?m)^        run:(.*(?:\n          .*)*)", st)
+    run = run.group(1) if run else ""
+    if re.search(r"\bexit\b|\bfalse\b", run):
+        fail("notify step's run: exits on its own — leave the exit status "
+             "to notify-packages.sh, which never fails the release")
+    else:
+        ok("notify step's run: has no exit of its own")
+    if run.strip() == 'bash src/tools/ci/notify-packages.sh "$GITHUB_REF_NAME"':
+        ok("notify step's run: is exactly the helper call")
+    else:
+        fail("notify step's run: must be exactly `bash "
+             "src/tools/ci/notify-packages.sh \"$GITHUB_REF_NAME\"` — no "
+             "other command may run beside the token")
+    env = re.search(r"(?m)^        env:\n((?:          .*\n?)*)", st)
+    env = env.group(1) if env else ""
+    if re.search(r"(?m)^          PACKAGES_DISPATCH_TOKEN:\s*\$\{\{\s*"
+                 r"secrets\.PACKAGES_DISPATCH_TOKEN\s*\}\}\s*$", env):
+        ok("PACKAGES_DISPATCH_TOKEN reaches the notify step through env:")
+    else:
+        fail("notify step does not pass secrets.PACKAGES_DISPATCH_TOKEN as "
+             "PACKAGES_DISPATCH_TOKEN in its env: block")
+uses_secret = len(re.findall(r"secrets\.PACKAGES_DISPATCH_TOKEN", wf))
+if uses_secret == 1:
+    ok("secrets.PACKAGES_DISPATCH_TOKEN is referenced exactly once")
+else:
+    fail(f"secrets.PACKAGES_DISPATCH_TOKEN is referenced {uses_secret} times "
+         "— it must reach the notify step's env: alone")
+sparse = re.search(r"(?m)^          sparse-checkout: \|\n((?:            \S.*\n)*)",
+                   release_job)
+if sparse and re.search(r"(?m)^            tools/ci/notify-packages\.sh$",
+                        sparse.group(1)):
+    ok("release job checks out tools/ci/notify-packages.sh")
+else:
+    fail("release job's sparse checkout lacks tools/ci/notify-packages.sh")
 
 # --- per-package SBOM -------------------------------------------------------
 if re.search(r"uses:\s*anchore/sbom-action@[0-9a-f]{40}", wf) \
