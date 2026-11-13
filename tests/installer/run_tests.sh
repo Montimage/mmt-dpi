@@ -383,6 +383,9 @@ for l in libmmt_core libmmt_tcpip libmmt_tmobile libmmt_business_app libmmt_tdic
         test "$(dynamic_entries SONAME "${LIB}/${l}.so.${VER}")" = "${l}.so.${SOV}"
     check "${l}: make install links ${l}.so.${SOV} -> ${l}.so.${VER}" \
         test "$(readlink "${LIB}/${l}.so.${SOV}")" = "${l}.so.${VER}"
+    # Issue #82: the development link is relative too, so a moved prefix keeps it.
+    check "${l}: make install links ${l}.so -> ${l}.so.${VER} (relative)" \
+        test "$(readlink "${LIB}/${l}.so")" = "${l}.so.${VER}"
 done
 check "a consumer's NEEDED entry names libmmt_core.so.${SOV}" \
     grep -qx "libmmt_core.so.${SOV}" <(dynamic_entries NEEDED "${WORK}/extract_all")
@@ -701,10 +704,16 @@ else
             check "dpkg-deb -c mmt-dpi-security lists ${l}.so.${SOV} -> ${l}.so.${VER}" \
                 grep -qF "/dpi/lib/${l}.so.${SOV} -> ${l}.so.${VER}" "${WORK}/sec.list"
         done
+        # Issue #82: no absolute symlink target in either package, so the
+        # payload resolves when unpacked outside / (dpkg-deb -x).
+        check "dpkg-deb -c: mmt-dpi lists libmmt_core.so -> libmmt_core.so.${VER}" \
+            grep -qF "/dpi/lib/libmmt_core.so -> libmmt_core.so.${VER}" "${WORK}/main.list"
+        check "dpkg-deb -c: no symlink in either package has an absolute target" \
+            bash -c "! awk '\$7 == \"->\" && \$8 ~ /^\\//' '${WORK}/main.list' '${WORK}/sec.list' | grep -q ."
         # Issue #550: the package ships the `install` .pc and a link that puts
         # it on pkg-config's default search path.
         check "dpkg-deb -c mmt-dpi lists dpi/lib/pkgconfig/mmt-dpi.pc and the /usr/share/pkgconfig link" \
-            bash -c "grep -q '/opt/mmt/dpi/lib/pkgconfig/mmt-dpi.pc\$' '${WORK}/main.list' && grep -qF './usr/share/pkgconfig/mmt-dpi.pc -> /opt/mmt/dpi/lib/pkgconfig/mmt-dpi.pc' '${WORK}/main.list'"
+            bash -c "grep -q '/opt/mmt/dpi/lib/pkgconfig/mmt-dpi.pc\$' '${WORK}/main.list' && grep -qF './usr/share/pkgconfig/mmt-dpi.pc -> ../../../opt/mmt/dpi/lib/pkgconfig/mmt-dpi.pc' '${WORK}/main.list'"
         check "mmt-dpi holds neither engine nor the fuzz headers" \
             bash -c "! grep -Eq 'libmmt_(security|fuzz)|/include/fuzz/' '${WORK}/main.list'"
         check "mmt-dpi-security depends on exactly its own mmt-dpi version" \
