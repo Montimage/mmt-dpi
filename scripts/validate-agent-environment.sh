@@ -178,9 +178,9 @@ sdk/Makefile:25-29	^PLUGINS_PATH_STAMP :=	^FORCE:	plugins_engine.o depends on a 
 sdk/Makefile:58-68	^LDCONF +\?= auto	^[[:space:]]+esac$	the loader is registered by privilege (LDCONF=auto|0|1)	id -u
 sdk/Makefile:70-80	^--check-built:	^[[:space:]]+fi$	make install refuses a missing or mismatched build	PLUGINS_PATH_STAMP
 sdk/Makefile:173-214	^uninstall:	Done!	make uninstall removes the install and its drop-in	LDCONF_FILE
-sdk/Makefile:88	ln -sf .*\$\$l\.so	-	make install creates the unversioned .so symlinks	MMT_SONAME_LIBS
+sdk/Makefile:88	ln -sf \$\$l\.so\.\$\(VERSION\) .*\$\$l\.so 	-	make install creates the unversioned .so symlinks, relative (issue #82)	MMT_SONAME_LIBS
 sdk/Makefile:251	^MMT_LAYOUT_SEC_LIBS := libmmt_security libmmt_fuzz$	-	install symlinks both ENABLESEC engines (the layout list, issue #538)
-sdk/Makefile:364-366	for l in \$\(MMT_SONAME_LIBS\)	^[[:space:]]+done$	the dist tree symlinks every library, both ENABLESEC engines included	ln -s .*\$\$l\.so 
+sdk/Makefile:364-366	for l in \$\(MMT_SONAME_LIBS\)	^[[:space:]]+done$	the dist tree symlinks every library, both ENABLESEC engines included, with relative targets (issue #82)	ln -s \$\$l\.so\.\$\(VERSION\) .*\$\$l\.so 
 sdk/Makefile:618-623	^test:	\./proto_attributes_iterator	the make test target builds from the installed prefix	\$\(MMT_EXAMS\)/proto_attributes_iterator\.c
 tests/run_all_tests.sh:8-118	^# Modes:	^esac	the runner has two opt-in sanitizer modes	\-fsanitize=thread
 tests/run_all_tests.sh:106-109	command -v setarch	^ *fi$	TSan re-execs once with ASLR disabled	exec setarch .*\-R

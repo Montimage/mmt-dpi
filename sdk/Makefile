@@ -85,7 +85,7 @@ install: --check-built --check-prefix
 	@ install -m 0755 $(SDKLIB)/*.so.* $(MMT_LIB)/
 	@ install -m 0644 $(SDKLIB)/*.a    $(MMT_LIB)/
 # Make links
-	@ for l in $(MMT_SONAME_LIBS); do ln -sf $(MMT_LIB)/$$l.so.$(VERSION) $(MMT_LIB)/$$l.so || exit 1; done
+	@ for l in $(MMT_SONAME_LIBS); do ln -sf $$l.so.$(VERSION) $(MMT_LIB)/$$l.so || exit 1; done
 # Runtime (SONAME) links, issue #536: lib<name>.so.$(SOVERSION) is what a
 # consumer's NEEDED entry names, so the loader needs it even when ldconfig
 # never runs (an unprivileged install). Only for the libraries installed.
@@ -362,7 +362,7 @@ SEC_PKG_LICENSE := GPL-3.0-or-later AND Apache-2.0
 	done
 	# Make links
 	$(QUIET) for l in $(MMT_SONAME_LIBS); do \
-		ln -s $(MMT_LIB)/$$l.so.$(VERSION) $(BUILD_DIR)$(MMT_LIB)/$$l.so || exit 1; \
+		ln -s $$l.so.$(VERSION) $(BUILD_DIR)$(MMT_LIB)/$$l.so || exit 1; \
 	done
 	# SONAME links (issue #536), as `install` lays them down: shipped in the
 	# package, not left to the postinst ldconfig, so dpkg/rpm own them.
@@ -378,7 +378,7 @@ SEC_PKG_LICENSE := GPL-3.0-or-later AND Apache-2.0
 	# package without PKG_CONFIG_PATH.
 	$(QUIET) install -d -m 0755 $(BUILD_DIR)$(MMT_LIB)/pkgconfig $(BUILD_DIR)/usr/share/pkgconfig \
 	    && $(call mmt_write_pc,$(BUILD_DIR)$(MMT_LIB)/pkgconfig/mmt-dpi.pc,rpath) \
-	    && ln -s $(MMT_LIB)/pkgconfig/mmt-dpi.pc $(BUILD_DIR)/usr/share/pkgconfig/mmt-dpi.pc
+	    && ln -s `realpath -s --relative-to=$(BUILD_DIR)/usr/share/pkgconfig $(BUILD_DIR)$(MMT_LIB)/pkgconfig/mmt-dpi.pc` $(BUILD_DIR)/usr/share/pkgconfig/mmt-dpi.pc
 	# Licence files (issue #497): LICENSE and THIRD-PARTY-NOTICES in each
 	# package, under its own doc directory.
 	$(QUIET) umask 022 && install -d -m 0755 $(BUILD_DIR)$(MMT_DOC) \
@@ -407,7 +407,7 @@ SEC_PKG_LICENSE := GPL-3.0-or-later AND Apache-2.0
 		if [ -d $$d ] && find $$d -type f -perm /022 -print -quit | grep -q .; then \
 			echo "ERROR: group/world-writable file under $$d" >&2; exit 1; \
 		fi; \
-	done
+	done; $(MMT_ASSERT_RELATIVE_LINKS)
 
 deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	$(QUIET) $(MKDIR) $(BUILD_DIR)/DEBIAN
@@ -702,3 +702,11 @@ install-fhs: --check-built
 		echo "ERROR: group/world-writable file under $(DESTDIR)$(MMT_LIB)" >&2; exit 1; \
 	fi
 	@ echo "[MMT-]> Installed the FHS layout under $(DESTDIR)$(MMT_LIB)"
+
+# Issue #82: every symlink a package stages is relative, so the payload
+# resolves wherever it is unpacked (`dpkg-deb -x`, `rpm2cpio`), not only
+# under /. Run at the end of --private-prepare-build-dir, before deb or rpm
+# assembles the tree: an absolute target fails the package build.
+MMT_ASSERT_RELATIVE_LINKS = abs=`find $(BUILD_DIR) $(SEC_BUILD_DIR) -type l -lname '/*' -printf '%p -> %l\n' 2>/dev/null`; \
+	if [ -n "$$abs" ]; then echo "ERROR: absolute symlink target in the package tree (issue 82):" >&2; \
+		echo "$$abs" >&2; exit 1; fi

@@ -16,6 +16,8 @@
 #   - mmt-dpi holds none of them, nor a build-id link pointing at one
 #   - .rpm: `rpm -qp --qf '%{LICENSE}'` prints PKG_LICENSE / SEC_PKG_LICENSE
 #     from sdk/Makefile
+#   - no symlink in either package has an absolute target (issue #82), so
+#     the payload resolves when unpacked outside / (dpkg-deb -x, rpm2cpio)
 #
 # Usage: check-package-split.sh <mmt-dpi.deb|.rpm> <mmt-dpi-security.deb|.rpm>
 # Exit codes: 0 = holds, 1 = violation, 2 = bad usage / tool missing.
@@ -99,6 +101,17 @@ if [ -n "$leaked" ]; then
 else
     ok "mmt-dpi carries no build-id link to an engine library"
 fi
+
+# Issue #82: checked on the extracted payloads, so the same test covers
+# .deb and .rpm (build-id links included).
+for tag in main sec; do
+    absl="$(find "$WORK/$tag" -type l -lname '/*' -printf '%P -> %l\n')"
+    if [ -n "$absl" ]; then
+        bad "$tag package has absolute symlink targets: $(echo "$absl" | head -5 | tr '\n' ' ')"
+    else
+        ok "$tag package: every symlink target is relative"
+    fi
+done
 
 if [ "$KIND" = rpm ]; then
     for pair in "PKG_LICENSE:$MAIN" "SEC_PKG_LICENSE:$SEC"; do
