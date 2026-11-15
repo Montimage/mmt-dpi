@@ -1985,8 +1985,8 @@ def _stun(msg_type, txid, attrs=b""):
     return struct.pack("!HHI", msg_type, len(attrs), 0x2112A442) + txid + attrs
 
 
-def _stun_xor_mapped():
-    port = 49451 ^ 0x2112
+def _stun_xor_mapped(port=49451):
+    port ^= 0x2112
     addr = struct.unpack("!I", ACC_CLIENT)[0] ^ 0x2112A442
     return struct.pack("!HHBBHI", 0x0020, 8, 0, 1, port, addr)
 
@@ -2084,6 +2084,45 @@ def _ice_check_ok(port):
     xaddr = struct.unpack("!I", ACC_CLIENT)[0] ^ 0x2112A442
     return _rfc4571(_stun_ice(0x0101, _stun_attr(
         0x0020, struct.pack("!BBHI", 0, 1, port ^ 0x2112, xaddr))))
+
+
+RFB_BANNER = b"RFB 003.008\n"   # RFC 6143 §7.1.1 ProtocolVersion
+
+
+def _tpkt(tpdu):
+    """RFC 1006 §6 TPKT: version 3, reserved 0, 16-bit length of the whole
+    packet, then the ISO 8073 TPDU."""
+    return struct.pack("!BBH", 3, 0, 4 + len(tpdu)) + tpdu
+
+
+def _cotp(code, dst_ref, src_ref, params):
+    """ISO 8073 §13.3/§13.4 class 0 CR (0xE0) / CC (0xD0) TPDU: length
+    indicator, code, DST-REF, SRC-REF, class/option 0, then the parameters."""
+    body = bytes([code]) + struct.pack("!HHB", dst_ref, src_ref, 0) + params
+    return bytes([len(body)]) + body
+
+
+# ISO 8073 §13.3.4 parameters: calling / called TSAP-ID, TPDU size 1024
+COTP_TSAPS = b"\xc1\x02\x01\x00" + b"\xc2\x02\x01\x02"
+COTP_TPDU_SIZE = b"\xc0\x01\x0a"
+
+
+def _rtp_framed(seq):
+    """One 20 ms RTP packet with the RFC 4571 length prefix (ICE-TCP media)."""
+    return _rfc4571(_rtp(seq, seq * 160, 0x5A5A0001, 0x7F))
+
+
+def _dtls_appdata(seq):
+    """RFC 6347 §4.1 DTLS 1.2 application_data record (epoch 1), framed for
+    ICE-TCP: first octet 23, which RFC 7983 §7 demultiplexes as DTLS."""
+    body = bytes([seq]) * 40
+    return _rfc4571(struct.pack("!BHH", 23, 0xFEFD, 1) + seq.to_bytes(6, "big")
+                    + struct.pack("!H", len(body)) + body)
+
+
+ICY_LISTENER_GET = _text([b"GET /live HTTP/1.0", b"Host: radio.accuracy.example",
+                          b"User-Agent: accuracy/1.0", b"Icy-MetaData: 1", b""])
+MP3_FRAME = b"\xff\xfb\x90\x64" + b"\x00" * 200   # MPEG-1 Layer III, 128 kbit/s
 
 
 def _iax_full(scall, dcall, oseq, iseq, subclass, ies):
@@ -2760,6 +2799,85 @@ ACC_CLASSIFIER_FLOWS = {
     "acc_xbox_negative": (17, 49599, 3074, False, [
         ("cli", b"hello, this datagram is not an Xbox Live packet\n"),
         ("srv", b"and neither is this reply, despite the port\n")], {}),
+    # issue #92: classifiers montimage-projects/mmt-dpi#527 found defective, once fixed
+    "acc_vnc_positive": (6, 49700, 5900, True, [
+        ("srv", RFB_BANNER),
+        ("cli", RFB_BANNER)], {}),
+    "acc_vnc_negative": (6, 49701, 5900, True, [
+        ("srv", b"RFB 003.008 but not a banner\n"),
+        ("cli", b"hello, this is not an RFB banner\n")], {}),
+    "acc_tpkt_positive": (6, 49702, 102, True, [
+        ("cli", _tpkt(_cotp(0xE0, 0, 1, COTP_TSAPS + COTP_TPDU_SIZE))),
+        ("srv", _tpkt(_cotp(0xD0, 1, 1, COTP_TPDU_SIZE + COTP_TSAPS)))], {}),
+    "acc_tpkt_negative": (6, 49703, 102, True, [
+        ("cli", b"\x03\x00\x00\x40hello, the TPKT length lies\n"),
+        ("srv", b"and this reply is not TPKT\n")], {}),
+    "acc_ndn_http_tcp_positive": (6, 49704, 6363, True, [
+        ("cli", _ndn_interest(_ndn_name(b"accuracy.example", b"GET",
+                                        b"index.html"))),
+        ("srv", _ndn_data(_ndn_name(b"accuracy.example", b"GET",
+                                    b"index.html"), b"ok"))], {}),
+    "acc_ndn_http_tcp_negative": (6, 49705, 6363, True, [
+        ("cli", b"hello, this stream is not an NDN Interest\n"),
+        ("srv", b"and this reply is not an NDN Data packet\n")], {}),
+    "acc_stun_tcp_unframed_positive": (6, 49706, 3478, True, [
+        ("cli", _stun(0x0001, bytes(range(0x30, 0x3C)))),
+        ("srv", _stun(0x0101, bytes(range(0x30, 0x3C)),
+                      _stun_xor_mapped(49706)))], {}),
+    "acc_stun_tcp_unframed_classic_ambiguous": (6, 49707, 3478, True, [
+        ("cli", struct.pack("!HHI", 0x0001, 0, 0x01020304)
+         + bytes(range(0x30, 0x3C))),
+        ("srv", struct.pack("!HHI", 0x0101, 12, 0x01020304)
+         + bytes(range(0x30, 0x3C))
+         + struct.pack("!HHBBH4s", 0x0001, 8, 0, 1, 49707, ACC_CLIENT))], {}),
+    "acc_rtp_tcp_positive": (6, 49708, 3478, True, [
+        ("cli", _ice_check()),
+        ("srv", _ice_check_ok(49708))]
+        + [("cli", _rtp_framed(seq)) for seq in range(100, 106)], {}),
+    "acc_rtp_tcp_keepalive_positive": (6, 49709, 3478, True, [
+        ("cli", _ice_check()),
+        ("srv", _ice_check_ok(49709))]
+        + [("cli", _rtp_framed(seq)) for seq in range(100, 106)]
+        + [("cli", _ice_check()),
+           ("srv", _ice_check_ok(49709))]
+        + [("cli", _rtp_framed(seq)) for seq in range(106, 109)], {}),
+    "acc_rtp_tcp_negative": (6, 49710, 3478, True, [
+        ("cli", _ice_check()),
+        ("srv", _ice_check_ok(49710))]
+        + [("cli", _dtls_appdata(seq)) for seq in range(1, 6)], {}),
+    "acc_rtp_tcp_unpreceded_ambiguous": (6, 49711, 3478, True,
+        [("cli", _rtp_framed(seq)) for seq in range(100, 106)], {}),
+    "acc_icecast_listener_positive": (6, 49712, 8000, True, [
+        ("cli", ICY_LISTENER_GET),
+        ("srv", _text([b"HTTP/1.0 200 OK", b"Server: Icecast 2.4.4",
+                       b"Content-Type: audio/mpeg", b"icy-metaint: 16000",
+                       b""])),
+        ("srv", MP3_FRAME)], {}),
+    "acc_icecast_listener_ogg_positive": (6, 49713, 8000, True, [
+        ("cli", _text([b"GET /live.ogg HTTP/1.0",
+                       b"Host: radio.accuracy.example",
+                       b"User-Agent: accuracy/1.0", b""])),
+        ("srv", _text([b"HTTP/1.0 200 OK", b"Server: Icecast 2.4.4",
+                       b"Content-Type: application/ogg", b""])),
+        ("srv", b"OggS" + b"\x00" * 200)], {}),
+    "acc_icecast_listener_negative": (6, 49714, 8000, True, [
+        ("cli", ICY_LISTENER_GET),
+        ("srv", _text([b"HTTP/1.0 200 OK", b"Server: accuracy-httpd/1.0",
+                       b"Content-Type: audio/mpeg", b"icy-metaint: 16000",
+                       b""])),
+        ("srv", MP3_FRAME)], {}),
+    "acc_shoutcast_listener_positive": (6, 49715, 8001, True, [
+        ("cli", ICY_LISTENER_GET),
+        ("srv", _text([b"ICY 200 OK", b"icy-notice1: accuracy test stream",
+                       b"icy-name: accuracy", b"content-type: audio/mpeg",
+                       b"icy-metaint: 8192", b""])),
+        ("srv", MP3_FRAME)], {}),
+    "acc_shoutcast_listener_ambiguous": (6, 49716, 8001, True, [
+        ("cli", ICY_LISTENER_GET),
+        ("srv", _text([b"HTTP/1.0 200 OK", b"icy-name: accuracy",
+                       b"content-type: audio/mpeg", b"icy-metaint: 8192",
+                       b""])),
+        ("srv", MP3_FRAME)], {}),
 }
 
 
@@ -2949,6 +3067,43 @@ def gen_acc_geneve_negative_pcap(path):
                     ACC_HTTP_EXCHANGE, "UDP/6081 with GENEVE version 1")
 
 
+# --- accuracy corpus: Spotify host corroboration (issue #92) ----------------
+# Off Spotify's own address range, mmt_check_spotify labels a TCP flow whose
+# first payload starts 01 00 00 and whose second starts 00 (16 bytes or more)
+# only when a host of the flow is already known for Spotify
+# (proto_spotify.c). An HTTP request from the client with a Spotify-
+# User-Agent (http.c, spotify_parse_packet_useragentline) records that, so the
+# positive and the negative differ in the User-Agent alone; both flows run
+# between the RFC 5737 hosts, and no Spotify address is used.
+
+
+def _acc_spotify_pcap(path, user_agent, note):
+    f = pcap_open(path)
+    web = _AccFlow(f, 6, 49720, 80)
+    web.handshake()
+    web.send("cli", _text([b"GET /index.html HTTP/1.1", b"Host: accuracy.example",
+                           b"User-Agent: " + user_agent, b"Accept: */*", b""]))
+    web.send("srv", _text([b"HTTP/1.1 200 OK", b"Content-Type: text/plain",
+                           b"Content-Length: 2", b""]) + b"ok")
+    app = _AccFlow(f, 6, 49721, 4070, ts_us=web.ts_us)
+    app.handshake()
+    app.send("cli", b"\x01\x00\x00" + bytes(range(0x10, 0x1D)))
+    app.send("srv", b"\x00" + bytes(range(0x20, 0x2F)))
+    app.send("cli", bytes(range(0x30, 0x50)))
+    f.close()
+    print("wrote %s (accuracy: %s)" % (path, note))
+
+
+def gen_acc_spotify_positive_pcap(path):
+    _acc_spotify_pcap(path, b"Spotify-11.1.0",
+                      "Spotify User-Agent, then the 01 00 00 / 00 flow")
+
+
+def gen_acc_spotify_negative_pcap(path):
+    _acc_spotify_pcap(path, b"accuracy/1.0",
+                      "another User-Agent, then the same flow")
+
+
 # --- accuracy corpus: IPv6 (issue #92) ---------------------------------------
 # mmt_check_dhcpv6 runs on IPv6 only (MMT_SELECTION_BITMASK_PROTOCOL_V6_UDP_*,
 # proto_dhcpv6.c). The client solicits from its link-local address to the
@@ -3067,6 +3222,8 @@ ACC_GENS = {
     "acc_vxlan_negative": gen_acc_vxlan_negative_pcap,
     "acc_geneve_http_positive": gen_acc_geneve_http_positive_pcap,
     "acc_geneve_negative": gen_acc_geneve_negative_pcap,
+    "acc_spotify_positive": gen_acc_spotify_positive_pcap,
+    "acc_spotify_negative": gen_acc_spotify_negative_pcap,
     "acc_dhcpv6_positive": gen_acc_dhcpv6_positive_pcap,
     "acc_dhcpv6_negative": gen_acc_dhcpv6_negative_pcap,
 }
