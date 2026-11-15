@@ -24,6 +24,11 @@
  * a stray CR or a bare LF splits no line — only CRLF does — and the parser
  * still reports every header of the request as an HTTP_HEADER event.
  *
+ * Issue #92: an Icecast or SHOUTcast listener stream — an HTTP request
+ * answered by `Server: Icecast...` or by an `ICY 200 OK` status line — is
+ * labelled icecast / shoutcast, not http.mpeg: the HTTP checker owns the flow
+ * before the Icecast and SHOUTcast checkers see the answer.
+ *
  * Exit status: 0 = all cases classified as expected, non-zero = regression.
  */
 #include <stdio.h>
@@ -72,9 +77,10 @@ static int classification_handler(const ipacket_t *ipacket, void *user) {
 }
 
 /* Build a minimal Ethernet/IPv4/TCP frame carrying the given HTTP payload.
- * src_port is varied per case so each request lands in its own session. */
+ * src_port is varied per case so each request lands in its own session.
+ * reply: the server's answer on that session (addresses and ports swapped). */
 static int build_frame(unsigned char *buf, const char *payload, int plen,
-                       int src_port) {
+                       int src_port, int reply) {
     int o = 0;
     const unsigned char eth[14] = {
         0,0,0,0,0,1,  0,0,0,0,0,2,  0x08,0x00 };          /* dst, src, IPv4 */
@@ -91,6 +97,11 @@ static int build_frame(unsigned char *buf, const char *payload, int plen,
     memcpy(buf + o, ip, 20);  o += 20;
     memcpy(buf + o, tcp, 20); o += 20;
     memcpy(buf + o, payload, plen); o += plen;
+    if (reply) {
+        unsigned char t[4];
+        memcpy(t, buf + 26, 4); memcpy(buf + 26, buf + 30, 4); memcpy(buf + 30, t, 4);
+        memcpy(t, buf + 34, 2); memcpy(buf + 34, buf + 36, 2); memcpy(buf + 36, t, 2);
+    }
     return o;
 }
 
@@ -104,11 +115,27 @@ static int classify_request(mmt_handler_t *h, const char *payload, int src_port)
     g_nb_headers   = 0;
     g_headers[0]   = '\0';
     memset(&hdr, 0, sizeof(hdr));
-    n = build_frame(buf, payload, (int) strlen(payload), src_port);
+    n = build_frame(buf, payload, (int) strlen(payload), src_port, 0);
     hdr.len = n;
     hdr.caplen = n;
     packet_process(h, &hdr, buf);
     return g_saw_facebook;
+}
+
+/* Issue #92: a listener's request, then the server's answer on the same
+ * session; g_path is the answer's protocol path. */
+static void classify_listener(mmt_handler_t *h, const char *request,
+                              const char *answer, int src_port) {
+    unsigned char buf[2048];
+    struct pkthdr hdr;
+    int n;
+    classify_request(h, request, src_port);
+    g_path[0] = '\0';
+    memset(&hdr, 0, sizeof(hdr));
+    n = build_frame(buf, answer, (int) strlen(answer), src_port, 1);
+    hdr.len = n;
+    hdr.caplen = n;
+    packet_process(h, &hdr, buf);
 }
 
 struct testcase {
@@ -182,13 +209,41 @@ int main(void) {
         }
     }
 
+    /* Issue #92: the listener's answer names the streaming server */
+    {
+        static const char *get = "GET /live HTTP/1.0\r\nHost: radio.example\r\n"
+                                  "Icy-MetaData: 1\r\n\r\n";
+        static const struct { const char *label, *answer, *want; int port; } l[] = {
+            { "Icecast",   "HTTP/1.0 200 OK\r\nServer: Icecast 2.4.4\r\n"
+                           "Content-Type: audio/mpeg\r\n\r\n", "icecast", 1010 },
+            { "SHOUTcast", "ICY 200 OK\r\nicy-name: test\r\n"
+                           "content-type: audio/mpeg\r\n\r\n", "shoutcast", 1011 },
+            { "other",     "HTTP/1.0 200 OK\r\nServer: example-httpd\r\n"
+                           "Content-Type: audio/mpeg\r\n\r\n", NULL, 1012 },
+        };
+        for (i = 0; i < sizeof(l) / sizeof(l[0]); i++) {
+            classify_listener(h, get, l[i].answer, l[i].port);
+            const char *last = strrchr(g_path, '.');
+            last = (last != NULL) ? last + 1 : g_path;
+            int ok = (l[i].want != NULL) ? strcmp(last, l[i].want) == 0
+                                         : strcmp(last, "mpeg") == 0;
+            printf("  %-16s -> %-40s [%s]\n", l[i].label, g_path, ok ? "PASS" : "FAIL");
+            if (!ok) {
+                failures++;
+                fprintf(stderr, "  ✗ %s listener: expected %s, got '%s'\n", l[i].label,
+                        l[i].want != NULL ? l[i].want : "http.mpeg", g_path);
+            }
+        }
+    }
+
     mmt_close_handler(h);
     close_extraction();
 
     if (failures) {
         printf("\n✗ %d/%zu case(s) failed: HTTP header matching is not "
-               "case-insensitive, or a line break other than CRLF split a "
-               "line\n", failures, sizeof(cases) / sizeof(cases[0]) + 1);
+               "case-insensitive, a line break other than CRLF split a "
+               "line, or a streaming listener was mislabelled\n", failures,
+               sizeof(cases) / sizeof(cases[0]) + 4);
         return 1;
     }
     printf("\n✓ all cases classified as expected — HTTP header matching is "
