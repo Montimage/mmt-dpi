@@ -1000,6 +1000,25 @@ static inline void check_content_type_and_change_protocol(ipacket_t * ipacket) {
         rtsp_parse_packet_acceptline(ipacket);
 #endif
     }
+    /* Issue #92: an Icecast or SHOUTcast listener stream starts as an HTTP
+     * request, so this checker owns the flow (and a converged flow is
+     * dispatched to its owner alone, issue #252) before mmt_check_icecast /
+     * mmt_check_shoutcast see the server's answer: label the flow from that
+     * answer here, before the Icy-MetaData -> MPEG rule below. */
+#ifdef PROTO_ICECAST
+    if (packet->server_line.ptr != NULL && packet->server_line.len > 7
+            && mmt_memcmp(packet->server_line.ptr, "Icecast", 7) == 0) {
+        mmt_int_http_add_connection(ipacket, PROTO_ICECAST);
+        return;
+    }
+#endif
+#ifdef PROTO_SHOUTCAST
+    if (packet->parsed_lines > 0 && packet->line[0].ptr != NULL && packet->line[0].len >= 10
+            && mmt_memcmp(packet->line[0].ptr, "ICY 200 OK", 10) == 0) {
+        mmt_int_http_add_connection(ipacket, PROTO_SHOUTCAST);
+        return;
+    }
+#endif
     /* search for line startin with "Icy-MetaData" */
 #ifdef PROTO_MPEG
     for (a = 0; a < packet->parsed_lines; a++) {

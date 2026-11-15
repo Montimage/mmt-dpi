@@ -118,6 +118,19 @@ int mmt_check_stun_tcp(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
+        /* Issue #92: a flow labelled STUN is dispatched to this checker
+         * alone (packet_pipeline.c, issue #252), so the RFC 4571-framed RTP
+         * that mmt_check_rtp_tcp searches only after STUN would never be
+         * seen: hand the segment over to it, under the guard the walk
+         * evaluates for it (RTP's detection set holds STUN, the selection
+         * masks are the same). A STUN keep-alive is no RTP and leaves the
+         * flow STUN; once it is RTP, this checker's guard is closed. */
+        if (packet->detected_protocol_stack[0] == PROTO_STUN) {
+            if (!MMT_FLOW_EXCLUDES(flow, PROTO_RTP)) {
+                return mmt_check_rtp_tcp(ipacket, index);
+            }
+            return 0;
+        }
 
         /* STUN may be encapsulated in TCP packets */
         if (packet->payload_packet_len >= 2 + 20 &&
@@ -131,6 +144,15 @@ int mmt_check_stun_tcp(ipacket_t * ipacket, unsigned index) {
                 mmt_int_stun_add_connection(ipacket);
                 return 1;
             }
+        }
+        /* Issue #92: unframed STUN over TCP (RFC 8489 §6.2.2, TURN over
+         * TCP); without the framing length, only a message carrying the
+         * RFC 8489 magic cookie is matched. */
+        if (packet->payload_packet_len >= 20
+                && get_u32(packet->payload, 4) == htonl(0x2112A442)
+                && mmt_int_check_stun(ipacket, packet->payload, packet->payload_packet_len) == MMT_IS_STUN) {
+            mmt_int_stun_add_connection(ipacket);
+            return 1;
         }
         MMT_EXCLUDE_PROTOCOL(flow, PROTO_STUN);
     }
@@ -298,6 +320,11 @@ int mmt_check_stun_udp(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
+        /* Issue #92: the detection set holds STUN for mmt_check_stun_tcp's
+         * hand-over to RTP; over UDP a STUN flow is left as it was. */
+        if (packet->detected_protocol_stack[0] == PROTO_STUN) {
+            return 0;
+        }
 
         if (mmt_int_check_stun(ipacket, packet->payload, packet->payload_packet_len) == MMT_IS_STUN) {
             /* Issue #564 (F-BUG-304): the flow stays STUN. No application
@@ -327,7 +354,7 @@ int init_proto_stun_struct() {
 
         mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
                 &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD,
-                PROTO_UNKNOWN, PROTO_STUN);
+                PROTO_STUN, PROTO_STUN);   /* issue #92: STUN flows reach the TCP hand-over */
 
         return register_protocol(protocol_struct, PROTO_STUN);
     } else {

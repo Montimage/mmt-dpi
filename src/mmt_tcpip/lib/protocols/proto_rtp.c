@@ -586,9 +586,52 @@ void rtp_session_data_cleanup(mmt_session_t * session, unsigned index) {
     }
 }
 
+/* Issue #92: the RTP-over-TCP flows mmt_check_rtp_tcp accepted behind the
+ * RFC 4571 length prefix (the RTP layer then starts after it,
+ * tcp_post_classification_function). */
+static int rtp_rfc4571_framed(const ipacket_t * ipacket) {
+    const struct mmt_internal_tcpip_session_struct *flow =
+            ipacket->session != NULL ? ipacket->session->internal_data : NULL;
+    return flow != NULL && flow->rtp_rfc4571_framing;
+}
+
+/* Issue #92: the session analysis reads the 12-byte fixed header (RFC 3550
+ * §5.1); it must lie in the captured frame. On an RFC 4571-framed TCP flow
+ * a segment can end anywhere, so the CSRC list and the header extension
+ * (§5.3.1) must fit as well, and a frame that is not RTP version 2 — the
+ * STUN keep-alives ICE-TCP multiplexes on the flow — is no RTP packet. */
+static int rtp_session_hdr_avail(const ipacket_t * ipacket, int offset) {
+    if (offset < 0 || ipacket->p_hdr == NULL || ipacket->data == NULL) {
+        return 0;
+    }
+    const uint64_t caplen = ipacket->p_hdr->caplen;
+    uint64_t len = 12;
+    if ((uint64_t) offset + len > caplen) {
+        return 0;
+    }
+    if (!rtp_rfc4571_framed(ipacket)) {
+        return 1;
+    }
+    const uint8_t *hdr = &ipacket->data[offset];
+    if ((hdr[0] & 0xc0) != 0x80) {
+        return 0;
+    }
+    len += 4u * (hdr[0] & 0x0f);
+    if (hdr[0] & 0x10) {
+        if ((uint64_t) offset + len + 4 > caplen) {
+            return 0;
+        }
+        len += 4 + 4u * ntohs(get_u16(ipacket->data, offset + len + 2));
+    }
+    return (uint64_t) offset + len <= caplen;
+}
+
 int rtp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     //Dummy function! just calls the function registered with the session context
     struct rtp_session_data_struct * rtp_session_data = ipacket->session->session_data[index];
+    if (!rtp_session_hdr_avail(ipacket, get_packet_offset_at_index(ipacket, index))) {
+        return MMT_CONTINUE; /* short segment: skipped, never over-read */
+    }
     rtp_session_data->rtp_data_analysis(ipacket, index);
     return MMT_CONTINUE;
 }
@@ -639,10 +682,12 @@ static void mmt_int_rtp_add_connection(ipacket_t * ipacket) {
                 mmt_internal_add_connection_by(ipacket, proto, MMT_CORRELATED_PROTOCOL, MMT_CLASSIFICATION_METHOD_IP);
                 return;
         }
-    }else if((proto = check_local_proto_by_port_nb(packet->udp->dest, dst)) != PROTO_UNKNOWN) {
+    /* Issue #92: RTP over TCP (mmt_check_rtp_tcp, reached through the STUN
+     * hand-over) has no UDP header; the ports recorded per host are UDP's. */
+    }else if(packet->udp != NULL && (proto = check_local_proto_by_port_nb(packet->udp->dest, dst)) != PROTO_UNKNOWN) {
         mmt_internal_add_connection(ipacket, proto, MMT_CORRELATED_PROTOCOL);
         return;
-    }else if((proto = check_local_proto_by_port_nb(packet->udp->source, src)) != PROTO_UNKNOWN) {
+    }else if(packet->udp != NULL && (proto = check_local_proto_by_port_nb(packet->udp->source, src)) != PROTO_UNKNOWN) {
         mmt_internal_add_connection(ipacket, proto, MMT_CORRELATED_PROTOCOL);
         return;
     } else if ((proto = get_local_conv_proto(ipacket)) != PROTO_UNKNOWN) {
@@ -824,6 +869,12 @@ int mmt_check_rtp_tcp(ipacket_t * ipacket, unsigned index) {
                 /* The framing length must cover the whole segment (strict on
                  * purpose, like the STUN-over-TCP check). */
                 mmt_rtp_search(ipacket, packet->payload + 2, packet->payload_packet_len - 2);
+                /* Issue #92: the flow is RTP (or a protocol correlated on
+                 * it) once the search left STUN behind: record the framing
+                 * so the RTP layer is placed after the length prefix. */
+                if (flow != NULL && packet->detected_protocol_stack[0] != PROTO_STUN) {
+                    flow->rtp_rfc4571_framing = 1;
+                }
                 return 4;
             }
         }

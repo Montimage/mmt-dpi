@@ -63,8 +63,10 @@ static const chain_row_t rows[] = {
 #define N_ROWS (sizeof(rows) / sizeof(rows[0]))
 
 /* Issue #561: the checkers whose unit calls mmt_checker_keeps_local_guard():
- * three keep their own guard, mmt_check_gtp never had one. */
-static const char *const local_guard[] = { "mmt_check_gtp", "mmt_check_ndn_http", "mmt_check_tpkt", "mmt_check_vnc" };
+ * mmt_check_gtp, which never had a guard. Issue #92: TPKT, VNC and
+ * NDN-over-HTTP excluded themselves on a closed guard — the payload-less TCP
+ * handshake — so they never matched after one; the walk guards them now. */
+static const char *const local_guard[] = { "mmt_check_gtp" };
 
 static int keeps_local_guard(const char *fn) {
     size_t i;

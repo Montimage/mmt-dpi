@@ -18,6 +18,12 @@
  * FaceTime fallbacks a non-STUN datagram still takes, and RFC 4571-framed
  * STUN over TCP.
  *
+ * Issue #92: over TCP an unframed message (RFC 8489 §6.2.2) is STUN only
+ * with the magic cookie, and a flow already labelled STUN hands its segments
+ * over to mmt_check_rtp_tcp (stubbed: it records the call) unless RTP is
+ * excluded; over UDP a STUN-labelled flow is left alone. The detection set
+ * holds STUN, so the walk calls the checkers on such a flow at all.
+ *
  * proto_stun.c is included directly so gcov attributes the exercised lines
  * to the real file; the mmt_core helpers it calls are stubbed (same
  * convention as test_ptp_classify.c).
@@ -44,6 +50,7 @@ static int failures;
 static uint32_t g_added[8];
 static int g_nadded;
 static int g_ip_lookups;
+static int g_rtp_calls;
 
 static void record(uint32_t proto) {
 	if (g_nadded < (int) (sizeof(g_added) / sizeof(g_added[0])))
@@ -65,6 +72,14 @@ void mmt_internal_add_connection_by(ipacket_t *ipacket,
 	(void) protocol_type;
 	(void) method;
 	record(detected_protocol);
+}
+
+/* issue #92: the RTP-over-TCP checker the STUN-labelled flow is handed to */
+int mmt_check_rtp_tcp(ipacket_t *ipacket, unsigned index) {
+	(void) ipacket;
+	(void) index;
+	g_rtp_calls++;
+	return 4;
 }
 
 /* the IP-range table: every address is Google's (the pre-#564 classifier
@@ -128,6 +143,7 @@ static struct test_pkt *pkt_udp(uint32_t daddr, const uint8_t *payload,
 	t->ipacket.mmt_handler = &t->handler;
 	g_nadded = 0;
 	g_ip_lookups = 0;
+	g_rtp_calls = 0;
 	return t;
 }
 
@@ -299,6 +315,51 @@ int main(void) {
 		t = pkt_udp(0xC6336402, framed, sizeof(framed));
 		CHECK(mmt_check_stun_tcp(&t->ipacket, 0) == 0 && g_nadded == 0,
 				"a frame length that misses the segment is not STUN");
+		free_pkt(t);
+	}
+
+	/* Issue #92: unframed STUN over TCP needs the RFC 8489 magic cookie */
+	{
+		t = pkt_udp(0xC6336402, BINDING_REQUEST, sizeof(BINDING_REQUEST));
+		CHECK(mmt_check_stun_tcp(&t->ipacket, 0) == 1
+				&& g_nadded == 1 && g_added[0] == PROTO_STUN,
+				"unframed Binding request with the magic cookie over TCP is STUN");
+		free_pkt(t);
+		uint8_t classic[20];
+		memcpy(classic, BINDING_REQUEST, sizeof(classic));
+		classic[4] = 0x01;   /* RFC 3489 transaction id, no cookie */
+		t = pkt_udp(0xC6336402, classic, sizeof(classic));
+		CHECK(mmt_check_stun_tcp(&t->ipacket, 0) == 0 && g_nadded == 0
+				&& MMT_FLOW_EXCLUDES(&t->flow, PROTO_STUN),
+				"unframed message without the magic cookie over TCP is not STUN");
+		free_pkt(t);
+	}
+
+	/* Issue #92: a STUN-labelled TCP flow hands framed RTP over to
+	 * mmt_check_rtp_tcp; a STUN-labelled UDP flow is left alone */
+	{
+		CHECK(MMT_COMPARE_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_STUN) != 0,
+				"the detection set holds STUN (the walk calls the checkers on a STUN flow)");
+		static const uint8_t rtp[14] = {
+			0x00, 0x0c, 0x80, 0x00, 0x00, 0x64, 0, 0, 0x3e, 0x80, 0x5a, 0x5a, 0x00, 0x01,
+		};
+		t = pkt_udp(0xC6336402, rtp, sizeof(rtp));
+		t->ip.detected_protocol_stack[0] = PROTO_STUN;
+		CHECK(mmt_check_stun_tcp(&t->ipacket, 0) == 4 && g_rtp_calls == 1
+				&& g_nadded == 0 && !MMT_FLOW_EXCLUDES(&t->flow, PROTO_STUN),
+				"a STUN-labelled TCP flow hands the segment over to the RTP checker");
+		free_pkt(t);
+		t = pkt_udp(0xC6336402, rtp, sizeof(rtp));
+		t->ip.detected_protocol_stack[0] = PROTO_STUN;
+		MMT_EXCLUDE_PROTOCOL(&t->flow, PROTO_RTP);
+		CHECK(mmt_check_stun_tcp(&t->ipacket, 0) == 0 && g_rtp_calls == 0 && g_nadded == 0,
+				"no hand-over once the flow excluded RTP");
+		free_pkt(t);
+		t = pkt_udp(0xC6336402, BINDING_REQUEST, sizeof(BINDING_REQUEST));
+		t->ip.detected_protocol_stack[0] = PROTO_STUN;
+		CHECK(mmt_check_stun_udp(&t->ipacket, 0) == 0 && g_nadded == 0 && g_rtp_calls == 0
+				&& !MMT_FLOW_EXCLUDES(&t->flow, PROTO_STUN),
+				"a STUN-labelled UDP flow is left as it was");
 		free_pkt(t);
 	}
 

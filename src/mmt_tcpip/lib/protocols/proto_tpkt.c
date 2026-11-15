@@ -35,9 +35,7 @@ static attribute_metadata_t tpkt_attributes_metadata[TPKT_ATTRIBUTES_NB] = {
 
 int mmt_check_tpkt(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && !MMT_FLOW_EXCLUDES(packet->flow, PROTO_TPKT)
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+    { /* guard evaluated by the classifier walk (issue #561) */
         uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
 
         if (payload_len == 0) {
@@ -63,8 +61,8 @@ int mmt_check_tpkt(ipacket_t * ipacket, unsigned index) {
                 }
             }
         }
+        MMT_EXCLUDE_PROTOCOL(packet->flow, PROTO_TPKT);
     }
-    MMT_EXCLUDE_PROTOCOL(packet->flow, PROTO_TPKT);
     return 0;
 }
 
@@ -82,9 +80,6 @@ int init_proto_tpkt_struct() {
         mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
                 &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
                 PROTO_TPKT, PROTO_TPKT);
-        /* issue #561: a closed guard excludes the protocol on the flow, which
-         * the walk's skip would lose — the checker keeps its own guard */
-        mmt_checker_keeps_local_guard(PROTO_TPKT);
         return register_protocol(protocol_struct, PROTO_TPKT);
     } else {
         return -1;

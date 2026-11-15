@@ -45,8 +45,9 @@ TCP_HLEN = 20
 UDP_HLEN = 8
 
 
-def eth_header(src=b"\x02\x00\x00\x00\x00\x01", dst=b"\x02\x00\x00\x00\x00\x02"):
-    return dst + src + struct.pack("!H", 0x0800)
+def eth_header(src=b"\x02\x00\x00\x00\x00\x01", dst=b"\x02\x00\x00\x00\x00\x02",
+               ethertype=0x0800):
+    return dst + src + struct.pack("!H", ethertype)
 
 
 def ip_header(src_ip, dst_ip, proto, payload_len, ident=0):
@@ -56,6 +57,25 @@ def ip_header(src_ip, dst_ip, proto, payload_len, ident=0):
     return struct.pack("!BBHHHBBH4s4s",
                        ver_ihl, 0, total, ident, 0x4000, 64, proto, 0,
                        src_ip, dst_ip)
+
+
+def ip6_header(src_ip, dst_ip, next_header, payload_len, hop_limit=64):
+    """RFC 8200 §3 fixed header: version 6, traffic class 0, flow label 0."""
+    return struct.pack("!IHBB16s16s", 6 << 28, payload_len, next_header,
+                       hop_limit, src_ip, dst_ip)
+
+
+def l4_checksum6(src_ip, dst_ip, next_header, segment):
+    """RFC 8200 §8.1 upper-layer checksum over the IPv6 pseudo-header (source,
+    destination, upper-layer length, next header) and the TCP/UDP segment,
+    whose checksum field must be zero. Mandatory for UDP over IPv6; a sum of
+    zero is sent as 0xFFFF (RFC 768), its one's-complement equivalent."""
+    data = (src_ip + dst_ip + struct.pack("!IxxxB", len(segment), next_header)
+            + segment + b"\x00" * (len(segment) % 2))
+    total = sum(struct.unpack("!%dH" % (len(data) // 2), data))
+    while total >> 16:
+        total = (total & 0xFFFF) + (total >> 16)
+    return (~total & 0xFFFF) or 0xFFFF
 
 
 def tcp_header(sport, dport, seq=1000, flags=0x18, payload_len=0):
@@ -528,7 +548,11 @@ def gen_ips_data_pcap(path):
 # deliberately NOT part of ci/golden_pcaps.txt: the golden classification
 # fingerprint's input set stays unchanged. Addresses are RFC 5737 documentation
 # ranges and names are RFC 2606/6761 reserved, so the captures carry no real
-# identity. Regenerate with:
+# identity. IPv6 cases (issue #92) follow the same rule: global addresses come
+# from the RFC 3849 documentation prefix 2001:db8::/32, and link-scoped ones
+# are fe80::/64 addresses derived from the locally administered MACs below
+# (RFC 4291 §2.5.6 and Appendix A), which no host outside the capture owns.
+# Regenerate with:
 #   tools/phase0/gen_tcpip_pcap.py --out-dir tools/phase0/ci/accuracy --accuracy
 
 ACC_CLIENT = struct.pack("!I", 0xC0000201)   # 192.0.2.1   (TEST-NET-1)
@@ -540,24 +564,29 @@ ACC_SERVER_MAC = b"\x02\x00\x00\x00\x64\x02"
 class _AccFlow:
     """One bidirectional flow with consistent addressing (and, for TCP,
     consistent sequence/acknowledgement numbers) between the accuracy client
-    and server. Packets are written with strictly increasing timestamps."""
+    and server. Packets are written with strictly increasing timestamps.
+    16-byte addresses make it an IPv6 flow (issue #92): ethertype 0x86DD and
+    a TCP/UDP checksum over the IPv6 pseudo-header; IPv4 frames are
+    unchanged (no checksum, which the parsers do not verify)."""
 
     def __init__(self, f, proto, cport, sport, ts_us=0, server=ACC_SERVER,
-                 server_mac=ACC_SERVER_MAC):
+                 server_mac=ACC_SERVER_MAC, client=ACC_CLIENT,
+                 client_mac=ACC_CLIENT_MAC):
         self.f, self.proto = f, proto
         self.cport, self.sport = cport, sport
         self.server, self.server_mac = server, server_mac
+        self.client, self.client_mac = client, client_mac
         self.seq = {"cli": 1000, "srv": 50000}
         self.ts_us = ts_us
         self.ident = 0
 
     def _l3l4(self, side, payload, flags):
         if side == "cli":
-            smac, dmac = ACC_CLIENT_MAC, self.server_mac
-            sip, dip, sp, dp = ACC_CLIENT, self.server, self.cport, self.sport
+            smac, dmac = self.client_mac, self.server_mac
+            sip, dip, sp, dp = self.client, self.server, self.cport, self.sport
         else:
-            smac, dmac = self.server_mac, ACC_CLIENT_MAC
-            sip, dip, sp, dp = self.server, ACC_CLIENT, self.sport, self.cport
+            smac, dmac = self.server_mac, self.client_mac
+            sip, dip, sp, dp = self.server, self.client, self.sport, self.cport
         other = "srv" if side == "cli" else "cli"
         if self.proto == 6:
             l4 = struct.pack("!HHIIBBHHH", sp, dp, self.seq[side],
@@ -566,6 +595,13 @@ class _AccFlow:
             self.seq[side] += len(payload) + (1 if flags & 0x03 else 0)
         else:
             l4 = udp_header(sp, dp, len(payload))
+        if len(sip) == 16:
+            csum = l4_checksum6(sip, dip, self.proto, l4 + payload)
+            at = 16 if self.proto == 6 else 6
+            l4 = l4[:at] + struct.pack("!H", csum) + l4[at + 2:]
+            return (eth_header(smac, dmac, 0x86DD)
+                    + ip6_header(sip, dip, self.proto, len(l4) + len(payload))
+                    + l4 + payload)
         return (eth_header(smac, dmac)
                 + ip_header(sip, dip, self.proto, len(l4) + len(payload),
                             ident=self.ident)
@@ -1949,8 +1985,8 @@ def _stun(msg_type, txid, attrs=b""):
     return struct.pack("!HHI", msg_type, len(attrs), 0x2112A442) + txid + attrs
 
 
-def _stun_xor_mapped():
-    port = 49451 ^ 0x2112
+def _stun_xor_mapped(port=49451):
+    port ^= 0x2112
     addr = struct.unpack("!I", ACC_CLIENT)[0] ^ 0x2112A442
     return struct.pack("!HHBBHI", 0x0020, 8, 0, 1, port, addr)
 
@@ -2048,6 +2084,45 @@ def _ice_check_ok(port):
     xaddr = struct.unpack("!I", ACC_CLIENT)[0] ^ 0x2112A442
     return _rfc4571(_stun_ice(0x0101, _stun_attr(
         0x0020, struct.pack("!BBHI", 0, 1, port ^ 0x2112, xaddr))))
+
+
+RFB_BANNER = b"RFB 003.008\n"   # RFC 6143 §7.1.1 ProtocolVersion
+
+
+def _tpkt(tpdu):
+    """RFC 1006 §6 TPKT: version 3, reserved 0, 16-bit length of the whole
+    packet, then the ISO 8073 TPDU."""
+    return struct.pack("!BBH", 3, 0, 4 + len(tpdu)) + tpdu
+
+
+def _cotp(code, dst_ref, src_ref, params):
+    """ISO 8073 §13.3/§13.4 class 0 CR (0xE0) / CC (0xD0) TPDU: length
+    indicator, code, DST-REF, SRC-REF, class/option 0, then the parameters."""
+    body = bytes([code]) + struct.pack("!HHB", dst_ref, src_ref, 0) + params
+    return bytes([len(body)]) + body
+
+
+# ISO 8073 §13.3.4 parameters: calling / called TSAP-ID, TPDU size 1024
+COTP_TSAPS = b"\xc1\x02\x01\x00" + b"\xc2\x02\x01\x02"
+COTP_TPDU_SIZE = b"\xc0\x01\x0a"
+
+
+def _rtp_framed(seq):
+    """One 20 ms RTP packet with the RFC 4571 length prefix (ICE-TCP media)."""
+    return _rfc4571(_rtp(seq, seq * 160, 0x5A5A0001, 0x7F))
+
+
+def _dtls_appdata(seq):
+    """RFC 6347 §4.1 DTLS 1.2 application_data record (epoch 1), framed for
+    ICE-TCP: first octet 23, which RFC 7983 §7 demultiplexes as DTLS."""
+    body = bytes([seq]) * 40
+    return _rfc4571(struct.pack("!BHH", 23, 0xFEFD, 1) + seq.to_bytes(6, "big")
+                    + struct.pack("!H", len(body)) + body)
+
+
+ICY_LISTENER_GET = _text([b"GET /live HTTP/1.0", b"Host: radio.accuracy.example",
+                          b"User-Agent: accuracy/1.0", b"Icy-MetaData: 1", b""])
+MP3_FRAME = b"\xff\xfb\x90\x64" + b"\x00" * 200   # MPEG-1 Layer III, 128 kbit/s
 
 
 def _iax_full(scall, dcall, oseq, iseq, subclass, ies):
@@ -2724,6 +2799,85 @@ ACC_CLASSIFIER_FLOWS = {
     "acc_xbox_negative": (17, 49599, 3074, False, [
         ("cli", b"hello, this datagram is not an Xbox Live packet\n"),
         ("srv", b"and neither is this reply, despite the port\n")], {}),
+    # issue #92: classifiers montimage-projects/mmt-dpi#527 found defective, once fixed
+    "acc_vnc_positive": (6, 49700, 5900, True, [
+        ("srv", RFB_BANNER),
+        ("cli", RFB_BANNER)], {}),
+    "acc_vnc_negative": (6, 49701, 5900, True, [
+        ("srv", b"RFB 003.008 but not a banner\n"),
+        ("cli", b"hello, this is not an RFB banner\n")], {}),
+    "acc_tpkt_positive": (6, 49702, 102, True, [
+        ("cli", _tpkt(_cotp(0xE0, 0, 1, COTP_TSAPS + COTP_TPDU_SIZE))),
+        ("srv", _tpkt(_cotp(0xD0, 1, 1, COTP_TPDU_SIZE + COTP_TSAPS)))], {}),
+    "acc_tpkt_negative": (6, 49703, 102, True, [
+        ("cli", b"\x03\x00\x00\x40hello, the TPKT length lies\n"),
+        ("srv", b"and this reply is not TPKT\n")], {}),
+    "acc_ndn_http_tcp_positive": (6, 49704, 6363, True, [
+        ("cli", _ndn_interest(_ndn_name(b"accuracy.example", b"GET",
+                                        b"index.html"))),
+        ("srv", _ndn_data(_ndn_name(b"accuracy.example", b"GET",
+                                    b"index.html"), b"ok"))], {}),
+    "acc_ndn_http_tcp_negative": (6, 49705, 6363, True, [
+        ("cli", b"hello, this stream is not an NDN Interest\n"),
+        ("srv", b"and this reply is not an NDN Data packet\n")], {}),
+    "acc_stun_tcp_unframed_positive": (6, 49706, 3478, True, [
+        ("cli", _stun(0x0001, bytes(range(0x30, 0x3C)))),
+        ("srv", _stun(0x0101, bytes(range(0x30, 0x3C)),
+                      _stun_xor_mapped(49706)))], {}),
+    "acc_stun_tcp_unframed_classic_ambiguous": (6, 49707, 3478, True, [
+        ("cli", struct.pack("!HHI", 0x0001, 0, 0x01020304)
+         + bytes(range(0x30, 0x3C))),
+        ("srv", struct.pack("!HHI", 0x0101, 12, 0x01020304)
+         + bytes(range(0x30, 0x3C))
+         + struct.pack("!HHBBH4s", 0x0001, 8, 0, 1, 49707, ACC_CLIENT))], {}),
+    "acc_rtp_tcp_positive": (6, 49708, 3478, True, [
+        ("cli", _ice_check()),
+        ("srv", _ice_check_ok(49708))]
+        + [("cli", _rtp_framed(seq)) for seq in range(100, 106)], {}),
+    "acc_rtp_tcp_keepalive_positive": (6, 49709, 3478, True, [
+        ("cli", _ice_check()),
+        ("srv", _ice_check_ok(49709))]
+        + [("cli", _rtp_framed(seq)) for seq in range(100, 106)]
+        + [("cli", _ice_check()),
+           ("srv", _ice_check_ok(49709))]
+        + [("cli", _rtp_framed(seq)) for seq in range(106, 109)], {}),
+    "acc_rtp_tcp_negative": (6, 49710, 3478, True, [
+        ("cli", _ice_check()),
+        ("srv", _ice_check_ok(49710))]
+        + [("cli", _dtls_appdata(seq)) for seq in range(1, 6)], {}),
+    "acc_rtp_tcp_unpreceded_ambiguous": (6, 49711, 3478, True,
+        [("cli", _rtp_framed(seq)) for seq in range(100, 106)], {}),
+    "acc_icecast_listener_positive": (6, 49712, 8000, True, [
+        ("cli", ICY_LISTENER_GET),
+        ("srv", _text([b"HTTP/1.0 200 OK", b"Server: Icecast 2.4.4",
+                       b"Content-Type: audio/mpeg", b"icy-metaint: 16000",
+                       b""])),
+        ("srv", MP3_FRAME)], {}),
+    "acc_icecast_listener_ogg_positive": (6, 49713, 8000, True, [
+        ("cli", _text([b"GET /live.ogg HTTP/1.0",
+                       b"Host: radio.accuracy.example",
+                       b"User-Agent: accuracy/1.0", b""])),
+        ("srv", _text([b"HTTP/1.0 200 OK", b"Server: Icecast 2.4.4",
+                       b"Content-Type: application/ogg", b""])),
+        ("srv", b"OggS" + b"\x00" * 200)], {}),
+    "acc_icecast_listener_negative": (6, 49714, 8000, True, [
+        ("cli", ICY_LISTENER_GET),
+        ("srv", _text([b"HTTP/1.0 200 OK", b"Server: accuracy-httpd/1.0",
+                       b"Content-Type: audio/mpeg", b"icy-metaint: 16000",
+                       b""])),
+        ("srv", MP3_FRAME)], {}),
+    "acc_shoutcast_listener_positive": (6, 49715, 8001, True, [
+        ("cli", ICY_LISTENER_GET),
+        ("srv", _text([b"ICY 200 OK", b"icy-notice1: accuracy test stream",
+                       b"icy-name: accuracy", b"content-type: audio/mpeg",
+                       b"icy-metaint: 8192", b""])),
+        ("srv", MP3_FRAME)], {}),
+    "acc_shoutcast_listener_ambiguous": (6, 49716, 8001, True, [
+        ("cli", ICY_LISTENER_GET),
+        ("srv", _text([b"HTTP/1.0 200 OK", b"icy-name: accuracy",
+                       b"content-type: audio/mpeg", b"icy-metaint: 8192",
+                       b""])),
+        ("srv", MP3_FRAME)], {}),
 }
 
 
@@ -2913,6 +3067,118 @@ def gen_acc_geneve_negative_pcap(path):
                     ACC_HTTP_EXCHANGE, "UDP/6081 with GENEVE version 1")
 
 
+# --- accuracy corpus: Spotify host corroboration (issue #92) ----------------
+# Off Spotify's own address range, mmt_check_spotify labels a TCP flow whose
+# first payload starts 01 00 00 and whose second starts 00 (16 bytes or more)
+# only when a host of the flow is already known for Spotify
+# (proto_spotify.c). An HTTP request from the client with a Spotify-
+# User-Agent (http.c, spotify_parse_packet_useragentline) records that, so the
+# positive and the negative differ in the User-Agent alone; both flows run
+# between the RFC 5737 hosts, and no Spotify address is used.
+
+
+def _acc_spotify_pcap(path, user_agent, note):
+    f = pcap_open(path)
+    web = _AccFlow(f, 6, 49720, 80)
+    web.handshake()
+    web.send("cli", _text([b"GET /index.html HTTP/1.1", b"Host: accuracy.example",
+                           b"User-Agent: " + user_agent, b"Accept: */*", b""]))
+    web.send("srv", _text([b"HTTP/1.1 200 OK", b"Content-Type: text/plain",
+                           b"Content-Length: 2", b""]) + b"ok")
+    app = _AccFlow(f, 6, 49721, 4070, ts_us=web.ts_us)
+    app.handshake()
+    app.send("cli", b"\x01\x00\x00" + bytes(range(0x10, 0x1D)))
+    app.send("srv", b"\x00" + bytes(range(0x20, 0x2F)))
+    app.send("cli", bytes(range(0x30, 0x50)))
+    f.close()
+    print("wrote %s (accuracy: %s)" % (path, note))
+
+
+def gen_acc_spotify_positive_pcap(path):
+    _acc_spotify_pcap(path, b"Spotify-11.1.0",
+                      "Spotify User-Agent, then the 01 00 00 / 00 flow")
+
+
+def gen_acc_spotify_negative_pcap(path):
+    _acc_spotify_pcap(path, b"accuracy/1.0",
+                      "another User-Agent, then the same flow")
+
+
+# --- accuracy corpus: IPv6 (issue #92) ---------------------------------------
+# mmt_check_dhcpv6 runs on IPv6 only (MMT_SELECTION_BITMASK_PROTOCOL_V6_UDP_*,
+# proto_dhcpv6.c). The client solicits from its link-local address to the
+# All_DHCP_Relay_Agents_and_Servers group and the server answers it link-local
+# (RFC 8415 §7.1, §18.2.1), so the exchange is two UDP flows; the address the
+# server offers is an RFC 3849 documentation address.
+
+ACC_CLIENT6_LL = bytes.fromhex("fe80000000000000000000fffe000201")  # fe80::ff:fe00:201
+ACC_SERVER6_LL = bytes.fromhex("fe80000000000000000000fffe006402")  # fe80::ff:fe00:6402
+ACC_OFFER6 = bytes.fromhex("20010db8000000000000000000000201")      # 2001:db8::201
+DHCPV6_GROUP = bytes.fromhex("ff020000000000000000000000010002")    # ff02::1:2
+DHCPV6_GROUP_MAC = b"\x33\x33\x00\x01\x00\x02"   # RFC 2464 §7: 33:33 + low 32 bits
+
+
+def _dhcpv6_opt(code, value):
+    """RFC 8415 §21.1 option: 16-bit code and length, then the value."""
+    return struct.pack("!HH", code, len(value)) + value
+
+
+def _dhcpv6_duid_ll(mac):
+    """RFC 8415 §11.4 DUID-LL: type 3, hardware type 1 (Ethernet), the MAC."""
+    return struct.pack("!HH", 3, 1) + mac
+
+
+def _dhcpv6(msg_type, xid, options):
+    """RFC 8415 §8 client/server message: msg-type, 24-bit transaction-id."""
+    return struct.pack("!I", (msg_type << 24) | xid) + options
+
+
+def _dhcpv6_solicit():
+    """Solicit (1): Client Identifier, Option Request (DNS servers, 23),
+    Elapsed Time 0 and an empty IA_NA (RFC 8415 §18.2.1, §21.2/7/9/4)."""
+    return _dhcpv6(1, 0x0A6B92, (
+        _dhcpv6_opt(1, _dhcpv6_duid_ll(ACC_CLIENT_MAC))
+        + _dhcpv6_opt(6, struct.pack("!H", 23))
+        + _dhcpv6_opt(8, struct.pack("!H", 0))
+        + _dhcpv6_opt(3, struct.pack("!III", 1, 0, 0))))
+
+
+def _dhcpv6_advertise():
+    """Advertise (2) for the same transaction: Client and Server Identifier
+    and the IA_NA (T1 1800 s, T2 2880 s) offering one IA Address (preferred
+    3600 s, valid 7200 s) (RFC 8415 §18.3.9, §21.4, §21.6)."""
+    iaaddr = _dhcpv6_opt(5, ACC_OFFER6 + struct.pack("!II", 3600, 7200))
+    return _dhcpv6(2, 0x0A6B92, (
+        _dhcpv6_opt(1, _dhcpv6_duid_ll(ACC_CLIENT_MAC))
+        + _dhcpv6_opt(2, _dhcpv6_duid_ll(ACC_SERVER_MAC))
+        + _dhcpv6_opt(3, struct.pack("!III", 1, 1800, 2880) + iaaddr)))
+
+
+def _acc_dhcpv6_pcap(path, solicit, advertise, note):
+    f = pcap_open(path)
+    ask = _AccFlow(f, 17, 546, 547, client=ACC_CLIENT6_LL,
+                   server=DHCPV6_GROUP, server_mac=DHCPV6_GROUP_MAC)
+    ask.send("cli", solicit)
+    answer = _AccFlow(f, 17, 546, 547, ts_us=ask.ts_us,
+                      client=ACC_CLIENT6_LL, server=ACC_SERVER6_LL)
+    answer.send("srv", advertise)
+    f.close()
+    print("wrote %s (accuracy: %s)" % (path, note))
+
+
+def gen_acc_dhcpv6_positive_pcap(path):
+    _acc_dhcpv6_pcap(path, _dhcpv6_solicit(), _dhcpv6_advertise(),
+                     "DHCPv6 Solicit / Advertise over IPv6")
+
+
+def gen_acc_dhcpv6_negative_pcap(path):
+    """Plain text on the same IPv6 addresses and UDP ports 546/547: the
+    ports alone must not yield a verdict (the first octet is no msg-type)."""
+    _acc_dhcpv6_pcap(path, b"hello, this datagram is not a DHCPv6 Solicit\n",
+                     b"and neither is this reply, despite the ports\n",
+                     "plain text on UDP/546-547 over IPv6")
+
+
 ACC_GENS = {
     "acc_dns_positive": gen_acc_dns_positive_pcap,
     "acc_dns_negative": gen_acc_dns_negative_pcap,
@@ -2956,6 +3222,10 @@ ACC_GENS = {
     "acc_vxlan_negative": gen_acc_vxlan_negative_pcap,
     "acc_geneve_http_positive": gen_acc_geneve_http_positive_pcap,
     "acc_geneve_negative": gen_acc_geneve_negative_pcap,
+    "acc_spotify_positive": gen_acc_spotify_positive_pcap,
+    "acc_spotify_negative": gen_acc_spotify_negative_pcap,
+    "acc_dhcpv6_positive": gen_acc_dhcpv6_positive_pcap,
+    "acc_dhcpv6_negative": gen_acc_dhcpv6_negative_pcap,
 }
 ACC_GENS.update((name, _acc_classifier_gen(name))
                 for name in ACC_CLASSIFIER_FLOWS)

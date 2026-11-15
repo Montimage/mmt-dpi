@@ -1,6 +1,6 @@
 {
   "_comment": [
-    "Issues #389 and #390 (F-TEST-003): reviewed DNS, TLS, QUIC, HTTP/2, S1AP, NGAP and NAS accuracy cases plus unknown/malformed traffic; issue #527: a positive and a negative case per default-chain classifier (see coverage-pending.txt for the ones still owed); issue #564: corroboration cases for DICOM, gQUIC, STUN and S1AP/NGAP; issue #565: IP-range attribution of a CloudFront and a Google Cloud tenant address; issue #572: inner HTTP/TLS flows through MPLS, PPPoE, VXLAN and GENEVE.",
+    "Issues #389 and #390 (F-TEST-003): reviewed DNS, TLS, QUIC, HTTP/2, S1AP, NGAP and NAS accuracy cases plus unknown/malformed traffic; issue #527: a positive and a negative case per default-chain classifier (see coverage-pending.txt for the ones still owed); issue #564: corroboration cases for DICOM, gQUIC, STUN and S1AP/NGAP; issue #565: IP-range attribution of a CloudFront and a Google Cloud tenant address; issue #572: inner HTTP/TLS flows through MPLS, PPPoE, VXLAN and GENEVE; issue #92: VNC, TPKT, NDN over TCP, unframed STUN and STUN-preceded RTP over TCP, Icecast and SHOUTcast listener streams, Spotify host corroboration and DHCPv6 over IPv6.",
     "Checked by tools/ci/tests/check-accuracy-corpus.py; NOT part of ci/golden_pcaps.txt,",
     "so the golden classification fingerprint's input set is unchanged.",
     "expected counts are per packet: wire = carries the family's wire-protocol label,",
@@ -347,6 +347,26 @@
     "dicom": {
       "wire_labels": [
         "dicom"
+      ]
+    },
+    "vnc": {
+      "wire_labels": [
+        "vnc"
+      ]
+    },
+    "tpkt": {
+      "wire_labels": [
+        "tpkt"
+      ]
+    },
+    "spotify": {
+      "wire_labels": [
+        "spotify"
+      ]
+    },
+    "dhcpv6": {
+      "wire_labels": [
+        "dhcpv6"
       ]
     },
     "unknown": {
@@ -5105,7 +5125,7 @@
         "date": "2026-10-29",
         "checks": [
           "SOURCE method with ice-* stream headers per the Icecast 2 source-client protocol (legacy SOURCE, before 2.4's PUT)",
-          "finding: an Icecast listener GET answered with Server: Icecast is labelled http/http.ogg, never icecast; only the SOURCE path classifies (issue #527 tranche 2)"
+          "an Icecast listener GET answered with Server: Icecast was labelled http/http.ogg, never icecast, so only this SOURCE path classified (montimage-projects/mmt-dpi#527, tranche 2); since issue #92 mmt_check_http labels the listener stream from the answer (acc_icecast_listener_positive, acc_icecast_listener_ogg_positive)"
         ]
       }
     },
@@ -5143,6 +5163,111 @@
       }
     },
     {
+      "pcap": "acc_icecast_listener_positive.pcap",
+      "family": "icecast",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_http"
+      ],
+      "description": "Icecast 2 listener on TCP/8000: GET /live with Icy-MetaData: 1, answered HTTP/1.0 200 OK with Server: Icecast 2.4.4, Content-Type audio/mpeg and icy-metaint, then an MPEG audio frame; labelled http.mpeg.icecast from the answer on.",
+      "sha256": "0a87d1ba2eaf7a0a47aa4b83bf185d714b0925381bc964d9807ab46974379f19",
+      "expected": {
+        "packets": 6,
+        "wire": 2,
+        "abstain": 3,
+        "other": {
+          "http": 1
+        },
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_icecast_listener_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #92",
+        "date": "2026-11-15",
+        "checks": [
+          "request and response headers as an Icecast 2.4 server exchanges them with a listener that asks for in-stream metadata (Icy-MetaData / icy-metaint)",
+          "the request is http.mpeg (Icy-MetaData) and counts as other; mmt_check_http owns the flow and labels it icecast from the Server: Icecast line (http.c:1003-1014, issue #92), because a converged flow is dispatched to its owner alone and mmt_check_icecast never sees the answer"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_icecast_listener_ogg_positive.pcap",
+      "family": "icecast",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_http"
+      ],
+      "description": "Icecast 2 listener on TCP/8000 without in-stream metadata: GET /live.ogg answered with Server: Icecast 2.4.4 and Content-Type application/ogg, then an Ogg page header; labelled http.ogg.icecast from the answer on.",
+      "sha256": "54d60aafa04f11ef9fb9e4efa08456ecc8a7f2e30da9ffb2fb7dbfecf4fd6420",
+      "expected": {
+        "packets": 6,
+        "wire": 2,
+        "abstain": 3,
+        "other": {
+          "http": 1
+        },
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_icecast_listener_ogg_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #92",
+        "date": "2026-11-15",
+        "checks": [
+          "Ogg stream (OggS capture pattern, RFC 3533 \u00a76) served by Icecast 2.4 to a plain HTTP/1.0 listener",
+          "the Server: Icecast rule runs after the Content-Type rule that sets http.ogg, so the label is http.ogg.icecast (http.c:1003-1014, issue #92); the request carries no hint and counts as other (http)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_icecast_listener_negative.pcap",
+      "family": "icecast",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_http"
+      ],
+      "description": "The listener request of acc_icecast_listener_positive answered by a server that is not Icecast (Server: accuracy-httpd/1.0) with the same headers and frame: an MPEG stream over HTTP, never icecast.",
+      "sha256": "82c16827798a8745c2dc279ca0d17567a88f4ebc6def005b33dc47b773357722",
+      "expected": {
+        "packets": 6,
+        "wire": 0,
+        "abstain": 3,
+        "other": {
+          "http": 3
+        },
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_icecast_listener_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #92",
+        "date": "2026-11-15",
+        "checks": [
+          "identical to acc_icecast_listener_positive except the Server line",
+          "expected handling: http.mpeg (Icy-MetaData -> MPEG rule), no icecast verdict; payload-less TCP handshake packets abstain too"
+        ]
+      }
+    },
+    {
       "pcap": "acc_shoutcast_positive.pcap",
       "family": "shoutcast",
       "case": "positive",
@@ -5171,7 +5296,7 @@
         "date": "2026-10-29",
         "checks": [
           "password CRLF / OK2 icy-caps:11 / icy-name, icy-genre, icy-pub, icy-br, icy-url per the SHOUTcast DNAS v1 source protocol",
-          "finding: the classifier accepts the source login only when the password starts with 123456 (proto_shoutcast.c:27), which this case uses; a listener GET with Icy-MetaData is labelled http.mpeg, never shoutcast"
+          "the classifier accepts the source login only when the password starts with 123456 (proto_shoutcast.c:24-25), which this case uses; a listener answered ICY 200 OK was labelled http.mpeg, never shoutcast, until issue #92 (acc_shoutcast_listener_positive)"
         ]
       }
     },
@@ -5209,6 +5334,76 @@
       }
     },
     {
+      "pcap": "acc_shoutcast_listener_positive.pcap",
+      "family": "shoutcast",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_http"
+      ],
+      "description": "SHOUTcast v1 listener on TCP/8001: GET /live with Icy-MetaData: 1, answered with the ICY 200 OK status line and icy-notice1/icy-name/content-type/icy-metaint headers, then an MPEG audio frame; labelled http.mpeg.shoutcast from the answer on.",
+      "sha256": "3c11b9bf40f610a7d599921b4e5153e857bf61734a774f617fdf75be450ffb07",
+      "expected": {
+        "packets": 6,
+        "wire": 2,
+        "abstain": 3,
+        "other": {
+          "http": 1
+        },
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_shoutcast_listener_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #92",
+        "date": "2026-11-15",
+        "checks": [
+          "ICY 200 OK status line and icy-* headers as a SHOUTcast DNAS v1 server answers a listener",
+          "mmt_check_http owns the flow and labels it shoutcast from the ICY 200 OK status line (http.c:1015-1021, issue #92); the request is http.mpeg and counts as other"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_shoutcast_listener_ambiguous.pcap",
+      "family": "shoutcast",
+      "case": "ambiguous",
+      "classifiers": [
+        "mmt_check_http"
+      ],
+      "description": "The answer of acc_shoutcast_listener_positive under an HTTP/1.0 200 OK status line instead of ICY 200 OK. Recorded as ambiguous: SHOUTcast v2 and other streaming servers answer this way too, so only the ICY status line marks SHOUTcast and the stream stays http.mpeg.",
+      "sha256": "310c7dcb9fa54ec20eef40082a3b922e0c15afcd62b46eae6a634a30484601fa",
+      "expected": {
+        "packets": 6,
+        "wire": 0,
+        "abstain": 3,
+        "other": {
+          "http": 3
+        },
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_shoutcast_listener_ambiguous"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #92",
+        "date": "2026-11-15",
+        "checks": [
+          "identical to acc_shoutcast_listener_positive except the status line",
+          "expected handling: http.mpeg, no shoutcast verdict -- icy- headers alone are not a SHOUTcast marker; payload-less TCP handshake packets abstain too"
+        ]
+      }
+    },
+    {
       "pcap": "acc_ndn_http_positive.pcap",
       "family": "ndn_http",
       "case": "positive",
@@ -5237,7 +5432,7 @@
         "date": "2026-10-29",
         "checks": [
           "Interest/Data/Name/Nonce/InterestLifetime/MetaInfo/Content/SignatureInfo/SignatureValue TLV types per NDN Packet Format v0.3 \u00a75.1, \u00a76.1, \u00a77.3; the SignatureValue is the real SHA-256 of the signed portion",
-          "finding: over TCP the same packets are never labelled after a three-way handshake, because proto_ndn_http.c:218 excludes the protocol on the payload-less SYN; the case therefore uses UDP"
+          "the case uses UDP because over TCP proto_ndn_http.c excluded the protocol on the payload-less SYN; since issue #92 the same packets after a TCP handshake are labelled too (acc_ndn_http_tcp_positive)"
         ]
       }
     },
@@ -5271,6 +5466,72 @@
         "checks": [
           "plain text both ways on the classifier's well-known port; no protocol grammar (first octet is not 0x05/0x06)",
           "expected handling: no ndn_http verdict (abstention)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_ndn_http_tcp_positive.pcap",
+      "family": "ndn_http",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_ndn_http"
+      ],
+      "description": "The NDN Interest and Data packets of acc_ndn_http_positive over TCP/6363 (NFD's TCP face) after a three-way handshake.",
+      "sha256": "1a95ce981c1a22c6a581ff688598786b038c3598da89a61ef3d4489edc126175",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_ndn_http_tcp_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #92",
+        "date": "2026-11-15",
+        "checks": [
+          "same NDN Packet Format v0.3 TLVs as acc_ndn_http_positive; NDN-over-TCP carries the TLV stream without extra framing",
+          "the payload-less handshake no longer excludes the protocol: the walk evaluates mmt_check_ndn_http's guard and the checker excludes NDN only on a payload it rejects (proto_ndn_http.c:190-218, issue #92); the UDP case keeps passing"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_ndn_http_tcp_negative.pcap",
+      "family": "ndn_http",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_ndn_http"
+      ],
+      "description": "Plain text instead of an NDN Interest on TCP/6363: the port alone must not yield a verdict.",
+      "sha256": "42d1ff97a47d372ba8ad769b10ef120e928a20ca3b3a672eef1bb40cc4ed3660",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_ndn_http_tcp_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #92",
+        "date": "2026-11-15",
+        "checks": [
+          "plain text both ways on the classifier's well-known port; no protocol grammar (first octet is not 0x05/0x06)",
+          "expected handling: no ndn_http verdict (abstention); payload-less TCP handshake packets abstain too"
         ]
       }
     },
@@ -5566,7 +5827,7 @@
         "date": "2026-10-29",
         "checks": [
           "STUN header, magic cookie and attribute padding per RFC 8489 \u00a75/\u00a714; MESSAGE-INTEGRITY and FINGERPRINT computed per \u00a714.5/\u00a714.7; 2-byte framing per RFC 4571 \u00a72 as ICE-TCP uses it (RFC 6544 \u00a73)",
-          "finding: unframed STUN over TCP (RFC 8489 \u00a76.2.2) is not detected, because mmt_check_stun_tcp requires the RFC 4571 prefix (proto_stun.c:125-126)",
+          "unframed STUN over TCP (RFC 8489 \u00a76.2.2) was not detected, because mmt_check_stun_tcp required the RFC 4571 prefix; since issue #92 an unframed message carrying the magic cookie is (acc_stun_tcp_unframed_positive)",
           "TCP/3478 is nominal here: ICE-TCP candidates use arbitrary ports, and unframed STUN is what RFC 8489 \u00a76.2.2 runs on 3478/TCP"
         ]
       }
@@ -5599,8 +5860,216 @@
         "reviewed_in": "issue #527",
         "date": "2026-10-29",
         "checks": [
-          "plain text both ways on the classifier's well-known port; no protocol grammar (no RFC 4571 length prefix matching the segment)",
+          "plain text both ways on the classifier's well-known port; no protocol grammar (no RFC 4571 length prefix matching the segment, no magic cookie at offset 4)",
           "expected handling: no stun verdict (abstention); payload-less TCP handshake packets abstain too"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_stun_tcp_unframed_positive.pcap",
+      "family": "stun",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_stun_tcp"
+      ],
+      "description": "Unframed STUN over TCP/3478 (RFC 8489 \u00a76.2.2): Binding request and success response with XOR-MAPPED-ADDRESS, no RFC 4571 length prefix.",
+      "sha256": "6d8ebfe782971a82153e36f729d4fcb2de7c997594e18d87f4d76b85d73d67c3",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_stun_tcp_unframed_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #92",
+        "date": "2026-11-15",
+        "checks": [
+          "STUN header with the magic cookie 0x2112A442 and the XOR-MAPPED-ADDRESS attribute per RFC 8489 \u00a75, \u00a714.2; over TCP without framing as \u00a76.2.2 runs it on port 3478",
+          "matched by the unframed path of mmt_check_stun_tcp, which requires the magic cookie (proto_stun.c:148-156, issue #92)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_stun_tcp_unframed_classic_ambiguous.pcap",
+      "family": "stun",
+      "case": "ambiguous",
+      "classifiers": [
+        "mmt_check_stun_tcp"
+      ],
+      "description": "Classic STUN (RFC 3489) Binding request and response over TCP/3478 without framing: no magic cookie, MAPPED-ADDRESS. Recorded as ambiguous: without the RFC 4571 length prefix or the cookie nothing separates the 20-byte header from arbitrary bytes, so the SDK abstains.",
+      "sha256": "4120addc431707e632c4562721ebbcf56f08bda14678ea8b3172add263f96542",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_stun_tcp_unframed_classic_ambiguous"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #92",
+        "date": "2026-11-15",
+        "checks": [
+          "RFC 3489 \u00a711.1 header (128-bit transaction id, here a 32-bit non-cookie value plus 96 bits) and \u00a711.2.1 MAPPED-ADDRESS carrying the client's address and port",
+          "expected handling: abstention -- the unframed path requires the RFC 8489 magic cookie (proto_stun.c:148-156, issue #92); payload-less TCP handshake packets abstain too"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_rtp_tcp_positive.pcap",
+      "family": "rtp",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_stun_tcp",
+        "mmt_check_rtp_tcp"
+      ],
+      "description": "ICE-TCP (RFC 6544) on TCP/3478: the framed connectivity check of acc_stun_tcp_positive, then six RFC 4571-framed RTP packets (PCMU, one SSRC); the flow is STUN, then stun.rtp from the fourth RTP packet on.",
+      "sha256": "b692b9434e3a48b5d6bae6082306e3eb8edd27b20f7a7b3307cc809142680e16",
+      "expected": {
+        "packets": 11,
+        "wire": 3,
+        "abstain": 3,
+        "other": {
+          "stun": 5
+        },
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_rtp_tcp_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #92",
+        "date": "2026-11-15",
+        "checks": [
+          "STUN as acc_stun_tcp_positive; RTP per RFC 3550 \u00a75.1 (V=2, PT 0, consecutive sequence numbers and 160-sample timestamps) with the RFC 4571 \u00a72 length prefix",
+          "mmt_check_stun_tcp hands each framed segment of the STUN flow to mmt_check_rtp_tcp (proto_stun.c:121-134, issue #92), whose sequence check labels RTP on the fourth packet; the two STUN messages and the first three RTP packets count as other (stun)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_rtp_tcp_keepalive_positive.pcap",
+      "family": "rtp",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_stun_tcp",
+        "mmt_check_rtp_tcp"
+      ],
+      "description": "acc_rtp_tcp_positive followed by a framed STUN keep-alive (connectivity check and response) and three more framed RTP packets: the flow stays stun.rtp.",
+      "sha256": "780276454e49bd5ece46f83612c640eadd7248279843e37700acef8081863578",
+      "expected": {
+        "packets": 16,
+        "wire": 8,
+        "abstain": 3,
+        "other": {
+          "stun": 5
+        },
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_rtp_tcp_keepalive_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #92",
+        "date": "2026-11-15",
+        "checks": [
+          "same messages as acc_rtp_tcp_positive; the keep-alive repeats the RFC 8445 \u00a711 / RFC 6544 connectivity check on the same connection",
+          "once the flow is RTP the STUN checker's guard is closed, so the keep-alive does not flip the label back (proto_stun.c:121-134, issue #92)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_rtp_tcp_negative.pcap",
+      "family": "rtp",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_stun_tcp",
+        "mmt_check_rtp_tcp"
+      ],
+      "description": "The framed connectivity check of acc_rtp_tcp_positive followed by five framed DTLS 1.2 application_data records instead of RTP: the flow stays STUN, never rtp.",
+      "sha256": "f795b7025d5ca91761ac479fb36c1833da7caa044664c2d6383ab5c171179a92",
+      "expected": {
+        "packets": 10,
+        "wire": 0,
+        "abstain": 3,
+        "other": {
+          "stun": 7
+        },
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_rtp_tcp_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #92",
+        "date": "2026-11-15",
+        "checks": [
+          "DTLS 1.2 record header (type 23, version 0xFEFD, epoch 1, sequence number, length) per RFC 6347 \u00a74.1 with the RFC 4571 prefix; first octet 23 is DTLS under the RFC 7983 \u00a77 demultiplexing, not RTP (128-191)",
+          "expected handling: STUN (other), no rtp verdict; payload-less TCP handshake packets abstain too"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_rtp_tcp_unpreceded_ambiguous.pcap",
+      "family": "rtp",
+      "case": "ambiguous",
+      "classifiers": [
+        "mmt_check_stun_tcp",
+        "mmt_check_rtp_tcp"
+      ],
+      "description": "The six RFC 4571-framed RTP packets of acc_rtp_tcp_positive on TCP/3478 without a STUN check before them. Recorded as ambiguous: the SDK searches framed RTP only on a flow already detected as STUN or RTP (proto_rtp.c:818-831), by design, because the RTP test alone is too weak for an arbitrary TCP flow.",
+      "sha256": "7c931bcaf1f0d6e00fd9f35e753d1cc942d2530509d7804a04fa174490e98396",
+      "expected": {
+        "packets": 9,
+        "wire": 0,
+        "abstain": 9,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_rtp_tcp_unpreceded_ambiguous"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #92",
+        "date": "2026-11-15",
+        "checks": [
+          "same RTP packets and framing as acc_rtp_tcp_positive",
+          "expected handling: abstention, by design (proto_rtp.c:818-819; RTP over TCP is signalled out of band, e.g. RFC 4571 \u00a73 SDP); a change of that rule must update this expectation; payload-less TCP handshake packets abstain too"
         ]
       }
     },
@@ -6258,6 +6727,274 @@
         "checks": [
           "plain text both ways on the classifier's well-known port; no protocol grammar (payload[0] is not 0 and no length rule matches)",
           "expected handling: no xbox verdict (abstention)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_vnc_positive.pcap",
+      "family": "vnc",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_vnc"
+      ],
+      "description": "RFB (VNC) on TCP/5900: the server's ProtocolVersion RFB 003.008 and the client's matching reply, after a three-way handshake; the reply is labelled.",
+      "sha256": "6c3672be34c4512b9ba7a0d89d0d485c9c04a204873e889ee528194bd33826f1",
+      "expected": {
+        "packets": 5,
+        "wire": 1,
+        "abstain": 4,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_vnc_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #92",
+        "date": "2026-11-15",
+        "checks": [
+          "12-byte ProtocolVersion handshake per RFC 6143 \u00a77.1.1 (server first, client echoes the version it accepts)",
+          "the second banner confirms the first (proto_vnc.c:24-45); the payload-less handshake no longer excludes VNC, the walk evaluates the checker's guard (issue #92)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_vnc_negative.pcap",
+      "family": "vnc",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_vnc"
+      ],
+      "description": "Text that starts like an RFB banner but is not the 12-byte ProtocolVersion, and plain text in reply, on TCP/5900: the port alone must not yield a verdict.",
+      "sha256": "797929a03c6f5137b2fdafb015459ed6a72f4cdcf065037f1204a2d018c8a5a3",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_vnc_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #92",
+        "date": "2026-11-15",
+        "checks": [
+          "server line starts with RFB 003.008 but is not 12 bytes ending in a newline (RFC 6143 \u00a77.1.1); client reply is plain text",
+          "expected handling: no vnc verdict (abstention); payload-less TCP handshake packets abstain too"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_tpkt_positive.pcap",
+      "family": "tpkt",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_tpkt"
+      ],
+      "description": "ISO transport over TCP (RFC 1006) on TCP/102: a TPKT-framed COTP class 0 Connection Request and its Connection Confirm (calling/called TSAP, TPDU size 1024).",
+      "sha256": "e6baa009c22064656eadab2f35662ac3c5c06cf8780abb2539ccb15256339796",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_tpkt_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #92",
+        "date": "2026-11-15",
+        "checks": [
+          "TPKT header (version 3, length of the whole packet) per RFC 1006 \u00a76; COTP CR/CC TPDU fixed part and parameters per ISO 8073 \u00a713.3/\u00a713.4",
+          "labelled when the TPKT length equals the segment (proto_tpkt.c:46-61); the payload-less handshake no longer excludes TPKT, the walk evaluates the checker's guard (issue #92)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_tpkt_negative.pcap",
+      "family": "tpkt",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_tpkt"
+      ],
+      "description": "A segment starting with a TPKT version octet whose length field does not match, and plain text in reply, on TCP/102: the port alone must not yield a verdict.",
+      "sha256": "7a5fb3041f6afdab30a32c1f4e6f2648e1c6b6a7fb903b28b6c6e2f022134711",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_tpkt_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #92",
+        "date": "2026-11-15",
+        "checks": [
+          "TPKT length 0x40 against a 32-byte segment; the reply is plain text",
+          "expected handling: no tpkt verdict (abstention); payload-less TCP handshake packets abstain too"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_spotify_positive.pcap",
+      "family": "spotify",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_http",
+        "mmt_check_spotify"
+      ],
+      "description": "An HTTP request with a Spotify-11.1.0 User-Agent from the client, then, between the same two hosts on TCP/4070, a flow whose first payload starts 01 00 00 and whose second starts 00: the HTTP flow is http.spotify, the second flow spotify from its second payload on.",
+      "sha256": "85f449a3370a09e97f03335153048b9378df71b4eee18163fa30e3531a13fc54",
+      "expected": {
+        "packets": 11,
+        "wire": 4,
+        "abstain": 7,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_spotify_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #92",
+        "date": "2026-11-15",
+        "checks": [
+          "the User-Agent rule (http.c:753-758) records Spotify on both hosts; mmt_check_spotify confirms its two-packet heuristic only for a host already known for Spotify (proto_spotify.c:34-53); no Spotify address is used, so the 78.31.8.0/22 range test (proto_spotify.c:28-29) is not exercised",
+          "the second flow's payloads are the minimal bytes the heuristic reads (16 bytes or more), not a reviewed Spotify message: no public specification of the protocol exists; TCP/4070 is nominal, the classifier reads no port"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_spotify_negative.pcap",
+      "family": "spotify",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_http",
+        "mmt_check_spotify"
+      ],
+      "description": "acc_spotify_positive with another User-Agent (accuracy/1.0): the same 01 00 00 / 00 flow between the same hosts is not Spotify, because no host is known for Spotify.",
+      "sha256": "7bfd9d63d101d67dd83c90175f11352e954e58e9e25063073ae7752a92144dfc",
+      "expected": {
+        "packets": 11,
+        "wire": 0,
+        "abstain": 9,
+        "other": {
+          "http": 2
+        },
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_spotify_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #92",
+        "date": "2026-11-15",
+        "checks": [
+          "identical to acc_spotify_positive except the User-Agent",
+          "expected handling: http for the first flow, no spotify verdict for the second (abstention); payload-less TCP handshake packets abstain too"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_dhcpv6_positive.pcap",
+      "family": "dhcpv6",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_dhcpv6"
+      ],
+      "description": "DHCPv6 over IPv6: a Solicit from the client's link-local address to ff02::1:2 (UDP 546 -> 547) and the server's Advertise to the client (UDP 547 -> 546) offering 2001:db8::201.",
+      "sha256": "52eb421c8d86359923be75c39e15480a2590a07a4653e99ef8cf6841d928b647",
+      "expected": {
+        "packets": 2,
+        "wire": 2,
+        "abstain": 0,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_dhcpv6_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (fe80::/64 link-local addresses derived from locally administered MACs, the RFC 8415 ff02::1:2 group, an RFC 3849 documentation address); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #92",
+        "date": "2026-11-15",
+        "checks": [
+          "RFC 8415 \u00a78 message header (msg-type, transaction-id); Solicit with Client Identifier (DUID-LL, \u00a711.4), Option Request, Elapsed Time and IA_NA; Advertise with Client and Server Identifier and IA_NA/IA Address (\u00a721.4, \u00a721.6); UDP checksums over the IPv6 pseudo-header (RFC 8200 \u00a78.1)",
+          "multicast to All_DHCP_Relay_Agents_and_Servers from a link-local address per RFC 8415 \u00a77.1, \u00a718.2.1; the classifier reads the two ports and the message type (proto_dhcpv6.c:22-25)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_dhcpv6_negative.pcap",
+      "family": "dhcpv6",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_dhcpv6"
+      ],
+      "description": "Plain text on the addresses and UDP ports 546/547 of acc_dhcpv6_positive: the ports alone must not yield a verdict.",
+      "sha256": "fe91e26439ba46b3b88d8a24c1579e5e90e02724f4a106789baa6f4733b5d5ed",
+      "expected": {
+        "packets": 2,
+        "wire": 0,
+        "abstain": 2,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_dhcpv6_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (fe80::/64 link-local addresses derived from locally administered MACs, the RFC 8415 ff02::1:2 group, an RFC 3849 documentation address); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #92",
+        "date": "2026-11-15",
+        "checks": [
+          "plain text both ways on the classifier's ports; no protocol grammar (first octet is no RFC 8415 message type 1-13)",
+          "expected handling: no dhcpv6 verdict (abstention)"
         ]
       }
     },
