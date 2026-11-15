@@ -349,6 +349,11 @@
         "dicom"
       ]
     },
+    "dhcpv6": {
+      "wire_labels": [
+        "dhcpv6"
+      ]
+    },
     "unknown": {
       "wire_labels": [],
       "abstention": true
@@ -6258,6 +6263,72 @@
         "checks": [
           "plain text both ways on the classifier's well-known port; no protocol grammar (payload[0] is not 0 and no length rule matches)",
           "expected handling: no xbox verdict (abstention)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_dhcpv6_positive.pcap",
+      "family": "dhcpv6",
+      "case": "positive",
+      "classifiers": [
+        "mmt_check_dhcpv6"
+      ],
+      "description": "DHCPv6 over IPv6: a Solicit from the client's link-local address to ff02::1:2 (UDP 546 -> 547) and the server's Advertise to the client (UDP 547 -> 546) offering 2001:db8::201.",
+      "sha256": "52eb421c8d86359923be75c39e15480a2590a07a4653e99ef8cf6841d928b647",
+      "expected": {
+        "packets": 2,
+        "wire": 2,
+        "abstain": 0,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_dhcpv6_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (fe80::/64 link-local addresses derived from locally administered MACs, the RFC 8415 ff02::1:2 group, an RFC 3849 documentation address); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #92",
+        "date": "2026-11-15",
+        "checks": [
+          "RFC 8415 \u00a78 message header (msg-type, transaction-id); Solicit with Client Identifier (DUID-LL, \u00a711.4), Option Request, Elapsed Time and IA_NA; Advertise with Client and Server Identifier and IA_NA/IA Address (\u00a721.4, \u00a721.6); UDP checksums over the IPv6 pseudo-header (RFC 8200 \u00a78.1)",
+          "multicast to All_DHCP_Relay_Agents_and_Servers from a link-local address per RFC 8415 \u00a77.1, \u00a718.2.1; the classifier reads the two ports and the message type (proto_dhcpv6.c:22-25)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_dhcpv6_negative.pcap",
+      "family": "dhcpv6",
+      "case": "negative",
+      "classifiers": [
+        "mmt_check_dhcpv6"
+      ],
+      "description": "Plain text on the addresses and UDP ports 546/547 of acc_dhcpv6_positive: the ports alone must not yield a verdict.",
+      "sha256": "fe91e26439ba46b3b88d8a24c1579e5e90e02724f4a106789baa6f4733b5d5ed",
+      "expected": {
+        "packets": 2,
+        "wire": 0,
+        "abstain": 2,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_dhcpv6_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (fe80::/64 link-local addresses derived from locally administered MACs, the RFC 8415 ff02::1:2 group, an RFC 3849 documentation address); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #92",
+        "date": "2026-11-15",
+        "checks": [
+          "plain text both ways on the classifier's ports; no protocol grammar (first octet is no RFC 8415 message type 1-13)",
+          "expected handling: no dhcpv6 verdict (abstention)"
         ]
       }
     },

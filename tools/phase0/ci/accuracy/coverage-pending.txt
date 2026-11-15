@@ -37,7 +37,6 @@ mmt_check_crossfire_tcp                # no reviewed case yet; #540 kept it in t
 mmt_check_guildwars                    # no reviewed case yet; #540 kept it in the default chains (its service is still operated)
 mmt_check_spotify                      # needs Spotify's own 78.31.8.0/22 address range (proto_spotify.c:31-32); documentation addresses cannot trigger it
 mmt_check_tpkt                         # finding: excluded on the payload-less TCP handshake (unconditional exclusion, proto_tpkt.c:67), so a TPKT/COTP CR/CC after a three-way handshake is never labelled
-mmt_check_dhcpv6                       # IPv6-only protocol; the accuracy generator emits IPv4 flows only
 mmt_check_directconnect_udp            # no reviewed case yet; #540 kept it in the default chains (its service is still operated)
 mmt_check_sopcast_udp                  # no reviewed case yet; #540 kept it in the default chains (its service is still operated)
 mmt_check_pplive_udp                   # no reviewed case yet; #540 kept it in the default chains (its service is still operated)

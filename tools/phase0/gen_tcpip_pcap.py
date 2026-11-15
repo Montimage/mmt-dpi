@@ -45,8 +45,9 @@ TCP_HLEN = 20
 UDP_HLEN = 8
 
 
-def eth_header(src=b"\x02\x00\x00\x00\x00\x01", dst=b"\x02\x00\x00\x00\x00\x02"):
-    return dst + src + struct.pack("!H", 0x0800)
+def eth_header(src=b"\x02\x00\x00\x00\x00\x01", dst=b"\x02\x00\x00\x00\x00\x02",
+               ethertype=0x0800):
+    return dst + src + struct.pack("!H", ethertype)
 
 
 def ip_header(src_ip, dst_ip, proto, payload_len, ident=0):
@@ -56,6 +57,25 @@ def ip_header(src_ip, dst_ip, proto, payload_len, ident=0):
     return struct.pack("!BBHHHBBH4s4s",
                        ver_ihl, 0, total, ident, 0x4000, 64, proto, 0,
                        src_ip, dst_ip)
+
+
+def ip6_header(src_ip, dst_ip, next_header, payload_len, hop_limit=64):
+    """RFC 8200 §3 fixed header: version 6, traffic class 0, flow label 0."""
+    return struct.pack("!IHBB16s16s", 6 << 28, payload_len, next_header,
+                       hop_limit, src_ip, dst_ip)
+
+
+def l4_checksum6(src_ip, dst_ip, next_header, segment):
+    """RFC 8200 §8.1 upper-layer checksum over the IPv6 pseudo-header (source,
+    destination, upper-layer length, next header) and the TCP/UDP segment,
+    whose checksum field must be zero. Mandatory for UDP over IPv6; a sum of
+    zero is sent as 0xFFFF (RFC 768), its one's-complement equivalent."""
+    data = (src_ip + dst_ip + struct.pack("!IxxxB", len(segment), next_header)
+            + segment + b"\x00" * (len(segment) % 2))
+    total = sum(struct.unpack("!%dH" % (len(data) // 2), data))
+    while total >> 16:
+        total = (total & 0xFFFF) + (total >> 16)
+    return (~total & 0xFFFF) or 0xFFFF
 
 
 def tcp_header(sport, dport, seq=1000, flags=0x18, payload_len=0):
@@ -528,7 +548,11 @@ def gen_ips_data_pcap(path):
 # deliberately NOT part of ci/golden_pcaps.txt: the golden classification
 # fingerprint's input set stays unchanged. Addresses are RFC 5737 documentation
 # ranges and names are RFC 2606/6761 reserved, so the captures carry no real
-# identity. Regenerate with:
+# identity. IPv6 cases (issue #92) follow the same rule: global addresses come
+# from the RFC 3849 documentation prefix 2001:db8::/32, and link-scoped ones
+# are fe80::/64 addresses derived from the locally administered MACs below
+# (RFC 4291 §2.5.6 and Appendix A), which no host outside the capture owns.
+# Regenerate with:
 #   tools/phase0/gen_tcpip_pcap.py --out-dir tools/phase0/ci/accuracy --accuracy
 
 ACC_CLIENT = struct.pack("!I", 0xC0000201)   # 192.0.2.1   (TEST-NET-1)
@@ -540,24 +564,29 @@ ACC_SERVER_MAC = b"\x02\x00\x00\x00\x64\x02"
 class _AccFlow:
     """One bidirectional flow with consistent addressing (and, for TCP,
     consistent sequence/acknowledgement numbers) between the accuracy client
-    and server. Packets are written with strictly increasing timestamps."""
+    and server. Packets are written with strictly increasing timestamps.
+    16-byte addresses make it an IPv6 flow (issue #92): ethertype 0x86DD and
+    a TCP/UDP checksum over the IPv6 pseudo-header; IPv4 frames are
+    unchanged (no checksum, which the parsers do not verify)."""
 
     def __init__(self, f, proto, cport, sport, ts_us=0, server=ACC_SERVER,
-                 server_mac=ACC_SERVER_MAC):
+                 server_mac=ACC_SERVER_MAC, client=ACC_CLIENT,
+                 client_mac=ACC_CLIENT_MAC):
         self.f, self.proto = f, proto
         self.cport, self.sport = cport, sport
         self.server, self.server_mac = server, server_mac
+        self.client, self.client_mac = client, client_mac
         self.seq = {"cli": 1000, "srv": 50000}
         self.ts_us = ts_us
         self.ident = 0
 
     def _l3l4(self, side, payload, flags):
         if side == "cli":
-            smac, dmac = ACC_CLIENT_MAC, self.server_mac
-            sip, dip, sp, dp = ACC_CLIENT, self.server, self.cport, self.sport
+            smac, dmac = self.client_mac, self.server_mac
+            sip, dip, sp, dp = self.client, self.server, self.cport, self.sport
         else:
-            smac, dmac = self.server_mac, ACC_CLIENT_MAC
-            sip, dip, sp, dp = self.server, ACC_CLIENT, self.sport, self.cport
+            smac, dmac = self.server_mac, self.client_mac
+            sip, dip, sp, dp = self.server, self.client, self.sport, self.cport
         other = "srv" if side == "cli" else "cli"
         if self.proto == 6:
             l4 = struct.pack("!HHIIBBHHH", sp, dp, self.seq[side],
@@ -566,6 +595,13 @@ class _AccFlow:
             self.seq[side] += len(payload) + (1 if flags & 0x03 else 0)
         else:
             l4 = udp_header(sp, dp, len(payload))
+        if len(sip) == 16:
+            csum = l4_checksum6(sip, dip, self.proto, l4 + payload)
+            at = 16 if self.proto == 6 else 6
+            l4 = l4[:at] + struct.pack("!H", csum) + l4[at + 2:]
+            return (eth_header(smac, dmac, 0x86DD)
+                    + ip6_header(sip, dip, self.proto, len(l4) + len(payload))
+                    + l4 + payload)
         return (eth_header(smac, dmac)
                 + ip_header(sip, dip, self.proto, len(l4) + len(payload),
                             ident=self.ident)
@@ -2913,6 +2949,81 @@ def gen_acc_geneve_negative_pcap(path):
                     ACC_HTTP_EXCHANGE, "UDP/6081 with GENEVE version 1")
 
 
+# --- accuracy corpus: IPv6 (issue #92) ---------------------------------------
+# mmt_check_dhcpv6 runs on IPv6 only (MMT_SELECTION_BITMASK_PROTOCOL_V6_UDP_*,
+# proto_dhcpv6.c). The client solicits from its link-local address to the
+# All_DHCP_Relay_Agents_and_Servers group and the server answers it link-local
+# (RFC 8415 §7.1, §18.2.1), so the exchange is two UDP flows; the address the
+# server offers is an RFC 3849 documentation address.
+
+ACC_CLIENT6_LL = bytes.fromhex("fe80000000000000000000fffe000201")  # fe80::ff:fe00:201
+ACC_SERVER6_LL = bytes.fromhex("fe80000000000000000000fffe006402")  # fe80::ff:fe00:6402
+ACC_OFFER6 = bytes.fromhex("20010db8000000000000000000000201")      # 2001:db8::201
+DHCPV6_GROUP = bytes.fromhex("ff020000000000000000000000010002")    # ff02::1:2
+DHCPV6_GROUP_MAC = b"\x33\x33\x00\x01\x00\x02"   # RFC 2464 §7: 33:33 + low 32 bits
+
+
+def _dhcpv6_opt(code, value):
+    """RFC 8415 §21.1 option: 16-bit code and length, then the value."""
+    return struct.pack("!HH", code, len(value)) + value
+
+
+def _dhcpv6_duid_ll(mac):
+    """RFC 8415 §11.4 DUID-LL: type 3, hardware type 1 (Ethernet), the MAC."""
+    return struct.pack("!HH", 3, 1) + mac
+
+
+def _dhcpv6(msg_type, xid, options):
+    """RFC 8415 §8 client/server message: msg-type, 24-bit transaction-id."""
+    return struct.pack("!I", (msg_type << 24) | xid) + options
+
+
+def _dhcpv6_solicit():
+    """Solicit (1): Client Identifier, Option Request (DNS servers, 23),
+    Elapsed Time 0 and an empty IA_NA (RFC 8415 §18.2.1, §21.2/7/9/4)."""
+    return _dhcpv6(1, 0x0A6B92, (
+        _dhcpv6_opt(1, _dhcpv6_duid_ll(ACC_CLIENT_MAC))
+        + _dhcpv6_opt(6, struct.pack("!H", 23))
+        + _dhcpv6_opt(8, struct.pack("!H", 0))
+        + _dhcpv6_opt(3, struct.pack("!III", 1, 0, 0))))
+
+
+def _dhcpv6_advertise():
+    """Advertise (2) for the same transaction: Client and Server Identifier
+    and the IA_NA (T1 1800 s, T2 2880 s) offering one IA Address (preferred
+    3600 s, valid 7200 s) (RFC 8415 §18.3.9, §21.4, §21.6)."""
+    iaaddr = _dhcpv6_opt(5, ACC_OFFER6 + struct.pack("!II", 3600, 7200))
+    return _dhcpv6(2, 0x0A6B92, (
+        _dhcpv6_opt(1, _dhcpv6_duid_ll(ACC_CLIENT_MAC))
+        + _dhcpv6_opt(2, _dhcpv6_duid_ll(ACC_SERVER_MAC))
+        + _dhcpv6_opt(3, struct.pack("!III", 1, 1800, 2880) + iaaddr)))
+
+
+def _acc_dhcpv6_pcap(path, solicit, advertise, note):
+    f = pcap_open(path)
+    ask = _AccFlow(f, 17, 546, 547, client=ACC_CLIENT6_LL,
+                   server=DHCPV6_GROUP, server_mac=DHCPV6_GROUP_MAC)
+    ask.send("cli", solicit)
+    answer = _AccFlow(f, 17, 546, 547, ts_us=ask.ts_us,
+                      client=ACC_CLIENT6_LL, server=ACC_SERVER6_LL)
+    answer.send("srv", advertise)
+    f.close()
+    print("wrote %s (accuracy: %s)" % (path, note))
+
+
+def gen_acc_dhcpv6_positive_pcap(path):
+    _acc_dhcpv6_pcap(path, _dhcpv6_solicit(), _dhcpv6_advertise(),
+                     "DHCPv6 Solicit / Advertise over IPv6")
+
+
+def gen_acc_dhcpv6_negative_pcap(path):
+    """Plain text on the same IPv6 addresses and UDP ports 546/547: the
+    ports alone must not yield a verdict (the first octet is no msg-type)."""
+    _acc_dhcpv6_pcap(path, b"hello, this datagram is not a DHCPv6 Solicit\n",
+                     b"and neither is this reply, despite the ports\n",
+                     "plain text on UDP/546-547 over IPv6")
+
+
 ACC_GENS = {
     "acc_dns_positive": gen_acc_dns_positive_pcap,
     "acc_dns_negative": gen_acc_dns_negative_pcap,
@@ -2956,6 +3067,8 @@ ACC_GENS = {
     "acc_vxlan_negative": gen_acc_vxlan_negative_pcap,
     "acc_geneve_http_positive": gen_acc_geneve_http_positive_pcap,
     "acc_geneve_negative": gen_acc_geneve_negative_pcap,
+    "acc_dhcpv6_positive": gen_acc_dhcpv6_positive_pcap,
+    "acc_dhcpv6_negative": gen_acc_dhcpv6_negative_pcap,
 }
 ACC_GENS.update((name, _acc_classifier_gen(name))
                 for name in ACC_CLASSIFIER_FLOWS)
