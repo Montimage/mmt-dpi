@@ -489,6 +489,19 @@ MANIFEST_NAME=".mmt-dpi-manifest"
 DOC_DIR="dpi/share/doc/mmt-dpi"
 MMT_PLUGIN_SET="libmmt_tcpip libmmt_tmobile libmmt_tdicom libmmt_business_app"
 
+# refuse_unsafe_manifest <action> — the manifest path must be absent or a
+# regular file: a symlink there could redirect the write or the read, and a
+# directory would swallow the renamed manifest, so the next uninstall would
+# stop partway (issue #94).
+refuse_unsafe_manifest() {
+    local manifest="$MMT_BASE/$MANIFEST_NAME"
+    if [ -L "$manifest" ]; then
+        fatal "$manifest is a symlink — refusing to $1"
+    elif [ -e "$manifest" ] && [ ! -f "$manifest" ]; then
+        fatal "$manifest is not a regular file — refusing to $1"
+    fi
+}
+
 uninstall_mmt() {
     local lib="$MMT_BASE/dpi/lib" run="" f removed=0 rel p r entries rbase
     local manifest="$MMT_BASE/$MANIFEST_NAME"
@@ -507,9 +520,7 @@ uninstall_mmt() {
     if [ ! -d "$MMT_BASE/dpi" ] && [ ! -d "$MMT_BASE/plugins" ] && [ ! -d "$MMT_BASE/examples" ]; then
         warn "No MMT-DPI install found under $MMT_BASE"
     fi
-    if [ -L "$manifest" ]; then
-        fatal "$manifest is a symlink — refusing to uninstall"
-    fi
+    refuse_unsafe_manifest uninstall
     # Entries are removed only when their directory resolves inside the real
     # prefix: a directory symlink planted under the prefix cannot redirect
     # the removal elsewhere.
@@ -670,6 +681,9 @@ install_mmt() {
     step "Installing mmt-dpi to $MMT_BASE"
 
     cd "$BUILD_DIR/mmt-dpi/sdk"
+    refuse_unsafe_manifest install
+    local manifest_before
+    manifest_before="$(manifest_id)"
 
     # Elevate by writability, not by a path literal (issue #211, F-BUG-116):
     # /usr/local/mmt needs sudo exactly like /opt/mmt did, while a prefix the
@@ -687,12 +701,14 @@ install_mmt() {
         $SUDO make ARCH="linux" MMT_BASE="$MMT_BASE" LDCONF="$LDCONF" install
     fi
 
-    # The pinned release tag's Makefile writes no install manifest and
-    # installs no licence files: lay down the clone's LICENSE (and
-    # THIRD-PARTY-NOTICES once the tag carries it, issue #497) where
-    # `make install` puts them, then record what was copied from this build
-    # so --uninstall can remove exactly that.
-    if [ ! -f "$MMT_BASE/$MANIFEST_NAME" ]; then
+    # A Makefile that predates the install manifest (issue #485) writes none
+    # and installs no licence files; the pinned tag's does both. When
+    # `make install` left the manifest as it was — absent, or an earlier
+    # install's — lay down the clone's LICENSE (and THIRD-PARTY-NOTICES)
+    # where `make install` puts them, then merge what was copied from this
+    # build into the manifest so --uninstall removes exactly that, the earlier
+    # install's entries included (issue #94).
+    if [ "$(manifest_id)" = "$manifest_before" ]; then
         local priv=""
         [ "$ELEVATED" = "1" ] && priv="$SUDO"
         install_licence_files "$BUILD_DIR/mmt-dpi" "$priv"
@@ -714,21 +730,28 @@ install_licence_files() {
     done
 }
 
+# manifest_id — the inode of <prefix>/.mmt-dpi-manifest, or "none": a
+# `make install` that writes the manifest renames a new file into place, so
+# an unchanged id means it wrote none.
+manifest_id() {
+    stat -c %i -- "$MMT_BASE/$MANIFEST_NAME" 2>/dev/null || echo none
+}
+
 # write_manifest <sdk dir> [priv] — the same list `make install` records in
 # <prefix>/.mmt-dpi-manifest (sdk/Makefile MMT_LIST_INSTALLED): every entry
-# copied from <sdk dir>, relative to the prefix.
+# copied from <sdk dir>, relative to the prefix, merged with the entries an
+# earlier install recorded there, as `make install` merges them (issue #94).
 write_manifest() {
     local sdk="$1" priv="${2:-}" f
     local manifest="$MMT_BASE/$MANIFEST_NAME" tmp
-    # Never write through a symlink planted at the manifest name: write a
-    # fresh mktemp file and rename it into place.
-    if [ -L "$manifest" ]; then
-        fatal "$manifest is a symlink — refusing to write the install manifest"
-    fi
+    # Never write through a symlink planted at the manifest name, nor into a
+    # directory there: write a fresh mktemp file and rename it into place.
+    refuse_unsafe_manifest "write the install manifest"
     tmp="$($priv mktemp "$manifest.XXXXXX")" || fatal "Cannot create a temporary manifest under $MMT_BASE"
     {
         echo "# mmt-dpi install manifest: paths relative to $MMT_BASE, read by make uninstall"
         {
+            if [ -f "$manifest" ]; then grep -v '^#' "$manifest" || true; fi
             (cd "$sdk/lib" && ls -d ./*.so.* ./*.a) | sed 's|^\./|dpi/lib/|'
             for f in libmmt_core libmmt_fuzz libmmt_security $MMT_PLUGIN_SET; do
                 echo "dpi/lib/$f.so"
@@ -747,7 +770,7 @@ write_manifest() {
         } | LC_ALL=C sort -u
     } | $priv tee "$tmp" >/dev/null
     $priv chmod 0644 "$tmp"
-    $priv mv -f -- "$tmp" "$manifest"
+    $priv mv -fT -- "$tmp" "$manifest"
 }
 
 # resolve_dir <dir> — the physical path of an existing directory (cd -P), so
