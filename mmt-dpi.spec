@@ -25,7 +25,7 @@
 %global mmt_vars MMT_LIB=%{_libdir} MMT_INC=%{_includedir}/%{name} MMT_PLUGINS=%{_libdir}/%{name}/plugins MMT_EXAMS=%{_docdir}/%{name}-devel/examples GIT_VERSION=%{version}-%{release}
 
 Name:           mmt-dpi
-Version:        1.10.2
+Version:        1.10.3
 Release:        1%{?dist}
 Summary:        Deep packet inspection library
 
@@ -91,6 +91,9 @@ bash tests/run_all_tests.sh hexdump mmt_utils mmt_inet_ntop avltree memory
 %{_docdir}/%{name}-devel/
 
 %changelog
+* Sun Nov 15 2026 Montimage <developer@montimage.eu> - 1.10.3-1
+- MMT-DPI 1.10.3: see CHANGELOG.md
+
 * Tue Nov 10 2026 Montimage <developer@montimage.eu> - 1.10.2-1
 - MMT-DPI 1.10.2: see CHANGELOG.md
 

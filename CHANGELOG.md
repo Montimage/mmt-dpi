@@ -1,6 +1,21 @@
 RELEASE NOTES
 ---
 
+Version 1.10.3 (unreleased)
+---
+
+### Core and protocols
+- report the whole payload of a datagram rebuilt from IPv4 fragments again (#84). Since the F-BUG-016 clamp (`c8bbd1b5`), v1.10.0 to v1.10.2 bounded its L4 length by the `tot_len` of the fragment that completed it. That `tot_len` describes only that fragment, so a reassembled TCP or UDP payload was cut to the size of the last fragment, and to nothing when that fragment was smaller than the TCP header. The result was `tcp.payload_len` 0 on a fragmented TCP SYN carrying data, the "data in SYN" evasion that mmt-security detects. `ip_post_classification_function()` (`proto_ip.c`) again takes the length of the reassembled buffer for such a datagram. Every other packet keeps `MIN(tot_len, captured length)`, so a forged `tot_len` larger than the capture is still clamped. `tools/phase0/tests/run_ip_reassembled_l4_len_test.sh` covers fragmented TCP (in and out of order) and UDP datagrams under ASan/UBSan.
+
+### Build, CI and packaging
+- ship relative development symlinks in the deb/rpm payloads (#82). The package tree linked `lib<name>.so` and `/usr/share/pkgconfig/mmt-dpi.pc` to absolute `/opt/mmt` targets, so a package unpacked anywhere but `/` (`dpkg-deb -x`, `rpm2cpio`) left them dangling, and `-lmmt_core` fell back to the static library. `sdk/Makefile` now links them relatively, `make install` does the same, and the package build fails on any staged symlink with an absolute target.
+- notify Montimage/packages after a release is published (#76). The last step of the tag run's `release` job sends a `mmt-dpi-release` repository dispatch through `tools/ci/notify-packages.sh`, so the APT repository is rebuilt and signed there. mmt-dpi never holds the APT key.
+- check the clone URL given in `docs/Compilation-and-Installation-Instructions.md` instead of the checkout's `origin` in `scripts/validate-compile-install.sh`, so the required `doc-validators` check passes in forks and mirrors.
+- repin the drifted `ubuntu:22.04`, `ubuntu:24.04`, `ubuntu:26.04` and `buildpack-deps:trixie` base images (#81), and bump `addressable` to 2.9.1 in the documentation site's `Gemfile.lock` (GHSA-qq38-m9mg-xjj5).
+
+### Documentation
+- reserve protocol ids 950-999 for third-party plugins (#73). `docs/Add-New-Protocol.md` documents the range, and `scripts/validate-proto-id-range.sh` fails when a built-in `PROTO_` id falls in it or `PROTO_MAX_IDENTIFIER` drops below 1000.
+
 Version 1.10.2 (10 November 2026)
 ---
 
