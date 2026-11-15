@@ -207,7 +207,7 @@ check "refused directory-manifest uninstall deleted nothing" \
 # Makefile that writes no manifest would leave it. The manifest must merge the
 # earlier install's entries, so --uninstall then leaves nothing behind.
 ish_install() {
-    # shellcheck disable=SC2034,SC2329  # stubs and variables the eval'd functions use
+    # shellcheck disable=SC2034,SC2317,SC2329  # stubs and variables the eval'd functions use
     ( eval "$(sed -n -e '/^ELEVATED=/p' -e '/^MANIFEST_NAME=/p' -e '/^DOC_DIR=/p' -e '/^MMT_PLUGIN_SET=/p' \
                     -e '/^prefix_writable()/,/^}/p' -e '/^refuse_unsafe_manifest()/,/^}/p' \
                     -e '/^manifest_id()/,/^}/p' -e '/^install_mmt()/,/^}/p' \
