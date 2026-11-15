@@ -37,12 +37,15 @@ fi
 
 echo "=== Compilation-and-Installation-Instructions.md validation ==="
 
-# Check 1: Git repo URL is correct
-remote_url=$(git -C "$ROOT" remote get-url origin 2>/dev/null || echo "")
-if echo "$remote_url" | grep -qi 'Montimage/mmt-dpi'; then
-    echo "  ✓ Remote URL matches doc (Montimage/mmt-dpi)"
+# Check 1: the doc's clone URL is the canonical repository. Checked in the
+# doc itself, not against this checkout's `origin`, which names whatever fork
+# or mirror it was cloned from (actions/checkout sets it to the workflow's own
+# repository) — issue #765.
+DOC="$ROOT/docs/Compilation-and-Installation-Instructions.md"
+if grep -qF 'git clone https://github.com/Montimage/mmt-dpi.git' "$DOC" 2>/dev/null; then
+    echo "  ✓ Doc clone URL is the canonical repository (Montimage/mmt-dpi)"
 else
-    echo "  ✗ Remote URL does not match doc"
+    echo "  ✗ Doc clone URL does not name Montimage/mmt-dpi"
     ERRORS=$((ERRORS + 1))
 fi
 
