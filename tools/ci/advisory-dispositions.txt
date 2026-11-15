@@ -71,3 +71,8 @@ CVE-2026-86144 | debian:13 | 2026-12-31 | #515 | HIGH libxml2 @ 2.12.7+dfsg+real
 # pair's expiry and #492 tracking.
 CVE-2026-6368 | debian:13 | 2026-12-31 | #492 | glibc @ 2.41-12+deb13u4: no rating in any source and unfixed in the distro
 CVE-2026-6791 | debian:13 | 2026-12-31 | #492 | glibc @ 2.41-12+deb13u4: no rating in any source and unfixed in the distro
+CVE-2026-84243 | debian:12 | 2026-12-31 | #492 | HIGH glibc @ 2.36-9+deb12u14: unfixed in the distro, no fixed revision published
+CVE-2026-84243 | debian:13 | 2026-12-31 | #515 | HIGH glibc @ 2.41-12+deb13u4: unfixed in the distro, no fixed revision published
+CVE-2026-84243 | ubuntu:22.04 | 2026-12-31 | #492 | HIGH glibc @ 2.35-0ubuntu3.15: unfixed in the distro, no fixed revision published
+CVE-2026-84243 | ubuntu:24.04 | 2026-12-31 | #492 | HIGH glibc @ 2.39-0ubuntu8.9: unfixed in the distro, no fixed revision published
+CVE-2026-84243 | ubuntu:26.04 | 2026-12-31 | #492 | HIGH glibc @ 2.43-2ubuntu2.4: unfixed in the distro, no fixed revision published
