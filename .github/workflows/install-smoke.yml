@@ -85,8 +85,8 @@ jobs:
           # Every image is digest-pinned and recorded in
           # tools/ci/base-images.txt (check-image-digests.sh, refreshed daily
           # by base-image-refresh.yml).
-          - { name: ubuntu-22.04, tier: supported, image: "ubuntu:22.04@sha256:076e7bf82319619f28dd0aa9c02ab34b055ad37100395b4f49a2ffba04fb5e11" }
-          - { name: ubuntu-24.04, tier: supported, image: "ubuntu:24.04@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852" }
+          - { name: ubuntu-22.04, tier: supported, image: "ubuntu:22.04@sha256:74b12b11ffa550fba1929ad4d8d16533c34f6612728469671afba1b03b66881c" }
+          - { name: ubuntu-24.04, tier: supported, image: "ubuntu:24.04@sha256:2198e4c65076e9cb0b3d695219df667c0e3b0072da64ca3c2648aca17dcecaf5" }
           - { name: debian-12, tier: supported, image: "debian:12@sha256:268fb24c39bca92d326dd83ea3abebe4a3f7751c804ffef23bb6d857dd343ff8" }
           - { name: rocky-9, tier: supported, image: "rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6" }
           - { name: centos-stream9, tier: supported, image: "quay.io/centos/centos:stream9@sha256:280add9b43d478ff06de6ccc6285afa7f1d81d8a0ea0d63e292a2f87f1d5aedf" }
