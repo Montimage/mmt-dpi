@@ -948,12 +948,29 @@ static void b_htoi(void) {
     CHECK(htoi(out, sizeof(out), "0aFf", 2) == 2, "two bytes converted");
     CHECK((unsigned char) out[0] == 0x0a && (unsigned char) out[1] == 0xff, "mixed-case hex digits");
     CHECK(htoi(out, 1, "1234", 2) == 1, "capacity bounds the write");
+    /* Issue #93: the edge cases data_defs.h documents. */
+    memset(out, 0x55, sizeof(out));
+    CHECK(htoi(out, sizeof(out), "1234", 1) == 1 && (unsigned char) out[0] == 0x12
+          && (unsigned char) out[1] == 0x55, "len bounds the write below the capacity");
+    memset(out, 0x55, sizeof(out));
+    CHECK(htoi(out, sizeof(out), "12zz34", 3) == 1 && (unsigned char) out[0] == 0x12
+          && (unsigned char) out[1] == 0x55, "stops at the first non-hex character");
+    memset(out, 0x55, sizeof(out));
+    CHECK(htoi(out, sizeof(out), "abc", 2) == 2 && (unsigned char) out[0] == 0xab
+          && (unsigned char) out[1] == 0x0c, "a lone trailing digit is a byte of its own value");
+    CHECK((unsigned char) out[2] == 0x55, "no NUL terminator is written");
+    memset(out, 0x55, sizeof(out));
+    CHECK(htoi(out, sizeof(out), "0x1f", 2) == 1 && (unsigned char) out[0] == 0x00,
+          "a 0x prefix is not skipped");
 }
 static void e_htoi(void) {
     char out[4];
     CHECK(htoi(NULL, sizeof(out), "0a", 1) == 0, "NULL destination -> 0 bytes");
     CHECK(htoi(out, 0, "0a", 1) == 0, "zero capacity -> 0 bytes");
     CHECK(htoi(out, sizeof(out), "zz", 1) == 0, "non-hex input -> 0 bytes");
+    CHECK(htoi(out, sizeof(out), NULL, 1) == 0, "NULL source -> 0 bytes");
+    CHECK(htoi(out, sizeof(out), "0a", 0) == 0 && htoi(out, sizeof(out), "0a", -1) == 0,
+          "len 0 or negative -> 0 bytes");
 }
 
 static void b_get_data_size_by_proto_and_field_ids(void) {
@@ -1101,25 +1118,39 @@ static void b_mmt_tolower(void) {
     CHECK(mmt_tolower('A') == 'a' && mmt_tolower('Z') == 'z', "uppercase letters fold down");
     CHECK(mmt_tolower('q') == 'q' && mmt_tolower('@') == '@', "other characters pass through");
 }
+/* Issue #93: the comparators return exactly -1, 0 or +1, as data_defs.h now
+ * documents. The inputs stay below 0x80, so the results do not depend on the
+ * signedness of plain char (the x86, ARM and -funsigned-char legs agree). */
 static void b_mmt_strcasecmp(void) {
     CHECK(mmt_strcasecmp("Meta", "mETA") == 0, "equal ignoring case");
     CHECK(mmt_strcasecmp("abc", "ABD") < 0 && mmt_strcasecmp("abd", "ABC") > 0, "orders case-insensitively");
+    CHECK(mmt_strcasecmp("abc", "ABZZZ") == -1 && mmt_strcasecmp("ABZZZ", "abc") == +1, "returns exactly -1 or +1");
+    CHECK(mmt_strcasecmp("a", "_") == -1, "letters compare in upper case: 'A' < '_'");
+    CHECK(mmt_strcasecmp("{", "[") == +1, "only ASCII letters are folded");
 }
 static void b_mmt_strncasecmp(void) {
     CHECK(mmt_strncasecmp("MetaX", "metaY", 4) == 0, "equal over the first 4 characters");
-    CHECK(mmt_strncasecmp("MetaX", "metaY", 5) < 0, "differs at the 5th character");
+    CHECK(mmt_strncasecmp("MetaX", "metaY", 5) == -1 && mmt_strncasecmp("metaY", "MetaX", 5) == +1,
+          "differs at the 5th character: exactly -1 or +1");
+    CHECK(mmt_strncasecmp("ab", "AB", 10) == 0, "stops at a common NUL before max");
+    CHECK(mmt_strncasecmp("a", "b", 0) == 0, "max 0 compares nothing");
 }
-/* Finding (issue #525): data_defs.h documents mmt_strcmp as case-insensitive;
- * the implementation is case-sensitive. The contract pins the code. */
+/* montimage-projects/mmt-dpi#525 found that data_defs.h documented mmt_strcmp
+ * as case-insensitive; issue #93 made the header describe this case-sensitive
+ * code. */
 static void b_mmt_strcmp(void) {
     CHECK(mmt_strcmp("meta", "meta") == 0, "equal strings");
-    CHECK(mmt_strcmp("meta", "META") > 0, "case-sensitive: 'm' > 'M'");
-    CHECK(mmt_strcmp("abc", "abd") < 0, "orders by the first difference");
+    CHECK(mmt_strcmp("meta", "META") == +1, "case-sensitive: 'm' > 'M', exactly +1");
+    CHECK(mmt_strcmp("abc", "abzzz") == -1, "orders by the first difference, exactly -1");
+    CHECK(mmt_strcmp("ab", "abc") == -1 && mmt_strcmp("abc", "ab") == +1, "a prefix orders first");
 }
 static void b_mmt_strncmp(void) {
     CHECK(mmt_strncmp("abcX", "abcY", 3) == 0, "equal over the first 3 characters");
-    CHECK(mmt_strncmp("abcX", "abcY", 4) < 0, "differs at the 4th character");
-    CHECK(mmt_strncmp("abc", "ABC", 3) > 0, "case-sensitive");
+    CHECK(mmt_strncmp("abcX", "abcY", 4) == -1 && mmt_strncmp("abcY", "abcX", 4) == +1,
+          "differs at the 4th character: exactly -1 or +1");
+    CHECK(mmt_strncmp("abc", "ABC", 3) == +1, "case-sensitive");
+    CHECK(mmt_strncmp("ab", "ab", 10) == 0, "stops at a common NUL before max");
+    CHECK(mmt_strncmp("a", "b", 0) == 0, "max 0 compares nothing");
 }
 
 static void b_mmt_attr_format(void) {
