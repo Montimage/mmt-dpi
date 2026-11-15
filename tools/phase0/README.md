@@ -113,7 +113,7 @@ list fails the build):
 - `instruction-gate` — instruction-gate
 - `precision-gate` — precision-gate
 - `precision-gate-context` — Labelled-pcap precision/recall holds or improves (M9, issue
-- matrix expansion: `harness-*` runs 5 legs, slices of `tools/phase0/run_all_harnesses.sh` that together run all 51 `tools/phase0/tests/run_*.sh`
+- matrix expansion: `harness-*` runs 5 legs, slices of `tools/phase0/run_all_harnesses.sh` that together run all 52 `tools/phase0/tests/run_*.sh`
 <!-- end-generated: ci-gates -->
 
 What each gate asserts:

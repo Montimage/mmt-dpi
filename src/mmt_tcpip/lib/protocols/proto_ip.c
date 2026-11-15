@@ -1040,10 +1040,22 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
     /* Issue #192 (F-BUG-016): l3_packet_len derives from the attacker-
      * controlled IPv4 tot_len and may exceed what was actually captured, so
      * bound the L4 length by the captured length on every branch — not only
-     * on the reassembled one. usable = MIN(l3_packet_len, l3_captured_packet_len). */
-    uint32_t usable = packet->l3_packet_len;
-    if (packet->l3_captured_packet_len < usable)
+     * on the reassembled one. usable = MIN(l3_packet_len, l3_captured_packet_len).
+     *
+     * Issue #84: a datagram rebuilt from fragments keeps the IPv4 header of
+     * the fragment that completed it, so its tot_len describes that fragment
+     * only. There l3_captured_packet_len is the length of the reassembled
+     * buffer (header + dg->len, set by ip_process_fragment()), bounded by
+     * what was really rebuilt: use it alone, or the L4 length is cut to the
+     * size of the last fragment. */
+    uint32_t usable;
+    if (ipacket->nb_reassembled_packets[index] > 1) {
         usable = packet->l3_captured_packet_len;
+    } else {
+        usable = packet->l3_packet_len;
+        if (packet->l3_captured_packet_len < usable)
+            usable = packet->l3_captured_packet_len;
+    }
     if (usable < ihl_bytes) {
         packet->l4_packet_len = 0;
     } else {
