@@ -195,6 +195,60 @@ rm -rf "${UI}"; mkdir -p "${UI}"; printf 'examples/x.c\n' > "${WORK}/outside-ui/
 ln -s "${WORK}/outside-ui/manifest" "${UI}/.mmt-dpi-manifest"
 check_fail "install.sh --uninstall refuses a symlinked manifest" \
     bash "${REPO_ROOT}/install.sh" --uninstall --prefix "${UI}"
+# Issue #94: a directory at the manifest path is refused before anything is
+# removed (it used to send uninstall down the no-manifest path, then abort).
+rm -rf "${UI}"; mkdir -p "${UI}/dpi/lib" "${UI}/.mmt-dpi-manifest"; : > "${UI}/dpi/lib/libmmt_core.so.1.9.1"
+check_fail "install.sh --uninstall refuses a directory at the manifest path" \
+    bash "${REPO_ROOT}/install.sh" --uninstall --prefix "${UI}"
+check "refused directory-manifest uninstall deleted nothing" \
+    bash -c "[ -f '${UI}/dpi/lib/libmmt_core.so.1.9.1' ] && [ -d '${UI}/.mmt-dpi-manifest' ]"
+# install.sh's install step over an earlier install (issue #94), offline: its
+# install_mmt with `make install` stubbed by a copy of a fake build, as a
+# Makefile that writes no manifest would leave it. The manifest must merge the
+# earlier install's entries, so --uninstall then leaves nothing behind.
+ish_install() {
+    # shellcheck disable=SC2034,SC2329  # stubs and variables the eval'd functions use
+    ( eval "$(sed -n -e '/^ELEVATED=/p' -e '/^MANIFEST_NAME=/p' -e '/^DOC_DIR=/p' -e '/^MMT_PLUGIN_SET=/p' \
+                    -e '/^prefix_writable()/,/^}/p' -e '/^refuse_unsafe_manifest()/,/^}/p' \
+                    -e '/^manifest_id()/,/^}/p' -e '/^install_mmt()/,/^}/p' \
+                    -e '/^install_licence_files()/,/^}/p' -e '/^write_manifest()/,/^}/p' "${REPO_ROOT}/install.sh")"
+      step() { :; }; info() { :; }; success() { :; }; warn() { :; }
+      fatal() { echo "fatal: $*" >&2; exit 1; }
+      make() {
+          local s="$BUILD_DIR/mmt-dpi/sdk"
+          mkdir -p "$MMT_BASE/dpi/lib" "$MMT_BASE/dpi/include" "$MMT_BASE/plugins" "$MMT_BASE/examples" \
+              && cp -P "$s"/lib/* "$MMT_BASE/dpi/lib/" && cp "$s/lib/libmmt_tcpip.so.9.9.9" "$MMT_BASE/plugins/libmmt_tcpip.so" \
+              && cp -R "$s"/include/. "$MMT_BASE/dpi/include/" && cp -R "$s"/examples/. "$MMT_BASE/examples/"
+      }
+      MMT_BASE="$1"; BUILD_DIR="$2"; SUDO=""; LDCONF=0
+      install_mmt )
+}
+FAKE="${WORK}/fake-build/mmt-dpi"
+mkdir -p "${FAKE}/sdk/lib" "${FAKE}/sdk/include/sub" "${FAKE}/sdk/examples"
+: > "${FAKE}/LICENSE"; : > "${FAKE}/sdk/lib/libmmt_core.so.9.9.9"; : > "${FAKE}/sdk/lib/libmmt_core.a"
+: > "${FAKE}/sdk/lib/libmmt_tcpip.so.9.9.9"; ln -s libmmt_core.so.9.9.9 "${FAKE}/sdk/lib/libmmt_core.so"
+: > "${FAKE}/sdk/include/mmt_core.h"; : > "${FAKE}/sdk/include/sub/new.h"; : > "${FAKE}/sdk/examples/extract_all.c"
+rm -rf "${UI}"; mkdir -p "${UI}/dpi/lib" "${UI}/dpi/include" "${UI}/examples"
+: > "${UI}/dpi/lib/libmmt_core.so.1.9.1"; : > "${UI}/dpi/include/mmt_old_removed.h"; : > "${UI}/examples/old_removed.c"
+printf '%s\n' '# earlier install' dpi/include/mmt_old_removed.h dpi/lib/libmmt_core.so.1.9.1 examples/old_removed.c \
+    > "${UI}/.mmt-dpi-manifest"
+ish_upgrade_merges() {
+    local e
+    ish_install "${UI}" "${WORK}/fake-build" || return 1
+    for e in dpi/include/mmt_old_removed.h examples/old_removed.c dpi/lib/libmmt_core.so.1.9.1 \
+             dpi/lib/libmmt_core.so.9.9.9 dpi/include/sub/new.h plugins/libmmt_tcpip.so \
+             dpi/share/doc/mmt-dpi/LICENSE; do
+        grep -qx "$e" "${UI}/.mmt-dpi-manifest" || { echo "manifest misses $e"; return 1; }
+    done
+}
+check "install.sh upgrade merges the earlier install's manifest" ish_upgrade_merges
+check "install.sh --uninstall after an install.sh upgrade leaves nothing behind" \
+    bash -c "bash '${REPO_ROOT}/install.sh' --uninstall --prefix '${UI}' && [ ! -e '${UI}' ]"
+rm -rf "${UI}"; mkdir -p "${UI}/.mmt-dpi-manifest"
+check_fail "install.sh install refuses a directory at the manifest path" \
+    ish_install "${UI}" "${WORK}/fake-build"
+check "refused install.sh install laid down nothing" \
+    bash -c "[ ! -e '${UI}/dpi' ] && [ -z \"\$(ls -A '${UI}/.mmt-dpi-manifest')\" ]"
 rm -rf "${UI}"
 for bad in '//' '/.' '/opt/./mmt' '/opt/*'; do
     check_fail "install.sh --uninstall refuses MMT_BASE='${bad}'" \
@@ -615,6 +669,44 @@ rm -rf "${PREFIX2}"
 check "symlinked manifest target untouched" \
     bash -c "[ \"\$(cat '${CANARY}/manifest')\" = examples/x.c ]"
 rm -rf "${SYMP}"
+# Issue #94: a directory at the manifest path is refused by install before it
+# lays anything down (mv used to move the manifest into it and exit 0), and by
+# uninstall before it removes anything.
+mkdir -p "${PREFIX2}/.mmt-dpi-manifest"
+check_fail "install refuses a directory at the manifest path" \
+    "${SDKM[@]}" MMT_BASE="${PREFIX2}" "${STAGE[@]}" LDCONF=0 install
+check "refused install laid down nothing and left the directory empty" \
+    bash -c "[ ! -e '${PREFIX2}/dpi' ] && [ -z \"\$(ls -A '${PREFIX2}/.mmt-dpi-manifest')\" ]"
+mkdir -p "${PREFIX2}/dpi/lib"; : > "${PREFIX2}/dpi/lib/libmmt_core.so.1.9.1"
+check_fail "uninstall refuses a directory at the manifest path" \
+    "${SDKM[@]}" MMT_BASE="${PREFIX2}" "${STAGE[@]}" uninstall
+check "refused directory-manifest uninstall deleted nothing" \
+    test -f "${PREFIX2}/dpi/lib/libmmt_core.so.1.9.1"
+rm -rf "${PREFIX2}"
+# An upgrade over an earlier install (issue #94): make install merges the
+# earlier manifest, so files the new version no longer ships are recorded and
+# both uninstall routes leave nothing behind.
+seed_earlier_install() {
+    mkdir -p "${PREFIX2}/dpi/include" "${PREFIX2}/examples"
+    : > "${PREFIX2}/dpi/include/mmt_old_removed.h"; : > "${PREFIX2}/examples/old_removed.c"
+    printf '%s\n' '# earlier install' dpi/include/mmt_old_removed.h examples/old_removed.c \
+        > "${PREFIX2}/.mmt-dpi-manifest"
+}
+upgrade_merges() {
+    "${SDKM[@]}" MMT_BASE="${PREFIX2}" "${STAGE[@]}" LDCONF=0 install || return 1
+    grep -qx dpi/include/mmt_old_removed.h "${PREFIX2}/.mmt-dpi-manifest" \
+        && grep -qx examples/old_removed.c "${PREFIX2}/.mmt-dpi-manifest" \
+        && grep -qx dpi/lib/libmmt_core.so "${PREFIX2}/.mmt-dpi-manifest"
+}
+seed_earlier_install
+check "make install over an earlier install merges its manifest" upgrade_merges
+check "make uninstall after an upgrade leaves nothing behind" \
+    bash -c "\"\$@\" MMT_BASE='${PREFIX2}' uninstall && [ ! -e '${PREFIX2}' ]" _ "${SDKM[@]}" "${STAGE[@]}"
+seed_earlier_install
+check "make install over an earlier install (second run) merges its manifest" upgrade_merges
+check "install.sh --uninstall after a make install upgrade leaves nothing behind" \
+    bash -c "bash '${REPO_ROOT}/install.sh' --uninstall --prefix '${PREFIX2}' && [ ! -e '${PREFIX2}' ]"
+rm -rf "${PREFIX2}"
 check "dist-clean is an alias for uninstall" \
     grep -q '^dist-clean: uninstall$' "${REPO_ROOT}/sdk/Makefile"
 
