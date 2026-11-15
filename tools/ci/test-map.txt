@@ -183,6 +183,7 @@ harness http_method_classification_test tcpip
 harness http_scanner_test tcpip
 harness http_session_test smoke
 harness ip_frag_bounds_test smoke
+harness ip_reassembled_l4_len_test smoke
 harness ip_session_frag_key_test smoke
 harness ip_unaligned_header_test smoke
 harness leak_regression_test smoke
