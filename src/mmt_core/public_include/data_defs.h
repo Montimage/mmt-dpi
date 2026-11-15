@@ -1153,12 +1153,27 @@ MMTAPI struct timeval MMTCALL get_last_activity_time( mmt_handler_t * handler ) 
 
 
 /**
- * Transforms the first len (in number of bytes) haxadecimal text represented in ASCI into binary format.
+ * Converts hexadecimal ASCII text into binary data: each pair of hex digits
+ * (0-9, a-f, A-F) becomes one byte, the first digit of the pair giving the
+ * high nibble. At most min(@p len, @p binary_data_cap) bytes are written, so
+ * at most twice that many characters of @p hex_data are read.
+ * Conversion stops early at the first character that is not a hex digit, the
+ * terminating NUL included; a "0x" prefix, spaces and other separators are
+ * not skipped. A single digit left before that character is stored as a byte
+ * of its own value (0x00 to 0x0f) and counted. The output is not
+ * NUL-terminated.
  * @param binary_data pointer where the transformed binary data will be stored
- * @param binary_data_cap capacity of binary_data in bytes (to prevent overflow)
- * @param hex_data pointer to the hexadecimal ASCI string to transform
- * @param len the number of bytes to transform (honored: at most len bytes are written)
- * @return the length of the transformed data on success, a negative value on failure.
+ * @param binary_data_cap capacity of binary_data in bytes; never exceeded
+ * @param hex_data pointer to the hexadecimal ASCII text to transform; it must be
+ * readable up to its first non-hex character or 2 * min(len, binary_data_cap)
+ * characters, whichever comes first
+ * @param len the maximum number of bytes to produce
+ * @return the number of bytes written to @p binary_data, at most
+ * min(@p len, @p binary_data_cap). It is 0 when @p binary_data or @p hex_data
+ * is NULL, @p len is 0 or negative, @p binary_data_cap is 0, or the first
+ * character of @p hex_data is not a hex digit. There is no negative or error
+ * return: a count below the requested length is the only sign that the text
+ * ended early.
  */
 MMTAPI unsigned int MMTCALL htoi(
     char *binary_data,
@@ -1338,11 +1353,19 @@ MMTAPI char MMTCALL mmt_tolower(
 );
 
 /**
- * Case insensitive comparison of strings (even for non-ascii).
+ * Case-insensitive comparison of two NUL-terminated strings, for ASCII letters
+ * only: a-z are folded to A-Z before comparing, and every other byte, bytes
+ * 0x80 and above included, is compared unchanged. Letters compare in their
+ * upper-case form, so against the six characters between 'Z' and 'a' (0x5B to
+ * 0x60, '_' among them) they order differently from strcasecmp(), which folds
+ * to lower case. Characters compare as plain char, so the order of a byte
+ * 0x80 or above depends on whether char is signed on the target. Neither
+ * argument may be NULL.
  * @param first string to be compared.
  * @param second string to be compared.
- * @return Zero if both strings are case insensitivly equal, positive value if to indicate that the first character that does
- * not match has a greater case insensitive value in @p first than in @p second; a negative value indicates the opposite.
+ * @return 0 if both strings are equal ignoring ASCII case; +1 if the first
+ * character that differs after folding is greater in @p first than in
+ * @p second; -1 otherwise. No other value is returned.
  */
 MMTAPI int MMTCALL mmt_strcasecmp(
     const char *first,
@@ -1350,13 +1373,17 @@ MMTAPI int MMTCALL mmt_strcasecmp(
 );
 
 /**
- * Case insensitive comparison of strings (even for non-ascii).
+ * Case-insensitive comparison of at most @p max characters of two strings,
+ * with the same ASCII-only folding and ordering as mmt_strcasecmp(); the
+ * comparison also stops at a NUL common to both strings. Neither argument may
+ * be NULL.
  * @param first string to be compared.
  * @param second string to be compared.
  * @param max maximum number of characters to compare.
- * @return Zero indicates that the characters compared in both strings form the same case insensitive string;
- *         a positive value indicates that the first character that does not match has a greater case insensitive value in @p first than in @p second;
- *         a negative value indicates the opposite.
+ * @return 0 if the compared characters are equal ignoring ASCII case (always
+ * 0 when @p max is 0); +1 if the first character that differs after folding is
+ * greater in @p first than in @p second; -1 otherwise. No other value is
+ * returned.
  */
 MMTAPI int MMTCALL mmt_strncasecmp(
     const char *first,
@@ -1365,11 +1392,15 @@ MMTAPI int MMTCALL mmt_strncasecmp(
 );
 
 /**
- * Case insensitive comparison of strings (even for non-ascii).
+ * Case-sensitive comparison of two NUL-terminated strings, character by
+ * character with no folding: "meta" and "META" differ. Characters compare as
+ * plain char, so the order of a byte 0x80 or above depends on whether char is
+ * signed on the target. Neither argument may be NULL.
  * @param first string to be compared.
  * @param second string to be compared.
- * @return Zero if both strings are equal, positive value if to indicate that the first character that does
- * not match has a greater value in @p first than in @p second; a negative value indicates the opposite.
+ * @return 0 if both strings are equal; +1 if the first character that differs
+ * is greater in @p first than in @p second; -1 otherwise. No other value is
+ * returned.
  */
 MMTAPI int MMTCALL mmt_strcmp(
     const char *first,
@@ -1377,12 +1408,15 @@ MMTAPI int MMTCALL mmt_strcmp(
 ) __attribute__((deprecated("no known caller (issue #541); removal in 2.0.0")));
 
 /**
- * Case insensitive comparison of strings (even for non-ascii).
+ * Case-sensitive comparison of at most @p max characters of two strings, with
+ * the same ordering as mmt_strcmp(); the comparison also stops at a NUL common
+ * to both strings. Neither argument may be NULL.
  * @param first string to be compared.
  * @param second string to be compared.
  * @param max maximum number of characters to compare.
- * @return Zero indicates that the characters compared in both strings form the same string; positive value if to indicate that the first character that does
- * not match has a greater value in @p first than in @p second; a negative value indicates the opposite.
+ * @return 0 if the compared characters are equal (always 0 when @p max is 0);
+ * +1 if the first character that differs is greater in @p first than in
+ * @p second; -1 otherwise. No other value is returned.
  */
 MMTAPI int MMTCALL mmt_strncmp(
     const char *first,
