@@ -6857,7 +6857,7 @@
         "reviewed_in": "issue #92",
         "date": "2026-11-15",
         "checks": [
-          "TPKT length 0x40 against a 30-byte segment; the reply is plain text",
+          "TPKT length 0x40 against a 32-byte segment; the reply is plain text",
           "expected handling: no tpkt verdict (abstention); payload-less TCP handshake packets abstain too"
         ]
       }
