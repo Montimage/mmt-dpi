@@ -190,9 +190,7 @@ static attribute_metadata_t ndn_attributes_metadata[NDN_HTTP_ATTRIBUTES_NB] = {
 int mmt_check_ndn_http(ipacket_t * ipacket, unsigned index) {
     // debug("[NDN_HTTP] mmt_check_ndn_http on packet: %lu index: %d",ipacket->packet_id,index);
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-            && !MMT_FLOW_EXCLUDES(packet->flow, PROTO_NDN_HTTP)
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+    { /* guard evaluated by the classifier walk (issue #561) */
             
             // debug("NDN_HTTP: checking ndn payload %lu",ipacket->packet_id);
             int offset = get_packet_offset_at_index(ipacket, index + 1);
@@ -214,8 +212,8 @@ int mmt_check_ndn_http(ipacket_t * ipacket, unsigned index) {
                     return 1;    
                 // }
             }
+            MMT_EXCLUDE_PROTOCOL(packet->flow, PROTO_NDN_HTTP);
     }
-    MMT_EXCLUDE_PROTOCOL(packet->flow, PROTO_NDN_HTTP);
     return 0;
 }
 
@@ -237,10 +235,6 @@ int init_proto_ndn_http_struct() {
         mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
                 &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
                 PROTO_NDN_HTTP, PROTO_NDN_HTTP);
-        /* issue #561: a closed guard excludes the protocol on the flow, which
-         * the walk's skip would lose — the checker keeps its own guard */
-        mmt_checker_keeps_local_guard(PROTO_NDN_HTTP);
-
         return register_protocol(protocol_struct, PROTO_NDN_HTTP);
     } else {
         return 0;
