@@ -1250,6 +1250,13 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
                     index++;
                     retval.proto_id = packet->flow->detected_protocol_stack[a];
                     retval.status = Classified;
+#ifdef PROTO_RTP
+                    /* Issue #92: RFC 4571 media (stun.rtp over ICE-TCP) puts
+                     * the RTP header after a 2-byte length prefix. */
+                    if (retval.proto_id == PROTO_RTP && packet->flow->rtp_rfc4571_framing) {
+                        retval.offset += 2;
+                    }
+#endif
                     new_retval = set_classified_proto(ipacket, index, retval);
                     retval.offset = 0; // verified: stacked application ids share the payload, so offset 0 past the first
                 }

@@ -310,11 +310,21 @@
 #                               directly and search_ddl_domains() is driven
 #                               over fabricated Host lines (no SDK build).
 #
+# Issue #92 adds the "rtp-tcp" fixture: on an RFC 4571-framed RTP-over-TCP
+# flow (stun.rtp, ICE-TCP media) the RTP layer starts after the 2-byte length
+# prefix, and the RTP session analysis skips a segment that ends inside the
+# RTP header instead of reading past the capture.
+#
+#   test_rtp_tcp_framing_api.c — packet/API path: the accuracy-corpus capture
+#                               acc_rtp_tcp_keepalive_positive.pcap, then
+#                               crafted short segments in exact-size buffers,
+#                               through mmt_init_handler + packet_process.
+#
 # Usage: tests/parser_boundaries/run_tests.sh [fixture ...]
 #   no arguments runs every fixture; "udp"/"dtls"/"dns-soa"/"dns-txt"/"dns-names"/"nfs"/"int"/
 #   "tcp-options"/"radius-dns"/"quic"/"gre"/"classifier-audit"/"tcp-events"/"s1ap-integer"/
 #   "classify"/"registration"/"ftp-sessions"/"classification-method"/"chain"/
-#   "tls-hello"/"encap"/"gtp"/"ddl" select a fixture family.
+#   "tls-hello"/"encap"/"gtp"/"ddl"/"rtp-tcp" select a fixture family.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -322,7 +332,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # --- fixture selection -----------------------------------------------------
 FIXTURES=( "$@" )
-[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain tls-hello encap gtp ddl)
+[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain tls-hello encap gtp ddl rtp-tcp)
 UNIT_TESTS=()
 API_TESTS=()
 MOBILE_TESTS=()
@@ -402,8 +412,11 @@ for f in "${FIXTURES[@]}"; do
         ddl)
             UNIT_TESTS+=(ddl_host_port_unit)
             ;;
+        rtp-tcp)
+            API_TESTS+=(rtp_tcp_framing_api)
+            ;;
         *)
-            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain tls-hello encap gtp ddl)" >&2
+            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain tls-hello encap gtp ddl rtp-tcp)" >&2
             exit 2
             ;;
     esac

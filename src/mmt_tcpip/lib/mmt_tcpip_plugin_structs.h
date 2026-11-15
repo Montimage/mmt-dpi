@@ -565,6 +565,10 @@ typedef struct mmt_internal_tcpip_session_struct {
 #ifdef PROTO_RTP
     uint32_t rtp_stage1 : 2; //0-3
     uint32_t rtp_stage2 : 2;
+    /* Issue #92: mmt_check_rtp_tcp found RTP behind the RFC 4571 2-byte
+     * length prefix, so the RTP layer starts 2 bytes into each segment
+     * (tcp_post_classification_function). Outside l4, which is a union. */
+    uint32_t rtp_rfc4571_framing : 1;
 #endif
 #ifdef PROTO_EDONKEY
     uint32_t edk_stage : 5; // 0-17
