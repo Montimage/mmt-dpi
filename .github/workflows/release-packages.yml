@@ -156,13 +156,13 @@ jobs:
       matrix:
         arch: [amd64, arm64]
         distro:
-          - { name: ubuntu-22.04,   image: "ubuntu:22.04@sha256:076e7bf82319619f28dd0aa9c02ab34b055ad37100395b4f49a2ffba04fb5e11",                    pkg: deb }
-          - { name: ubuntu-24.04,   image: "ubuntu:24.04@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852",                    pkg: deb }
+          - { name: ubuntu-22.04,   image: "ubuntu:22.04@sha256:74b12b11ffa550fba1929ad4d8d16533c34f6612728469671afba1b03b66881c",                    pkg: deb }
+          - { name: ubuntu-24.04,   image: "ubuntu:24.04@sha256:2198e4c65076e9cb0b3d695219df667c0e3b0072da64ca3c2648aca17dcecaf5",                    pkg: deb }
           - { name: debian-12,      image: "debian:12@sha256:268fb24c39bca92d326dd83ea3abebe4a3f7751c804ffef23bb6d857dd343ff8",                       pkg: deb }
           - { name: rocky-9,        image: "rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6",                    pkg: rpm }
           - { name: centos-stream9, image: "quay.io/centos/centos:stream9@sha256:280add9b43d478ff06de6ccc6285afa7f1d81d8a0ea0d63e292a2f87f1d5aedf",   pkg: rpm }
           # Current generation (issue #515).
-          - { name: ubuntu-26.04,    image: "ubuntu:26.04@sha256:6a06111c3b0a8600feadb270aec771dc239bf407b25625f93f44ab00e11f4d3c",                    pkg: deb }
+          - { name: ubuntu-26.04,    image: "ubuntu:26.04@sha256:065aa8626841f16057b78b027b464cd59c4fac36c204c72dcbf48d66f5fa8a96",                    pkg: deb }
           - { name: debian-13,       image: "debian:13@sha256:9c6e381421d0f48d1b8133e573f33c185ee16cbf505eda9c4a8a4791b25ea8a6",                       pkg: deb }
           - { name: rocky-10,        image: "rockylinux/rockylinux:10@sha256:827d37bc128288ccf160ee318bb3cb92d591164cb217e92f8bc61e3982ae1834",        pkg: rpm }
           - { name: centos-stream10, image: "quay.io/centos/centos:stream10@sha256:5eaff839eea6ca355f8122044dcfaefbac5ac991940f223b668dcf80478e3166",  pkg: rpm }
@@ -302,10 +302,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { distro: ubuntu-24.04, image: "ubuntu:24.04@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852",                    pkg: deb }
+          - { distro: ubuntu-24.04, image: "ubuntu:24.04@sha256:2198e4c65076e9cb0b3d695219df667c0e3b0072da64ca3c2648aca17dcecaf5",                    pkg: deb }
           - { distro: rocky-9,      image: "rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6",                   pkg: rpm }
           # One current-generation leg (issue #515): GCC 15 and libxml2 2.15.
-          - { distro: ubuntu-26.04, image: "ubuntu:26.04@sha256:6a06111c3b0a8600feadb270aec771dc239bf407b25625f93f44ab00e11f4d3c",                    pkg: deb }
+          - { distro: ubuntu-26.04, image: "ubuntu:26.04@sha256:065aa8626841f16057b78b027b464cd59c4fac36c204c72dcbf48d66f5fa8a96",                    pkg: deb }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -347,10 +347,10 @@ jobs:
       matrix:
         arch: [amd64, arm64]
         distro:
-          - { name: ubuntu-22.04,   image: "ubuntu:22.04@sha256:076e7bf82319619f28dd0aa9c02ab34b055ad37100395b4f49a2ffba04fb5e11" }
-          - { name: ubuntu-24.04,   image: "ubuntu:24.04@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852" }
+          - { name: ubuntu-22.04,   image: "ubuntu:22.04@sha256:74b12b11ffa550fba1929ad4d8d16533c34f6612728469671afba1b03b66881c" }
+          - { name: ubuntu-24.04,   image: "ubuntu:24.04@sha256:2198e4c65076e9cb0b3d695219df667c0e3b0072da64ca3c2648aca17dcecaf5" }
           - { name: debian-12,      image: "debian:12@sha256:268fb24c39bca92d326dd83ea3abebe4a3f7751c804ffef23bb6d857dd343ff8" }
-          - { name: ubuntu-26.04,   image: "ubuntu:26.04@sha256:6a06111c3b0a8600feadb270aec771dc239bf407b25625f93f44ab00e11f4d3c" }
+          - { name: ubuntu-26.04,   image: "ubuntu:26.04@sha256:065aa8626841f16057b78b027b464cd59c4fac36c204c72dcbf48d66f5fa8a96" }
           - { name: debian-13,      image: "debian:13@sha256:9c6e381421d0f48d1b8133e573f33c185ee16cbf505eda9c4a8a4791b25ea8a6" }
     env:
       IMAGE: ${{ matrix.distro.image }}
