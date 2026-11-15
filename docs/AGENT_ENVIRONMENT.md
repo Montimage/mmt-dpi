@@ -546,8 +546,10 @@ documents link here.
   deepest first — never `rm -rf` on a tree and never a directory above the
   prefix), and the drop-in when it names that prefix's `dpi/lib`; files
   another product put under the prefix — even inside `examples/` or
-  `dpi/include/` — survive. A symlinked manifest is refused, the manifest
-  is written via `mktemp` + rename (never through a planted symlink), and an
+  `dpi/include/` — survive. A manifest path that is a symlink or not a
+  regular file (a directory) is refused before anything is installed or
+  removed (issue #94), the manifest is written via `mktemp` + `mv -T`
+  (never through a planted symlink, never into a directory), and an
   entry is removed only when its directory resolves (`cd -P`) inside the
   real prefix, so a directory symlink under the prefix cannot redirect a
   root uninstall; keep the prefix writable only by the installing user.
@@ -557,8 +559,9 @@ documents link here.
   include/examples trees are kept with a warning. `dist-clean` is kept as an
   alias. From the source installer: its `--uninstall [--prefix <dir>]`
   option (the Quick Start's uninstall line), which applies the same
-  manifest rules (and writes the manifest itself after installing from the
-  pinned tag, whose Makefile predates it).
+  manifest rules (and, when the installed tag's Makefile writes no
+  manifest, writes one itself, merged with an earlier install's as
+  `make install` merges it, issue #94).
 - **Prefix guard.** `install` and `uninstall` refuse an unsafe layout before
   touching anything: `MMT_BASE` and each of `MMT_DPI`, `MMT_LIB`, `MMT_INC`,
   `MMT_PLUGINS`, `MMT_EXAMS` must be absolute, at most 256 characters of

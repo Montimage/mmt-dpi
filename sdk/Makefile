@@ -144,13 +144,13 @@ install: --check-built --check-prefix
 	fi
 # Record every entry laid down above in $(MMT_MANIFEST), merged with the one a
 # previous install left, so `uninstall` removes exactly those (issue #485).
-# Written to a fresh mktemp file and renamed into place, so a symlink planted
-# at the manifest name is replaced, never written through.
-	@ umask 022; if [ -L $(MMT_MANIFEST) ]; then echo "ERROR: $(MMT_MANIFEST) is a symlink — refusing to use it" >&2; exit 1; fi; \
+# Written to a fresh mktemp file and renamed into place (mv -T), never through
+# a symlink or into a directory at the manifest name (MMT_MANIFEST_GUARD).
+	@ umask 022; $(MMT_MANIFEST_GUARD); \
 	tmp=`mktemp $(MMT_MANIFEST).XXXXXX` || exit 1; \
 	{ { if [ -f $(MMT_MANIFEST) ]; then grep -v '^#' $(MMT_MANIFEST); fi; $(MMT_LIST_INSTALLED); } | LC_ALL=C sort -u \
 	  | { echo "# mmt-dpi install manifest: paths relative to $(MMT_BASE), read by make uninstall"; cat; } > "$$tmp" \
-	  && chmod 0644 "$$tmp" && mv -f -- "$$tmp" $(MMT_MANIFEST); } || { rm -f -- "$$tmp"; exit 1; }
+	  && chmod 0644 "$$tmp" && mv -fT -- "$$tmp" $(MMT_MANIFEST); } || { rm -f -- "$$tmp"; exit 1; }
 	@ echo "[MMT-]> Done! "
 
 #  - - - - - - - - -
@@ -165,15 +165,15 @@ install: --check-built --check-prefix
 # that predates the manifest is reconstructed from this checkout's sdk/include
 # and sdk/examples when they exist; otherwise only the libmmt_* libraries and
 # plugins go and the include/examples trees are kept with a warning. A
-# symlinked manifest is refused, and an entry is removed only when its parent
-# directory resolves (cd -P) inside the real $(MMT_BASE): a directory symlink
-# planted under the prefix cannot redirect a root uninstall elsewhere. The
-# drop-in is removed only when it names this $(MMT_LIB) — never one
-# registering another prefix (issue #485, F-UX-007).
+# manifest that is a symlink or not a regular file is refused (issue #94),
+# and an entry is removed only when its parent directory resolves (cd -P)
+# inside the real $(MMT_BASE): a directory symlink planted under the prefix
+# cannot redirect a root uninstall elsewhere. The drop-in is removed only when
+# it names this $(MMT_LIB), never another prefix's (issue #485, F-UX-007).
 uninstall: --check-prefix
 	@ echo "[MMT-]> Removing MMT-DPI from $(MMT_BASE)"
 	$(QUIET) set -e; base='$(MMT_BASE)'; list=`mktemp`; trap 'rm -f "$$list"' EXIT; \
-	if [ -L $(MMT_MANIFEST) ]; then echo "ERROR: $(MMT_MANIFEST) is a symlink — refusing to uninstall" >&2; exit 1; fi; \
+	$(MMT_MANIFEST_GUARD); \
 	rbase=`cd -P -- "$$base" 2>/dev/null && pwd -P` || rbase="$$base"; \
 	inside() { r=`cd -P -- "$$1" 2>/dev/null && pwd -P` || return 1; case "$$r" in "$$rbase"|"$$rbase"/*) return 0 ;; esac; return 1; }; \
 	if [ -f $(MMT_MANIFEST) ]; then \
@@ -219,7 +219,7 @@ uninstall: --check-prefix
 # [A-Za-z0-9._/-] only (no whitespace, quote or glob character), with no
 # empty, '.' or '..' component and no trailing slash — so '/', '//', '/.'
 # and '/opt/*' are refused — and each SDK directory must lie strictly under
-# MMT_BASE. Same rules as install.sh's validate_mmt_base (issue #485).
+# MMT_BASE, as install.sh's validate_mmt_base (#485); then MMT_MANIFEST_GUARD.
 --check-prefix:
 	@ base='$(MMT_BASE)'; sub=; \
 	for p in "$$base" '$(MMT_DPI)' '$(MMT_LIB)' '$(MMT_INC)' '$(MMT_PLUGINS)' '$(MMT_EXAMS)'; do \
@@ -231,7 +231,7 @@ uninstall: --check-prefix
 		if [ -n "$$sub" ]; then case "$$p" in "$$base"/?*) ;; *) why="is not under MMT_BASE=$$base" ;; esac; fi; \
 		if [ -n "$$why" ]; then echo "ERROR: install path '$$p' $$why — refusing to $(MAKECMDGOALS)" >&2; exit 1; fi; \
 		sub=1; \
-	done
+	done; $(MMT_MANIFEST_GUARD)
 
 #  - - - - - - - - - - - - - - -
 #  I N S T A L L   L A Y O U T
@@ -710,3 +710,11 @@ install-fhs: --check-built
 MMT_ASSERT_RELATIVE_LINKS = abs=`find $(BUILD_DIR) $(SEC_BUILD_DIR) -type l -lname '/*' -printf '%p -> %l\n' 2>/dev/null`; \
 	if [ -n "$$abs" ]; then echo "ERROR: absolute symlink target in the package tree (issue 82):" >&2; \
 		echo "$$abs" >&2; exit 1; fi
+
+# Issue #94: $(MMT_MANIFEST) must be absent or a regular file. A symlink there
+# could redirect the manifest write or read, and a directory would swallow the
+# renamed manifest, so the next uninstall stopped partway. --check-prefix runs
+# it before install or uninstall touches anything; both re-check it. Defined
+# here, at the end, so no line cited by the docs moves.
+MMT_MANIFEST_GUARD = if [ -L $(MMT_MANIFEST) ] || { [ -e $(MMT_MANIFEST) ] && [ ! -f $(MMT_MANIFEST) ]; }; then \
+	echo "ERROR: $(MMT_MANIFEST) is a symlink or not a regular file — refusing to $(MAKECMDGOALS)" >&2; exit 1; fi
