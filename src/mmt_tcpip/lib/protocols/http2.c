@@ -4,6 +4,7 @@
 #include "mmt_common_internal_include.h"
 #include "../../include/http2.h"
 #include "../mmt_tcpip_plugin_structs.h" /* mmt_tcpip_internal_packet_t */
+#include "../mmt_tcpip_plugin_structs.h" /* mmt_tcpip_internal_packet_t */
 
 /*
  * HTTP/2 frame parser hardening (issue #4, H1).
@@ -34,6 +35,12 @@ static inline int http2_can_write(int offset, unsigned int n, unsigned int caple
 }
 
 /* ---- HTTP/2 frame-type classification (RFC 7540 §6.1) ---- */
+
+/* Forward declarations. */
+static int http2_find_frame_offset(const ipacket_t *packet, unsigned proto_index,
+		int frame_index, int *frame_offset, uint8_t *frame_type);
+static int http2_walk_frames(const ipacket_t *packet, unsigned proto_index,
+		uint8_t *frame_types, int *count, int out_size);
 
 /* Walk all HTTP/2 frames in the TCP segment payload. Returns the number of
  * frames found. Skips the 24-byte connection preface if present. Each frame
@@ -99,6 +106,62 @@ static int http2_walk_frames(const ipacket_t *packet, unsigned proto_index,
 
 	*count = n_frames;
 	return 0;
+}
+
+/* Find the byte offset of the Nth HTTP/2 frame (0-indexed) after skipping
+ * the connection preface. Returns -1 if the frame index is out of range.
+ * frame_offset[out] receives the base offset of that frame's 9-byte header.
+ * frame_type[out] (if non-NULL) receives the frame's type byte. */
+static int http2_find_frame_offset(const ipacket_t *packet, unsigned proto_index,
+		int frame_index, int *frame_offset, uint8_t *frame_type) {
+	int proto_offset = get_packet_offset_at_index(packet, proto_index);
+	unsigned int caplen = packet->p_hdr->caplen;
+
+	if (!http2_can_read(proto_offset, 9, caplen))
+		return -1;
+
+	struct mmt_tcpip_internal_packet_struct *internal =
+		(struct mmt_tcpip_internal_packet_struct *) packet->internal_packet;
+	unsigned int h2_end;
+	if (internal && internal->payload_packet_len > 0) {
+		if ((unsigned int)proto_offset + internal->payload_packet_len < (unsigned int)proto_offset)
+			return -1;
+		h2_end = (unsigned int)proto_offset + internal->payload_packet_len;
+	} else {
+		h2_end = caplen;
+	}
+
+	int pos = proto_offset;
+	if (h2_end - (unsigned int)pos >= 24
+		&& strncmp((const char*)&packet->data[pos],
+			"PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n", 24) == 0) {
+		pos += 24;
+	}
+
+	int i;
+	for (i = 0; i <= frame_index; i++) {
+		if (pos + 9 > (int)h2_end)
+			return -1;
+		if (!http2_can_read(pos, 9, caplen))
+			return -1;
+
+		uint32_t payload_len = (uint32_t)packet->data[pos] << 16
+			| (uint32_t)packet->data[pos + 1] << 8
+			| (uint32_t)packet->data[pos + 2];
+
+		if (i == frame_index) {
+			if (frame_offset) *frame_offset = pos;
+			if (frame_type) *frame_type = packet->data[pos + 3];
+			return 0;
+		}
+
+		uint64_t frame_total = (uint64_t)pos + 9 + (uint64_t)payload_len;
+		if (frame_total > (uint64_t)h2_end)
+			return -1; /* truncated */
+		pos = (int)frame_total;
+	}
+
+	return -1;
 }
 
 static const char *http2_frame_type_name(uint8_t type) {
@@ -177,37 +240,23 @@ int http2_header_method_extraction(const ipacket_t *packet,
 
 int http2_header_length_extraction(const ipacket_t *packet,
 		unsigned proto_index, attribute_t *extracted_data) {
-	// [ETH][IP][TCP][HTTP2][xxx]
-	//=================^
-	
-	int http2_offset = get_packet_offset_at_index(packet, proto_index );
-	//not enough room
-	//if (http2_offset >= packet->p_hdr->caplen)
-	//	return 0;
-	// printf("http2_offset %d \n", http2_offset);
+	int proto_offset = get_packet_offset_at_index(packet, proto_index);
 
-	
-	char signature_http2[] = { 0x0D, 0x0A, 0x0D, 0x0A, 0x53, 0x4D, 0x0D, 0x0A, 0x0D, 0x0A }; 	//PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n
-	//bounds-check the whole signature window before comparing it
-	if (http2_can_read(http2_offset, sizeof(signature_http2), packet->p_hdr->caplen)
-			&& strncmp((char*) &packet->data[http2_offset], signature_http2,
-				sizeof(signature_http2) / sizeof(signature_http2[0])) == 0) { //The first packet must be ignored
-
-		*((unsigned int*) extracted_data->data) = 0;
-		return 1;
-	}
-
-	//char * payload= (char*) &packet->data[proto_offset ];
-	int attribute_offset = extracted_data->position_in_packet - 1;
-	//ensure the 4-byte length field is fully inside the packet; this also
-	//guards the position-1 step-back from underflowing to a negative offset
-	if( !http2_can_read(http2_offset + attribute_offset, sizeof(unsigned int), packet->p_hdr->caplen) )
+	/* Find the first real frame (skip the connection preface). */
+	int frame_offset = 0;
+	uint8_t frame_type = 0;
+	if (http2_find_frame_offset(packet, proto_index, 0, &frame_offset, &frame_type) < 0)
 		return 0;
 
-	//int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
-	*((unsigned int*) extracted_data->data) = ntohl(get_u32(packet->data, http2_offset + attribute_offset));
-	*((unsigned int*) extracted_data->data) =
-			*((unsigned int*) extracted_data->data) & (0x00FFFFFF);
+	int attribute_offset = extracted_data->position_in_packet - 1;
+	int read_offset = frame_offset + attribute_offset;
+	//ensure the 4-byte length field is fully inside the packet; this also
+	//guards the position-1 step-back from underflowing to a negative offset
+	if (!http2_can_read(read_offset, sizeof(unsigned int), packet->p_hdr->caplen))
+		return 0;
+
+	*((unsigned int*) extracted_data->data) = ntohl(get_u32(packet->data, read_offset));
+	*((unsigned int*) extracted_data->data) &= 0x00FFFFFF;
 	if ((*((unsigned int*) extracted_data->data)) > 2000) {
 		*((unsigned int*) extracted_data->data) = 0;
 		return 0;
@@ -387,13 +436,19 @@ int http2_stream_id_extraction(const ipacket_t *packet, unsigned proto_index,
 		attribute_t *extracted_data) {
 
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
-	int attribute_offset = (extracted_data->position_in_packet);
 
-	proto_offset += attribute_offset;
-	//ensure the whole 4-byte stream id is inside the packet
-	if( !http2_can_read(proto_offset, sizeof(unsigned int), packet->p_hdr->caplen) )
+	/* Find the first real frame (skip the connection preface). */
+	int frame_offset = 0;
+	uint8_t frame_type = 0;
+	if (http2_find_frame_offset(packet, proto_index, 0, &frame_offset, &frame_type) < 0)
 		return 0;
-	*((unsigned int*) extracted_data->data) = (ntohl(get_u32(packet->data, proto_offset)));
+
+	int attribute_offset = extracted_data->position_in_packet;
+	int read_offset = frame_offset + attribute_offset;
+	//ensure the whole 4-byte stream id is inside the packet
+	if (!http2_can_read(read_offset, sizeof(unsigned int), packet->p_hdr->caplen))
+		return 0;
+	*((unsigned int*) extracted_data->data) = (ntohl(get_u32(packet->data, read_offset)));
 	return 1;
 }
 
