@@ -90,6 +90,8 @@ cite	docs/External-Attribution.md	src/mmt_core/public_include/mmt_core.h:779	MMT
 cite	docs/Global-Handler.md	src/mmt_core/public_include/mmt_core.h:1268	MMTAPI char* MMTCALL mmt_version();	-
 cite	docs/Global-Handler.md	src/mmt_core/public_include/mmt_core.h:190	MMTAPI bool MMTCALL init_extraction();	-
 cite	docs/Global-Handler.md	src/mmt_core/public_include/mmt_core.h:203	MMTAPI void MMTCALL close_extraction();	-
+cite	docs/HTTP2-protocol.md	src/mmt_tcpip/lib/protocols/http2.c:56-81	static int http2_frame_window(const ipacket_t *packet, unsigned proto_index,	}
+cite	docs/HTTP2-protocol.md	src/mmt_tcpip/lib/protocols/http2.c:105-145	static void http2_count_frames(const ipacket_t *packet, unsigned proto_index,	}
 cite	docs/MMT-Attributes.md	src/mmt_core/src/proto_meta.c:136	{META_CLASSIFICATION_METHOD, META_CLASSIFICATION_METHOD_ALIAS, MMT_U8_DATA, sizeof (uint8_t),	-
 cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_tcp.c:1230	retval.proto_id =  mmt_guess_protocol_by_port_number(ipacket);	-
 cite	docs/MMT-Attributes.md	src/mmt_tcpip/lib/protocols/proto_udp.c:165	retval.proto_id = mmt_guess_protocol_by_port_number(ipacket);	-
