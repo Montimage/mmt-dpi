@@ -265,10 +265,64 @@ int main(void) {
     CHECK(!g.has_type && !g.has_stream_id, "no header attribute is read from the preface");
     CHECK(!g.has_frames && !g.has_rst, "no frame counter is reported");
 
-    /* 8. A pure ACK reports nothing. */
+    /* 8. A pure ACK reports nothing, even with a trailer long enough to hold
+     *    a frame header (6 bytes of padding + a 4-byte FCS). */
     send_tcp(h, 1, TCP_ACK, NULL, 0, NULL, 0);
     printf("[8] pure ACK\n");
     CHECK(!g.has_frames && !g.has_rst, "no frame counter on an empty segment");
+    memset(trailer, 0, sizeof(trailer));
+    send_tcp(h, 1, TCP_ACK, NULL, 0, trailer, 10);
+    CHECK(!g.has_frames && !g.has_rst && !g.has_type,
+          "no frame read from a 10-byte trailer after an empty segment");
+
+    /* 9. Random segments (fixed seed): the counters equal a reference walk
+     *    of the TCP payload alone, whatever the frame lengths claim and
+     *    whatever trailer follows the IP datagram. Under ASan this also
+     *    proves the walk never reads past the capture. */
+    printf("[9] 2000 random segments vs a reference walk\n");
+    unsigned int seed = 770;
+    int mismatches = 0, unclassified = 0, rst_seen = 0;
+    for (int it = 0; it < 2000; it++) {
+        size_t plen = 1 + (size_t) (rand_r(&seed) % 600);
+        for (size_t i = 0; i < plen; i++)
+            seg[i] = (uint8_t) rand_r(&seed);
+        /* plant plausible frames: small lengths, types 0..9, some resets */
+        for (size_t p = 0; p + 9 <= plen && rand_r(&seed) % 4; ) {
+            uint32_t len = (uint32_t) (rand_r(&seed) % 4 ? rand_r(&seed) % 40 : 4);
+            seg[p] = 0; seg[p + 1] = (uint8_t) (len >> 8); seg[p + 2] = (uint8_t) len;
+            seg[p + 3] = (uint8_t) (rand_r(&seed) % 10);
+            p += 9 + len;
+        }
+        size_t tlen = (size_t) (rand_r(&seed) % 16);
+        for (size_t i = 0; i < tlen; i++)
+            trailer[i] = (uint8_t) rand_r(&seed);
+
+        uint32_t want_frames = 0, want_rst = 0;
+        for (uint64_t p = 0; p + 9 <= plen; ) {
+            uint32_t len = (uint32_t) seg[p] << 16 | (uint32_t) seg[p + 1] << 8 | seg[p + 2];
+            uint32_t sid = ((uint32_t) seg[p + 5] << 24 | (uint32_t) seg[p + 6] << 16
+                            | (uint32_t) seg[p + 7] << 8 | seg[p + 8]) & 0x7FFFFFFF;
+            want_frames++;
+            if (seg[p + 3] == 0x3 && len == 4 && sid != 0)
+                want_rst++;
+            p += 9 + (uint64_t) len;
+        }
+        rst_seen += (int) want_rst;
+
+        send_tcp(h, 0, TCP_PSH_ACK, seg, plen, trailer, tlen);
+        if (!g.is_http2) { unclassified++; continue; }
+        uint32_t got_frames = g.has_frames ? g.frames : 0;
+        uint32_t got_rst = g.has_rst ? g.rst : 0;
+        if (got_frames != want_frames || got_rst != want_rst
+                || g.has_frames != (want_frames > 0)) {
+            if (mismatches++ < 5)
+                printf("    it %d: plen %zu tlen %zu frames %u/%u rst %u/%u\n", it,
+                       plen, tlen, got_frames, want_frames, got_rst, want_rst);
+        }
+    }
+    CHECK(unclassified == 0, "every random segment stays in the HTTP/2 session");
+    CHECK(rst_seen > 0, "the random segments include resets");
+    CHECK(mismatches == 0, "frame_count and rst_stream_count match the reference walk");
 
     mmt_close_handler(h);
     close_extraction();

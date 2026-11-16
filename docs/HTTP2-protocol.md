@@ -102,7 +102,7 @@ segment as starting on a frame boundary and stops at the end of the TCP
 payload, so bytes after the IP datagram (Ethernet padding, an FCS) are never
 read as frames. The 24-byte connection preface
 `PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n` that opens a client's first segment is
-skipped (`http2_frame_window()`, `src/mmt_tcpip/lib/protocols/http2.c:56-81`).
+skipped (`http2_frame_window()`, `src/mmt_tcpip/lib/protocols/http2.c:58-82`).
 
 | Attribute | Type | Value |
 |-----------|------|-------|
@@ -110,7 +110,7 @@ skipped (`http2_frame_window()`, `src/mmt_tcpip/lib/protocols/http2.c:56-81`).
 | `http2.frame_count` | `MMT_U32_DATA` | frames whose 9-byte header lies in the segment (a frame continued in the next segment counts) |
 | `http2.rst_stream_count` | `MMT_U32_DATA` | RST_STREAM frames among them, counted only in the shape RFC 9113 §6.4 allows: a 4-byte payload on a non-zero stream |
 
-The two counters (`src/mmt_tcpip/lib/protocols/http2.c:105-145`) see every
+The two counters (`src/mmt_tcpip/lib/protocols/http2.c:106-146`) see every
 frame of a segment, so a rule can count the resets of an HTTP/2 Rapid Reset
 (CVE-2023-44487), which packs HEADERS and RST_STREAM frames in one segment.
 A retransmitted segment is counted again, and a segment that starts inside a

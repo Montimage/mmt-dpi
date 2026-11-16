@@ -44,10 +44,12 @@ static inline int http2_can_write(int offset, unsigned int n, unsigned int caple
  * http2_frame_window() returns in *first the offset of the first frame
  * header, the preface skipped, and in *end the end of the TCP payload: the
  * TCP dissector's payload_packet_len (already clamped to the capture,
- * proto_tcp.c) when the HTTP/2 offset lies inside that payload, the capture
- * length otherwise (no TCP state, e.g. the crafted-packet harnesses). That
- * keeps a trailer after the IP datagram (Ethernet padding, an FCS) out of the
- * frame walk. Returns 0 when the HTTP/2 offset is outside the capture.
+ * proto_tcp.c) when that payload starts at the HTTP/2 offset, as it does for
+ * every packet mmt_check_http2() classifies; the capture length otherwise (no
+ * TCP state, e.g. the crafted-packet harnesses). That keeps a trailer after
+ * the IP datagram (Ethernet padding, an FCS) out of the frame walk. Every
+ * read below is bounded by *end <= caplen. Returns 0 when the HTTP/2 offset
+ * is outside the capture.
  */
 static const char http2_preface[] = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
 #define HTTP2_PREFACE_LEN (sizeof(http2_preface) - 1)
@@ -66,8 +68,7 @@ static int http2_frame_window(const ipacket_t *packet, unsigned proto_index,
 		/* wraps huge when payload < data, which then fails the test */
 		uintptr_t poff = (uintptr_t) tcpip->payload - (uintptr_t) packet->data;
 		uint64_t pend = (uint64_t) poff + tcpip->payload_packet_len;
-		if (poff <= (uintptr_t) proto_offset && (uint64_t) proto_offset < pend
-				&& pend < stop)
+		if (poff == (uintptr_t) proto_offset && pend < stop)
 			stop = (unsigned int) pend;
 	}
 
