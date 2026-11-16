@@ -206,6 +206,21 @@ int main(void) {
     CHECK(g.has_frames && g.frames == 1 && g.has_rst && g.rst == 0,
           "frame_count = 1, rst_stream_count = 0");
 
+    /* 2b. The segment of this test's first version: SETTINGS + HEADERS +
+     *     RST_STREAM. Its two failing checks ("contains HEADERS", "contains
+     *     RST_STREAM") asked that the frames after the first one be seen:
+     *     all three are counted and the reset is visible. */
+    n = 0;
+    n += put_frame(seg + n, 0, 0x4, 0, 0);
+    n += put_frame(seg + n, 0, 0x1, 0, 1);
+    n += put_frame(seg + n, 4, 0x3, 0, 1);
+    send_tcp(h, 0, TCP_PSH_ACK, seg, n, NULL, 0);
+    printf("[2b] SETTINGS + HEADERS + RST_STREAM in one segment\n");
+    CHECK(g.has_type && g.type == 0x4, "http2.type = 4 (SETTINGS, the first frame)");
+    CHECK(g.has_frames && g.frames == 3,
+          "http2.frame_count = 3: HEADERS and RST_STREAM after SETTINGS are seen");
+    CHECK(g.has_rst && g.rst == 1, "http2.rst_stream_count = 1: the RST_STREAM is visible");
+
     /* 3. Rapid Reset: 3 x (HEADERS + RST_STREAM) in one segment. */
     n = 0;
     for (uint32_t sid = 1; sid <= 5; sid += 2) {
