@@ -65,13 +65,14 @@ static int http2_walk_frames(const ipacket_t *packet, unsigned proto_index,
 	struct mmt_tcpip_internal_packet_struct *internal =
 		(struct mmt_tcpip_internal_packet_struct *) packet->internal_packet;
 	unsigned int h2_end;
-	if (internal && internal->payload_packet_len > 0) {
+	if (internal && internal->payload_packet_len > 0
+		&& (unsigned int)proto_offset + internal->payload_packet_len >= (unsigned int)proto_offset
+		&& internal->payload_packet_len <= caplen) {
 		/* Use the TCP payload length as the boundary. */
-		if ((unsigned int)proto_offset + internal->payload_packet_len < (unsigned int)proto_offset)
-			return -1; /* overflow */
 		h2_end = (unsigned int)proto_offset + internal->payload_packet_len;
 	} else {
-		/* Fall back to caplen. */
+		/* Fall back to caplen — payload_packet_len may be incorrect
+		 * (e.g. non-standard pcap link type causes misparse). */
 		h2_end = caplen;
 	}
 
@@ -123,9 +124,9 @@ static int http2_find_frame_offset(const ipacket_t *packet, unsigned proto_index
 	struct mmt_tcpip_internal_packet_struct *internal =
 		(struct mmt_tcpip_internal_packet_struct *) packet->internal_packet;
 	unsigned int h2_end;
-	if (internal && internal->payload_packet_len > 0) {
-		if ((unsigned int)proto_offset + internal->payload_packet_len < (unsigned int)proto_offset)
-			return -1;
+	if (internal && internal->payload_packet_len > 0
+		&& (unsigned int)proto_offset + internal->payload_packet_len >= (unsigned int)proto_offset
+		&& internal->payload_packet_len <= caplen) {
 		h2_end = (unsigned int)proto_offset + internal->payload_packet_len;
 	} else {
 		h2_end = caplen;
