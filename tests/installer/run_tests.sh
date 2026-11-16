@@ -220,7 +220,7 @@ ish_install() {
               && cp -P "$s"/lib/* "$MMT_BASE/dpi/lib/" && cp "$s/lib/libmmt_tcpip.so.9.9.9" "$MMT_BASE/plugins/libmmt_tcpip.so" \
               && cp -R "$s"/include/. "$MMT_BASE/dpi/include/" && cp -R "$s"/examples/. "$MMT_BASE/examples/"
       }
-      MMT_BASE="$1"; BUILD_DIR="$2"; SUDO=""; LDCONF=0
+      MMT_BASE="$1"; BUILD_DIR="$2"; SUDO="${ISH_SUDO:-}"; LDCONF=0
       install_mmt )
 }
 FAKE="${WORK}/fake-build/mmt-dpi"
@@ -249,6 +249,81 @@ check_fail "install.sh install refuses a directory at the manifest path" \
     ish_install "${UI}" "${WORK}/fake-build"
 check "refused install.sh install laid down nothing" \
     bash -c "[ ! -e '${UI}/dpi' ] && [ -z \"\$(ls -A '${UI}/.mmt-dpi-manifest')\" ]"
+# Issue #100: a non-root upgrade through sudo into a prefix this user cannot
+# enter (mode 0700, root's), then --uninstall. Offline: the prefix is this
+# user's at mode 000, a fake sudo first on PATH opens it (0700) for the one
+# command it runs, as root's privilege would, and a fake make installs the
+# fake build — writing the merged manifest by rename as the pinned Makefile
+# does (ISH_MAKE_MANIFEST=1) or none, as an older one. Every read install.sh
+# makes of the prefix unprivileged sees nothing, so an earlier install's
+# entries dropped from the manifest are left behind by the uninstall.
+if [ "$(id -u)" -ne 0 ]; then
+    FB="${WORK}/fakebin"; mkdir -p "${FB}"
+    cat > "${FB}/sudo" <<'EOF'
+#!/usr/bin/env bash
+chmod 0700 "$ISH_LOCKED"
+"$@"; rc=$?
+chmod 0000 "$ISH_LOCKED" 2>/dev/null || true
+exit "$rc"
+EOF
+    cat > "${FB}/make" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+for a; do case "$a" in MMT_BASE=*) base="${a#MMT_BASE=}" ;; esac; done
+s="$PWD"
+mkdir -p "$base/dpi/lib" "$base/dpi/include" "$base/plugins" "$base/examples"
+cp -P "$s"/lib/* "$base/dpi/lib/"; cp "$s/lib/libmmt_tcpip.so.9.9.9" "$base/plugins/libmmt_tcpip.so"
+cp -R "$s"/include/. "$base/dpi/include/"; cp -R "$s"/examples/. "$base/examples/"
+if [ "${ISH_MAKE_MANIFEST:-0}" = 1 ]; then
+    m="$base/.mmt-dpi-manifest"; tmp="$(mktemp "$m.XXXXXX")"
+    { echo '# merged by make install'
+      { if [ -f "$m" ]; then grep -v '^#' "$m"; fi
+        (cd "$s/lib" && ls) | sed 's|^|dpi/lib/|'; echo plugins/libmmt_tcpip.so
+        (cd "$s/include" && find . -mindepth 1) | sed 's|^\./|dpi/include/|'
+        (cd "$s/examples" && find . -mindepth 1) | sed 's|^\./|examples/|'; } | LC_ALL=C sort -u; } > "$tmp"
+    chmod 0644 "$tmp"; mv -fT -- "$tmp" "$m"
+fi
+EOF
+    chmod +x "${FB}/sudo" "${FB}/make"
+    # ish_locked_upgrade <make writes the manifest: 0|1> — the earlier install,
+    # locked, upgraded through the fake sudo; its manifest must keep the
+    # earlier entries.
+    ish_locked_upgrade() {
+        local e rc=0
+        chmod -R u+rwx "${UI}" 2>/dev/null || true
+        rm -rf "${UI}"; mkdir -p "${UI}/dpi/lib" "${UI}/dpi/include" "${UI}/examples"
+        : > "${UI}/dpi/lib/libmmt_core.so.1.9.1"; : > "${UI}/dpi/include/mmt_old_removed.h"; : > "${UI}/examples/old_removed.c"
+        printf '%s\n' '# earlier install' dpi/include/mmt_old_removed.h dpi/lib/libmmt_core.so.1.9.1 examples/old_removed.c \
+            > "${UI}/.mmt-dpi-manifest"
+        chmod 0000 "${UI}"
+        PATH="${FB}:${PATH}" ISH_LOCKED="${UI}" ISH_SUDO=sudo ISH_MAKE_MANIFEST="$1" \
+            ish_install "${UI}" "${WORK}/fake-build" || rc=1
+        chmod 0700 "${UI}"
+        for e in dpi/include/mmt_old_removed.h examples/old_removed.c dpi/lib/libmmt_core.so.1.9.1 \
+                 dpi/lib/libmmt_core.so.9.9.9 dpi/include/sub/new.h plugins/libmmt_tcpip.so; do
+            grep -qx "$e" "${UI}/.mmt-dpi-manifest" || { echo "manifest misses $e"; rc=1; }
+        done
+        chmod 0000 "${UI}"
+        return "$rc"
+    }
+    ish_locked_uninstall() {
+        PATH="${FB}:${PATH}" ISH_LOCKED="${UI}" bash "${REPO_ROOT}/install.sh" --uninstall --prefix "${UI}" \
+            && [ ! -e "${UI}" ]
+    }
+    check "install.sh sudo upgrade into a 0700 prefix keeps make install's merged manifest" ish_locked_upgrade 1
+    check "install.sh --uninstall of that 0700 prefix leaves nothing behind" ish_locked_uninstall
+    check "install.sh sudo upgrade into a 0700 prefix merges the earlier manifest itself" ish_locked_upgrade 0
+    check "install.sh --uninstall after its own manifest in a 0700 prefix leaves nothing behind" ish_locked_uninstall
+    chmod -R u+rwx "${UI}" 2>/dev/null || true
+    rm -rf "${UI}"; mkdir -p "${UI}/dpi/lib"; : > "${UI}/dpi/lib/libmmt_core.so.1.9.1"
+    printf 'examples/x.c\n' > "${WORK}/outside-ui/manifest"; ln -s "${WORK}/outside-ui/manifest" "${UI}/.mmt-dpi-manifest"
+    chmod 0000 "${UI}"
+    check_fail "install.sh --uninstall refuses a symlinked manifest in a 0700 prefix" \
+        env PATH="${FB}:${PATH}" ISH_LOCKED="${UI}" bash "${REPO_ROOT}/install.sh" --uninstall --prefix "${UI}"
+    chmod 0700 "${UI}"
+    check "refused 0700-prefix uninstall deleted nothing" \
+        bash -c "[ -L '${UI}/.mmt-dpi-manifest' ] && [ -f '${UI}/dpi/lib/libmmt_core.so.1.9.1' ]"
+fi
 rm -rf "${UI}"
 for bad in '//' '/.' '/opt/./mmt' '/opt/*'; do
     check_fail "install.sh --uninstall refuses MMT_BASE='${bad}'" \
