@@ -110,9 +110,6 @@ typedef struct  http2_header_struct{
 	#define HTTP2_FRAME_WINDOW_UPDATE       0x08
 	#define HTTP2_FRAME_CONTINUATION        0x09
 
-	/* Frame-type classification (readable name). */
-	#define HTTP2_FRAME_TYPE_NAME           18
-
 	enum HTTP2_attributes {
 
 		HTTP2_TYPE = 1,
@@ -156,7 +153,6 @@ struct http2_session_data_struct {
 #define HTTP2_PAYLOAD_STREAM_ID_ALIAS "payload_stream_id"
 #define HTTP2_PAYLOAD_LENGTH_ALIAS "payload_length"
 #define HTTP2_PAYLOAD_DATA_ALIAS "payload_data"
-#define HTTP2_FRAME_TYPE_NAME_ALIAS "frame_type"
 #define HTTP2_FRAME_TYPE_NAME_ALIAS "frame_type"
 	//int init_HTTP2_proto_struct();
 

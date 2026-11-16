@@ -494,7 +494,7 @@ int _http2_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 static attribute_metadata_t http2_attributes_metadata[HTTP2_ATTRIBUTES_NB] = {
 
 	{HTTP2_HEADER_LENGTH,     HTTP2_HEADER_LENGTH_ALIAS,    MMT_U32_DATA, sizeof(uint32_t),  0 , SCOPE_PACKET, http2_header_length_extraction},
-	{HTTP2_TYPE,              HTTP2_TYPE_ALIAS,             MMT_U8_DATA	, sizeof(char), 3, SCOPE_PACKET, http2_header_method_extraction},//put here all extract function
+	{HTTP2_TYPE,              HTTP2_TYPE_ALIAS,             MMT_STRING_DATA,  16, 3, SCOPE_PACKET, http2_header_method_extraction},//put here all extract function
 	{HTTP2_HEADER_STREAM_ID,  HTTP2_HEADER_STREAM_ID_ALIAS, MMT_U32_DATA, sizeof(uint32_t),   5, SCOPE_PACKET, http2_stream_id_extraction},
 	{HTTP2_HEADER_METHOD,     HTTP2_HEADER_METHOD_ALIAS,    MMT_U8_DATA, sizeof(char), 9, 	SCOPE_PACKET, http2_header_method_extraction},
 	{HTTP2_PAYLOAD_LENGTH,    HTTP2_PAYLOAD_LENGTH_ALIAS,   MMT_U32_DATA, sizeof(uint32_t),POSITION_NOT_KNOWN, SCOPE_PACKET, http2_payload_length_extraction},
@@ -519,13 +519,6 @@ int init_http2_proto_struct() {
 		for (; i < HTTP2_ATTRIBUTES_NB; i++) {
 			register_attribute_with_protocol(protocol_struct,
 					&http2_attributes_metadata[i]);
-		}
-
-		/* Register extra attributes (frame type name, etc.) */
-		int j;
-		for (j = 0; j < (int)(sizeof(http2_extra_metadata)/sizeof(http2_extra_metadata[0])); j++) {
-			register_attribute_with_protocol(protocol_struct,
-					&http2_extra_metadata[j]);
 		}
 
 		if (!register_classification_function_with_parent_protocol(PROTO_TCP,
