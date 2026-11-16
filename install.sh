@@ -493,11 +493,17 @@ MMT_PLUGIN_SET="libmmt_tcpip libmmt_tmobile libmmt_tdicom libmmt_business_app"
 # regular file: a symlink there could redirect the write or the read, and a
 # directory would swallow the renamed manifest, so the next uninstall would
 # stop partway (issue #94).
+#
+# Issue #100: every read of the prefix runs with the privilege that writes
+# it — [priv] here and below is "" or $SUDO. A prefix this user cannot enter
+# (mode 0700, root's) answers every unprivileged test, stat and read with
+# "absent", which dropped the earlier entries from the manifest on a sudo
+# upgrade and left an uninstall with nothing to remove.
 refuse_unsafe_manifest() {
-    local manifest="$MMT_BASE/$MANIFEST_NAME"
-    if [ -L "$manifest" ]; then
+    local manifest="$MMT_BASE/$MANIFEST_NAME" priv="${2:-}"
+    if $priv test -L "$manifest"; then
         fatal "$manifest is a symlink — refusing to $1"
-    elif [ -e "$manifest" ] && [ ! -f "$manifest" ]; then
+    elif $priv test -e "$manifest" && ! $priv test -f "$manifest"; then
         fatal "$manifest is not a regular file — refusing to $1"
     fi
 }
@@ -517,20 +523,21 @@ uninstall_mmt() {
         fi
     fi
 
-    if [ ! -d "$MMT_BASE/dpi" ] && [ ! -d "$MMT_BASE/plugins" ] && [ ! -d "$MMT_BASE/examples" ]; then
+    if ! $run test -d "$MMT_BASE/dpi" && ! $run test -d "$MMT_BASE/plugins" && ! $run test -d "$MMT_BASE/examples"; then
         warn "No MMT-DPI install found under $MMT_BASE"
     fi
-    refuse_unsafe_manifest uninstall
+    refuse_unsafe_manifest uninstall "$run"
     # Entries are removed only when their directory resolves inside the real
     # prefix: a directory symlink planted under the prefix cannot redirect
     # the removal elsewhere.
-    rbase="$(resolve_dir "$MMT_BASE")" || rbase="$MMT_BASE"
-    if [ -f "$manifest" ]; then
-        entries="$(grep -v '^#' "$manifest" || true)"
+    rbase="$(resolve_dir "$MMT_BASE" "$run")" || rbase="$MMT_BASE"
+    if $run test -f "$manifest"; then
+        entries="$($run grep -v '^#' "$manifest" || true)"
     else
         warn "No install manifest ($manifest): the install predates it — removing only the libmmt_* libraries and plugins"
         warn "Kept $MMT_BASE/dpi/include and $MMT_BASE/examples — remove them by hand"
-        entries="$( (cd "$lib" 2>/dev/null && ls -d libmmt_*.so libmmt_*.so.* libmmt_*.a 2>/dev/null) | sed 's|^|dpi/lib/|'
+        # shellcheck disable=SC2016  # $1/$2 belong to the sh -c script
+        entries="$($run sh -c 'cd -- "$1" 2>/dev/null && ls -d libmmt_*.so libmmt_*.so.* libmmt_*.a 2>/dev/null' sh "$lib" | sed 's|^|dpi/lib/|'
                     for f in $MMT_PLUGIN_SET; do echo "plugins/$f.so"; done )"
     fi
     # Refuse the whole list before touching anything if one entry could
@@ -545,8 +552,9 @@ uninstall_mmt() {
     while IFS= read -r rel; do
         [ -n "$rel" ] || continue
         p="$MMT_BASE/$rel"
-        if [ -L "$p" ] || { [ -e "$p" ] && [ ! -d "$p" ]; }; then
-            r="$(resolve_dir "${p%/*}")" || r=""
+        # shellcheck disable=SC2016  # $1/$2 belong to the sh -c script
+        if $run sh -c '[ -L "$1" ] || { [ -e "$1" ] && [ ! -d "$1" ]; }' sh "$p"; then
+            r="$(resolve_dir "${p%/*}" "$run")" || r=""
             case "$r" in
                 "$rbase"|"$rbase"/*) $run rm -f -- "$p" ;;
                 *) warn "Skipped $p — its directory resolves outside $rbase" ;;
@@ -555,19 +563,20 @@ uninstall_mmt() {
     done <<< "$entries"
     {
         while IFS= read -r rel; do
-            [ -n "$rel" ] && [ -d "$MMT_BASE/$rel" ] && [ ! -L "$MMT_BASE/$rel" ] && echo "$rel"
+            # shellcheck disable=SC2016  # $1/$2 belong to the sh -c script
+            [ -n "$rel" ] && $run sh -c '[ -d "$1" ] && [ ! -L "$1" ]' sh "$MMT_BASE/$rel" && echo "$rel"
         done <<< "$entries"
         printf '%s\n' dpi/include examples dpi/lib plugins dpi
     } | LC_ALL=C sort -r -u | while IFS= read -r rel; do
         p="$MMT_BASE/$rel"
-        r="$(resolve_dir "$p")" || continue
+        r="$(resolve_dir "$p" "$run")" || continue
         case "$r" in "$rbase"|"$rbase"/*) ;; *) continue ;; esac
-        if [ ! -L "$p" ]; then
+        if ! $run test -L "$p"; then
             $run rmdir -- "$p" 2>/dev/null || warn "Kept non-empty $p"
         fi
     done
     $run rm -f -- "$manifest"
-    if [ -d "$MMT_BASE" ]; then
+    if $run test -d "$MMT_BASE"; then
         $run rmdir -- "$MMT_BASE" 2>/dev/null || warn "Kept non-empty $MMT_BASE"
     fi
 
@@ -681,24 +690,28 @@ install_mmt() {
     step "Installing mmt-dpi to $MMT_BASE"
 
     cd "$BUILD_DIR/mmt-dpi/sdk"
-    refuse_unsafe_manifest install
-    local manifest_before
-    manifest_before="$(manifest_id)"
-
     # Elevate by writability, not by a path literal (issue #211, F-BUG-116):
     # /usr/local/mmt needs sudo exactly like /opt/mmt did, while a prefix the
     # user can already write installs unprivileged — and must not trigger the
-    # post-install ldconfig escalation.
-    if prefix_writable "$MMT_BASE"; then
-        info "Installing to user-writable prefix $MMT_BASE"
-        make ARCH="linux" MMT_BASE="$MMT_BASE" LDCONF="$LDCONF" install
-    else
+    # post-install ldconfig escalation. Decided before the prefix is read, so
+    # every read below runs with the same privilege (issue #100).
+    local priv="" manifest_before
+    if ! prefix_writable "$MMT_BASE"; then
         if [ -z "$SUDO" ]; then
             fatal "Prefix $MMT_BASE is not writable by this user and sudo is unavailable — set MMT_BASE to a user-writable directory or re-run as root"
         fi
         ELEVATED=1
+        priv="$SUDO"
+    fi
+    refuse_unsafe_manifest install "$priv"
+    manifest_before="$(manifest_id "$priv")"
+
+    if [ "$ELEVATED" = "1" ]; then
         info "Prefix $MMT_BASE is not writable — installing via sudo"
         $SUDO make ARCH="linux" MMT_BASE="$MMT_BASE" LDCONF="$LDCONF" install
+    else
+        info "Installing to user-writable prefix $MMT_BASE"
+        make ARCH="linux" MMT_BASE="$MMT_BASE" LDCONF="$LDCONF" install
     fi
 
     # A Makefile that predates the install manifest (issue #485) writes none
@@ -708,9 +721,7 @@ install_mmt() {
     # where `make install` puts them, then merge what was copied from this
     # build into the manifest so --uninstall removes exactly that, the earlier
     # install's entries included (issue #94).
-    if [ "$(manifest_id)" = "$manifest_before" ]; then
-        local priv=""
-        [ "$ELEVATED" = "1" ] && priv="$SUDO"
+    if [ "$(manifest_id "$priv")" = "$manifest_before" ]; then
         install_licence_files "$BUILD_DIR/mmt-dpi" "$priv"
         write_manifest "$BUILD_DIR/mmt-dpi/sdk" "$priv"
     fi
@@ -730,11 +741,11 @@ install_licence_files() {
     done
 }
 
-# manifest_id — the inode of <prefix>/.mmt-dpi-manifest, or "none": a
+# manifest_id [priv] — the inode of <prefix>/.mmt-dpi-manifest, or "none": a
 # `make install` that writes the manifest renames a new file into place, so
 # an unchanged id means it wrote none.
 manifest_id() {
-    stat -c %i -- "$MMT_BASE/$MANIFEST_NAME" 2>/dev/null || echo none
+    ${1:-} stat -c %i -- "$MMT_BASE/$MANIFEST_NAME" 2>/dev/null || echo none
 }
 
 # write_manifest <sdk dir> [priv] — the same list `make install` records in
@@ -743,40 +754,46 @@ manifest_id() {
 # earlier install recorded there, as `make install` merges them (issue #94).
 write_manifest() {
     local sdk="$1" priv="${2:-}" f
-    local manifest="$MMT_BASE/$MANIFEST_NAME" tmp
+    local manifest="$MMT_BASE/$MANIFEST_NAME" tmp entries
     # Never write through a symlink planted at the manifest name, nor into a
     # directory there: write a fresh mktemp file and rename it into place.
-    refuse_unsafe_manifest "write the install manifest"
+    refuse_unsafe_manifest "write the install manifest" "$priv"
     tmp="$($priv mktemp "$manifest.XXXXXX")" || fatal "Cannot create a temporary manifest under $MMT_BASE"
-    {
-        echo "# mmt-dpi install manifest: paths relative to $MMT_BASE, read by make uninstall"
-        {
-            if [ -f "$manifest" ]; then grep -v '^#' "$manifest" || true; fi
+    # The list is complete before the write starts: the prefix reads and the
+    # write never overlap.
+    entries="$( {
+            if $priv test -f "$manifest"; then $priv grep -v '^#' "$manifest" || true; fi
             (cd "$sdk/lib" && ls -d ./*.so.* ./*.a) | sed 's|^\./|dpi/lib/|'
             for f in libmmt_core libmmt_fuzz libmmt_security $MMT_PLUGIN_SET; do
                 echo "dpi/lib/$f.so"
                 # The SONAME links an installed Makefile lays down (issue #536).
-                for l in "$MMT_BASE/dpi/lib/$f".so.*; do
-                    if [ -L "$l" ]; then echo "dpi/lib/${l##*/}"; fi
-                done
+                # shellcheck disable=SC2016  # $1/$2 belong to the sh -c script
+                $priv sh -c 'for l in "$1/$2".so.*; do if [ -L "$l" ]; then echo "dpi/lib/${l##*/}"; fi; done' \
+                    sh "$MMT_BASE/dpi/lib" "$f"
             done
             for f in $MMT_PLUGIN_SET; do echo "plugins/$f.so"; done
             (cd "$sdk/include" && find . -mindepth 1) | sed 's|^\./|dpi/include/|'
             (cd "$sdk/examples" && find . -mindepth 1) | sed 's|^\./|examples/|'
-            if [ -d "$MMT_BASE/$DOC_DIR" ]; then
+            if $priv test -d "$MMT_BASE/$DOC_DIR"; then
                 printf '%s\n' dpi/share dpi/share/doc "$DOC_DIR"
-                (cd "$MMT_BASE/$DOC_DIR" && find . -mindepth 1) | sed "s|^\./|$DOC_DIR/|"
+                # shellcheck disable=SC2016  # $1/$2 belong to the sh -c script
+                $priv sh -c 'cd -- "$1" && find . -mindepth 1' sh "$MMT_BASE/$DOC_DIR" | sed "s|^\./|$DOC_DIR/|"
             fi
-        } | LC_ALL=C sort -u
+        } | LC_ALL=C sort -u )"
+    {
+        echo "# mmt-dpi install manifest: paths relative to $MMT_BASE, read by make uninstall"
+        printf '%s\n' "$entries"
     } | $priv tee "$tmp" >/dev/null
     $priv chmod 0644 "$tmp"
     $priv mv -fT -- "$tmp" "$manifest"
 }
 
-# resolve_dir <dir> — the physical path of an existing directory (cd -P), so
-# symlinked components are resolved; fails when <dir> does not exist.
+# resolve_dir <dir> [priv] — the physical path of an existing directory
+# (cd -P), so symlinked components are resolved; fails when <dir> does not
+# exist.
 resolve_dir() {
-    (cd -P -- "$1" 2>/dev/null && pwd -P)
+    # shellcheck disable=SC2016  # $1/$2 belong to the sh -c script
+    ${2:-} sh -c 'cd -P -- "$1" 2>/dev/null && pwd -P' sh "$1"
 }
 
 # ---------------------------------------------------------------------------
@@ -807,12 +824,15 @@ post_install() {
         info "User-local install: skipping ldconfig — use LD_LIBRARY_PATH=$lib_dir"
     fi
 
-    # Verify installation
-    if [ -f "$lib_dir/libmmt_core.so" ]; then
+    # Verify installation, read with the install's privilege (issue #100)
+    local vpriv=""
+    [ "$ELEVATED" = "1" ] && vpriv="$SUDO"
+    if $vpriv test -f "$lib_dir/libmmt_core.so"; then
         success "Libraries found in $lib_dir"
     else
         # Check for versioned .so files
-        if ls "$lib_dir"/libmmt_core.so.* &>/dev/null; then
+        # shellcheck disable=SC2016  # $1 belongs to the sh -c script
+        if $vpriv sh -c 'ls "$1"/libmmt_core.so.* >/dev/null 2>&1' sh "$lib_dir"; then
             success "Libraries found in $lib_dir"
         else
             warn "Could not verify library installation in $lib_dir"
