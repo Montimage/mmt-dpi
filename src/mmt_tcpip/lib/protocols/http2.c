@@ -226,15 +226,33 @@ classified_proto_t http2_stack_classification(ipacket_t *ipacket) {
 
 int http2_header_method_extraction(const ipacket_t *packet,
 		unsigned proto_index, attribute_t *extracted_data) {
+	/* Report ALL frame types in the segment as a comma-separated list.
+	 * This replaces the old single-byte type with a multi-frame list so
+	 * security rules can detect RST_STREAM, HEADERS, etc. regardless of
+	 * their position in the TCP segment. */
+	uint8_t frame_types[64];
+	int n_frames = 0;
 
-	int proto_offset = get_packet_offset_at_index(packet, proto_index);
-	int attribute_offset = extracted_data->position_in_packet;
-	//ensure that we can read the 1-byte field without leaving the packet
-	if( !http2_can_read(proto_offset + attribute_offset, 1, packet->p_hdr->caplen) )
+	if (http2_walk_frames(packet, proto_index, frame_types, &n_frames, 64) < 0)
 		return 0;
 
-	//int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
-	*((unsigned char*) extracted_data->data) = *((unsigned char*) &packet->data[proto_offset + attribute_offset]);
+	if (n_frames == 0)
+		return 0;
+
+	char *buf = (char *)extracted_data->data;
+	int pos = 0;
+	int i;
+	for (i = 0; i < n_frames; i++) {
+		const char *name = http2_frame_type_name(frame_types[i]);
+		int len = (int)strlen(name);
+		if (pos + len + 1 >= 16)
+			break;
+		if (i > 0)
+			buf[pos++] = ',';
+		memcpy(buf + pos, name, len);
+		pos += len;
+	}
+	buf[pos] = '\0';
 	return 1;
 }
 
