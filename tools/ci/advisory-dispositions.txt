@@ -76,3 +76,7 @@ CVE-2026-84243 | debian:13 | 2026-12-31 | #515 | HIGH glibc @ 2.41-12+deb13u4: u
 CVE-2026-84243 | ubuntu:22.04 | 2026-12-31 | #492 | HIGH glibc @ 2.35-0ubuntu3.15: unfixed in the distro, no fixed revision published
 CVE-2026-84243 | ubuntu:24.04 | 2026-12-31 | #492 | HIGH glibc @ 2.39-0ubuntu8.9: unfixed in the distro, no fixed revision published
 CVE-2026-84243 | ubuntu:26.04 | 2026-12-31 | #492 | HIGH glibc @ 2.43-2ubuntu2.4: unfixed in the distro, no fixed revision published
+RLSA-2026:98512 | rockylinux:9 | 2026-12-15 | #102 | HIGH glibc @ 0:2.34-284.el9_8.4: fix 2.34-290.el9_9 published, pinned image not yet rebuilt
+RLSA-2026:98468 | rockylinux:9 | 2026-12-15 | #102 | HIGH libxml2 @ 0:2.9.13-14.el9_8.5: fix 2.9.13-18.el9_9.1 published, pinned image not yet rebuilt
+RLSA-2026:98599 | rockylinux/rockylinux:10 | 2026-12-15 | #102 | HIGH glibc @ 0:2.39-145.el10_2: fix 2.39-147.el10_3 published, pinned image not yet rebuilt
+RLSA-2026:98572 | rockylinux/rockylinux:10 | 2026-12-15 | #102 | HIGH libxml2 @ 0:2.12.5-10.el10_2.4: fix 2.12.5-15.el10_3.2 published, pinned image not yet rebuilt
