@@ -83,6 +83,21 @@ typedef struct  http2_header_struct{
 
 
 
+	/* HTTP/2 frame types per RFC 7540 §6.1 */
+	#define HTTP2_FRAME_DATA                0x00
+	#define HTTP2_FRAME_HEADERS             0x01
+	#define HTTP2_FRAME_PRIORITY            0x02
+	#define HTTP2_FRAME_RST_STREAM          0x03
+	#define HTTP2_FRAME_SETTINGS            0x04
+	#define HTTP2_FRAME_PUSH_PROMISE        0x05
+	#define HTTP2_FRAME_PING                0x06
+	#define HTTP2_FRAME_GOAWAY              0x07
+	#define HTTP2_FRAME_WINDOW_UPDATE       0x08
+	#define HTTP2_FRAME_CONTINUATION        0x09
+
+	/* Frame-type classification (readable name). */
+	#define HTTP2_FRAME_TYPE_NAME           18
+
 	enum HTTP2_attributes {
 
 		HTTP2_TYPE = 1,
@@ -126,6 +141,7 @@ struct http2_session_data_struct {
 #define HTTP2_PAYLOAD_STREAM_ID_ALIAS "payload_stream_id"
 #define HTTP2_PAYLOAD_LENGTH_ALIAS "payload_length"
 #define HTTP2_PAYLOAD_DATA_ALIAS "payload_data"
+#define HTTP2_FRAME_TYPE_NAME_ALIAS "frame_type"
 	//int init_HTTP2_proto_struct();
 
 
