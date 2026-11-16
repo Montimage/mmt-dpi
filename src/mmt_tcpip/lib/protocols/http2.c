@@ -522,12 +522,6 @@ static attribute_metadata_t http2_attributes_metadata[HTTP2_ATTRIBUTES_NB] = {
 
 };
 
-/* Extra attributes beyond the base set — registered separately so the
- * base array stays stable for existing consumers. */
-static attribute_metadata_t http2_extra_metadata[] = {
-	{HTTP2_FRAME_TYPE_NAME,   HTTP2_FRAME_TYPE_NAME_ALIAS,  MMT_STRING_DATA,  16, 3, SCOPE_PACKET, http2_frame_type_name_extraction},
-};
-
 int init_http2_proto_struct() {
 	//printf("I am inside init_http2_proto_struct \n");
 	protocol_t *protocol_struct = init_protocol_struct_for_registration(PROTO_HTTP2, PROTO_HTTP2_ALIAS);

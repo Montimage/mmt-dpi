@@ -153,7 +153,6 @@ struct http2_session_data_struct {
 #define HTTP2_PAYLOAD_STREAM_ID_ALIAS "payload_stream_id"
 #define HTTP2_PAYLOAD_LENGTH_ALIAS "payload_length"
 #define HTTP2_PAYLOAD_DATA_ALIAS "payload_data"
-#define HTTP2_FRAME_TYPE_NAME_ALIAS "frame_type"
 	//int init_HTTP2_proto_struct();
 
 
