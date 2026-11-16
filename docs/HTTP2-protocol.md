@@ -106,13 +106,15 @@ skipped (`http2_frame_window()`, `src/mmt_tcpip/lib/protocols/http2.c:58-82`).
 
 | Attribute | Type | Value |
 |-----------|------|-------|
-| `http2.type`, `http2.header_length`, `http2.header_stream_id`, `http2.header_method` | `MMT_U8_DATA` / `MMT_U32_DATA` | type, length, stream id and first payload byte of the **first** frame of the segment |
+| `http2.type`, `http2.header_length`, `http2.header_stream_id`, `http2.header_method` | `MMT_U8_DATA` / `MMT_U32_DATA` | type, length, stream id and first payload byte of the **first** frame of the segment; `http2.header_length` is not reported above 16384, the initial `SETTINGS_MAX_FRAME_SIZE` (RFC 9113 §4.2) |
 | `http2.frame_count` | `MMT_U32_DATA` | frames whose 9-byte header lies in the segment (a frame continued in the next segment counts) |
 | `http2.rst_stream_count` | `MMT_U32_DATA` | RST_STREAM frames among them, counted only in the shape RFC 9113 §6.4 allows: a 4-byte payload on a non-zero stream |
 
-The two counters (`src/mmt_tcpip/lib/protocols/http2.c:106-146`) see every
+The two counters (`src/mmt_tcpip/lib/protocols/http2.c:106-182`) see every
 frame of a segment, so a rule can count the resets of an HTTP/2 Rapid Reset
 (CVE-2023-44487), which packs HEADERS and RST_STREAM frames in one segment.
+They share one walk per packet: the second counter extracted reuses the
+first one's result.
 A retransmitted segment is counted again, and a segment that starts inside a
 frame begun in an earlier one is walked from the wrong place.
 

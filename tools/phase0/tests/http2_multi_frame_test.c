@@ -290,6 +290,24 @@ int main(void) {
     CHECK(!g.has_frames && !g.has_rst && !g.has_type,
           "no frame read from a 10-byte trailer after an empty segment");
 
+    /* 8b. #107: http2.header_length reports a frame up to the initial
+     *     SETTINGS_MAX_FRAME_SIZE (16384, RFC 9113 §4.2), not only up to 2000.
+     *     Each segment holds the header of a DATA frame continued later. */
+    printf("[8b] header_length bound\n");
+    static const uint32_t lens[] = {3000, 16384, 16385};
+    for (int k = 0; k < 3; k++) {
+        n = put_frame(seg, 0, 0x0, 0, 17);
+        seg[0] = (lens[k] >> 16) & 0xff; seg[1] = (lens[k] >> 8) & 0xff; seg[2] = lens[k] & 0xff;
+        send_tcp(h, 0, TCP_PSH_ACK, seg, n, NULL, 0);
+        if (lens[k] <= 16384)
+            CHECK(g.has_length && g.length == lens[k],
+                  "header_length up to 16384 is reported");
+        else
+            CHECK(!g.has_length, "header_length above 16384 is not reported");
+        CHECK(g.has_frames && g.frames == 1 && g.has_rst && g.rst == 0,
+              "frame_count = 1, rst_stream_count = 0");
+    }
+
     /* 9. Random segments (fixed seed): the counters equal a reference walk
      *    of the TCP payload alone, whatever the frame lengths claim and
      *    whatever trailer follows the IP datagram. Under ASan this also

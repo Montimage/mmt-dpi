@@ -137,6 +137,10 @@ struct http2_session_data_struct {
 #define HTTP2_FRAME_WINDOW_UPDATE 0x8
 #define HTTP2_FRAME_CONTINUATION  0x9
 
+/* Initial SETTINGS_MAX_FRAME_SIZE (RFC 9113 §4.2): the largest frame payload
+ * http2.header_length reports (#107) */
+#define HTTP2_DEFAULT_MAX_FRAME_SIZE 16384
+
 #define HTTP2_TYPE_ALIAS "type"
 #define HTTP2_HEADER_METHOD_ALIAS "header_method"
 #define HTTP2_HEADER_LENGTH_ALIAS "header_length"

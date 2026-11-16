@@ -125,10 +125,46 @@ static void http2_count_frames(const ipacket_t *packet, unsigned proto_index,
 	}
 }
 
+/*
+ * Both counters come from one walk: a rule that registers http2.frame_count
+ * and http2.rst_stream_count would otherwise walk each segment twice
+ * (#107). The last result is kept per thread, keyed on the packet
+ * (ipacket_t, packet_id, data pointer and caplen) and the HTTP/2 index, so
+ * the second extractor of the same packet reuses it. Thread-local because
+ * each processing thread extracts its own packets.
+ */
+static void http2_count_frames_cached(const ipacket_t *packet,
+		unsigned proto_index, uint32_t *frames, uint32_t *rst_streams) {
+	static __thread struct {
+		const ipacket_t *packet;
+		uint64_t packet_id;
+		const u_char *data;
+		unsigned int caplen;
+		unsigned proto_index;
+		uint32_t frames, rst_streams;
+	} cache;
+	unsigned int caplen = packet->p_hdr->caplen;
+	if (cache.packet == packet && cache.packet_id == packet->packet_id
+			&& cache.data == packet->data && cache.caplen == caplen
+			&& cache.proto_index == proto_index) {
+		*frames = cache.frames;
+		*rst_streams = cache.rst_streams;
+		return;
+	}
+	http2_count_frames(packet, proto_index, frames, rst_streams);
+	cache.packet = packet;
+	cache.packet_id = packet->packet_id;
+	cache.data = packet->data;
+	cache.caplen = caplen;
+	cache.proto_index = proto_index;
+	cache.frames = *frames;
+	cache.rst_streams = *rst_streams;
+}
+
 static int http2_frame_count_extraction(const ipacket_t *packet,
 		unsigned proto_index, attribute_t *extracted_data) {
 	uint32_t frames, rst_streams;
-	http2_count_frames(packet, proto_index, &frames, &rst_streams);
+	http2_count_frames_cached(packet, proto_index, &frames, &rst_streams);
 	if (frames == 0)
 		return 0;
 	*((uint32_t*) extracted_data->data) = frames;
@@ -138,7 +174,7 @@ static int http2_frame_count_extraction(const ipacket_t *packet,
 static int http2_rst_stream_count_extraction(const ipacket_t *packet,
 		unsigned proto_index, attribute_t *extracted_data) {
 	uint32_t frames, rst_streams;
-	http2_count_frames(packet, proto_index, &frames, &rst_streams);
+	http2_count_frames_cached(packet, proto_index, &frames, &rst_streams);
 	if (frames == 0)
 		return 0;
 	*((uint32_t*) extracted_data->data) = rst_streams;
@@ -181,7 +217,10 @@ int http2_header_length_extraction(const ipacket_t *packet,
 		return 0;
 
 	*((unsigned int*) extracted_data->data) = ntohl(get_u32(packet->data, at)) & 0x00FFFFFF;
-	if ((*((unsigned int*) extracted_data->data)) > 2000) {
+	// #107: a frame longer than SETTINGS_MAX_FRAME_SIZE's initial value
+	// (16384, RFC 9113 §4.2) is not reported; the earlier 2000 bound dropped
+	// legal DATA and HEADERS frames (mmt-security rule 97 tests up to 16384).
+	if ((*((unsigned int*) extracted_data->data)) > HTTP2_DEFAULT_MAX_FRAME_SIZE) {
 		*((unsigned int*) extracted_data->data) = 0;
 		return 0;
 	}
