@@ -22,6 +22,21 @@ name: Install smoke
 #                       first-run files from the documentation site
 #   workflow_dispatch   either (input `source`, default published)
 #
+# APT repository legs (issue #78; repository design in #24): `apt` installs
+# mmt-dpi and mmt-dpi-security from the signed repository
+# https://montimage.github.io/packages — deb822 source, Signed-By the
+# published keyring, whose primary key must be the committed
+# debian/upstream/signing-key.asc — on every Debian/Ubuntu release it serves,
+# on amd64 and arm64, and runs the installed-consumer check
+# (tools/ci/tests/run-installed-consumer.sh --root-install, taken from the
+# installed release's tag so the check matches the SDK under test);
+# `apt-tamper` changes one byte of a local copy of InRelease and requires
+# apt-get update to fail on the signature (tools/ci/smoke-apt.sh). The
+# version comes from `apt-ready`: on a post-release run, the released tag,
+# once every suite and architecture lists it (the tag run dispatches the
+# repository rebuild, which ends minutes later); otherwise the newest version
+# the repository lists. All APT legs are supported.
+#
 # Tiers: `supported` legs must pass; `best-effort` legs (distributions the
 # docs label best-effort — README "Key Features" and the One-Line Install text
 # of README "Install" / docs/_includes/quick-start.md) run their smoke step
@@ -38,6 +53,8 @@ on:
       - docs/first-run/**
       - docs/_includes/first-example.md
       - tools/ci/smoke-install.sh
+      - tools/ci/smoke-apt.sh
+      - debian/upstream/signing-key.asc
       - .github/workflows/install-smoke.yml
   schedule:
     - cron: "17 5 * * 1"          # weekly, Monday 05:17 UTC
@@ -150,12 +167,125 @@ jobs:
             echo "::warning title=best-effort distribution failed::$NAME: the one-command install or first run failed ($OUTCOME) — labelled best-effort in README, not gating"
           fi
 
+  apt-ready:
+    name: APT repository version
+    # The smoke job's condition: only a successful tag run of the release
+    # workflow triggers a post-release run.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       startsWith(github.event.workflow_run.head_branch, 'v'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: tools/ci/smoke-apt.sh
+          sparse-checkout-cone-mode: false
+
+      - name: Resolve the version every suite and architecture lists
+        id: resolve
+        env:
+          EVENT: ${{ github.event_name }}
+          RUN_TAG: ${{ github.event.workflow_run.head_branch }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          # Post-release runs wait for the released tag; the others take
+          # the newest version the repository lists.
+          case "$EVENT" in
+            workflow_run) args=(--tag "$RUN_TAG") ;;
+            release)      args=(--tag "$RELEASE_TAG") ;;
+            *)            args=() ;;
+          esac
+          version="$(bash tools/ci/smoke-apt.sh --resolve "${args[@]}")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "APT repository version: $version"
+
+  apt:
+    name: apt ${{ matrix.distro.name }} ${{ matrix.platform.arch }}
+    needs: apt-ready
+    runs-on: ${{ matrix.platform.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # The Debian/Ubuntu releases the repository serves. Digest-pinned
+        # and recorded in tools/ci/base-images.txt; arm64 runs natively.
+        distro:
+          - { name: ubuntu-22.04, image: "ubuntu:22.04@sha256:74b12b11ffa550fba1929ad4d8d16533c34f6612728469671afba1b03b66881c" }
+          - { name: ubuntu-24.04, image: "ubuntu:24.04@sha256:2198e4c65076e9cb0b3d695219df667c0e3b0072da64ca3c2648aca17dcecaf5" }
+          - { name: ubuntu-26.04, image: "ubuntu:26.04@sha256:065aa8626841f16057b78b027b464cd59c4fac36c204c72dcbf48d66f5fa8a96" }
+          - { name: debian-12, image: "debian:12@sha256:268fb24c39bca92d326dd83ea3abebe4a3f7751c804ffef23bb6d857dd343ff8" }
+          - { name: debian-13, image: "debian:13@sha256:9c6e381421d0f48d1b8133e573f33c185ee16cbf505eda9c4a8a4791b25ea8a6" }
+        platform:
+          - { arch: amd64, runner: ubuntu-24.04 }
+          - { arch: arm64, runner: ubuntu-24.04-arm }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The consumer and its fixtures as the installed release shipped them:
+      # this ref's copy may expect a later SDK.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: v${{ needs.apt-ready.outputs.version }}
+          path: released
+          persist-credentials: false
+          sparse-checkout: |
+            tools/ci/tests/
+            tools/phase0/ci/pcaps/
+          sparse-checkout-cone-mode: false
+
+      - name: Install mmt-dpi from the APT repository in ${{ matrix.distro.name }} (${{ matrix.platform.arch }})
+        id: smoke
+        env:
+          IMAGE: ${{ matrix.distro.image }}
+          VERSION: ${{ needs.apt-ready.outputs.version }}
+        run: |
+          docker run --rm -v "$PWD":/work:ro -w /work "$IMAGE" \
+            bash tools/ci/smoke-apt.sh --version "$VERSION" \
+              --consumer-dir /work/released/tools/ci/tests
+
+      - name: Record the verdict
+        if: always()
+        env:
+          NAME: ${{ matrix.distro.name }} ${{ matrix.platform.arch }}
+          OUTCOME: ${{ steps.smoke.outcome }}
+        run: echo "| $NAME | supported | apt | $OUTCOME |" >> "$GITHUB_STEP_SUMMARY"
+
+  apt-tamper:
+    name: apt rejects a tampered InRelease
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       startsWith(github.event.workflow_run.head_branch, 'v'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: One byte of a local InRelease changed; apt-get update must fail
+        env:
+          IMAGE: "ubuntu:24.04@sha256:2198e4c65076e9cb0b3d695219df667c0e3b0072da64ca3c2648aca17dcecaf5"
+        run: |
+          docker run --rm -v "$PWD":/work:ro -w /work "$IMAGE" \
+            bash tools/ci/smoke-apt.sh --expect-reject
+
   report:
     name: Report a failing supported distribution
-    needs: smoke
+    needs: [smoke, apt-ready, apt, apt-tamper]
     # Scheduled and post-release runs only: a pull request shows its own red.
     if: >-
-      always() && needs.smoke.result == 'failure' &&
+      always() && contains(needs.*.result, 'failure') &&
       github.event_name != 'pull_request' && github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -172,9 +302,9 @@ jobs:
           set -euo pipefail
           title="Install smoke matrix failing"
           {
-            echo "The [install smoke run]($RUN_URL) (\`$EVENT\`) failed on at least one **supported** distribution (issue #493)."
+            echo "The [install smoke run]($RUN_URL) (\`$EVENT\`) failed on at least one **supported** leg (issues #493, #78)."
             echo
-            echo "The README one-liner or the landing-page first run no longer works there. Open the run for the failing leg's log, and reproduce it by running \`bash tools/ci/smoke-install.sh --source published\` as root in that leg's pinned image (the matrix in \`.github/workflows/install-smoke.yml\`), with this checkout mounted."
+            echo "The README one-liner, the landing-page first run or the APT repository install no longer works there. Open the run for the failing leg's log, and reproduce it as root in that leg's pinned image (the matrices in \`.github/workflows/install-smoke.yml\`), with this checkout mounted: \`bash tools/ci/smoke-install.sh --source published\` for a one-liner leg, \`bash tools/ci/smoke-apt.sh\` for an \`apt\` leg (\`--expect-reject\` for the tampered-InRelease leg). An \`APT repository version\` failure means the repository does not list the released version for every suite and architecture: check the Montimage/packages rebuild the tag run dispatched (\`tools/ci/notify-packages.sh\`)."
           } > "$RUNNER_TEMP/body.md"
           # Only an issue this job opened: anyone can file an issue with the
           # same title, and its author could later rewrite the body (#598).

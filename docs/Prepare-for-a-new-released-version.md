@@ -111,7 +111,12 @@ Release order:
    (`.github/workflows/install-smoke.yml`, *Run workflow*, `source:
    published`) and check that every `supported` leg passed. The workflow
    also runs by itself after the tag run and weekly, but the run after the
-   tag still exercises the previous pin until step 3 lands. A failing
+   tag still exercises the previous pin until step 3 lands. Its `apt` legs
+   (issue #78) do not wait for step 3: the run after the tag waits in
+   `APT repository version` until https://montimage.github.io/packages lists
+   the new tag for every suite and architecture, then installs it on each
+   Debian/Ubuntu release and architecture and runs the installed-consumer
+   check; `apt rejects a tampered InRelease` checks the signature. A failing
    supported leg on a scheduled or post-release run opens (or comments on)
    an issue titled `Install smoke matrix failing`.
 
