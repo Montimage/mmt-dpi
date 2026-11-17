@@ -85,7 +85,7 @@ Release order:
    expected assets: for each package in its `manifest.json`, the alias
    (`file`), the package (`source`) and its `.sbom.json`; plus `install.sh`,
    `manifest.json`, `SHA256SUMS`, `mmt-dpi.intoto.jsonl` and the source
-   tarball (and its `.asc` once the signing key is provisioned). There are two
+   tarball and its `.asc` signature. There are two
    packages (`mmt-dpi`, `mmt-dpi-security`) per leg of the `package` matrix of
    `release-packages.yml`. v1.10.0 had 18 legs, 36 packages and 113 assets,
    so a count floor would pass a Release missing most of its SBOMs:
@@ -95,7 +95,7 @@ Release order:
    gh release download "$t" --repo Montimage/mmt-dpi -p manifest.json -D "$d"
    diff <(gh release view "$t" --repo Montimage/mmt-dpi --json assets --jq '.assets[].name' | LC_ALL=C sort) \
         <({ jq -r '.packages[] | .file, .source, .source + ".sbom.json"' "$d/manifest.json"
-            printf '%s\n' install.sh manifest.json SHA256SUMS mmt-dpi.intoto.jsonl "mmt-dpi-${t#v}.tar.gz"; } | LC_ALL=C sort) \
+            printf '%s\n' install.sh manifest.json SHA256SUMS mmt-dpi.intoto.jsonl "mmt-dpi-${t#v}.tar.gz" "mmt-dpi-${t#v}.tar.gz.asc"; } | LC_ALL=C sort) \
      && echo "asset set complete: $(jq '.packages | length' "$d/manifest.json") packages"
    ```
 3. After the tag is published, update the published-release sites in one

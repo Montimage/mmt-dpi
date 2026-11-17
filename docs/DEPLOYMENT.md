@@ -41,6 +41,20 @@ An `ENABLESEC=1` build also produces `mmt-dpi-security_*.deb`, which holds the
 security and fuzz engines (GPL-3.0-or-later, issue #497). Install it alongside
 `mmt-dpi`; it requires the same version.
 
+### Release signing key
+
+Release source tarballs (`mmt-dpi-<version>.tar.gz.asc`) are signed by
+`Montimage Release Signing <developer@montimage.eu>`; the same key signs the
+APT repository at https://montimage.github.io/packages. The public key is
+`debian/upstream/signing-key.asc`. Primary key fingerprint:
+
+```text
+2163 0C36 2624 FB20 5C3D  0B18 4F95 AECC FEF4 8443
+```
+
+Key handling (rotation, expiry extension, revocation) is documented in
+[Montimage/packages `docs/signing-key.md`](https://github.com/Montimage/packages/blob/main/docs/signing-key.md).
+
 ### Uninstall
 
 ```bash
