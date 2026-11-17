@@ -8,8 +8,8 @@
 # checkout mounted read-only:
 #   [1/4] install the tools the documented APT setup and the consumer check
 #         need (curl, ca-certificates, gnupg, gcc, libpcap-dev, pkg-config);
-#   [2/4] fetch the published keyring and check that its primary key is the
-#         one committed in debian/upstream/signing-key.asc — the keyring is
+#   [2/4] fetch the published keyring and check that its only primary key is
+#         the one committed in debian/upstream/signing-key.asc — the keyring is
 #         served by the same site as the metadata it vouches for, so it is
 #         never trusted on its own; install it under /etc/apt/keyrings and
 #         write the deb822 source (Signed-By) for this release's codename;
@@ -143,15 +143,20 @@ apt-get install -y -qq --no-install-recommends \
 
 # ---------------------------------------------------------------------------
 echo "  [2/4] keyring ${APT_REPO_URL}/montimage-archive-keyring.gpg"
-primary_fpr() { gpg --batch --quiet --show-keys --with-colons "$1" | awk -F: '$1=="pub"{p=1;next} p&&$1=="fpr"{print $10;exit}'; }
+# One line per primary key: the fingerprint that follows each pub record.
+primary_fprs() { gpg --batch --quiet --show-keys --with-colons "$1" | awk -F: '$1=="pub"{p=1;next} p&&$1=="fpr"{print $10;p=0}'; }
 work="$(mktemp -d)"
 trap 'rm -rf "${work}"' EXIT
 export GNUPGHOME="${work}/gnupg"
 install -d -m 0700 "$GNUPGHOME"
 curl -fsSL -o "${work}/keyring.gpg" "${APT_REPO_URL}/montimage-archive-keyring.gpg"
-want="$(primary_fpr "$COMMITTED_KEY")"
-got="$(primary_fpr "${work}/keyring.gpg")"
+want="$(primary_fprs "$COMMITTED_KEY" | head -n 1)"
+got="$(primary_fprs "${work}/keyring.gpg")"
 [ -n "$want" ] || fail "no primary key in ${COMMITTED_KEY}"
+# Signed-By trusts every key in the keyring, so a second primary key beside
+# the committed one would let its holder sign the metadata: exactly one.
+nkeys="$(printf '%s' "$got" | grep -c .)" || true
+[ "$nkeys" -eq 1 ] || fail "the published keyring holds ${nkeys} primary keys ($(echo "$got" | paste -sd ' ' -)), not only the committed ${want}"
 [ "$got" = "$want" ] || fail "the published keyring's primary key is ${got:-none}, the committed one ${want}"
 echo "        primary key ${got} (matches debian/upstream/signing-key.asc)"
 install -d -m 0755 /etc/apt/keyrings
