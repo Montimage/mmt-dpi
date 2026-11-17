@@ -178,6 +178,7 @@ harness ftp_data_session_uaf_test smoke
 harness ftp_lprt_eprt_test tcpip
 harness hostname_trie_mem_test smoke
 harness http2_bounds_test tcpip
+harness http2_multi_frame_test tcpip
 harness http2_parser_test tcpip
 harness http_method_classification_test tcpip
 harness http_scanner_test tcpip

@@ -118,6 +118,28 @@ struct http2_session_data_struct {
 #define HTTP2_HEADER_AMPLIFICATION 15
 #define HTTP2_PAYLOAD_LENGTH 16
 #define HTTP2_PAYLOAD_DATA 17//payload first char
+/* montimage-projects/mmt-dpi#770: segment-wide frame counters. http2.type
+ * and the other header_* attributes describe only the first frame of a TCP
+ * segment; these two walk every frame of it (after the connection preface,
+ * if any). */
+#define HTTP2_FRAME_COUNT 18 /* frames in the segment */
+#define HTTP2_RST_STREAM_COUNT 19 /* RST_STREAM (type 0x3) frames in the segment */
+
+/* HTTP/2 frame types (RFC 9113 §6) */
+#define HTTP2_FRAME_DATA          0x0
+#define HTTP2_FRAME_HEADERS       0x1
+#define HTTP2_FRAME_PRIORITY      0x2
+#define HTTP2_FRAME_RST_STREAM    0x3
+#define HTTP2_FRAME_SETTINGS      0x4
+#define HTTP2_FRAME_PUSH_PROMISE  0x5
+#define HTTP2_FRAME_PING          0x6
+#define HTTP2_FRAME_GOAWAY        0x7
+#define HTTP2_FRAME_WINDOW_UPDATE 0x8
+#define HTTP2_FRAME_CONTINUATION  0x9
+
+/* Initial SETTINGS_MAX_FRAME_SIZE (RFC 9113 §4.2): the largest frame payload
+ * http2.header_length reports (#107) */
+#define HTTP2_DEFAULT_MAX_FRAME_SIZE 16384
 
 #define HTTP2_TYPE_ALIAS "type"
 #define HTTP2_HEADER_METHOD_ALIAS "header_method"
@@ -126,6 +148,8 @@ struct http2_session_data_struct {
 #define HTTP2_PAYLOAD_STREAM_ID_ALIAS "payload_stream_id"
 #define HTTP2_PAYLOAD_LENGTH_ALIAS "payload_length"
 #define HTTP2_PAYLOAD_DATA_ALIAS "payload_data"
+#define HTTP2_FRAME_COUNT_ALIAS "frame_count"
+#define HTTP2_RST_STREAM_COUNT_ALIAS "rst_stream_count"
 	//int init_HTTP2_proto_struct();
 
 
