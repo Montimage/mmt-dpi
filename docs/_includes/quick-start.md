@@ -4,8 +4,45 @@ installs under `/opt/mmt`, so the first run works after any of them, from an
 empty directory.
 
 <!-- Route order (issue #577): package repository, then the release
-     bootstrap, then the source installer. The signed APT and dnf
-     repositories (#575, #576) go first, here, once they are published. -->
+     bootstrap, then the source installer. The signed APT repository
+     (issue #79) holds the first slot; the dnf repository (#576) joins it
+     once it is published. -->
+
+**APT repository** — Ubuntu 22.04/24.04/26.04 (`jammy`, `noble`,
+`resolute`), Debian 12/13 (`bookworm`, `trixie`), amd64 or arm64. A signed
+repository at https://montimage.github.io/packages that serves the last two
+releases, so `apt-get upgrade` picks up new ones. Download the signing key
+and look at it first:
+
+```bash
+sudo apt-get update && sudo apt-get install -y curl gnupg
+keyring=$(mktemp)
+curl -fsSL -o "$keyring" https://montimage.github.io/packages/montimage-archive-keyring.gpg
+gpg --show-keys "$keyring"
+```
+
+Go on only if `gpg` prints the primary key fingerprint
+`21630C362624FB205C3D0B184F95AECCFEF48443`. Then install the key into
+`/etc/apt/keyrings`, add the repository as a deb822 source that trusts only
+that key, and install the package:
+
+```bash
+sudo install -d -m 0755 /etc/apt/keyrings
+sudo install -m 0644 "$keyring" /etc/apt/keyrings/montimage-archive-keyring.gpg && rm -f "$keyring"
+sudo tee /etc/apt/sources.list.d/montimage.sources >/dev/null <<EOF
+Types: deb
+URIs: https://montimage.github.io/packages
+Suites: $(. /etc/os-release && echo "$VERSION_CODENAME")
+Components: main
+Signed-By: /etc/apt/keyrings/montimage-archive-keyring.gpg
+EOF
+sudo apt-get update && sudo apt-get install -y mmt-dpi
+```
+
+Add `mmt-dpi-security` to the last command to install the GPL security
+engines too. apt never refreshes the keyring by itself: after a key change
+(see *Signing key handling* in `docs/DEB_PACKAGE_CHECKLIST.md`), download it
+again with the two blocks above.
 
 **Verified package bootstrap** — Ubuntu 22.04/24.04/26.04, Debian 12/13,
 Rocky Linux / AlmaLinux 9 and 10, CentOS Stream 9 and 10, amd64 or arm64. It

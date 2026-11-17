@@ -75,152 +75,120 @@ title: ".deb Package Build & apt Repository Setup Checklist"
 
 ---
 
-## apt Repository Setup Checklist
+## The apt repository
 
-### Option 1: Debian Repository (apt-get)
+The signed APT repository is https://montimage.github.io/packages, built by
+[Montimage/packages](https://github.com/Montimage/packages), which alone holds
+the repository signing subkey (decided in issue #24). This repository builds
+the `.deb` files and publishes them with each GitHub Release; the client
+setup — keyring, deb822 source, `apt-get install mmt-dpi` — is the first
+route of the [Quick Start](https://github.com/Montimage/mmt-dpi#install)
+(`docs/_includes/quick-start.md`). `apt-key` is deprecated and is never used:
+the source names its keyring with `Signed-By`, so the key is trusted for this
+repository only.
 
-#### 1. Create Repository Structure
+### How it is built
 
-```bash
-# Create repository directory
-mkdir -p /var/www/html/mmt-dpi/debian/dists/stable/main/binary-aarch64
+- **Trigger.** The release job's last step, `tools/ci/notify-packages.sh`,
+  sends a `repository_dispatch` of type `mmt-dpi-release` to
+  Montimage/packages once the Release is published (issue #76). Its
+  `apt-repo.yml` workflow also runs by hand (`workflow_dispatch`) and on
+  pushes to its `main` that touch its `scripts/`, `site/` or the workflow.
+- **Stateless.** Every run rebuilds the whole repository from the GitHub
+  Releases of Montimage/mmt-dpi; nothing is kept between runs and no package
+  is committed. A rerun of the same releases gives the same unsigned tree.
+- **Last 2 releases.** It takes the last two published, non-draft,
+  non-prerelease Releases, and from each only the `mmt-dpi` and
+  `mmt-dpi-security` `.deb` files. A Release is used only when `SHA256SUMS`
+  and every `.deb` carry a build-provenance attestation of this repository's
+  `release-packages.yml` at that tag, and every `.deb` matches `SHA256SUMS`.
+  A published release must never be deleted or demoted: the repository's
+  `Date` would move backwards and apt would keep its older indexes. Publish a
+  newer release instead.
+- **Layout.** One suite per distribution, each with its own pool, because
+  every distribution's package has the same Debian version:
 
-# Copy .deb file
-cp mmt-dpi_*.deb /var/www/html/mmt-dpi/debian/pool/main/
+  | Release asset | Suite |
+  |---------------|-------|
+  | `ubuntu-22.04` | `jammy` |
+  | `ubuntu-24.04` | `noble` |
+  | `ubuntu-26.04` | `resolute` |
+  | `debian-12` | `bookworm` |
+  | `debian-13` | `trixie` |
+
+  ```text
+  pool/<suite>/main/m/mmt-dpi/<package>_<version>_<arch>.deb
+  dists/<suite>/main/binary-{amd64,arm64}/Packages{,.gz}
+  dists/<suite>/{Release,InRelease,Release.gpg}
+  montimage-archive-keyring.gpg
+  ```
+
+  `Release` has Origin and Label `Montimage`, Architectures `amd64 arm64`,
+  Components `main` and no `Valid-Until`.
+- **Signed.** `InRelease` and `Release.gpg` are signed by subkey A of the
+  Montimage release signing key. The public keyring served at the root,
+  `montimage-archive-keyring.gpg`, holds the same primary key as
+  `debian/upstream/signing-key.asc` in this repository.
+- **Checked here.** The `apt`, `apt-tamper` and `apt-ready` jobs of
+  `.github/workflows/install-smoke.yml` (`tools/ci/smoke-apt.sh`, issue #78)
+  install from the published repository on every suite and architecture,
+  check that the served keyring's only primary key is the committed one, and
+  require apt to refuse an `InRelease` with one byte changed.
+
+The authoritative build description is the Montimage/packages
+[README](https://github.com/Montimage/packages#how-the-repository-is-built).
+
+### Signing key handling
+
+One ed25519 primary key, `Montimage Release Signing <developer@montimage.eu>`
+(certify-only, 5-year expiry), stays on the maintainer's signing machine and
+never enters CI. It certifies two signing-only subkeys (2-year expiry), each
+held by one repository only:
+
+| Subkey | Signs | Held by |
+|--------|-------|---------|
+| A | The APT repository (`InRelease`, `Release.gpg`) | Montimage/packages, `apt-signing` environment |
+| B | The source tarball (`mmt-dpi-<version>.tar.gz.asc`) | This repository, secrets `MMT_RELEASE_SIGNING_KEY` and `MMT_RELEASE_SIGNING_PASSPHRASE` |
+
+Primary key fingerprint:
+
+```text
+2163 0C36 2624 FB20 5C3D  0B18 4F95 AECC FEF4 8443
 ```
 
-#### 2. Generate Packages File
+The commands for every case below are in
+[Montimage/packages `docs/signing-key.md`](https://github.com/Montimage/packages/blob/main/docs/signing-key.md);
+this section lists what each case changes on the mmt-dpi side. No key
+material, passphrase or secret value is ever committed or written in an
+issue: only public keys and fingerprints.
 
-```bash
-# Install dpkg-dev if not present
-sudo apt install dpkg-dev
+- **Expiry extension** (about two months before a subkey expires). The
+  maintainer extends both subkeys with the primary key and re-exports the
+  public key. Commit the refreshed armoured export as
+  `debian/upstream/signing-key.asc` here, and the binary keyring as
+  `site/montimage-archive-keyring.gpg` in Montimage/packages, together. The
+  CI secrets do not change: the expiry lives in the public key.
+- **Rotation** (a new subkey, planned or after a leak). The maintainer adds
+  a new subkey, exports it re-protected with a new CI-only passphrase and
+  replaces that subkey's secrets: for subkey B, `MMT_RELEASE_SIGNING_KEY` and
+  `MMT_RELEASE_SIGNING_PASSPHRASE` here; for subkey A, the three
+  `apt-signing` values in Montimage/packages. The public key is republished
+  in both repositories, because the keyring holds both subkeys.
+- **Revocation.** A leaked subkey is revoked first, then rotated as above.
+  A compromised or lost primary key is revoked with its revocation
+  certificate (kept apart from the key backup), the revoked public key is
+  republished in both repositories, and a new key is created and its
+  fingerprint announced; every fingerprint in these docs then changes.
 
-# Generate Packages file
-cd /var/www/html/mmt-dpi/debian/dists/stable/main/binary-aarch64
-dpkg-scanpackages ../../../../pool /dev/null > Packages
+After any of these changes:
 
-# Compress
-gzip -k Packages
-```
-
-#### 3. Generate Release File
-
-```bash
-cd /var/www/html/mmt-dpi/debian/dists/stable
-
-# Create Release file
-cat > Release << EOF
-Origin: Montimage
-Label: mmt-dpi
-Suite: stable
-Codename: stable
-Architectures: aarch64
-Components: main
-Description: MMT-DPI Repository
-EOF
-
-# Sign the Release file (optional but recommended)
-gpg --detach-sign -o Release.gpg Release
-```
-
-#### 4. Client Configuration
-
-Add to `/etc/apt/sources.list` or `/etc/apt/sources.list.d/mmt-dpi.list`:
-
-```
-deb [arch=aarch64] http://your-server/mmt-dpi/debian stable main
-```
-
-Add GPG key (if signed):
-
-```bash
-wget -O - http://your-server/mmt-dpi/gpg-key | sudo apt-key add -
-```
-
-Update and install:
-
-```bash
-sudo apt update
-sudo apt install mmt-dpi
-```
-
----
-
-### Option 2: Simple APT Mirror (apt-ftparchive)
-
-```bash
-# Create structure
-mkdir -p /var/www/html/mmt-dpi/pool/main
-mkdir -p /var/www/html/mmt-dpi/dists/stable/main/binary-aarch64
-
-# Copy deb file
-cp mmt-dpi_*.deb /var/www/html/mmt-dpi/pool/main/
-
-# Generate metadata
-cd /var/www/html/mmt-dpi
-apt-ftparchive packages pool/main > dists/stable/main/binary-aarch64/Packages
-
-# Generate Release
-apt-ftparchive release dists/stable > dists/stable/Release
-```
-
----
-
-### Option 3: Using reprepro (Recommended for Production)
-
-```bash
-# Install reprepro
-sudo apt install reprepro
-
-# Create configuration
-mkdir -p /var/www/html/mmt-dpi/conf
-
-cat > /var/www/html/mmt-dpi/conf/distributions << EOF
-Origin: Montimage
-Label: mmt-dpi
-Codename: stable
-Architectures: aarch64 source
-Components: main
-Description: MMT-DPI Repository
-SignWith: yes
-EOF
-
-# Add package
-reprepro -V /var/www/html/mmt-dpi includedeb stable mmt-dpi_*.deb
-```
-
----
-
-### Architecture Considerations
-
-| Architecture | uname -m | deb Architecture |
-|--------------|----------|------------------|
-| 64-bit ARM | aarch64 | aarch64 |
-| 64-bit x86 | x86_64 | amd64 |
-| 32-bit x86 | i386 | i386 |
-
-**Recommendation:** Build separate .deb files for each target architecture and maintain an `apt-architectures` line in the Release file:
-
-```
-Architectures: aarch64 amd64 i386
-```
-
----
-
-### Automated Build Integration
-
-Add to CI/CD pipeline:
-
-```yaml
-# .gitlab-ci.yml example
-deploy-deb:
-  stage: deploy
-  script:
-    - make -C sdk VERSION=$CI_COMMIT_TAG GIT_VERSION=$(git log --format="%h" -n 1) deb
-    - reprepro -V /path/to/repo includedeb stable sdk/mmt-dpi_*.deb
-  only:
-    - tags
-```
+- Keep the two published copies in step. `tools/ci/smoke-apt.sh` fails when
+  the served keyring's primary key differs from
+  `debian/upstream/signing-key.asc`, and `tools/ci/sign-source-tarball.sh`
+  fails a release whose secret and committed key disagree.
+- Users must download the keyring again: apt never refreshes
+  `/etc/apt/keyrings/montimage-archive-keyring.gpg` by itself. Say so in the
+  release notes.
 
 ---
 
@@ -268,35 +236,3 @@ sudo apt update
 sudo apt install libc6-dev
 ```
 
----
-
-## Files to Include in Repository
-
-```
-/var/www/html/mmt-dpi/
-├── conf/
-│   └── distributions       (reprepro config)
-├── pool/
-│   └── main/
-│       └── mmt-dpi_*.deb   (package files)
-├── dists/
-│   └── stable/
-│       ├── main/
-│       │   └── binary-aarch64/
-│       │       ├── Packages
-│       │       └── Packages.gz
-│       ├── Release
-│       └── Release.gpg     (if signed)
-└── index.html              (optional - simple web page)
-```
-
----
-
-## Next Steps
-
-1. [ ] Build package for additional architectures (x86_64, i386)
-2. [ ] Set up web server for package hosting
-3. [ ] Configure apt sources on test clients
-4. [ ] Test full installation flow
-5. [ ] Document versioning strategy
-6. [ ] Set up automated builds for releases
