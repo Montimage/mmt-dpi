@@ -113,9 +113,13 @@
 # exemption, a missing delegate) and then on the real docs tree.
 # It also runs the protocol-id-range self-test beside
 # scripts/validate-proto-id-range.sh (issue #73), which drives the real
-# validator on fixture trees (space- and tab-separated, indented, hex and
-# suffixed ids in 950-999, a PROTO_MAX_IDENTIFIER of 999, a page that no
-# longer names the range) and then on the real tree.
+# validator on fixture trees (space- and tab-separated, indented, hex,
+# suffixed, parenthesised and octal ids in 950–999; out-of-range octal, 0 and
+# (1000) ids; a PROTO_MAX_IDENTIFIER of 999; a page that no longer names the
+# range; no id define; a partial grep failure on an unreadable file;
+# expression defines, an id behind or around a comment and a comment-only
+# define; an invalid octal 0960; a page writing the range with a hyphen) and
+# then on the real tree.
 # It also runs the release-notification self-test beside
 # tools/ci/notify-packages.sh (issue #76), which drives
 # tools/ci/check-release-verification.sh on mutated copies of the release
