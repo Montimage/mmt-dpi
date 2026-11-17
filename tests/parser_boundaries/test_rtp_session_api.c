@@ -4,19 +4,20 @@
  *
  * The core calls the RTP session_data_init hook on every packet whose path
  * reports the RTP layer as an update. It used to allocate a fresh block each
- * time, so the order, loss and jitter analysis restarted on each such packet
- * (those attributes stayed 0 whatever the flow did) and the previous block
- * leaked: 36 blocks on this flow before the fix, LeakSanitizer measured.
+ * time — on this flow for its first few dozen packets — so the order, loss
+ * and jitter analysis restarted on each of them (those attributes stayed 0
+ * whatever the flow did) and the previous block leaked: 36 blocks before the
+ * fix, LeakSanitizer measured. Phases 1-3 fall in that stretch.
  *
  * One client→server flow, built from the first packet of the accuracy-corpus
  * capture acc_rtp_positive.pcap (PCMU, 8 kHz, ts = seq * 160):
- *   1. seq 1000..1019, 20 ms apart: in order, no loss, no jitter;
- *   2. seq 1021 — 1020 is missing: the packet is reported out of order, and
+ *   1. seq 1000..1009, 20 ms apart: in order, no loss, no jitter;
+ *   2. seq 1010..1019, arrivals alternately 10 ms and 30 ms apart for 20 ms
+ *      of media each: the RFC 3550 jitter (rtp.jitter) becomes non-zero —
+ *      rtp.inter_jitter is not used: it is non-zero on an evenly paced flow;
+ *   3. seq 1021 — 1020 is missing: the packet is reported out of order, and
  *      once the 8-slot window (rtp.h MMT_Window_Width) slides past the hole
  *      the loss is reported;
- *   3. arrivals alternately 10 ms and 30 ms apart for 20 ms of media each:
- *      the RFC 3550 jitter (rtp.jitter) becomes non-zero — rtp.inter_jitter
- *      is not used: it is non-zero on an evenly paced flow too;
  *   4. RTP_SESSION_LONG_FLOW more in-order packets: a long capture, so a run
  *      with ASAN_OPTIONS=detect_leaks=1 (run_tests.sh under SANITIZE=asan)
  *      reports any RTP session block that is not freed with the session.
@@ -159,15 +160,21 @@ int main(void) {
 
     printf("issue #101: RTP session data kept across the packets of a UDP flow\n");
 
-    printf("phase 1: seq 1000..1019 in order, 20 ms apart\n");
+    printf("phase 1: seq 1000..1009 in order, 20 ms apart\n");
     reset_counts();
-    for (uint16_t s = 1000; s < 1020; s++) send_rtp(h, s, 20000);
-    CHECK(g_rtp_pkts >= 10, "only %u of 20 packets classified as RTP", g_rtp_pkts);
+    for (uint16_t s = 1000; s < 1010; s++) send_rtp(h, s, 20000);
+    CHECK(g_rtp_pkts >= 5, "only %u of 10 packets classified as RTP", g_rtp_pkts);
     CHECK(g_unorder_pkts == 0, "%u in-order packet(s) reported out of order", g_unorder_pkts);
     CHECK(g_loss_pkts == 0, "%u packet(s) reported a loss on a gap-free flow", g_loss_pkts);
     CHECK(g_jitter_pkts == 0, "%u packet(s) reported jitter on an evenly paced flow", g_jitter_pkts);
 
-    printf("phase 2: seq 1020 missing, then 1021..1031\n");
+    printf("phase 2: seq 1010..1019, arrivals 10 ms / 30 ms apart for 20 ms of media\n");
+    reset_counts();
+    for (uint16_t s = 1010; s < 1020; s++) send_rtp(h, s, (s & 1) ? 30000 : 10000);
+    CHECK(g_jitter_pkts >= 1, "no packet reported jitter on an unevenly paced flow "
+          "(%u packets)", g_rtp_pkts);
+
+    printf("phase 3: seq 1020 missing, then 1021..1031\n");
     reset_counts();
     send_rtp(h, 1021, 40000);
     CHECK(g_unorder_pkts == 1, "the packet after the hole was not reported out of order "
@@ -176,16 +183,10 @@ int main(void) {
     CHECK(g_loss_pkts >= 1, "the missing seq 1020 was never reported lost (%u packets)",
           g_rtp_pkts);
 
-    printf("phase 3: arrivals 10 ms / 30 ms apart for 20 ms of media\n");
-    reset_counts();
-    for (uint16_t s = 1032; s < 1052; s++) send_rtp(h, s, (s & 1) ? 30000 : 10000);
-    CHECK(g_jitter_pkts >= 1, "no packet reported jitter on an unevenly paced flow "
-          "(%u packets)", g_rtp_pkts);
-
     printf("phase 4: %u more in-order packets (leak check under detect_leaks=1)\n",
            RTP_SESSION_LONG_FLOW);
     reset_counts();
-    for (unsigned i = 0; i < RTP_SESSION_LONG_FLOW; i++) send_rtp(h, (uint16_t) (1052 + i), 20000);
+    for (unsigned i = 0; i < RTP_SESSION_LONG_FLOW; i++) send_rtp(h, (uint16_t) (1032 + i), 20000);
     CHECK(g_rtp_pkts == RTP_SESSION_LONG_FLOW, "%u of %u packets classified as RTP",
           g_rtp_pkts, RTP_SESSION_LONG_FLOW);
 
