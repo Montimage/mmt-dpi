@@ -155,6 +155,22 @@ gh attestation verify mmt-dpi_*_ubuntu-24.04_x86_64.deb \
 
 Install only after both checks pass.
 
+#### Verify the source tarball signature
+
+Starting with the first release after v1.10.3, the source tarball `mmt-dpi-<version>.tar.gz` comes with a
+detached OpenPGP signature `mmt-dpi-<version>.tar.gz.asc`, made by the
+Montimage release signing key. The public key is committed as
+`debian/upstream/signing-key.asc`. Its primary key fingerprint is:
+
+```text
+2163 0C36 2624 FB20 5C3D  0B18 4F95 AECC FEF4 8443
+```
+
+```bash
+gpg --import debian/upstream/signing-key.asc   # check the fingerprint above
+gpg --verify mmt-dpi-<version>.tar.gz.asc mmt-dpi-<version>.tar.gz
+```
+
 #### Verified one-command package install
 
 From v1.10.0 on, each release also publishes a bootstrap
