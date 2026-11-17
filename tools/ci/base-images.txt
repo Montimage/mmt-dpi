@@ -6,7 +6,8 @@
 # this file for its matrix pin before building), the root-install and
 # toolchain-floor jobs of .github/workflows/c-cpp.yml, the asn1c gate container of
 # .github/workflows/asn1c-regen.yml and the per-distribution install smoke
-# matrix of .github/workflows/install-smoke.yml (issue #493). tools/ci/check-image-digests.sh scans
+# and APT repository matrices of .github/workflows/install-smoke.yml (issues
+# #493 and #78). tools/ci/check-image-digests.sh scans
 # every workflow and fails when an image is floating, unrecorded here, or
 # recorded here but unused, so the two cannot drift apart silently.
 #
