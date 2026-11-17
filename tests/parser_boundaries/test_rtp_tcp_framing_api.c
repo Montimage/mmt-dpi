@@ -13,7 +13,7 @@
  * ICE connectivity check, nine framed RTP packets (seq 100..108, ts seq*160,
  * SSRC 0x5A5A0001) and a STUN keep-alive in the middle. Every RTP version-2
  * packet must report those values, and the session analysis must count no
- * loss or misordering (the keep-alive is no RTP packet).
+ * loss or misordering (the keep-alive is no RTP packet) — issue #101 fix.
  *
  * Case 2 appends segments that end inside the RTP header — 5 bytes, 11
  * bytes, and a 12-byte fixed header whose CSRC count or extension header
@@ -48,6 +48,8 @@ static int g_checks   = 0;
 static unsigned g_rtp_pkts;     /* packets whose path holds RTP, version 2 */
 static unsigned g_bad_fields;
 static unsigned g_seq_mask;     /* bit (seq - 100) per reported sequence number */
+static unsigned g_loss_count;   /* cumulative loss count from session analysis */
+static unsigned g_unorder_count;/* cumulative out-of-order count from session analysis */
 static int g_case2;            /* case 2: out-of-range sequence numbers are expected */
 static int g_seq109;           /* the full packet after the short segments */
 
@@ -59,6 +61,8 @@ static int pkt_cb(const ipacket_t *ipacket, mmt_opaque_t user) {
     uint16_t *seq = get_attribute_extracted_data(ipacket, PROTO_RTP, RTP_SEQNB);
     uint32_t *ts = get_attribute_extracted_data(ipacket, PROTO_RTP, RTP_TIMESTAMP);
     uint32_t *ssrc = get_attribute_extracted_data(ipacket, PROTO_RTP, RTP_SSRC);
+    uint16_t *loss = get_attribute_extracted_data(ipacket, PROTO_RTP, RTP_LOSS);
+    uint16_t *unorder = get_attribute_extracted_data(ipacket, PROTO_RTP, RTP_UNORDER);
     if (seq == NULL || ts == NULL || ssrc == NULL) return 0;  /* truncated: fields absent */
     if (g_case2) {
         if (*seq == 109 && *ts == 109u * 160u && *ssrc == SSRC) g_seq109 = 1;
@@ -71,6 +75,9 @@ static int pkt_cb(const ipacket_t *ipacket, mmt_opaque_t user) {
     g_rtp_pkts++;
     g_seq_mask |= 1u << (*seq - 100);
     if (*ts != (uint32_t) *seq * 160u || *ssrc != SSRC) g_bad_fields++;
+    /* Issue #101: session analysis must count no loss or misordering across packets */
+    if (loss != NULL) g_loss_count += *loss;
+    if (unorder != NULL) g_unorder_count += *unorder;
     return 0;
 }
 
@@ -155,7 +162,7 @@ int main(void) {
         close_extraction();
         return 2;
     }
-    static const uint32_t attrs[] = { RTP_VERSION, RTP_SEQNB, RTP_TIMESTAMP, RTP_SSRC };
+    static const uint32_t attrs[] = { RTP_VERSION, RTP_SEQNB, RTP_TIMESTAMP, RTP_SSRC, RTP_LOSS, RTP_UNORDER };
     for (size_t i = 0; i < sizeof attrs / sizeof attrs[0]; i++)
         CHECK(register_extraction_attribute(h, PROTO_RTP, attrs[i]), "register rtp attribute %u",
               (unsigned) attrs[i]);
@@ -186,6 +193,9 @@ int main(void) {
     CHECK(g_rtp_pkts >= 3, "only %u RTP packet(s) reported seq 100..108", g_rtp_pkts);
     CHECK((g_seq_mask & 0x1c0u) == 0x1c0u, "seq 106..108 (after the keep-alive) not all reported "
           "(mask 0x%x)", g_seq_mask);
+    /* Issue #101: session analysis must count no loss or misordering across the flow */
+    CHECK(g_loss_count == 0, "loss counter reports %u (expected 0 for this flow)", g_loss_count);
+    CHECK(g_unorder_count == 0, "out-of-order counter reports %u (expected 0 for this in-order flow)", g_unorder_count);
     CHECK(g_tmpl_len != 0, "no client RTP frame to build case 2 from");
 
     if (g_tmpl_len != 0) {

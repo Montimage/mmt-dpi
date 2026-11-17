@@ -563,6 +563,11 @@ int rtp_initial_data_processing(ipacket_t * ipacket, unsigned index) {
 }
 
 void rtp_session_data_init(ipacket_t * ipacket, unsigned index) {
+    /* Issue #101: session data is re-created on every packet for RTP-over-TCP.
+     * Only initialize if session data does not already exist for this protocol index. */
+    if (ipacket->session->session_data[index] != NULL) {
+        return;
+    }
     struct rtp_session_data_struct * rtp_session_data = (struct rtp_session_data_struct *) mmt_malloc(sizeof (struct rtp_session_data_struct));
 
     memset(rtp_session_data, 0, sizeof (struct rtp_session_data_struct));
