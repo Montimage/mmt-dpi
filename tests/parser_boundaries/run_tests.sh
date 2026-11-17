@@ -320,11 +320,23 @@
 #                               crafted short segments in exact-size buffers,
 #                               through mmt_init_handler + packet_process.
 #
+# Issue #101 adds the "rtp-session" fixture: the RTP session data is created
+# once per flow and kept across its packets, so the order, loss and jitter
+# analysis follow the flow instead of restarting on every packet (the
+# "rtp-tcp" fixture checks the same on framed TCP, its case 3).
+#
+#   test_rtp_session_api.c — packet/API path: a one-direction UDP RTP flow
+#                               crafted from acc_rtp_positive.pcap — in order,
+#                               a hole, uneven arrivals, then a long run; under
+#                               SANITIZE=asan both RTP tests run with
+#                               detect_leaks=1, so a block re-created per
+#                               packet is reported as a leak.
+#
 # Usage: tests/parser_boundaries/run_tests.sh [fixture ...]
 #   no arguments runs every fixture; "udp"/"dtls"/"dns-soa"/"dns-txt"/"dns-names"/"nfs"/"int"/
 #   "tcp-options"/"radius-dns"/"quic"/"gre"/"classifier-audit"/"tcp-events"/"s1ap-integer"/
 #   "classify"/"registration"/"ftp-sessions"/"classification-method"/"chain"/
-#   "tls-hello"/"encap"/"gtp"/"ddl"/"rtp-tcp" select a fixture family.
+#   "tls-hello"/"encap"/"gtp"/"ddl"/"rtp-tcp"/"rtp-session" select a fixture family.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -332,7 +344,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # --- fixture selection -----------------------------------------------------
 FIXTURES=( "$@" )
-[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain tls-hello encap gtp ddl rtp-tcp)
+[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain tls-hello encap gtp ddl rtp-tcp rtp-session)
 UNIT_TESTS=()
 API_TESTS=()
 MOBILE_TESTS=()
@@ -415,8 +427,11 @@ for f in "${FIXTURES[@]}"; do
         rtp-tcp)
             API_TESTS+=(rtp_tcp_framing_api)
             ;;
+        rtp-session)
+            API_TESTS+=(rtp_session_api)
+            ;;
         *)
-            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain tls-hello encap gtp ddl rtp-tcp)" >&2
+            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer classify registration ftp-sessions classification-method chain tls-hello encap gtp ddl rtp-tcp rtp-session)" >&2
             exit 2
             ;;
     esac
@@ -535,9 +550,15 @@ esac
 rc=0
 run_one() {
     local name="$1"
+    # Issue #101: the RTP session tests also prove the session data is not
+    # leaked per packet, so LeakSanitizer stays on for them.
+    local leaks=0
+    case "${name}" in
+        rtp_tcp_framing_api|rtp_session_api) leaks=1 ;;
+    esac
     if ( cd "${PREFIX}" && \
         env "${env_prefix[@]}" \
-            ASAN_OPTIONS="detect_leaks=0" \
+            ASAN_OPTIONS="detect_leaks=${leaks}" \
             UBSAN_OPTIONS="print_stacktrace=1" \
             LD_LIBRARY_PATH="${LIB}:${LD_LIBRARY_PATH:-}" \
             "${SCRIPT_DIR}/test_${name}" ); then
@@ -557,4 +578,4 @@ if [ "${rc}" -ne 0 ]; then
     echo "✗ parser boundary tests failed" >&2
     exit 1
 fi
-echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455, #505, #513, #531, #542, #544, #560, #567, #568, #569, #570, #571, #572, #749)"
+echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455, #505, #513, #531, #542, #544, #560, #567, #568, #569, #570, #571, #572, #749, #101)"
