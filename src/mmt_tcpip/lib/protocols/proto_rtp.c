@@ -563,9 +563,15 @@ int rtp_initial_data_processing(ipacket_t * ipacket, unsigned index) {
 }
 
 void rtp_session_data_init(ipacket_t * ipacket, unsigned index) {
-    /* Issue #101: session data is re-created on every packet for RTP-over-TCP.
-     * Only initialize if session data does not already exist for this protocol index. */
-    if (ipacket->session->session_data[index] != NULL) {
+    /* Issue #101: the core calls this hook on every packet whose path reports
+     * the RTP layer as an update (packet_session.c, proto_session_management),
+     * on UDP as on framed TCP. Allocating again restarted the loss, jitter
+     * and order analysis each packet and leaked the previous block. On an
+     * update the layer was RTP already, so a block at this index is ours:
+     * keep it. A detection or reclassification still starts a fresh block —
+     * the slot may then hold another protocol's data. */
+    if (ipacket->session->session_data[index] != NULL
+            && ipacket->proto_classif_status->proto_path[index] == PROTO_CLASSIFICATION_UPDATE) {
         return;
     }
     struct rtp_session_data_struct * rtp_session_data = (struct rtp_session_data_struct *) mmt_malloc(sizeof (struct rtp_session_data_struct));

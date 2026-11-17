@@ -12,14 +12,20 @@
  * Case 1 replays acc_rtp_tcp_keepalive_positive.pcap (accuracy corpus): an
  * ICE connectivity check, nine framed RTP packets (seq 100..108, ts seq*160,
  * SSRC 0x5A5A0001) and a STUN keep-alive in the middle. Every RTP version-2
- * packet must report those values, and the session analysis must count no
- * loss or misordering (the keep-alive is no RTP packet) — issue #101 fix.
+ * packet must report those values, and the session analysis must report no
+ * loss or misordering (the keep-alive is no RTP packet).
  *
  * Case 2 appends segments that end inside the RTP header — 5 bytes, 11
  * bytes, and a 12-byte fixed header whose CSRC count or extension header
  * declare more than the segment holds — each in an exact-size buffer, so
  * BUILD=asan (SANITIZE=asan) reports any over-read of the session analysis,
  * which must skip them; a full packet then still reports its fields.
+ *
+ * Case 3 (issue #101) continues the flow with seq 110, then 112..121: the
+ * session analysis must keep its state across the segments — 112 is reported
+ * out of order and, once the 8-slot window slides past it, 111 is reported
+ * lost. The session data used to be re-created on every packet, so both
+ * stayed 0 whatever the flow did.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,10 +54,12 @@ static int g_checks   = 0;
 static unsigned g_rtp_pkts;     /* packets whose path holds RTP, version 2 */
 static unsigned g_bad_fields;
 static unsigned g_seq_mask;     /* bit (seq - 100) per reported sequence number */
-static unsigned g_loss_count;   /* cumulative loss count from session analysis */
-static unsigned g_unorder_count;/* cumulative out-of-order count from session analysis */
+static unsigned g_loss_pkts;    /* packets reporting rtp.loss != 0 */
+static unsigned g_unorder_pkts; /* packets reporting rtp.unorder != 0 */
 static int g_case2;            /* case 2: out-of-range sequence numbers are expected */
 static int g_seq109;           /* the full packet after the short segments */
+static int g_case3;            /* case 3: seq 110..121 */
+static unsigned g_case3_pkts;
 
 static int pkt_cb(const ipacket_t *ipacket, mmt_opaque_t user) {
     (void) user;
@@ -64,6 +72,12 @@ static int pkt_cb(const ipacket_t *ipacket, mmt_opaque_t user) {
     uint16_t *loss = get_attribute_extracted_data(ipacket, PROTO_RTP, RTP_LOSS);
     uint16_t *unorder = get_attribute_extracted_data(ipacket, PROTO_RTP, RTP_UNORDER);
     if (seq == NULL || ts == NULL || ssrc == NULL) return 0;  /* truncated: fields absent */
+    if (loss != NULL && *loss != 0) g_loss_pkts++;
+    if (unorder != NULL && *unorder != 0) g_unorder_pkts++;
+    if (g_case3) {
+        if (*seq >= 110 && *seq <= 121) g_case3_pkts++;
+        return 0;
+    }
     if (g_case2) {
         if (*seq == 109 && *ts == 109u * 160u && *ssrc == SSRC) g_seq109 = 1;
         return 0;
@@ -75,9 +89,6 @@ static int pkt_cb(const ipacket_t *ipacket, mmt_opaque_t user) {
     g_rtp_pkts++;
     g_seq_mask |= 1u << (*seq - 100);
     if (*ts != (uint32_t) *seq * 160u || *ssrc != SSRC) g_bad_fields++;
-    /* Issue #101: session analysis must count no loss or misordering across packets */
-    if (loss != NULL) g_loss_count += *loss;
-    if (unorder != NULL) g_unorder_count += *unorder;
     return 0;
 }
 
@@ -193,9 +204,9 @@ int main(void) {
     CHECK(g_rtp_pkts >= 3, "only %u RTP packet(s) reported seq 100..108", g_rtp_pkts);
     CHECK((g_seq_mask & 0x1c0u) == 0x1c0u, "seq 106..108 (after the keep-alive) not all reported "
           "(mask 0x%x)", g_seq_mask);
-    /* Issue #101: session analysis must count no loss or misordering across the flow */
-    CHECK(g_loss_count == 0, "loss counter reports %u (expected 0 for this flow)", g_loss_count);
-    CHECK(g_unorder_count == 0, "out-of-order counter reports %u (expected 0 for this in-order flow)", g_unorder_count);
+    CHECK(g_loss_pkts == 0, "%u RTP packet(s) reported a loss on a gap-free flow", g_loss_pkts);
+    CHECK(g_unorder_pkts == 0, "%u RTP packet(s) reported out of order on an in-order flow",
+          g_unorder_pkts);
     CHECK(g_tmpl_len != 0, "no client RTP frame to build case 2 from");
 
     if (g_tmpl_len != 0) {
@@ -208,6 +219,19 @@ int main(void) {
         send_rtp(h, 109, 172, 0x80);            /* the next full packet */
         CHECK(g_seq109, "the full packet after the short segments did not report "
               "seq 109 / ts 17440 / ssrc 0x%08x", SSRC);
+
+        printf("case 3: seq 110, then 112..121 (111 missing)\n");
+        g_case3 = 1;
+        g_loss_pkts = g_unorder_pkts = 0;
+        send_rtp(h, 110, 172, 0x80);
+        CHECK(g_unorder_pkts == 0, "seq 110 (in order after 109) reported out of order");
+        send_rtp(h, 112, 172, 0x80);
+        CHECK(g_unorder_pkts == 1, "seq 112 (after the hole) not reported out of order — "
+              "the session analysis restarted (issue #101)");
+        for (uint16_t s = 113; s <= 121; s++) send_rtp(h, s, 172, 0x80);
+        CHECK(g_case3_pkts == 11, "%u of 11 case-3 packets reported their fields", g_case3_pkts);
+        CHECK(g_loss_pkts >= 1, "the missing seq 111 was never reported lost — "
+              "the session analysis restarted (issue #101)");
     }
 
     mmt_close_handler(h);
