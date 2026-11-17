@@ -32,6 +32,155 @@ static inline int http2_can_write(int offset, unsigned int n, unsigned int caple
 	return ((uint64_t) offset + (uint64_t) n) <= (uint64_t) caplen;
 }
 
+/*
+ * montimage-projects/mmt-dpi#770: the frames of a TCP segment.
+ *
+ * The HTTP/2 layer starts at the TCP payload, but a client's first segment
+ * opens with the 24-byte connection preface, which is not a frame: read as
+ * one it gave http2.type 32 and http2.header_stream_id 541611092. And one
+ * segment can carry several frames (HEADERS + RST_STREAM in an HTTP/2 Rapid
+ * Reset, CVE-2023-44487), of which the header_* attributes only see the first.
+ *
+ * http2_frame_window() returns in *first the offset of the first frame
+ * header, the preface skipped, and in *end the end of the TCP payload: the
+ * TCP dissector's payload_packet_len (already clamped to the capture,
+ * proto_tcp.c) when that payload starts at the HTTP/2 offset, as it does for
+ * every packet mmt_check_http2() classifies; the capture length otherwise (no
+ * TCP state, e.g. the crafted-packet harnesses). That keeps a trailer after
+ * the IP datagram (Ethernet padding, an FCS) out of the frame walk. Every
+ * read below is bounded by *end <= caplen. Returns 0 when the HTTP/2 offset
+ * is outside the capture.
+ */
+static const char http2_preface[] = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
+#define HTTP2_PREFACE_LEN (sizeof(http2_preface) - 1)
+#define HTTP2_FRAME_HEADER_LEN 9
+
+static int http2_frame_window(const ipacket_t *packet, unsigned proto_index,
+		int *first, unsigned int *end) {
+	int proto_offset = get_packet_offset_at_index(packet, proto_index);
+	unsigned int caplen = packet->p_hdr->caplen;
+	if (proto_offset < 0 || (unsigned int) proto_offset >= caplen)
+		return 0;
+
+	unsigned int stop = caplen;
+	const mmt_tcpip_internal_packet_t *tcpip = packet->internal_packet;
+	if (tcpip != NULL && tcpip->payload != NULL) {
+		/* wraps huge when payload < data, which then fails the test */
+		uintptr_t poff = (uintptr_t) tcpip->payload - (uintptr_t) packet->data;
+		uint64_t pend = (uint64_t) poff + tcpip->payload_packet_len;
+		if (poff == (uintptr_t) proto_offset && pend < stop)
+			stop = (unsigned int) pend;
+	}
+
+	int pos = proto_offset;
+	if (http2_can_read(pos, HTTP2_PREFACE_LEN, stop)
+			&& memcmp(&packet->data[pos], http2_preface, HTTP2_PREFACE_LEN) == 0)
+		pos += HTTP2_PREFACE_LEN;
+	*first = pos;
+	*end = stop;
+	return 1;
+}
+
+/* Offset of the n-byte field at field_offset in the first frame header of
+ * the segment, or -1 when that window is not inside the segment. */
+static int http2_first_frame_field(const ipacket_t *packet, unsigned proto_index,
+		int field_offset, unsigned int n) {
+	int first;
+	unsigned int end;
+	if (!http2_frame_window(packet, proto_index, &first, &end))
+		return -1;
+	int at = first + field_offset;
+	return http2_can_read(at, n, end) ? at : -1;
+}
+
+/*
+ * Walk every frame header of the segment: *frames counts them, *rst_streams
+ * the RST_STREAM frames among them. A frame whose payload runs past the
+ * segment ends the walk but still counts, its header being here. The walk
+ * keeps no state across segments, so it assumes the segment starts on a
+ * frame boundary, as the header_* attributes do; to keep the bytes of a frame
+ * continued from an earlier segment from passing for a reset, an RST_STREAM
+ * is counted only in the one shape RFC 9113 §6.4 allows (a 4-byte payload,
+ * a non-zero stream).
+ */
+static void http2_count_frames(const ipacket_t *packet, unsigned proto_index,
+		uint32_t *frames, uint32_t *rst_streams) {
+	int first;
+	unsigned int end;
+	*frames = 0;
+	*rst_streams = 0;
+	if (!http2_frame_window(packet, proto_index, &first, &end))
+		return;
+
+	const uint8_t *d = packet->data;
+	uint64_t pos = (uint64_t) first;
+	while (pos + HTTP2_FRAME_HEADER_LEN <= end) {
+		uint32_t len = (uint32_t) d[pos] << 16 | (uint32_t) d[pos + 1] << 8 | d[pos + 2];
+		uint32_t stream_id = ((uint32_t) d[pos + 5] << 24 | (uint32_t) d[pos + 6] << 16
+				| (uint32_t) d[pos + 7] << 8 | d[pos + 8]) & 0x7FFFFFFF;
+		(*frames)++;
+		if (d[pos + 3] == HTTP2_FRAME_RST_STREAM && len == 4 && stream_id != 0)
+			(*rst_streams)++;
+		pos += HTTP2_FRAME_HEADER_LEN + (uint64_t) len;
+	}
+}
+
+/*
+ * Both counters come from one walk: a rule that registers http2.frame_count
+ * and http2.rst_stream_count would otherwise walk each segment twice
+ * (#107). The last result is kept per thread, keyed on the packet
+ * (ipacket_t, packet_id, data pointer and caplen) and the HTTP/2 index, so
+ * the second extractor of the same packet reuses it. Thread-local because
+ * each processing thread extracts its own packets.
+ */
+static void http2_count_frames_cached(const ipacket_t *packet,
+		unsigned proto_index, uint32_t *frames, uint32_t *rst_streams) {
+	static __thread struct {
+		const ipacket_t *packet;
+		uint64_t packet_id;
+		const u_char *data;
+		unsigned int caplen;
+		unsigned proto_index;
+		uint32_t frames, rst_streams;
+	} cache;
+	unsigned int caplen = packet->p_hdr->caplen;
+	if (cache.packet == packet && cache.packet_id == packet->packet_id
+			&& cache.data == packet->data && cache.caplen == caplen
+			&& cache.proto_index == proto_index) {
+		*frames = cache.frames;
+		*rst_streams = cache.rst_streams;
+		return;
+	}
+	http2_count_frames(packet, proto_index, frames, rst_streams);
+	cache.packet = packet;
+	cache.packet_id = packet->packet_id;
+	cache.data = packet->data;
+	cache.caplen = caplen;
+	cache.proto_index = proto_index;
+	cache.frames = *frames;
+	cache.rst_streams = *rst_streams;
+}
+
+static int http2_frame_count_extraction(const ipacket_t *packet,
+		unsigned proto_index, attribute_t *extracted_data) {
+	uint32_t frames, rst_streams;
+	http2_count_frames_cached(packet, proto_index, &frames, &rst_streams);
+	if (frames == 0)
+		return 0;
+	*((uint32_t*) extracted_data->data) = frames;
+	return 1;
+}
+
+static int http2_rst_stream_count_extraction(const ipacket_t *packet,
+		unsigned proto_index, attribute_t *extracted_data) {
+	uint32_t frames, rst_streams;
+	http2_count_frames_cached(packet, proto_index, &frames, &rst_streams);
+	if (frames == 0)
+		return 0;
+	*((uint32_t*) extracted_data->data) = rst_streams;
+	return 1;
+}
+
 classified_proto_t http2_stack_classification(ipacket_t *ipacket) {
 
 	classified_proto_t retval;
@@ -44,14 +193,14 @@ classified_proto_t http2_stack_classification(ipacket_t *ipacket) {
 int http2_header_method_extraction(const ipacket_t *packet,
 		unsigned proto_index, attribute_t *extracted_data) {
 
-	int proto_offset = get_packet_offset_at_index(packet, proto_index);
-	int attribute_offset = extracted_data->position_in_packet;
-	//ensure that we can read the 1-byte field without leaving the packet
-	if( !http2_can_read(proto_offset + attribute_offset, 1, packet->p_hdr->caplen) )
+	//the 1-byte field of the first frame (issue #770: after the preface),
+	//inside the segment
+	int at = http2_first_frame_field(packet, proto_index,
+			extracted_data->position_in_packet, 1);
+	if (at < 0)
 		return 0;
 
-	//int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
-	*((unsigned char*) extracted_data->data) = *((unsigned char*) &packet->data[proto_offset + attribute_offset]);
+	*((unsigned char*) extracted_data->data) = packet->data[at];
 	return 1;
 }
 
@@ -59,36 +208,19 @@ int http2_header_length_extraction(const ipacket_t *packet,
 		unsigned proto_index, attribute_t *extracted_data) {
 	// [ETH][IP][TCP][HTTP2][xxx]
 	//=================^
-	
-	int http2_offset = get_packet_offset_at_index(packet, proto_index );
-	//not enough room
-	//if (http2_offset >= packet->p_hdr->caplen)
-	//	return 0;
-	// printf("http2_offset %d \n", http2_offset);
-
-	
-	char signature_http2[] = { 0x0D, 0x0A, 0x0D, 0x0A, 0x53, 0x4D, 0x0D, 0x0A, 0x0D, 0x0A }; 	//PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n
-	//bounds-check the whole signature window before comparing it
-	if (http2_can_read(http2_offset, sizeof(signature_http2), packet->p_hdr->caplen)
-			&& strncmp((char*) &packet->data[http2_offset], signature_http2,
-				sizeof(signature_http2) / sizeof(signature_http2[0])) == 0) { //The first packet must be ignored
-
-		*((unsigned int*) extracted_data->data) = 0;
-		return 1;
-	}
-
-	//char * payload= (char*) &packet->data[proto_offset ];
-	int attribute_offset = extracted_data->position_in_packet - 1;
-	//ensure the 4-byte length field is fully inside the packet; this also
-	//guards the position-1 step-back from underflowing to a negative offset
-	if( !http2_can_read(http2_offset + attribute_offset, sizeof(unsigned int), packet->p_hdr->caplen) )
+	// The 4-byte window starts one byte before the first frame (issue #770:
+	// after the preface) so the 24-bit length lands in its low bytes; it must
+	// lie inside the segment, which also rejects a step-back to offset -1.
+	int at = http2_first_frame_field(packet, proto_index,
+			extracted_data->position_in_packet - 1, sizeof(unsigned int));
+	if (at < 0)
 		return 0;
 
-	//int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
-	*((unsigned int*) extracted_data->data) = ntohl(get_u32(packet->data, http2_offset + attribute_offset));
-	*((unsigned int*) extracted_data->data) =
-			*((unsigned int*) extracted_data->data) & (0x00FFFFFF);
-	if ((*((unsigned int*) extracted_data->data)) > 2000) {
+	*((unsigned int*) extracted_data->data) = ntohl(get_u32(packet->data, at)) & 0x00FFFFFF;
+	// #107: a frame longer than SETTINGS_MAX_FRAME_SIZE's initial value
+	// (16384, RFC 9113 §4.2) is not reported; the earlier 2000 bound dropped
+	// legal DATA and HEADERS frames (mmt-security rule 97 tests up to 16384).
+	if ((*((unsigned int*) extracted_data->data)) > HTTP2_DEFAULT_MAX_FRAME_SIZE) {
 		*((unsigned int*) extracted_data->data) = 0;
 		return 0;
 	}
@@ -235,14 +367,13 @@ int http2_payload_data_extraction(const ipacket_t *packet, unsigned proto_index,
 int http2_stream_id_extraction(const ipacket_t *packet, unsigned proto_index,
 		attribute_t *extracted_data) {
 
-	int proto_offset = get_packet_offset_at_index(packet, proto_index);
-	int attribute_offset = (extracted_data->position_in_packet);
-
-	proto_offset += attribute_offset;
-	//ensure the whole 4-byte stream id is inside the packet
-	if( !http2_can_read(proto_offset, sizeof(unsigned int), packet->p_hdr->caplen) )
+	//the whole 4-byte stream id of the first frame (issue #770: after the
+	//preface) must be inside the segment
+	int at = http2_first_frame_field(packet, proto_index,
+			extracted_data->position_in_packet, sizeof(unsigned int));
+	if (at < 0)
 		return 0;
-	*((unsigned int*) extracted_data->data) = (ntohl(get_u32(packet->data, proto_offset)));
+	*((unsigned int*) extracted_data->data) = ntohl(get_u32(packet->data, at));
 	return 1;
 }
 
@@ -285,7 +416,7 @@ int _http2_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 	}
 }
 
-static attribute_metadata_t http2_attributes_metadata[HTTP2_ATTRIBUTES_NB] = {
+static attribute_metadata_t http2_attributes_metadata[] = {
 
 	{HTTP2_HEADER_LENGTH,     HTTP2_HEADER_LENGTH_ALIAS,    MMT_U32_DATA, sizeof(uint32_t),  0 , SCOPE_PACKET, http2_header_length_extraction},
 	{HTTP2_TYPE,              HTTP2_TYPE_ALIAS,             MMT_U8_DATA	, sizeof(char), 3, SCOPE_PACKET, http2_header_method_extraction},//put here all extract function
@@ -294,6 +425,8 @@ static attribute_metadata_t http2_attributes_metadata[HTTP2_ATTRIBUTES_NB] = {
 	{HTTP2_PAYLOAD_LENGTH,    HTTP2_PAYLOAD_LENGTH_ALIAS,   MMT_U32_DATA, sizeof(uint32_t),POSITION_NOT_KNOWN, SCOPE_PACKET, http2_payload_length_extraction},
 	{HTTP2_PAYLOAD_STREAM_ID, HTTP2_PAYLOAD_STREAM_ID_ALIAS,MMT_U32_DATA, sizeof(uint32_t),  POSITION_NOT_KNOWN, SCOPE_PACKET, http2_payload_stream_id_extraction},
 	{HTTP2_PAYLOAD_DATA,      HTTP2_PAYLOAD_DATA_ALIAS,     MMT_DATA_POINTER,    sizeof (char*),    POSITION_NOT_KNOWN, SCOPE_PACKET, http2_payload_data_extraction},
+	{HTTP2_FRAME_COUNT,       HTTP2_FRAME_COUNT_ALIAS,      MMT_U32_DATA, sizeof(uint32_t),  POSITION_NOT_KNOWN, SCOPE_PACKET, http2_frame_count_extraction},
+	{HTTP2_RST_STREAM_COUNT,  HTTP2_RST_STREAM_COUNT_ALIAS, MMT_U32_DATA, sizeof(uint32_t),  POSITION_NOT_KNOWN, SCOPE_PACKET, http2_rst_stream_count_extraction},
 
 };
 
@@ -304,7 +437,7 @@ int init_http2_proto_struct() {
 	if (protocol_struct != NULL) {
 
 		int i = 0;
-		for (; i < HTTP2_ATTRIBUTES_NB; i++) {
+		for (; i < (int) (sizeof(http2_attributes_metadata) / sizeof(http2_attributes_metadata[0])); i++) {
 			register_attribute_with_protocol(protocol_struct,
 					&http2_attributes_metadata[i]);
 		}
