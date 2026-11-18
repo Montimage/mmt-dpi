@@ -228,8 +228,9 @@ typedef void (*generic_session_data_initialization_function)(ipacket_t * ipacket
  * @param index the position in the protocol hierarchy to set
  * @param classified_proto the protocol identifier and header offset to record
  * @return nonzero when the hierarchy was set (appended, updated or reclassified); 0 when the
- *         protocol identifier is invalid, @p index is not below PROTO_PATH_SIZE or an append
- *         would go deeper than the handler's classification depth limit.
+ *         protocol identifier is invalid, @p index is not below PROTO_PATH_SIZE, an append
+ *         would go deeper than the handler's classification depth limit, or the layer at
+ *         @p index was handed over (mmt_session_handover()) and holds another protocol.
  */
 MMTAPI int MMTCALL set_classified_proto(
     ipacket_t *ipacket,
@@ -675,6 +676,67 @@ MMTAPI bool MMTCALL is_valid_proto_attribute(
     protocol_t *proto,
     mmt_proto_id_t proto_id,
     uint32_t attr_id
+);
+
+/**
+ * Hands the layer at @p index of the packet's session to the protocol @p new_proto_id, for
+ * example from a WebSocket plugin after HTTP's 101 Switching Protocols, or back to PROTO_HTTP
+ * from the plugin (issue #116). The call only queues the handover; it is applied when the
+ * session's next packet arrives, so the current packet is processed entirely as the old
+ * protocol. Applying it runs the session-data cleanup of the protocol at @p index and of every
+ * deeper layer, clears their slots, writes @p new_proto_id at @p index, drops the deeper layers
+ * and the recorded classification checkers from @p index on, and pins the layer: for the rest
+ * of the session the parent's classification (TCP/UDP post-classification included) no longer
+ * rewrites it, and only another handover changes it. The new protocol's session-data
+ * initialization runs once, then its analysis and attribute handlers run at @p index.
+ * A pending handover is dropped when the session's IP layer moves before it is applied.
+ * @param ipacket the packet being processed, with its session
+ * @param index the position of the layer in the session's protocol hierarchy
+ * @param new_proto_id the identifier of a registered protocol other than the current one
+ * @return 1 when the handover is queued; 0 when @p ipacket or its session is NULL, @p index
+ *         is below 2 or not a layer of the session's hierarchy, the layer or its parent
+ *         maintains sessions (the transport layer), @p index is not above the session's own
+ *         protocol, @p new_proto_id is invalid, unregistered or already at @p index, a handover
+ *         is already pending on the session, or the session is the parent of tunnelled sessions.
+ */
+MMTAPI int MMTCALL mmt_session_handover(
+    ipacket_t *ipacket,
+    unsigned index,
+    uint32_t new_proto_id
+);
+
+/**
+ * Registers a classifier that a protocol calls when it upgrades a session to another protocol:
+ * HTTP calls the classifiers registered for PROTO_HTTP, through mmt_session_offer_upgrade(), on
+ * the response that answers an Upgrade request with 101 Switching Protocols (issue #116).
+ * The classifier is called with the packet and the index of @p parent_proto_id, and claims
+ * the session by calling mmt_session_handover() on that index; its return value is ignored.
+ * The registration is process-wide and cannot be undone; it is released by close_extraction().
+ * @param parent_proto_id the identifier of the protocol that offers its sessions
+ * @param classification_fct the classifier
+ * @param weight the order among the classifiers of @p parent_proto_id: a lower weight is called
+ *        first, equal weights in registration order (clamped to 0..100)
+ * @return 1 on success; 0 when @p classification_fct is NULL, @p parent_proto_id is not a
+ *         valid protocol identifier, or out of memory.
+ */
+MMTAPI int MMTCALL register_upgrade_classification_function(
+    mmt_proto_id_t parent_proto_id,
+    generic_classification_function classification_fct,
+    int weight
+);
+
+/**
+ * Offers the packet's session to the upgrade classifiers registered for the protocol at
+ * @p index (register_upgrade_classification_function()), in weight order, and stops at the
+ * first one after which a handover is pending (issue #116).
+ * @param ipacket the packet that completes the upgrade, with its session
+ * @param index the position of the offering protocol in the packet's hierarchy
+ * @return 1 when a classifier claimed the session; 0 when none did, a handover was already
+ *         pending, or @p ipacket, its session or @p index is invalid.
+ */
+MMTAPI int MMTCALL mmt_session_offer_upgrade(
+    ipacket_t *ipacket,
+    unsigned index
 );
 
 #ifdef	__cplusplus

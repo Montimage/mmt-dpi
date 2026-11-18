@@ -578,7 +578,7 @@ int set_classified_proto(ipacket_t * ipacket, unsigned index, classified_proto_t
     ipacket_internal_t * pi = ipacket_internal(ipacket); /* Issue #535: private extension */
     int retval = 0;
     if (classified_proto.proto_id == (uint32_t)-1 || index >= PROTO_PATH_SIZE) return retval;
-    if (!is_valid_protocol_id(classified_proto.proto_id)) return retval;
+    if (!is_valid_protocol_id(classified_proto.proto_id) || mmt_layer_write_refused(ipacket, index, classified_proto.proto_id)) return retval; /* issue #116: pinned layer */
 
     if (index + 1 > ipacket->proto_hierarchy->len) {
         /* Issue #87: DPI profiles bound how deep payload inspection runs —
@@ -809,7 +809,7 @@ int proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * config
          * once the next index would exceed it. pre_classify above still
          * ran, so the current layer's header parse (packet->tcp/udp),
          * sessionization and attribute extraction are unaffected. */
-        if (configured_protocol->protocol->classify_next.classify_protos && classif_status != MMT_CLASSIFY_SKIP
+        if (configured_protocol->protocol->classify_next.classify_protos && classif_status != MMT_CLASSIFY_SKIP && !mmt_session_layer_pinned(ipacket->session, index + 1) /* issue #116 */
                 && (ipacket->mmt_handler == NULL
                     || (index + 1) <= ipacket->mmt_handler->classification_max_depth)) { // Classify next proto only when such a function exists!
             /* Issue #252 (F-PERF-002): when the hierarchy already carries a
@@ -1677,4 +1677,79 @@ void mmt_packet_scratch_destroy(mmt_handler_t *mmt_handler) {
     mmt_packet_scratch_release(mmt_handler);
     mmt_arena_destroy(mmt_handler->packet_scratch);
     mmt_handler->packet_scratch = NULL;
+}
+
+/* Issue #116: session handover. mmt_session_handover() only queues the
+ * handover on the session; mmt_session_apply_handover() applies it when the
+ * session's next packet reaches its sessionizer (proto_session_management()),
+ * so the packet that asked for it is processed entirely as the old protocol
+ * and nothing changes under an analyser or attribute handler mid-packet.
+ * Applying it cleans the old protocol's session data, writes the new id and
+ * pins the layer: proto_packet_classify_next() then skips the parent's
+ * classification round for it and set_classified_proto() refuses another
+ * protocol there, so TCP/UDP post-classification cannot rewrite it from the
+ * flow's detected stack. */
+static inline int handover_layer_has_session(const mmt_session_t * session, unsigned index) {
+    const protocol_t * proto = get_protocol_struct_by_id(session->proto_path.proto_path[index]);
+    return proto != NULL && proto->has_session;
+}
+
+int mmt_session_handover(ipacket_t * ipacket, unsigned index, uint32_t new_proto_id) {
+    mmt_session_t * session;
+    if (ipacket == NULL || ipacket->session == NULL) return 0;
+    session = ipacket->session;
+    /* never the transport layer, whatever a path splice did to
+     * session_protocol_index: the layer's parent and the layer itself must
+     * hold no session (IP/IPv6 sessionize, TCP/UDP above them do not) */
+    if (index < 2 || index >= PROTO_PATH_SIZE || (int) index >= session->proto_path.len) return 0;
+    if (handover_layer_has_session(session, index - 1) || handover_layer_has_session(session, index)) return 0;
+    if (index <= session->session_protocol_index) return 0;
+    if (!is_valid_protocol_id(new_proto_id) || get_protocol_struct_by_id(new_proto_id) == NULL) return 0;
+    if ((uint32_t) session->proto_path.proto_path[index] == new_proto_id) return 0;
+    if (session->handover_index != 0) return 0; /* the first claim wins */
+    /* a tunnel parent: its children borrow its session_data slots */
+    if (session->live_children > 0) return 0;
+    session->handover_index = (uint8_t) index;
+    session->handover_proto = (uint16_t) new_proto_id;
+    session->handover_from = (uint16_t) session->proto_path.proto_path[index];
+    return 1;
+}
+
+void mmt_session_apply_handover(mmt_session_t * session) {
+    unsigned index, i, len;
+    uint32_t new_proto_id, from;
+    if (session == NULL || session->handover_index == 0) return;
+    index = session->handover_index;
+    new_proto_id = session->handover_proto;
+    from = session->handover_from;
+    session->handover_index = 0;
+    session->handover_proto = 0;
+    session->handover_from = 0;
+    len = (session->proto_path.len > PROTO_PATH_SIZE) ? PROTO_PATH_SIZE : (unsigned) session->proto_path.len;
+    /* the session changed since the call (a child appeared, the layer moved
+     * or was reclassified): drop the handover */
+    if (session->live_children > 0 || index >= len
+            || (uint32_t) session->proto_path.proto_path[index] != from
+            || get_protocol_struct_by_id(new_proto_id) == NULL) {
+        return;
+    }
+    /* release the layer's and every deeper layer's session data, as
+     * cleanup_timedout_sessions() does at expiry */
+    for (i = index; i < len; i++) {
+        protocol_t * cleanup_proto = get_protocol_struct_by_id(session->proto_path.proto_path[i]);
+        if (cleanup_proto != NULL && cleanup_proto->session_data_cleanup != NULL) {
+            cleanup_proto->session_data_cleanup(session, i);
+        }
+        session->session_data[i] = NULL;
+    }
+    session->proto_path.proto_path[index] = (int) new_proto_id;
+    /* the new protocol's session_data_init runs when the layer is processed */
+    session->proto_classif_status.proto_path[index] = PROTO_RECLASSIFICATION;
+    session->proto_path.len = (int) index + 1;
+    session->proto_headers_offset.len = (int) index + 1;
+    session->proto_classif_status.len = (int) index + 1;
+    for (i = index; i < PROTO_PATH_SIZE; i++) {
+        session->proto_checkers[i] = 0;
+    }
+    session->handed_over = (uint16_t) ((session->handed_over & ((1u << index) - 1u)) | (1u << index));
 }

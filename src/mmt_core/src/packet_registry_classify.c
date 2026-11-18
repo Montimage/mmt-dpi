@@ -391,3 +391,99 @@ bool register_session_data_analysis_function_full(protocol_t *proto,
     }
     return retval;
 }
+
+/* Issue #116: the upgrade classifiers. A protocol that upgrades a session
+ * to another one (HTTP after a 101 Switching Protocols) offers the session
+ * to the classifiers registered for it, in weight order, through
+ * mmt_session_offer_upgrade(); one claims it by calling
+ * mmt_session_handover(). The registry is a sorted array, copy-on-write as
+ * the frozen chains of issue #560 are: a registration builds a new copy
+ * under the mutex and publishes it with a release store, an offer reads the
+ * published copy with an acquire load and never locks, and the replaced
+ * copies are freed only at teardown (a worker may still walk one). */
+typedef struct mmt_upgrade_entry_struct {
+    uint32_t parent_proto_id;
+    int weight;
+    generic_classification_function classify;
+} mmt_upgrade_entry_t;
+
+typedef struct mmt_upgrade_chain_struct {
+    struct mmt_upgrade_chain_struct * retired_next;
+    uint32_t count;
+    mmt_upgrade_entry_t entries[];
+} mmt_upgrade_chain_t;
+
+static pthread_mutex_t mmt_upgrade_lock = PTHREAD_MUTEX_INITIALIZER;
+static mmt_upgrade_chain_t * mmt_upgrade_chain = NULL;   /* published copy */
+static mmt_upgrade_chain_t * mmt_upgrade_retired = NULL; /* replaced copies */
+
+int register_upgrade_classification_function(uint32_t parent_proto_id,
+        generic_classification_function classification_fct, int weight) {
+    mmt_upgrade_chain_t * old, * chain;
+    uint32_t n, i, j = 0;
+    if (classification_fct == NULL || !is_valid_protocol_id(parent_proto_id)) return 0;
+    if (weight < 0) weight = 0;
+    if (weight > 100) weight = 100;
+    pthread_mutex_lock(&mmt_upgrade_lock);
+    old = __atomic_load_n(&mmt_upgrade_chain, __ATOMIC_RELAXED);
+    n = (old != NULL) ? old->count : 0;
+    chain = mmt_malloc(sizeof (*chain) + (size_t) (n + 1) * sizeof (chain->entries[0]));
+    if (chain == NULL) {
+        pthread_mutex_unlock(&mmt_upgrade_lock);
+        return 0;
+    }
+    chain->retired_next = NULL;
+    chain->count = n + 1;
+    /* after every entry of the same or a lower weight: equal weights keep
+     * their registration order */
+    for (i = 0; i < n && old->entries[i].weight <= weight; i++) chain->entries[j++] = old->entries[i];
+    chain->entries[j].parent_proto_id = parent_proto_id;
+    chain->entries[j].weight = weight;
+    chain->entries[j].classify = classification_fct;
+    j++;
+    for (; i < n; i++) chain->entries[j++] = old->entries[i];
+    __atomic_store_n(&mmt_upgrade_chain, chain, __ATOMIC_RELEASE);
+    if (old != NULL) {
+        old->retired_next = mmt_upgrade_retired;
+        mmt_upgrade_retired = old;
+    }
+    pthread_mutex_unlock(&mmt_upgrade_lock);
+    return 1;
+}
+
+int mmt_session_offer_upgrade(ipacket_t * ipacket, unsigned index) {
+    const mmt_upgrade_chain_t * chain;
+    uint32_t parent, i;
+    if (ipacket == NULL || ipacket->session == NULL || ipacket->proto_hierarchy == NULL
+            || index >= PROTO_PATH_SIZE || (int) index >= ipacket->proto_hierarchy->len) {
+        return 0;
+    }
+    /* a handover is already pending: nothing to offer */
+    if (ipacket->session->handover_index != 0) return 0;
+    chain = __atomic_load_n(&mmt_upgrade_chain, __ATOMIC_ACQUIRE);
+    if (chain == NULL) return 0;
+    parent = (uint32_t) ipacket->proto_hierarchy->proto_path[index];
+    for (i = 0; i < chain->count; i++) {
+        if (chain->entries[i].parent_proto_id != parent) continue;
+        (void) chain->entries[i].classify(ipacket, index);
+        /* the classifier claimed the session through mmt_session_handover() */
+        if (ipacket->session->handover_index != 0) return 1;
+    }
+    return 0;
+}
+
+void mmt_upgrade_registry_release(void) {
+    mmt_upgrade_chain_t * chain;
+    pthread_mutex_lock(&mmt_upgrade_lock);
+    chain = __atomic_load_n(&mmt_upgrade_chain, __ATOMIC_RELAXED);
+    __atomic_store_n(&mmt_upgrade_chain, NULL, __ATOMIC_RELEASE);
+    mmt_free(chain);
+    chain = mmt_upgrade_retired;
+    mmt_upgrade_retired = NULL;
+    while (chain != NULL) {
+        mmt_upgrade_chain_t * next = chain->retired_next;
+        mmt_free(chain);
+        chain = next;
+    }
+    pthread_mutex_unlock(&mmt_upgrade_lock);
+}

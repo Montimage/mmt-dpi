@@ -390,6 +390,11 @@ static void init_new_session_fields(mmt_handler_t * mmt_handler, mmt_session_t *
     /* Issue #252 (F-PERF-002): no layer has a recorded winning checker yet —
      * the first classifications run the full walk and fill the slots. */
     memset(session->proto_checkers, 0, sizeof(session->proto_checkers));
+    /* Issue #116: no layer handed over, no handover pending. */
+    session->handed_over = 0;
+    session->handover_proto = 0;
+    session->handover_from = 0;
+    session->handover_index = 0;
     mmt_handler->sessions_count += 1;
     mmt_handler->active_sessions_count += 1;
 }
@@ -585,6 +590,9 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
 
             if (is_new_session == 0) {
                 refresh_session_lower_offsets(ipacket, session, index);
+                /* Issue #116: a handover queued on an earlier packet takes
+                 * effect here, before the packet reads the session's path. */
+                mmt_session_apply_handover(session);
             }
 
             //Now update the packet structure to point to the flow and the protocol hierarchy info
