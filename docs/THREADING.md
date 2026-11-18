@@ -85,6 +85,13 @@ Each global has a dedicated `pthread_mutex_t`:
   handlers exist but while no worker runs (rule 3) is walked by every handler
   from its next packet. A registration while workers run stays unsupported:
   the list insert itself is not synchronised against a walk.
+- `mmt_deferred_lock` (`src/mmt_core/src/packet_registry_classify.c`,
+  issue #115) guards the deferred parent registrations of
+  `register_classification_function_with_parent_protocol_deferred()`, kept
+  only while `init_extraction()` loads the plugins. `register_protocol()`
+  attaches those of the parent it registered after it releases
+  `configured_protocols_mutex`, and no classifier is attached with
+  `mmt_deferred_lock` held.
 
 The locks are never held nested, so there is no lock-ordering hazard
 (`classify_freeze_mutex` is released before `mmt_init_handler()` takes
@@ -93,6 +100,7 @@ The locks are never held nested, so there is no lock-ordering hazard
 the call that may take `configured_protocols_mutex` via `register_protocol()`;
 `configured_handlers_map_mutex` is held only around the single map insert/delete
 call and takes no other lock while held.
+`mmt_deferred_lock` is taken with no other lock held.
 
 The single-threaded teardown iteration in `close_extraction()` walks the map via
 `iterate_through_mmt_handlers()` (an unlocked read) and force-closes each handler

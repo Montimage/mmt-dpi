@@ -173,6 +173,38 @@ A plugin that loads too early still registers its protocol, and `init_extraction
 
 The full guidance for plugin authors is in the mmt-plugin-generator README: its [*Use plugin*](https://github.com/Montimage/mmt-plugin-generator#use-plugin) section covers install, load order and the id and name rules, and [*NDN example and the built-in NDN dissector*](https://github.com/Montimage/mmt-plugin-generator#ndn-example-and-the-built-in-ndn-dissector) a worked example.
 
+## A plugin under another plugin
+
+A plugin can hang its classifier under a protocol another plugin provides — an OCPP plugin under a WebSocket plugin, COTP under TPKT — rather than under TCP or UDP. Two things make that work (issue #115).
+
+**Opting in to processing the claimed layer.** A plugin whose classifier claims the layer above TCP or UDP with `set_classified_proto()` does not get that layer processed while TCP or UDP still classify the flow: their post-classification returns 0 for a layer an external classifier claimed, so the layer gets no session-data analysis, no attribute extraction and no `classify_next` chain of its own — the classifiers registered under it are not called. That lasts until the session passes `2 * CFG_CLASSIFICATION_THRESHOLD` = 40 packets and TCP or UDP stop classifying it (`src/mmt_tcpip/lib/protocols/proto_tcp.c:1056-1060`, `src/mmt_tcpip/lib/protocols/proto_udp.c:126-128`): too late for a handshake, and never for a short session. A protocol opts out of that with `mmt_protocol_set_process_claimed_layer()` (`src/mmt_core/public_include/plugin_defs.h:756`), called in `init_proto()`:
+
+```c
+protocol_t *p = init_protocol_struct_for_registration(PROTO_WEBSOCKET_EXAMPLE, "websocket_example");
+mmt_protocol_set_process_claimed_layer(p, true);
+register_protocol(p, PROTO_WEBSOCKET_EXAMPLE);
+```
+
+TCP and UDP then continue into the claimed layer when its protocol opted in, and still skip the IP-address and port fallbacks (`src/mmt_tcpip/lib/protocols/proto_tcp.c:1215`, `src/mmt_tcpip/lib/protocols/proto_udp.c:150`, `src/mmt_core/private_include/packet_processing.h:1320-1332`). A protocol that does not opt in, and the in-tree HTTP/2 classifier, keep today's behaviour.
+
+- From the claiming packet on, the layer is processed on every packet: your `session_data_analysis`, your attribute handlers and the classifiers registered under your protocol run there, across the 40-packet mark (`tests/http_header_case/test_http_header_case.c`, `child_tests`).
+- During those first 40 packets your own classifier is still called on each packet as the layer's owner, as before. A plugin that parses each packet in its classifier during the first 40 packets and in `session_data_analysis` afterwards would now parse the packets of that period twice: with the opt-in, parse in `session_data_analysis` only and keep the classifier to the detection.
+- Each time your classifier claims the layer again, the core reports the layer as updated and runs your `session_data_init` before the analysis, as it does for the SDK's own layers (`src/mmt_core/src/packet_session.c:669-673`): keep it idempotent, allocating only when the slot is empty.
+- A layer taken over with `mmt_session_handover()` ([above](#taking-over-a-session-from-another-protocol)) needs no opt-in: it is pinned, the parent's classification round, post-classification included, is skipped for it and the packet still descends into it (`src/mmt_core/src/packet_pipeline.c:812`), so its analysis and its own chain run on every packet from the one that applies the handover.
+
+**Registering under a plugin that loads later.** Plugins load in file-name order ([*Load order*](#loading-a-plugin-of-your-own)), so the child's `init_proto()` may run before its parent's protocol is registered, and `register_classification_function_with_parent_protocol()` then returns 0 (`src/mmt_core/src/packet_registry_classify.c:209-219`). `register_classification_function_with_parent_protocol_deferred()` (`src/mmt_core/public_include/plugin_defs.h:777`) takes the child's id as well and, while `init_extraction()` loads the plugins, keeps a registration whose parent is not registered yet; `register_protocol()` attaches it when a later plugin registers the parent (`src/mmt_core/src/packet_registry.c:565`, `src/mmt_core/src/packet_registry_classify.c:536-564`):
+
+```c
+/* in the OCPP plugin's init_proto(), whatever its file name */
+return register_classification_function_with_parent_protocol_deferred(
+    PROTO_WEBSOCKET_EXAMPLE, PROTO_OCPP_EXAMPLE, classify_ocpp, 10);
+```
+
+- When the parent is already registered, the classifier is attached at once, as with the immediate call.
+- A registration still waiting when the plugins are loaded fails the load, and `init_extraction()` returns 0 after writing which registration it was (`src/mmt_core/src/packet_registry.c:609`, `src/mmt_core/src/packet_registry_classify.c:602-629`), for example `The classifier of protocol 998 (fi_child) is registered under protocol 996 (unregistered), which no plugin registered`.
+- Outside the plugin load — called from your own program after `init_extraction()` — the call keeps nothing: it returns false for an unregistered parent, like the immediate call.
+- The immediate call keeps its contract, so a plugin that relies on its 0 to detect a wrong order is unchanged. The `fault_injection` suite loads a child plugin whose file name sorts before its parent's and one whose parent no plugin registers (`tests/fault_injection/test_fi_plugin_order.c`).
+
 ## Protocol ids for a plugin of your own
 
 Protocol ids **950–999** are reserved for third-party plugins, the plugins of your own that the core loads out of tree. No built-in protocol is ever assigned an id in that range: the SDK's own ids stay below 950, and `scripts/validate-proto-id-range.sh`, run by the required `doc-validators` CI job, fails when a `#define PROTO_<NAME> <n>` under `src/` falls in it. The range ends at 999 because an id must be below `PROTO_MAX_IDENTIFIER`, 1000 (`src/mmt_core/public_include/mmt_core.h:40`); the same check fails if that bound ever drops below 1000.
