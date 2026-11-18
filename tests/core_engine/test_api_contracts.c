@@ -2885,6 +2885,35 @@ static void e_register_classification_function_with_parent_protocol(void) {
     CHECK(classify_node(g_pc, NULL) == NULL, "nothing chained");
 }
 
+/* Issue #115: outside a plugin load the deferred API is the immediate one,
+ * plus identifier checks; the load itself is tested in test_core_engine.c. */
+static int cls_deferred(ipacket_t *p, unsigned i) { (void) p; (void) i; return 0; }
+static void b_register_classification_function_with_parent_protocol_deferred(void) {
+    CHECK(register_classification_function_with_parent_protocol_deferred(AC_PROTO_C, AC_UNREG_ID, cls_deferred, 35) == 1,
+          "registered parent: attached");
+    mmt_classify_proto_t *n = classify_node(g_pc, cls_deferred);
+    CHECK(n != NULL && n->weight == 35, "chained on the parent with its weight");
+}
+static void e_register_classification_function_with_parent_protocol_deferred(void) {
+    CHECK(register_classification_function_with_parent_protocol_deferred(AC_PROTO_C, AC_UNREG_ID, NULL, 30) == 0,
+          "NULL callback -> 0");
+    CHECK(register_classification_function_with_parent_protocol_deferred(AC_UNREG_ID, AC_PROTO_C, cls2, 30) == 0,
+          "unregistered parent outside a plugin load -> 0");
+    CHECK(register_classification_function_with_parent_protocol_deferred(PROTO_MAX_IDENTIFIER, AC_PROTO_C, cls2, 30) == 0
+          && register_classification_function_with_parent_protocol_deferred(AC_PROTO_C, PROTO_MAX_IDENTIFIER, cls2, 30) == 0,
+          "invalid identifiers -> 0");
+    CHECK(classify_node(g_pc, NULL) == NULL && classify_node(g_pc, cls2) == NULL, "nothing chained");
+}
+
+static void b_mmt_protocol_set_process_claimed_layer(void) {
+    CHECK(mmt_protocol_set_process_claimed_layer(g_pc, true) == 1 && g_pc->process_claimed_layer == 1, "set");
+    CHECK(mmt_protocol_set_process_claimed_layer(g_pc, false) == 1 && g_pc->process_claimed_layer == 0, "cleared");
+}
+static void e_mmt_protocol_set_process_claimed_layer(void) {
+    CHECK(mmt_protocol_set_process_claimed_layer(NULL, true) == 0, "NULL protocol -> 0");
+    CHECK(g_pc->process_claimed_layer == 0, "nothing set");
+}
+
 static void b_register_classification_function(void) {
     CHECK(register_classification_function(g_pc, cls3) == 1, "registered");
     mmt_classify_proto_t *n = classify_node(g_pc, cls3);
@@ -3575,6 +3604,11 @@ static const api_contract_t k_contracts[] = {
     CONTRACT(register_classification_function_with_parent_protocol,
              b_register_classification_function_with_parent_protocol,
              e_register_classification_function_with_parent_protocol),
+    CONTRACT(register_classification_function_with_parent_protocol_deferred,
+             b_register_classification_function_with_parent_protocol_deferred,
+             e_register_classification_function_with_parent_protocol_deferred),
+    CONTRACT(mmt_protocol_set_process_claimed_layer, b_mmt_protocol_set_process_claimed_layer,
+             e_mmt_protocol_set_process_claimed_layer),
     CONTRACT(register_classification_function, b_register_classification_function, e_register_classification_function),
     CONTRACT(register_classification_function_full, b_register_classification_function_full,
              e_register_classification_function_full),

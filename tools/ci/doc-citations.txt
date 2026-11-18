@@ -28,7 +28,7 @@ cite	docs/ARCHITECTURE.md	rules/common.mk:216-223	LIBCORE     := libmmt_core	LIB
 cite	docs/ARCHITECTURE.md	rules/common.mk:225-228	ifdef ENABLESEC	endif
 cite	docs/Add-New-Protocol.md	src/mmt_core/public_include/mmt_log.h:148-168	#define mmt_log_at(level, ...)	#define mmt_log_debug(...) ((void)0)
 cite	docs/Add-New-Protocol.md	src/mmt_core/public_include/mmt_utils.h:32-39	#define MMT_LIKELY(x)   __builtin_expect(!!(x), 1)	#define MMT_UNLIKELY(x) (!!(x))
-cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry.c:669	if (!init_plugins()) return 0;	-
+cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry.c:671	if (!init_plugins()) return 0;	-
 cite	docs/Add-New-Protocol.md	src/mmt_core/src/plugins_engine.c:50-53	secure_getenv(PLUGINS_DIR_ENV)	return PLUGINS_REPOSITORY_OPT;
 cite	docs/Add-New-Protocol.md	src/mmt_core/src/plugins_engine.c:71	int n = scandir( dir, &entries, load_filter, alphasort );	-
 cite	docs/Add-New-Protocol.md	src/mmt_core/src/plugins_engine.c:122-138	plugin_handler->handler = dlopen(plugin_path_name, RTLD_NOW | RTLD_GLOBAL);	retval = init_proto_fct();
@@ -43,10 +43,23 @@ cite	docs/Add-New-Protocol.md	src/mmt_core/src/plugins_engine.c:149-151	if (retv
 cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry.c:381-388	bool is_free_protocol_id_for_registration(uint32_t proto_id) {	return 1; // Cool
 cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry.c:449-458	protocol_t *init_protocol_struct_for_registration(	return NULL;
 cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry.c:74-75	bool protocol_names_comparison_fct(	mmt_strncasecmp
-cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry.c:553-558	// Issue #19: index this protocol's name	insert_key_value(configured_protocols_names_map
+cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry.c:554-559	// Issue #19: index this protocol's name	insert_key_value(configured_protocols_names_map
 cite	docs/Add-New-Protocol.md	src/mmt_core/public_include/mmt_core.h:40	#define PROTO_MAX_IDENTIFIER    1000	-
 cite	docs/Add-New-Protocol.md	src/mmt_core/public_include/plugin_defs.h:702	MMTAPI bool MMTCALL mmt_session_handover(	-
 cite	docs/Add-New-Protocol.md	src/mmt_core/public_include/plugin_defs.h:722	MMTAPI bool MMTCALL register_upgrade_classification_function(	-
+cite	docs/Add-New-Protocol.md	src/mmt_tcpip/lib/protocols/proto_tcp.c:1056-1060	if (packet->flow != NULL	}
+cite	docs/Add-New-Protocol.md	src/mmt_tcpip/lib/protocols/proto_udp.c:126-128	if (ipacket->session->packet_count > (CFG_CLASSIFICATION_THRESHOLD * 2)) {	}
+cite	docs/Add-New-Protocol.md	src/mmt_core/public_include/plugin_defs.h:756	MMTAPI bool MMTCALL mmt_protocol_set_process_claimed_layer(	-
+cite	docs/Add-New-Protocol.md	src/mmt_tcpip/lib/protocols/proto_tcp.c:1215	return mmt_claimed_layer_verdict(ipacket, index);	-
+cite	docs/Add-New-Protocol.md	src/mmt_tcpip/lib/protocols/proto_udp.c:150	return mmt_claimed_layer_verdict(ipacket, index);	-
+cite	docs/Add-New-Protocol.md	src/mmt_core/private_include/packet_processing.h:1320-1332	static inline int mmt_claimed_layer_verdict(	}
+cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_pipeline.c:812	!mmt_session_layer_pinned(ipacket->session, index + 1)	-
+cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_session.c:669-673	(classify_status == PROTO_CLASSIFICATION_UPDATE)	configured_protocol->protocol->session_data_init(ipacket, index);
+cite	docs/Add-New-Protocol.md	src/mmt_core/public_include/plugin_defs.h:777	MMTAPI bool MMTCALL register_classification_function_with_parent_protocol_deferred(	-
+cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry.c:565	mmt_classify_deferred_attach(proto_id);	-
+cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry_classify.c:536-564	bool register_classification_function_with_parent_protocol_deferred(	}
+cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry.c:609	if (!mmt_classify_deferred_load(load_plugins))	-
+cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry_classify.c:602-629	int mmt_classify_deferred_load(int (*load)(void)) {	}
 cite	docs/BENCHMARKS.md	tools/phase0/capture_perf.sh:103-106	printf '# host: %s | cpu: %s | gcc: %s | os: %s | commit: %s\n'	rev-parse --short HEAD
 cite	docs/BENCHMARKS.md	tools/phase0/capture_perf.sh:86-88	gcc -O2 -Wall -o "${BIN}" "${SCRIPT_DIR}/phase0_throughput.c"	export LD_LIBRARY_PATH="${PREFIX}/dpi/lib
 cite	docs/BENCHMARKS.md	tools/phase0/capture_perf.sh:72-74	if [ "${MMT_SDK_PREBUILT:-0}" = "1" ]; then	no installed SDK under
@@ -161,21 +174,21 @@ cite	docs/Protocol-Statistics.md	src/mmt_core/public_include/mmt_core.h:1101	MMT
 cite	docs/Protocol-Statistics.md	src/mmt_core/public_include/mmt_core.h:1121	MMTAPI void MMTCALL get_protocol_stats_path(	-
 cite	docs/Protocol-Statistics.md	src/mmt_core/public_include/mmt_core.h:1111	MMTAPI void MMTCALL get_children_stats(proto_statistics_t * parent_stats,	-
 cite	docs/Protocol-Statistics.md	src/mmt_core/public_include/mmt_core.h:1131	MMTAPI void MMTCALL reset_statistics(proto_statistics_t * stats);	-
-cite	docs/THREADING.md	src/mmt_core/src/packet_registry.c:678-690	void close_extraction() {	}
+cite	docs/THREADING.md	src/mmt_core/src/packet_registry.c:680-692	void close_extraction() {	}
 cite	docs/USER_GUIDE.md	install.sh:356-423	# The package sets below install the default-profile build (compiler, make,	}
 cite	docs/USER_GUIDE.md	rules/common.mk:3-8	MMT_BASE ?=/opt/mmt	MMT_EXAMS ?= $(MMT_BASE)/examples
-cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry.c:627	bool init_extraction()	-
-cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry.c:669-670	if (!init_plugins()) return 0; // Issue #503: a plugin load/init failure fails init_extraction()	if (!init_handlers_map()) {
+cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry.c:629	bool init_extraction()	-
+cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry.c:671-672	if (!init_plugins()) return 0; // Issue #503: a plugin load/init failure fails init_extraction()	if (!init_handlers_map()) {
 cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry_handler.c:414	mmt_configured_handlers_map = init_map_space(pointer_comp_fn_pt, pointer_hash_fn);	-
 cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry_handler.c:116	mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * errbuf )	-
 cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry_handler.c:269	if(!insert_key_value(mmt_configured_handlers_map, (void *) new_handler, (void *) new_handler)){	-
 cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_pipeline.c:1592	bool packet_process(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet) {	-
 cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry_handler.c:302	void mmt_close_handler(mmt_handler_t *mmt_handler) {	-
 cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry_handler.c:352	delete_key_value(mmt_configured_handlers_map, mmt_handler);	-
-cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry.c:678	void close_extraction() {	-
-cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry.c:681	close_handlers_map();	-
+cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry.c:680	void close_extraction() {	-
+cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry.c:683	close_handlers_map();	-
 cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry_handler.c:420	iterate_through_mmt_handlers(mmt_close_handler_internal, NULL);	-
-cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry.c:689	close_plugins();	-
+cite	docs/USER_GUIDE.md	src/mmt_core/src/packet_registry.c:691	close_plugins();	-
 cite	docs/USER_GUIDE.md	src/examples/packet_handler.c:63	if(!init_extraction()){	-
 cite	docs/USER_GUIDE.md	src/examples/packet_handler.c:69	mmt_handler = mmt_init_handler(DLT_EN10MB, 0, mmt_errbuf);	-
 cite	docs/USER_GUIDE.md	src/examples/packet_handler.c:100	if(!packet_process(mmt_handler,&header,data)){	-

@@ -535,6 +535,7 @@ void free_registered_protocols() {
         configured_protocols_names_map = NULL;
     }
     mmt_upgrade_registry_release(); /* issue #116: the upgrade classifiers */
+    mmt_classify_deferred_release(); /* issue #115: before close_plugins() unloads their code */
 }
 
 bool register_protocol(protocol_t *proto, uint32_t proto_id) {
@@ -561,6 +562,7 @@ bool register_protocol(protocol_t *proto, uint32_t proto_id) {
         }
     }
     pthread_mutex_unlock(&configured_protocols_mutex);
+    if (retval == PROTO_REGISTERED) mmt_classify_deferred_attach(proto_id); /* issue #115: after the unlock */
     return retval;
 }
 
@@ -604,7 +606,7 @@ bool unregister_protocol_by_name(char* proto_name) {
 }
 
 int init_plugins() {
-    if (!load_plugins()) {
+    if (!mmt_classify_deferred_load(load_plugins)) { /* issue #115: deferred parent registrations */
         mmt_stderr_log( "Error while loading plugins\n");
         return 0;
     }

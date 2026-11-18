@@ -147,7 +147,7 @@ int udp_post_classification_function(ipacket_t * ipacket, unsigned index) {
     if (retval.proto_id == PROTO_UNKNOWN && ipacket->session->packet_count <= (CFG_CLASSIFICATION_THRESHOLD * 2)) {
         // LN: Check if the protocol id in the last index of protocol hierarchy is not PROTO_UDP -> do not try to classify more - external classification
         if(ipacket->proto_hierarchy->proto_path[ipacket->proto_hierarchy->len - 1]!=PROTO_UDP){
-            return new_retval;
+            return mmt_claimed_layer_verdict(ipacket, index); /* issue #115: 0 unless the claimed protocol opted in */
         }
         // Issue #87: the "different strategies" this fallback asked for are
         // the DPI profiles — each of the heuristic levers below (IP-range,

@@ -56,6 +56,7 @@
 #include <string.h>
 #include <sys/types.h> /* u_char for the pkthdr/packet prototypes */
 #include <sys/time.h>
+#include <unistd.h> /* dup/dup2: stderr capture, issue #115 */
 
 #include "mmt_core.h"
 #include "proto_meta.h"
@@ -3320,6 +3321,122 @@ static void test_session_handover(void) {
     CHECK(g_ho_bad_data == 0, "no protocol ever saw another protocol's session data");
 }
 
+/* ---- issue #115: deferred parent registration ------------------------------
+ * register_classification_function_with_parent_protocol_deferred() during a
+ * plugin load (mmt_classify_deferred_load() running a fake loader in place of
+ * load_plugins()), outside it, and the teardown of what it kept. */
+#define DF_PARENT       640
+#define DF_CHILD        641
+#define DF_EARLY        642 /* registered before the call */
+#define DF_ORPHAN       643 /* never registered during the load */
+#define DF_LATE         644 /* registered after a release */
+
+static int df_cls_a(ipacket_t *ipacket, unsigned index) { (void) ipacket; (void) index; return 0; }
+static int df_cls_b(ipacket_t *ipacket, unsigned index) { (void) ipacket; (void) index; return 0; }
+static int df_cls_c(ipacket_t *ipacket, unsigned index) { (void) ipacket; (void) index; return 0; }
+static int df_cls_d(ipacket_t *ipacket, unsigned index) { (void) ipacket; (void) index; return 0; }
+
+/* 1-based position of fn in the chain of id, 0 when absent */
+static int df_pos(uint32_t id, generic_classification_function fn) {
+    protocol_t *p = get_protocol_struct_by_protocol_id(id);
+    mmt_classify_proto_t *n;
+    int i = 1;
+    for (n = (p != NULL) ? p->classify_next.classify_protos : NULL; n != NULL; n = n->next, i++) {
+        if (n->classify_me == fn) return i;
+    }
+    return 0;
+}
+static int df_register(uint32_t id, const char *name) {
+    protocol_t *p = init_protocol_struct_for_registration(id, name);
+    return p != NULL && register_protocol(p, id) == PROTO_REGISTERED;
+}
+
+static int df_loader_ok(void) {
+    CHECK(df_register(DF_EARLY, "ce_df_early"), "register the early parent");
+    CHECK(register_classification_function_with_parent_protocol_deferred(DF_EARLY, DF_CHILD, df_cls_a, 10)
+          && df_pos(DF_EARLY, df_cls_a) == 1, "registered parent: attached at once");
+    CHECK(register_classification_function_with_parent_protocol_deferred(DF_PARENT, DF_CHILD, df_cls_b, 20),
+          "unregistered parent during the load: kept");
+    CHECK(register_classification_function_with_parent_protocol_deferred(DF_PARENT, DF_CHILD, df_cls_c, 20),
+          "a second one for the same parent: kept");
+    CHECK(register_classification_function_with_parent_protocol_deferred(DF_EARLY, DF_CHILD, NULL, 20) == 0,
+          "NULL classifier during the load -> 0");
+    CHECK(register_classification_function_with_parent_protocol(DF_PARENT, df_cls_d, 20) == 0,
+          "the immediate API still refuses an unregistered parent during the load");
+    CHECK(df_pos(DF_PARENT, df_cls_b) == 0, "nothing attached before the parent registers");
+    CHECK(df_register(DF_PARENT, "ce_df_parent"), "register the parent");
+    CHECK(df_pos(DF_PARENT, df_cls_b) == 1 && df_pos(DF_PARENT, df_cls_c) == 2,
+          "register_protocol() attached both, in registration order");
+    return 1;
+}
+
+static int df_loader_orphan(void) {
+    CHECK(register_classification_function_with_parent_protocol_deferred(DF_ORPHAN, DF_CHILD, df_cls_d, 20),
+          "orphan kept during the load");
+    return 1;
+}
+
+static int df_loader_fails(void) {
+    (void) register_classification_function_with_parent_protocol_deferred(DF_ORPHAN, DF_CHILD, df_cls_a, 20);
+    return 0; /* a later plugin failed */
+}
+
+static int df_loader_release(void) {
+    CHECK(register_classification_function_with_parent_protocol_deferred(DF_LATE, DF_CHILD, df_cls_b, 20),
+          "kept before the release");
+    mmt_classify_deferred_release();
+    CHECK(register_classification_function_with_parent_protocol_deferred(DF_LATE, DF_CHILD, df_cls_c, 20) == 0,
+          "after the release the load no longer keeps registrations");
+    CHECK(df_register(DF_LATE, "ce_df_late"), "register the late parent");
+    CHECK(df_pos(DF_LATE, df_cls_b) == 0, "the released registration is never attached");
+    return 1;
+}
+
+/* Runs load under mmt_classify_deferred_load() with stderr captured into msg. */
+static int df_load_capture(int (*load)(void), char *msg, size_t size) {
+    FILE *tmp = tmpfile();
+    int saved, ret;
+    size_t n = 0;
+    msg[0] = '\0';
+    fflush(stderr);
+    saved = dup(STDERR_FILENO);
+    if (tmp != NULL && saved >= 0) dup2(fileno(tmp), STDERR_FILENO);
+    ret = mmt_classify_deferred_load(load);
+    fflush(stderr);
+    if (saved >= 0) { dup2(saved, STDERR_FILENO); close(saved); }
+    if (tmp != NULL) {
+        rewind(tmp);
+        n = fread(msg, 1, size - 1, tmp);
+        fclose(tmp);
+    }
+    msg[n] = '\0';
+    return ret;
+}
+
+static void test_deferred_parent_registration(int cycle) {
+    char msg[512];
+    fprintf(stderr, "  test: deferred parent registration (#115), cycle %d\n", cycle);
+    CHECK(register_classification_function_with_parent_protocol_deferred(DF_PARENT, DF_CHILD, df_cls_a, 10) == 0,
+          "outside a plugin load, an unregistered parent -> 0");
+    CHECK(df_load_capture(df_loader_ok, msg, sizeof(msg)) == 1 && msg[0] == '\0', "load with every parent registered succeeds");
+    CHECK(register_classification_function_with_parent_protocol_deferred(DF_PARENT, DF_CHILD, df_cls_d, 30)
+          && df_pos(DF_PARENT, df_cls_d) == 3, "after the load, a registered parent: attached at once");
+    CHECK(register_classification_function_with_parent_protocol_deferred(DF_ORPHAN, DF_CHILD, df_cls_a, 10) == 0,
+          "after the load, an unregistered parent -> 0");
+    CHECK(register_classification_function_with_parent_protocol_deferred(PROTO_MAX_IDENTIFIER, DF_CHILD, df_cls_a, 10) == 0
+          && register_classification_function_with_parent_protocol_deferred(DF_PARENT, PROTO_MAX_IDENTIFIER, df_cls_a, 10) == 0,
+          "invalid protocol identifiers -> 0");
+
+    CHECK(df_load_capture(df_loader_orphan, msg, sizeof(msg)) == 0, "a parent never registered fails the load");
+    CHECK(strstr(msg, "641 (unregistered)") != NULL && strstr(msg, "643 (unregistered)") != NULL,
+          "the message names the child and the parent");
+    CHECK(df_load_capture(df_loader_fails, msg, sizeof(msg)) == 0 && strstr(msg, "643") != NULL,
+          "a failed load with a kept registration still reports it");
+    CHECK(df_register(DF_ORPHAN, "ce_df_orphan") && df_pos(DF_ORPHAN, df_cls_d) == 0 && df_pos(DF_ORPHAN, df_cls_a) == 0,
+          "the failed loads dropped what they kept: registering the parent later attaches nothing");
+    CHECK(df_load_capture(df_loader_release, msg, sizeof(msg)) == 1, "a release during a load drops what it kept");
+}
+
 int main(void) {
     fprintf(stderr, "Core-engine test suite (session lifecycle + arena allocator)\n");
     g_null_fp = fopen("/dev/null", "w"); /* sink for the fprintf/format helpers */
@@ -3357,11 +3474,13 @@ int main(void) {
     test_stats_child_cache();
     test_reasm_stats();
     test_session_handover(); /* issue #116: last, its protocols stay registered */
+    test_deferred_parent_registration(1); /* issue #115 */
 
     /* Full teardown, then a second init/close cycle — F-BUG-005 regression:
      * the global maps must be NULLed, not left dangling. */
     close_extraction();
     CHECK(init_extraction() == 1, "second init_extraction after close");
+    test_deferred_parent_registration(2); /* issue #115: the same ids, a fresh registry */
     close_extraction();
     test_null_slot_lookups();
 

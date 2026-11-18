@@ -681,6 +681,7 @@ struct protocol_struct {
                                    * Will be passed when calling protocol_context_init and protocol_context_cleanup. */
     //void * args; /**< For internal use. MUST not be changed. */
     int (* update_protocol_fct) (int); // function to update protocol structure
+    int process_claimed_layer; /**< Issue #115: TCP/UDP process this protocol's layer from the packet a classifier claims it (mmt_protocol_set_process_claimed_layer()). */
 };
 
 /**
@@ -1298,6 +1299,37 @@ void mmt_session_apply_handover(mmt_session_t * session);
 
 /* Frees the upgrade-classifier registry (packet_registry_classify.c). */
 void mmt_upgrade_registry_release(void);
+
+/* Issue #115: the deferred parent registrations of
+ * register_classification_function_with_parent_protocol_deferred()
+ * (packet_registry_classify.c). mmt_classify_deferred_load() runs `load`
+ * (load_plugins()) with registrations accepted for unregistered parents,
+ * then reports and drops any left unattached: it returns 0 when `load` failed
+ * or one was left. mmt_classify_deferred_attach() attaches those of a parent
+ * register_protocol() just registered (called without configured_protocols_mutex
+ * held). mmt_classify_deferred_release() drops them all (teardown). */
+int mmt_classify_deferred_load(int (*load)(void));
+void mmt_classify_deferred_attach(uint32_t parent_proto_id);
+void mmt_classify_deferred_release(void);
+
+/* Issue #115: the TCP/UDP post-classification verdict for the layer a
+ * classifier claimed at index + 1 while the flow's own detection is unknown:
+ * nonzero (process it) when its protocol opted in with
+ * mmt_protocol_set_process_claimed_layer(), 0 (skip it, the default) otherwise.
+ * Reads the handler's protocol snapshot like the dissectors do. */
+static inline int mmt_claimed_layer_verdict(const ipacket_t * ipacket, unsigned index) {
+    const proto_hierarchy_t * ph = ipacket->proto_hierarchy;
+    const protocol_t * proto;
+    uint32_t id;
+    if (ipacket->mmt_handler == NULL || ph == NULL || index + 1 >= PROTO_PATH_SIZE
+            || ph->len <= (int) (index + 1)) {
+        return 0;
+    }
+    id = (uint32_t) ph->proto_path[index + 1];
+    if (!_is_valid_protocol_id(id)) return 0;
+    proto = ipacket->mmt_handler->configured_protocols[id].protocol;
+    return proto != NULL && proto->is_registered && proto->process_claimed_layer;
+}
 
 #ifdef __cplusplus
 }
