@@ -1250,20 +1250,35 @@ static inline int mmt_layer_write_refused(const ipacket_t * ipacket, unsigned in
  * `new_ip_index` (a VLAN tag or an MPLS label appeared or went). The splice
  * moves proto_path, the offsets and the statuses; for a session that has a
  * pinned layer or a pending handover this moves what belongs to the layers
- * above IP with them: the session_data slots and the pinned bits. A pending
- * handover is dropped (its index no longer names the layer it was queued
- * for). A session with neither returns at once, so its session_data stays
- * where it was, as before. */
+ * above IP with them: the session_data slots, the pinned bits and the pending
+ * handover's index, so a claim queued on the packet before the splice (the
+ * 101 travels one way, the next packet the other, tagged) still applies to
+ * the layer it was queued for. A pending handover whose moved index falls
+ * outside the path above IP is dropped; mmt_session_apply_handover() still
+ * checks that the layer holds handover_from. A session with neither returns
+ * at once, so its session_data stays where it was, as before. */
 static inline void mmt_session_handover_on_splice(mmt_session_t * s, int old_ip_index, int new_ip_index) {
     void * moved[PROTO_PATH_SIZE];
     uint16_t bits = 0;
     int lo, i, k;
     if (s == NULL || (s->handed_over == 0 && s->handover_index == 0)) return;
-    s->handover_index = 0;
-    s->handover_proto = 0;
-    s->handover_from = 0;
     if (old_ip_index < 0 || new_ip_index < 0 || old_ip_index >= PROTO_PATH_SIZE
-            || new_ip_index >= PROTO_PATH_SIZE || old_ip_index == new_ip_index) return;
+            || new_ip_index >= PROTO_PATH_SIZE || old_ip_index == new_ip_index) {
+        s->handover_index = 0;
+        s->handover_proto = 0;
+        s->handover_from = 0;
+        return;
+    }
+    if (s->handover_index != 0) {
+        int moved_index = (int) s->handover_index + (new_ip_index - old_ip_index);
+        if (moved_index > new_ip_index && moved_index < PROTO_PATH_SIZE) {
+            s->handover_index = (uint8_t) moved_index;
+        } else {
+            s->handover_index = 0;
+            s->handover_proto = 0;
+            s->handover_from = 0;
+        }
+    }
     lo = ((old_ip_index < new_ip_index) ? old_ip_index : new_ip_index) + 1;
     memcpy(moved, s->session_data, sizeof(moved));
     for (i = lo; i < PROTO_PATH_SIZE; i++) s->session_data[i] = NULL;

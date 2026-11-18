@@ -3117,21 +3117,42 @@ static void test_session_handover_units(void) {
     s.handover_proto = HO_PROTO_Y;
     s.handover_from = HO_PROTO_X;
     mmt_session_handover_on_splice(&s, 2, 3);
-    CHECK(s.handover_index == 0 && s.handover_proto == 0 && s.handover_from == 0,
-          "a splice drops the pending handover");
+    CHECK(s.handover_index == 5 && s.handover_proto == HO_PROTO_Y && s.handover_from == HO_PROTO_X,
+          "a splice moves the pending handover up with its layer");
     CHECK(s.handed_over == (1u << 5), "the pin moved up with its layer");
     CHECK(s.session_data[5] == &canary && s.session_data[4] == NULL && s.session_data[3] == NULL,
           "the slot moved up with its layer");
     mmt_session_handover_on_splice(&s, 3, 2);
+    CHECK(s.handover_index == 4 && s.handover_proto == HO_PROTO_Y && s.handover_from == HO_PROTO_X,
+          "the pending handover moved back down");
     CHECK(s.handed_over == (1u << 4), "the pin moved back down");
     CHECK(s.session_data[4] == &canary && s.session_data[5] == NULL, "the slot moved back down");
     /* a pending handover alone also makes the helper act */
     memset(&s, 0, sizeof(s));
     s.handover_index = 3;
+    s.handover_proto = HO_PROTO_Y;
+    s.handover_from = HO_PROTO_X;
     s.session_data[3] = &canary;
     mmt_session_handover_on_splice(&s, 2, 3);
-    CHECK(s.handover_index == 0 && s.session_data[4] == &canary && s.session_data[3] == NULL,
-          "a pending-only session moves its slots and drops the handover");
+    CHECK(s.handover_index == 4 && s.handover_proto == HO_PROTO_Y && s.handover_from == HO_PROTO_X
+          && s.session_data[4] == &canary && s.session_data[3] == NULL,
+          "a pending-only session moves its slots and its handover");
+    /* a pending handover moved past the path is dropped */
+    memset(&s, 0, sizeof(s));
+    s.handover_index = PROTO_PATH_SIZE - 1;
+    s.handover_proto = HO_PROTO_Y;
+    s.handover_from = HO_PROTO_X;
+    mmt_session_handover_on_splice(&s, 2, 3);
+    CHECK(s.handover_index == 0 && s.handover_proto == 0 && s.handover_from == 0,
+          "a handover moved past the path is dropped");
+    /* a pending handover not above the IP layer is dropped, never shifted */
+    memset(&s, 0, sizeof(s));
+    s.handover_index = 3;
+    s.handover_proto = HO_PROTO_Y;
+    s.handover_from = HO_PROTO_X;
+    mmt_session_handover_on_splice(&s, 3, 2);
+    CHECK(s.handover_index == 0 && s.handover_proto == 0 && s.handover_from == 0,
+          "a handover at or below the IP layer is dropped");
     /* an ordinary session: nothing moves, as before #116 */
     memset(&s, 0, sizeof(s));
     s.session_data[4] = &canary;

@@ -37,7 +37,8 @@
  * cases: the handover itself, an Upgrade after earlier requests, a refused
  * upgrade (HTTP events identical to a run with no plugin), declining and
  * ordered classifiers, the path splice of a VLAN tag appearing and going
- * (IPv4 and IPv6), and the give-back to HTTP.
+ * (IPv4 and IPv6) on a handed-over flow and between the 101 and the packet
+ * that applies the handover, and the give-back to HTTP.
  *
  * Exit status: 0 = all cases classified as expected, non-zero = regression.
  */
@@ -374,6 +375,44 @@ static void splice_case(mmt_handler_t *h, int port, int ipv6, const char *label)
               && mine->magic == UPG_MAGIC, msg);
 }
 
+/* The two directions differ in encapsulation: the Upgrade and the 101 travel
+ * untagged, the client's frames tagged. The 101 queues the handover; the
+ * next client frame makes the IP sessionizer splice the path before the
+ * handover is applied, so it must apply on that frame, at the moved index. */
+static void pending_splice_case(mmt_handler_t *h, int port, int ipv6, const char *label) {
+    char msg[128];
+    upg_flow_t f = { port, ipv6, { 1000, 5000 } };
+    int bad = g_upg_bad, init = g_upg_init, analysed, depth, ok;
+    unsigned index;
+    upg_data_t *mine;
+    UPG_SEND(h, &f, 0, 0, UPG_REQ, 0);
+    UPG_SEND(h, &f, 1, 0, UPG_101, 0);
+    depth = path_depth(g_path);
+    index = (unsigned) depth - 1; /* http's index on the untagged path */
+    snprintf(msg, sizeof(msg), "%s 101 untagged is http", label);
+    UPG_CHECK(ends_with(g_path, ".tcp.http") && g_upg_init == init, msg);
+    analysed = g_upg_analyse;
+    g_upg_last = NULL;
+    UPG_SEND(h, &f, 0, 1, WS_CLIENT, 0);
+    mine = g_upg_last;
+    snprintf(msg, sizeof(msg), "%s tagged next frame applies it", label);
+    UPG_CHECK(ends_with(g_path, ".tcp." UPG_NAME) && path_depth(g_path) == depth + 1
+              && g_upg_init == init + 1 && g_upg_analyse == analysed + 1
+              && mine != NULL && g_upg_last_index == index + 1 && g_upg_bad == bad, msg);
+    ok = 1;
+    UPG_SEND(h, &f, 1, 0, WS_SERVER, 0);
+    ok = ok && ends_with(g_path, ".tcp." UPG_NAME) && path_depth(g_path) == depth
+         && g_upg_last == mine && g_upg_last_index == index;
+    UPG_SEND(h, &f, 0, 1, WS_CLIENT, 0);
+    ok = ok && ends_with(g_path, ".tcp." UPG_NAME) && path_depth(g_path) == depth + 1
+         && g_upg_last == mine && g_upg_last_index == index + 1;
+    UPG_SEND(h, &f, 1, 0, WS_SERVER, 0);
+    ok = ok && ends_with(g_path, ".tcp." UPG_NAME) && g_upg_last == mine && g_upg_last_index == index;
+    snprintf(msg, sizeof(msg), "%s both ways stay the plugin's (canary)", label);
+    UPG_CHECK(ok && g_upg_init == init + 1 && g_upg_bad == bad && mine != NULL
+              && mine->magic == UPG_MAGIC && mine->self == mine && mine->calls == 4, msg);
+}
+
 static void upgrade_tests(mmt_handler_t *h, const char *baseline) {
     upg_flow_t f;
     int n;
@@ -443,6 +482,8 @@ static void upgrade_tests(mmt_handler_t *h, const char *baseline) {
     /* (e) T1': the IP layer moves under a handed-over flow */
     splice_case(h, 2007, 0, "IPv4");
     splice_case(h, 2008, 1, "IPv6");
+    pending_splice_case(h, 2010, 0, "IPv4");
+    pending_splice_case(h, 2011, 1, "IPv6");
 
     /* (f) give-back: the plugin hands the session back to HTTP, which starts
      * on a fresh parser (the request parser it had was paused by the

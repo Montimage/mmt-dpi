@@ -689,7 +689,7 @@ MMTAPI bool MMTCALL is_valid_proto_attribute(
  * of the session the parent's classification (TCP/UDP post-classification included) no longer
  * rewrites it, and only another handover changes it. The new protocol's session-data
  * initialization runs once, then its analysis and attribute handlers run at @p index.
- * A pending handover is dropped when the session's IP layer moves before it is applied.
+ * A pending handover moves with its layer when the session's IP layer moves before it applies.
  * @param ipacket the packet being processed, with its session
  * @param index the position of the layer in the session's protocol hierarchy
  * @param new_proto_id the identifier of a registered protocol other than the current one
