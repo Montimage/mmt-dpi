@@ -491,6 +491,41 @@ Releases, so it needs no tag):
 gh workflow run apt-repo.yml -R Montimage/packages
 ```
 
+## Check the APT repository
+
+Once that rebuild has succeeded, check what the published repository
+serves (issue #79):
+
+1. Every suite and architecture lists the new version. This waits until the
+   `Packages` indexes of the five suites (amd64 and arm64) all hold the tag's
+   version and prints it, or fails after 45 minutes (`--wait SECONDS`
+   changes that). It reads the indexes over HTTPS with `curl`, needs no root
+   and no apt:
+
+   ```
+   bash tools/ci/smoke-apt.sh --resolve --tag vx.y.z
+   ```
+
+2. The *Install smoke* workflow's post-release run (`install-smoke.yml`)
+   passed its `apt-ready`, `apt` and `apt-tamper` jobs: they install
+   `mmt-dpi` and `mmt-dpi-security` from the repository on every suite and
+   architecture with the documented setup, and check that apt refuses a
+   tampered `InRelease` (issue #78). The completed tag run of *Build &
+   release packages* starts it as a `workflow_run` run; every other run of
+   that workflow also starts one, whose jobs are all skipped, so open the
+   one that started when the tag run ended. A release published by a person
+   starts it as a `release` run instead:
+
+   ```
+   gh run list --workflow install-smoke.yml --event workflow_run --limit 5
+   ```
+
+A failure here does not unpublish the release. Fix the repository (a
+re-run of `apt-repo.yml` rebuilds it), never delete or demote the Release:
+the repository keeps the last two releases, and removing one makes clients
+fail on the version it served. When the release changed the signing key,
+also follow *Signing key handling* in `docs/DEB_PACKAGE_CHECKLIST.md`.
+
 ## Update the documents
 
 - Update `ChangeLog` (`CHANGELOG.md` is the single canonical changelog — the

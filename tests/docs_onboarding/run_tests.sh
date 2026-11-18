@@ -23,7 +23,11 @@
 #         bootstrap's own usage names them, and each source-installer line
 #         runs from an empty directory with --dry-run added (the installer
 #         fetched from this checkout), exits 0, shows the plan its options
-#         ask for and leaves the directory empty;
+#         ask for and leaves the directory empty; the APT repository route
+#         (issue #79) comes first, and its lines are exactly the setup
+#         tools/ci/smoke-apt.sh installs from — its repository URL, keyring
+#         path, deb822 fields and sources.list.d file — with the primary key
+#         fingerprint of debian/upstream/signing-key.asc shown to check;
 #   [4/7] the SDK builds and installs into a throwaway MMT_BASE prefix;
 #   [5/7] the displayed commands, run verbatim in an empty directory, obtain
 #         both files, compile and print exactly the displayed output;
@@ -236,11 +240,14 @@ for smoke in smoke-install.sh smoke-bootstrap.sh; do
         || fail "tools/ci/${smoke} no longer runs the first run of docs/_includes/first-example.md"
 done
 mkdir -p "${WORK}/routes"
-python3 - "$QUICK_START" "${WORK}/routes" "${SOURCE_URL}" "${BOOTSTRAP_URL}" "file://${REPO_ROOT}/install.sh" <<'PYEOF' || ERRORS=$((ERRORS + 1))
+python3 - "$QUICK_START" "${WORK}/routes" "${SOURCE_URL}" "${BOOTSTRAP_URL}" "file://${REPO_ROOT}/install.sh" \
+    "${REPO_ROOT}/tools/ci/smoke-apt.sh" "${REPO_ROOT}/debian/upstream/signing-key.asc" <<'PYEOF' || ERRORS=$((ERRORS + 1))
+import base64
+import hashlib
 import re
 import sys
 import urllib.parse
-fragment, out, source_url, bootstrap_url, local_url = sys.argv[1:6]
+fragment, out, source_url, bootstrap_url, local_url, smoke_apt, signing_key = sys.argv[1:8]
 local_url = urllib.parse.quote(local_url, safe="/:")
 text = open(fragment, encoding="utf-8").read()
 bad = 0
@@ -255,11 +262,67 @@ commands = [line.strip()
 source = [c for c in commands if c.startswith(f"curl -fsSL {source_url} | ")]
 wget = [c for c in commands if c.startswith(f"wget -qO- {source_url} | ")]
 bootstrap = [c for c in commands if c.startswith(f"curl -fsSL {bootstrap_url} | ")]
-unknown = [c for c in commands if c not in source + wget + bootstrap]
+# The APT route (issue #79): the bash lines between its heading and the
+# bootstrap's, which must be the setup tools/ci/smoke-apt.sh installs from.
+apt_head, boot_head = "**APT repository**", "**Verified package bootstrap**"
+apt_text = (text.split(apt_head, 1)[-1].split(boot_head, 1)[0]
+            if apt_head in text and boot_head in text else "")
+apt = [line.strip()
+       for body in re.findall(r"^```bash\n(.*?)^```$", apt_text, re.S | re.M)
+       for line in body.splitlines()
+       if line.strip() and not line.lstrip().startswith("#")]
+unknown = [c for c in commands if c not in source + wget + bootstrap + apt]
 report(source_url != "" and bootstrap_url != "",
        "the smoke workflows' published installer URLs are readable")
 report(not unknown, "every displayed install command belongs to a known route"
        + "".join(f"\n        unknown: {c}" for c in unknown))
+smoke = open(smoke_apt, encoding="utf-8").read()
+def smoke_value(pattern):
+    m = re.search(pattern, smoke, re.M)
+    return m.group(1) if m else ""
+repo_url = smoke_value(r'^APT_REPO_URL="\$\{APT_REPO_URL:-([^}"]+)\}"$')
+keyring = smoke_value(r"^KEYRING=(\S+)$")
+sources_file = smoke_value(r'^\s*install -m 0644 "\$\{sources\}/montimage\.sources" (\S+)$')
+deb822 = smoke_value(r"printf '(Types: [^']*)'")
+report(all((repo_url, keyring, sources_file, deb822)),
+       "tools/ci/smoke-apt.sh names its repository URL, keyring, sources file and deb822 fields")
+codename = '$(. /etc/os-release && echo "$VERSION_CODENAME")'
+fields = deb822.replace("%s", "{}").format(repo_url, codename, keyring).split("\\n")
+expected = ["sudo apt-get update && sudo apt-get install -y curl gnupg",
+            "keyring=$(mktemp)",
+            f'curl -fsSL -o "$keyring" {repo_url}/montimage-archive-keyring.gpg',
+            'gpg --show-keys "$keyring"',
+            "sudo install -d -m 0755 " + keyring.rsplit("/", 1)[0],
+            f'sudo install -m 0644 "$keyring" {keyring} && rm -f "$keyring"',
+            f"sudo tee {sources_file} >/dev/null <<EOF",
+            *[f for f in fields if f],
+            "EOF",
+            "sudo apt-get update && sudo apt-get install -y mmt-dpi"]
+report(apt_text != "" and text.index(apt_head) < text.index(boot_head),
+       "the APT repository route is listed before the package bootstrap")
+report(apt == expected,
+       "the APT route is the setup tools/ci/smoke-apt.sh installs from"
+       + "".join(f"\n        displayed: {a}\n        expected:  {e}"
+                 for a, e in zip(apt + [""] * len(expected), expected + [""] * len(apt))
+                 if a != e))
+# Primary key fingerprint of the committed key: SHA-1 over 0x99, the
+# two-byte length and the body of the first (public-key) packet (RFC 4880 §12.2).
+armor = open(signing_key, encoding="utf-8").read().split("\n\n", 1)[-1]
+raw = base64.b64decode("".join(l for l in armor.splitlines()
+                               if l and not l.startswith(("=", "-----"))))
+tag = raw[0]
+if tag & 0x40:  # new-format packet header
+    n = raw[1]
+    body = (raw[2:2 + n] if n < 192 else
+            raw[3:3 + ((n - 192) << 8) + raw[2] + 192] if n < 224 else
+            raw[6:6 + int.from_bytes(raw[2:6], "big")])
+else:           # old-format packet header
+    size = {0: 1, 1: 2, 2: 4}[tag & 3]
+    body = raw[1 + size:1 + size + int.from_bytes(raw[1:1 + size], "big")]
+fpr = hashlib.sha1(b"\x99" + len(body).to_bytes(2, "big") + body).hexdigest().upper()
+report(f"`{fpr}`" in apt_text,
+       f"the APT route shows the primary key fingerprint of debian/upstream/signing-key.asc ({fpr})")
+report("apt-key" not in text, "no displayed route uses apt-key")
 marked = text.split("<!-- hero-install", 1)[-1].split("```")
 hero = marked[1].removeprefix("bash").strip() if len(marked) > 2 else ""
 report(hero == f"curl -fsSL {source_url} | bash",
