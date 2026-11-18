@@ -21,6 +21,12 @@
 #   PROTO_MAX_IDENTIFIER 999                                       -> 1
 #   a page that no longer names the range                          -> 1
 #   no id define at all                                            -> 2
+#   an unreadable file under src/ (grep fails on part of the tree) -> 2
+#   expression defines (900 + 60), ((uint32_t)960), (PROTO_NAS5G + 50) -> 1
+#   an id after a comment, /* x */ 960, or a comment inside 900 /* */ + 60 -> 1
+#   a comment-only define, /* no value */                          -> 0
+#   an invalid octal literal 0960                                  -> 2
+#   a page writing the range with a hyphen, 950-999                -> 0
 #   the real tree                                                  -> 0
 #
 # Usage: bash tools/ci/tests/test-proto-id-range.sh
@@ -123,6 +129,59 @@ d="$(fixture empty)"
 printf '#define PROTO_ALIAS "alias"\n' > "${d}/src/tcpip/protocols.h"
 printf '#define PROTO_MAX_IDENTIFIER_UNSET\n' > "${d}/src/core/core.h"
 expect "no id define at all" 2 "${d}" "the scan is broken"
+
+# Only the unreadable file holds an id in the range, so a validator that let
+# grep's partial failure pass would report the range free. chmod does not stop
+# root from reading the file: there a grep stand-in, first on PATH, fails the
+# recursive scan the way grep does on an unreadable file.
+d="$(fixture unreadable)"
+printf '#define PROTO_LOCKED 960\n' > "${d}/src/tcpip/locked.h"
+chmod 0000 "${d}/src/tcpip/locked.h"
+if [ ! -r "${d}/src/tcpip/locked.h" ]; then
+    expect "an unreadable file under src/" 2 "${d}" "grep failed"
+else
+    real_grep="$(command -v grep)"
+    mkdir -p "${WORK}/stub"
+    {
+        echo '#!/usr/bin/env bash'
+        echo "if [ \"\${1:-}\" = -rnIE ]; then"
+        printf '    %q "$@" | %q -vF /locked.h:\n' "${real_grep}" "${real_grep}"
+        echo '    echo "grep: locked.h: Permission denied" >&2'
+        echo '    exit 2'
+        echo 'fi'
+        printf 'exec %q "$@"\n' "${real_grep}"
+    } > "${WORK}/stub/grep"
+    chmod +x "${WORK}/stub/grep"
+    PATH="${WORK}/stub:${PATH}" expect "an unreadable file under src/ (grep stand-in, root)" 2 "${d}" "grep failed"
+fi
+
+d="$(fixture expression)"
+printf '%s\n' \
+    '#define PROTO_SUM (900 + 60)' \
+    '#define PROTO_CAST ((uint32_t)960)' \
+    '#define PROTO_REL (PROTO_NAS5G + 50)' >> "${d}/src/tcpip/protocols.h"
+expect "an expression define (900 + 60)" 1 "${d}" "PROTO_SUM = (900 + 60) is an expression the guard does not evaluate"
+expect "an expression define ((uint32_t)960)" 1 "${d}" "PROTO_CAST = ((uint32_t)960) is an expression the guard does not evaluate"
+expect "an expression define (PROTO_NAS5G + 50)" 1 "${d}" "PROTO_REL = (PROTO_NAS5G + 50) is an expression the guard does not evaluate"
+
+d="$(fixture comment_hidden)"
+printf '%s\n' \
+    '#define PROTO_HIDDEN /* a plugin id */ 960' \
+    '#define PROTO_SPLIT 900 /* base */ + 60' >> "${d}/src/tcpip/protocols.h"
+expect "an id after a comment, /* x */ 960" 1 "${d}" "PROTO_HIDDEN = /* a plugin id */ 960 is an expression the guard does not evaluate"
+expect "a comment inside 900 /* */ + 60" 1 "${d}" "PROTO_SPLIT = 900 /* base */ + 60 is an expression the guard does not evaluate"
+
+d="$(fixture comment_only)"
+printf '#define PROTO_NOTE /* no value */\n#define PROTO_NOTE_LINE // no value\n' >> "${d}/src/tcpip/protocols.h"
+expect "a comment-only define, /* no value */" 0 "${d}" "range 950–999 free"
+
+d="$(fixture bad_octal)"
+printf '#define PROTO_BAD_OCTAL 0960\n' >> "${d}/src/tcpip/protocols.h"
+expect "an invalid octal literal 0960" 2 "${d}" "PROTO_BAD_OCTAL has an invalid integer literal 0960"
+
+d="$(fixture hyphen)"
+printf 'Ids **950-999** are reserved for third-party plugins.\n' > "${d}/docs/page.md"
+expect "a page writing the range with a hyphen, 950-999" 0 "${d}" "range 950–999 free"
 
 got=0
 out="$(bash "${VALIDATOR}" 2>&1)" || got=$?
