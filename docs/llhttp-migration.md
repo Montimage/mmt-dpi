@@ -196,6 +196,13 @@ at `src/mmt_tcpip/lib/protocols/proto_http.c:368`: under llhttp, "this was an up
 `HPE_PAUSED_UPGRADE` return code (or `on_headers_complete` returning `2`) plus
 `llhttp_get_upgrade(parser)` — not only as a sticky flag after `execute`.
 
+Since issue #116 that branch is no longer empty: on the response parser that paused
+on a `101 Switching Protocols`, HTTP offers the session once to the upgrade
+classifiers registered for `PROTO_HTTP` (`mmt_http_offer_upgrade()`, see
+[HTTP protocol](./HTTP-protocol.md#upgrade-hand-off-issue-116)). MMT still never calls
+`llhttp_resume_after_upgrade()`: after an upgrade both parsers stay paused, as before,
+so a refused upgrade keeps today's output.
+
 ### 5.4 `execute` return contract
 
 `http_parser_execute` returns `size_t nparsed`; `nparsed != len` was MMT's error test
@@ -265,7 +272,7 @@ parser->parser[i].data = init_stream_processor();   /* after init, not before */
 enum llhttp_errno err =
     llhttp_execute(parser, (const char *) packet->payload, packet->payload_packet_len);
 if (err == HPE_PAUSED_UPGRADE || llhttp_get_upgrade(parser)) {
-    /* upgraded connection — unchanged TODO */
+    mmt_http_offer_upgrade(ipacket, index, parser, err); /* issue #116: offer a 101 */
 } else if (err != HPE_OK) {
     debug("... Error %s: %s\n", llhttp_errno_name(err), llhttp_get_error_reason(parser));
     llhttp_reset(parser);                           /* preserves data/settings */

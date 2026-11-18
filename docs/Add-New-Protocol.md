@@ -178,3 +178,25 @@ The full guidance for plugin authors is in the mmt-plugin-generator README: its 
 Protocol ids **950–999** are reserved for third-party plugins, the plugins of your own that the core loads out of tree. No built-in protocol is ever assigned an id in that range: the SDK's own ids stay below 950, and `scripts/validate-proto-id-range.sh`, run by the required `doc-validators` CI job, fails when a `#define PROTO_<NAME> <n>` under `src/` falls in it. The range ends at 999 because an id must be below `PROTO_MAX_IDENTIFIER`, 1000 (`src/mmt_core/public_include/mmt_core.h:40`); the same check fails if that bound ever drops below 1000.
 
 The range keeps your plugin clear of the SDK, not of other plugins: every third-party plugin draws from it and nothing assigns ids within it. So a plugin must still check at run time that its id and name are free, with every plugin deployed beside it, as [*Picking a free id and name*](#loading-a-plugin-of-your-own) describes. The mmt-plugin-generator README's [*Use plugin*](https://github.com/Montimage/mmt-plugin-generator#use-plugin) section gives the id and name rules for a generated plugin, and its [*NDN example and the built-in NDN dissector*](https://github.com/Montimage/mmt-plugin-generator#ndn-example-and-the-built-in-ndn-dissector) uses 980, an id from this range.
+
+## Taking over a session from another protocol
+
+A plugin protocol can take a classified session layer from its owner, or give it back, with `mmt_session_handover()` (issue #116, `src/mmt_core/public_include/plugin_defs.h:702`). The case it was made for is an HTTP connection upgraded to WebSocket or OCPP: register an upgrade classifier for `PROTO_HTTP` (`src/mmt_core/public_include/plugin_defs.h:722`), which HTTP calls on the `101 Switching Protocols` answer, and claim the session there:
+
+```c
+static int ws_upgrade(ipacket_t *ipacket, unsigned index) {
+    /* index is HTTP's layer; check the 101's headers if needed, then claim */
+    (void) mmt_session_handover(ipacket, index, PROTO_WEBSOCKET_EXAMPLE);
+    return MMT_CLASSIFY_SKIP; /* the return value is ignored */
+}
+
+/* in the plugin's init_proto(), once its protocol is registered */
+register_upgrade_classification_function(PROTO_HTTP, ws_upgrade, 10);
+```
+
+- The handover is applied on the session's next packet, so your `session_data_init` runs there with an empty slot: HTTP's parser has already been released. Your `session_data_analysis` and attribute handlers run at that index from then on.
+- Your session-data cleanup must tolerate an empty slot: it runs at expiry and when the layer is handed over again.
+- The layer is pinned: TCP's classification no longer rewrites it, so the session stays yours even though the flow's detected stack still says HTTP. To give the session back (the upgrade was refused, or you cannot parse what follows), call `mmt_session_handover(ipacket, index, PROTO_HTTP)` from your analysis; HTTP starts again on a fresh parser on the next packet.
+- `mmt_session_handover()` returns 0 when the session already has a handover pending (the first claim wins), for the transport layer and below, and on the parent of tunnelled sessions; the full list is in its documentation and in [MMT Sessions](./MMT-Session.md#handing-a-layer-to-another-protocol).
+- With the hand-off, you no longer need to register a classifier on TCP below HTTP's weight to claim the session on the Upgrade request itself: an Upgrade later in the connection is covered, and a refused upgrade simply stays HTTP.
+
