@@ -693,16 +693,16 @@ MMTAPI bool MMTCALL is_valid_proto_attribute(
  * @param ipacket the packet being processed, with its session
  * @param index the position of the layer in the session's protocol hierarchy
  * @param new_proto_id the identifier of a registered protocol other than the current one
- * @return 1 when the handover is queued; 0 when @p ipacket or its session is NULL, @p index
+ * @return true when the handover is queued; false when @p ipacket or its session is NULL, @p index
  *         is below 2 or not a layer of the session's hierarchy, the layer or its parent
  *         maintains sessions (the transport layer), @p index is not above the session's own
  *         protocol, @p new_proto_id is invalid, unregistered or already at @p index, a handover
  *         is already pending on the session, or the session is the parent of tunnelled sessions.
  */
-MMTAPI int MMTCALL mmt_session_handover(
+MMTAPI bool MMTCALL mmt_session_handover(
     ipacket_t *ipacket,
     unsigned index,
-    uint32_t new_proto_id
+    mmt_proto_id_t new_proto_id
 );
 
 /**
@@ -716,10 +716,10 @@ MMTAPI int MMTCALL mmt_session_handover(
  * @param classification_fct the classifier
  * @param weight the order among the classifiers of @p parent_proto_id: a lower weight is called
  *        first, equal weights in registration order (clamped to 0..100)
- * @return 1 on success; 0 when @p classification_fct is NULL, @p parent_proto_id is not a
+ * @return true on success; false when @p classification_fct is NULL, @p parent_proto_id is not a
  *         valid protocol identifier, or out of memory.
  */
-MMTAPI int MMTCALL register_upgrade_classification_function(
+MMTAPI bool MMTCALL register_upgrade_classification_function(
     mmt_proto_id_t parent_proto_id,
     generic_classification_function classification_fct,
     int weight
@@ -731,10 +731,10 @@ MMTAPI int MMTCALL register_upgrade_classification_function(
  * first one after which a handover is pending (issue #116).
  * @param ipacket the packet that completes the upgrade, with its session
  * @param index the position of the offering protocol in the packet's hierarchy
- * @return 1 when a classifier claimed the session; 0 when none did, a handover was already
+ * @return true when a classifier claimed the session; false when none did, a handover was already
  *         pending, or @p ipacket, its session or @p index is invalid.
  */
-MMTAPI int MMTCALL mmt_session_offer_upgrade(
+MMTAPI bool MMTCALL mmt_session_offer_upgrade(
     ipacket_t *ipacket,
     unsigned index
 );

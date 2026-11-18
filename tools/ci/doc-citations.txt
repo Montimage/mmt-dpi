@@ -45,8 +45,8 @@ cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry.c:449-458	protoco
 cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry.c:74-75	bool protocol_names_comparison_fct(	mmt_strncasecmp
 cite	docs/Add-New-Protocol.md	src/mmt_core/src/packet_registry.c:553-558	// Issue #19: index this protocol's name	insert_key_value(configured_protocols_names_map
 cite	docs/Add-New-Protocol.md	src/mmt_core/public_include/mmt_core.h:40	#define PROTO_MAX_IDENTIFIER    1000	-
-cite	docs/Add-New-Protocol.md	src/mmt_core/public_include/plugin_defs.h:702	MMTAPI int MMTCALL mmt_session_handover(	-
-cite	docs/Add-New-Protocol.md	src/mmt_core/public_include/plugin_defs.h:722	MMTAPI int MMTCALL register_upgrade_classification_function(	-
+cite	docs/Add-New-Protocol.md	src/mmt_core/public_include/plugin_defs.h:702	MMTAPI bool MMTCALL mmt_session_handover(	-
+cite	docs/Add-New-Protocol.md	src/mmt_core/public_include/plugin_defs.h:722	MMTAPI bool MMTCALL register_upgrade_classification_function(	-
 cite	docs/BENCHMARKS.md	tools/phase0/capture_perf.sh:103-106	printf '# host: %s | cpu: %s | gcc: %s | os: %s | commit: %s\n'	rev-parse --short HEAD
 cite	docs/BENCHMARKS.md	tools/phase0/capture_perf.sh:86-88	gcc -O2 -Wall -o "${BIN}" "${SCRIPT_DIR}/phase0_throughput.c"	export LD_LIBRARY_PATH="${PREFIX}/dpi/lib
 cite	docs/BENCHMARKS.md	tools/phase0/capture_perf.sh:72-74	if [ "${MMT_SDK_PREBUILT:-0}" = "1" ]; then	no installed SDK under
@@ -137,7 +137,7 @@ cite	docs/MMT-Packet.md	src/mmt_core/public_include/data_defs.h:374	#define MMT_
 cite	docs/MMT-Protocol.md	src/mmt_core/private_include/packet_processing.h:645	struct protocol_struct {	-
 cite	docs/MMT-Session.md	src/mmt_core/private_include/packet_processing.h:192	struct mmt_session_struct {	-
 cite	docs/MMT-Session.md	src/mmt_core/public_include/data_defs.h:63	typedef struct mmt_session_struct               mmt_session_t; ///< Opaque session (flow)	-
-cite	docs/MMT-Session.md	src/mmt_core/src/packet_pipeline.c:1697	int mmt_session_handover(ipacket_t * ipacket, unsigned index, uint32_t new_proto_id) {	-
+cite	docs/MMT-Session.md	src/mmt_core/src/packet_pipeline.c:1697	bool mmt_session_handover(ipacket_t * ipacket, unsigned index, uint32_t new_proto_id) {	-
 cite	docs/MMT-Session.md	src/mmt_core/src/packet_pipeline.c:1718	void mmt_session_apply_handover(mmt_session_t * session) {	-
 cite	docs/Memory-Management.md	src/mmt_core/src/memory.c:9-18	// B5 (remote-DoS hardening): allocation failure used to call abort(), which	// block is left untouched (standard realloc semantics).
 cite	docs/Memory-Management.md	src/mmt_core/src/packet_pipeline.c:1641	bool mmt_packet_scratch_adopt(const ipacket_t *ipacket, mmt_opaque_t value,	-

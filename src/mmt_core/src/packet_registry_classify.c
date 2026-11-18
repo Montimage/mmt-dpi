@@ -417,11 +417,11 @@ static pthread_mutex_t mmt_upgrade_lock = PTHREAD_MUTEX_INITIALIZER;
 static mmt_upgrade_chain_t * mmt_upgrade_chain = NULL;   /* published copy */
 static mmt_upgrade_chain_t * mmt_upgrade_retired = NULL; /* replaced copies */
 
-int register_upgrade_classification_function(uint32_t parent_proto_id,
+bool register_upgrade_classification_function(uint32_t parent_proto_id,
         generic_classification_function classification_fct, int weight) {
     mmt_upgrade_chain_t * old, * chain;
     uint32_t n, i, j = 0;
-    if (classification_fct == NULL || !is_valid_protocol_id(parent_proto_id)) return 0;
+    if (classification_fct == NULL || !is_valid_protocol_id(parent_proto_id)) return false;
     if (weight < 0) weight = 0;
     if (weight > 100) weight = 100;
     pthread_mutex_lock(&mmt_upgrade_lock);
@@ -430,7 +430,7 @@ int register_upgrade_classification_function(uint32_t parent_proto_id,
     chain = mmt_malloc(sizeof (*chain) + (size_t) (n + 1) * sizeof (chain->entries[0]));
     if (chain == NULL) {
         pthread_mutex_unlock(&mmt_upgrade_lock);
-        return 0;
+        return false;
     }
     chain->retired_next = NULL;
     chain->count = n + 1;
@@ -448,28 +448,28 @@ int register_upgrade_classification_function(uint32_t parent_proto_id,
         mmt_upgrade_retired = old;
     }
     pthread_mutex_unlock(&mmt_upgrade_lock);
-    return 1;
+    return true;
 }
 
-int mmt_session_offer_upgrade(ipacket_t * ipacket, unsigned index) {
+bool mmt_session_offer_upgrade(ipacket_t * ipacket, unsigned index) {
     const mmt_upgrade_chain_t * chain;
     uint32_t parent, i;
     if (ipacket == NULL || ipacket->session == NULL || ipacket->proto_hierarchy == NULL
             || index >= PROTO_PATH_SIZE || (int) index >= ipacket->proto_hierarchy->len) {
-        return 0;
+        return false;
     }
     /* a handover is already pending: nothing to offer */
-    if (ipacket->session->handover_index != 0) return 0;
+    if (ipacket->session->handover_index != 0) return false;
     chain = __atomic_load_n(&mmt_upgrade_chain, __ATOMIC_ACQUIRE);
-    if (chain == NULL) return 0;
+    if (chain == NULL) return false;
     parent = (uint32_t) ipacket->proto_hierarchy->proto_path[index];
     for (i = 0; i < chain->count; i++) {
         if (chain->entries[i].parent_proto_id != parent) continue;
         (void) chain->entries[i].classify(ipacket, index);
         /* the classifier claimed the session through mmt_session_handover() */
-        if (ipacket->session->handover_index != 0) return 1;
+        if (ipacket->session->handover_index != 0) return true;
     }
-    return 0;
+    return false;
 }
 
 void mmt_upgrade_registry_release(void) {

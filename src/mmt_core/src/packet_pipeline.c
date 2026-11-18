@@ -1694,25 +1694,25 @@ static inline int handover_layer_has_session(const mmt_session_t * session, unsi
     return proto != NULL && proto->has_session;
 }
 
-int mmt_session_handover(ipacket_t * ipacket, unsigned index, uint32_t new_proto_id) {
+bool mmt_session_handover(ipacket_t * ipacket, unsigned index, uint32_t new_proto_id) {
     mmt_session_t * session;
-    if (ipacket == NULL || ipacket->session == NULL) return 0;
+    if (ipacket == NULL || ipacket->session == NULL) return false;
     session = ipacket->session;
     /* never the transport layer, whatever a path splice did to
      * session_protocol_index: the layer's parent and the layer itself must
      * hold no session (IP/IPv6 sessionize, TCP/UDP above them do not) */
-    if (index < 2 || index >= PROTO_PATH_SIZE || (int) index >= session->proto_path.len) return 0;
-    if (handover_layer_has_session(session, index - 1) || handover_layer_has_session(session, index)) return 0;
-    if (index <= session->session_protocol_index) return 0;
-    if (!is_valid_protocol_id(new_proto_id) || get_protocol_struct_by_id(new_proto_id) == NULL) return 0;
-    if ((uint32_t) session->proto_path.proto_path[index] == new_proto_id) return 0;
-    if (session->handover_index != 0) return 0; /* the first claim wins */
+    if (index < 2 || index >= PROTO_PATH_SIZE || (int) index >= session->proto_path.len) return false;
+    if (handover_layer_has_session(session, index - 1) || handover_layer_has_session(session, index)) return false;
+    if (index <= session->session_protocol_index) return false;
+    if (!is_valid_protocol_id(new_proto_id) || get_protocol_struct_by_id(new_proto_id) == NULL) return false;
+    if ((uint32_t) session->proto_path.proto_path[index] == new_proto_id) return false;
+    if (session->handover_index != 0) return false; /* the first claim wins */
     /* a tunnel parent: its children borrow its session_data slots */
-    if (session->live_children > 0) return 0;
+    if (session->live_children > 0) return false;
     session->handover_index = (uint8_t) index;
     session->handover_proto = (uint16_t) new_proto_id;
     session->handover_from = (uint16_t) session->proto_path.proto_path[index];
-    return 1;
+    return true;
 }
 
 void mmt_session_apply_handover(mmt_session_t * session) {

@@ -149,22 +149,22 @@ MMTAPI int MMTCALL set_classified_proto(
 Set classified protocol for a packet. It returns 0, leaving the path unchanged, for a layer that was handed over (`mmt_session_handover()`) and holds another protocol.
 
 ```c
-MMTAPI int MMTCALL mmt_session_handover(
+MMTAPI bool MMTCALL mmt_session_handover(
     ipacket_t *ipacket,
     unsigned index,
-    uint32_t new_proto_id
+    mmt_proto_id_t new_proto_id
 );
 ```
 Hands the layer at `index` of the packet's session to `new_proto_id`, or gives it back (issue #116). The call queues the handover; the session's next packet applies it: the old protocol's session-data cleanup runs for the layer and every deeper layer, and the layer is pinned to the new protocol for the rest of the session. See [MMT Sessions](./MMT-Session.md#handing-a-layer-to-another-protocol).
 
 ```c
-MMTAPI int MMTCALL register_upgrade_classification_function(
+MMTAPI bool MMTCALL register_upgrade_classification_function(
     mmt_proto_id_t parent_proto_id,
     generic_classification_function classification_fct,
     int weight
 );
 
-MMTAPI int MMTCALL mmt_session_offer_upgrade(
+MMTAPI bool MMTCALL mmt_session_offer_upgrade(
     ipacket_t *ipacket,
     unsigned index
 );
