@@ -487,3 +487,156 @@ void mmt_upgrade_registry_release(void) {
     }
     pthread_mutex_unlock(&mmt_upgrade_lock);
 }
+
+bool mmt_protocol_set_process_claimed_layer(protocol_t * proto, bool on) {
+    if (proto == NULL) return false;
+    proto->process_claimed_layer = on ? 1 : 0;
+    return true;
+}
+
+/* Issue #115: deferred parent registrations. Plugins load in file-name order
+ * (plugins_engine.c), so a plugin can register a classifier under a protocol
+ * that a plugin loaded after it provides. While mmt_classify_deferred_load()
+ * runs the plugin load, such a registration is kept here, in registration
+ * order, and attached when register_protocol() registers the parent; what is
+ * left when the load ends fails it. The list never outlives the load: the
+ * entries hold function pointers into plugins that close_plugins() unloads.
+ * mmt_deferred_lock covers the list and the open flag and is never held with
+ * configured_protocols_mutex or while a classifier is attached. */
+typedef struct mmt_deferred_classify_struct {
+    struct mmt_deferred_classify_struct * next;
+    uint32_t parent_proto_id;
+    uint32_t child_proto_id;
+    int weight;
+    generic_classification_function classify;
+} mmt_deferred_classify_t;
+
+static pthread_mutex_t mmt_deferred_lock = PTHREAD_MUTEX_INITIALIZER;
+static mmt_deferred_classify_t * mmt_deferred_head = NULL;
+static mmt_deferred_classify_t ** mmt_deferred_tail = &mmt_deferred_head;
+static int mmt_deferred_open = 0; /* a plugin load is in progress */
+
+/* Appends; called with mmt_deferred_lock held. The stores to the list
+ * links are atomic for the unlocked emptiness check of
+ * mmt_classify_deferred_attach(). */
+static void deferred_append(mmt_deferred_classify_t * e) {
+    e->next = NULL;
+    __atomic_store_n(mmt_deferred_tail, e, __ATOMIC_RELAXED);
+    mmt_deferred_tail = &e->next;
+}
+
+/* Detaches the whole list; called with mmt_deferred_lock held. */
+static mmt_deferred_classify_t * deferred_take_all(void) {
+    mmt_deferred_classify_t * list = mmt_deferred_head;
+    __atomic_store_n(&mmt_deferred_head, NULL, __ATOMIC_RELAXED);
+    mmt_deferred_tail = &mmt_deferred_head;
+    return list;
+}
+
+bool register_classification_function_with_parent_protocol_deferred(uint32_t parent_proto_id,
+        uint32_t child_proto_id, generic_classification_function classification_fct, int weight) {
+    protocol_t * parent;
+    mmt_deferred_classify_t * e;
+    if (classification_fct == NULL || !is_valid_protocol_id(parent_proto_id)
+            || !is_valid_protocol_id(child_proto_id)) {
+        return false;
+    }
+    if (weight < 0) weight = 0;
+    if (weight > 100) weight = 100;
+    pthread_mutex_lock(&mmt_deferred_lock);
+    /* checked under the lock: a parent registered after this check is
+     * drained by mmt_classify_deferred_attach(), which takes the lock too */
+    parent = get_protocol_struct_by_protocol_id(parent_proto_id);
+    if (parent != NULL || !mmt_deferred_open) {
+        pthread_mutex_unlock(&mmt_deferred_lock);
+        return parent != NULL && register_classification_function_internal(parent, classification_fct, weight);
+    }
+    e = mmt_malloc(sizeof (*e));
+    if (e != NULL) {
+        e->parent_proto_id = parent_proto_id;
+        e->child_proto_id = child_proto_id;
+        e->weight = weight;
+        e->classify = classification_fct;
+        deferred_append(e);
+    }
+    pthread_mutex_unlock(&mmt_deferred_lock);
+    return e != NULL;
+}
+
+void mmt_classify_deferred_attach(uint32_t parent_proto_id) {
+    mmt_deferred_classify_t * list, * e, * keep = NULL, ** keep_tail = &keep, * mine = NULL, ** mine_tail = &mine;
+    protocol_t * parent;
+    /* every protocol registration comes here: no lock while nothing waits */
+    if (__atomic_load_n(&mmt_deferred_head, __ATOMIC_RELAXED) == NULL) return;
+    pthread_mutex_lock(&mmt_deferred_lock);
+    list = deferred_take_all();
+    while (list != NULL) {
+        e = list;
+        list = e->next;
+        e->next = NULL;
+        if (e->parent_proto_id == parent_proto_id) { *mine_tail = e; mine_tail = &e->next; }
+        else { *keep_tail = e; keep_tail = &e->next; }
+    }
+    for (e = keep; e != NULL; e = keep) { keep = e->next; deferred_append(e); }
+    pthread_mutex_unlock(&mmt_deferred_lock);
+    parent = get_protocol_struct_by_protocol_id(parent_proto_id);
+    while (mine != NULL) {
+        e = mine;
+        mine = e->next;
+        if (parent != NULL && register_classification_function_internal(parent, e->classify, e->weight)) {
+            mmt_free(e);
+        } else {
+            /* out of memory: left pending, so the load fails and reports it */
+            pthread_mutex_lock(&mmt_deferred_lock);
+            deferred_append(e);
+            pthread_mutex_unlock(&mmt_deferred_lock);
+        }
+    }
+}
+
+static const char * deferred_name(uint32_t proto_id) {
+    const char * name = get_protocol_name_by_id(proto_id);
+    return (name != NULL) ? name : "unregistered";
+}
+
+int mmt_classify_deferred_load(int (*load)(void)) {
+    mmt_deferred_classify_t * left, * e;
+    int ok;
+    pthread_mutex_lock(&mmt_deferred_lock);
+    mmt_deferred_open = 1;
+    pthread_mutex_unlock(&mmt_deferred_lock);
+    ok = load();
+    pthread_mutex_lock(&mmt_deferred_lock);
+    mmt_deferred_open = 0;
+    left = deferred_take_all();
+    pthread_mutex_unlock(&mmt_deferred_lock);
+    while (left != NULL) {
+        e = left;
+        left = e->next;
+        if (get_protocol_struct_by_protocol_id(e->parent_proto_id) == NULL) {
+            mmt_stderr_log("The classifier of protocol %u (%s) is registered under protocol %u (%s), "
+                    "which no plugin registered\n", e->child_proto_id, deferred_name(e->child_proto_id),
+                    e->parent_proto_id, deferred_name(e->parent_proto_id));
+        } else {
+            mmt_stderr_log("The classifier of protocol %u (%s) could not be attached to protocol %u (%s) "
+                    "(out of memory)\n", e->child_proto_id, deferred_name(e->child_proto_id),
+                    e->parent_proto_id, deferred_name(e->parent_proto_id));
+        }
+        mmt_free(e);
+        ok = 0;
+    }
+    return ok;
+}
+
+void mmt_classify_deferred_release(void) {
+    mmt_deferred_classify_t * list, * e;
+    pthread_mutex_lock(&mmt_deferred_lock);
+    mmt_deferred_open = 0;
+    list = deferred_take_all();
+    pthread_mutex_unlock(&mmt_deferred_lock);
+    while (list != NULL) {
+        e = list;
+        list = e->next;
+        mmt_free(e);
+    }
+}

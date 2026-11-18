@@ -739,6 +739,48 @@ MMTAPI bool MMTCALL mmt_session_offer_upgrade(
     unsigned index
 );
 
+/**
+ * Makes TCP and UDP process the layer of @p proto from the packet on which a classifier claims
+ * it (issue #115). While the flow is not identified by the SDK itself, TCP/UDP post-classification
+ * skips a layer that a classifier wrote above them with set_classified_proto(): it gets no
+ * session-data analysis, no attribute extraction and no classify_next chain of its own (the
+ * classifiers registered under it) until the session passes 2 * CFG_CLASSIFICATION_THRESHOLD
+ * packets and TCP/UDP stop classifying it. A protocol that opts in is processed on the claiming
+ * packet and on every later one; its own classifier still runs on those packets while TCP/UDP
+ * classify the flow, so a plugin that parses in both must not count a packet twice.
+ * The IP-address and port fallbacks stay skipped either way. The setting is process-wide.
+ * @param proto the protocol, from init_protocol_struct_for_registration()
+ * @param on true to process the claimed layer, false for the default behaviour
+ * @return true on success; false when @p proto is NULL.
+ */
+MMTAPI bool MMTCALL mmt_protocol_set_process_claimed_layer(
+    protocol_t *proto,
+    bool on
+);
+
+/**
+ * Registers @p classification_fct under @p parent_proto_id like
+ * register_classification_function_with_parent_protocol(), and, while init_extraction() is
+ * loading the plugins, also when the parent is not registered yet (issue #115): the registration
+ * is then kept and attached when a later plugin registers the parent with register_protocol(),
+ * so a plugin may load before the plugin it depends on. If the parent is still not registered
+ * when the plugins are loaded, init_extraction() reports both protocols and fails.
+ * @param parent_proto_id the identifier of the parent protocol
+ * @param child_proto_id the identifier of the protocol the classifier detects; it names the
+ *        registration in the error message and need not be registered
+ * @param classification_fct the classifier
+ * @param weight the order among the classifiers of the parent (clamped to 0..100)
+ * @return true when the classifier is attached or, during the plugin load, kept for the parent;
+ *         false when @p classification_fct is NULL, an identifier is not a valid protocol
+ *         identifier, the parent is not registered outside the plugin load, or out of memory.
+ */
+MMTAPI bool MMTCALL register_classification_function_with_parent_protocol_deferred(
+    mmt_proto_id_t parent_proto_id,
+    mmt_proto_id_t child_proto_id,
+    generic_classification_function classification_fct,
+    int weight
+);
+
 #ifdef	__cplusplus
 }
 #endif

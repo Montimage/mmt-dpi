@@ -209,15 +209,15 @@ a discussion on the repo.
 [^verify]: Release-tag verification: issue #197.
 [^sudo]: Privilege elevation only for an unwritable prefix: issue #211.
 [^layout]: The prefix and its directories: `rules/common.mk:3-8`; `make install` copies the example sources at `sdk/Makefile:110-113`.
-[^init]: `src/mmt_core/src/packet_registry.c:627`.
-[^init-state]: `src/mmt_core/src/packet_registry.c:669-670`, `src/mmt_core/src/packet_registry_handler.c:414`.
+[^init]: `src/mmt_core/src/packet_registry.c:629`.
+[^init-state]: `src/mmt_core/src/packet_registry.c:671-672`, `src/mmt_core/src/packet_registry_handler.c:414`.
 [^handler]: `src/mmt_core/src/packet_registry_handler.c:116`.
 [^handler-map]: `src/mmt_core/src/packet_registry_handler.c:269`.
 [^process]: `src/mmt_core/src/packet_pipeline.c:1592`.
 [^close-handler]: `src/mmt_core/src/packet_registry_handler.c:302`, `src/mmt_core/src/packet_registry_handler.c:352`.
-[^close]: `src/mmt_core/src/packet_registry.c:678`.
-[^close-handlers]: `src/mmt_core/src/packet_registry.c:681`, `src/mmt_core/src/packet_registry_handler.c:420`.
-[^close-plugins]: `src/mmt_core/src/packet_registry.c:689`.
+[^close]: `src/mmt_core/src/packet_registry.c:680`.
+[^close-handlers]: `src/mmt_core/src/packet_registry.c:683`, `src/mmt_core/src/packet_registry_handler.c:420`.
+[^close-plugins]: `src/mmt_core/src/packet_registry.c:691`.
 [^example]: `init_extraction()` at `src/examples/packet_handler.c:63`, the handler at `src/examples/packet_handler.c:69`, the pcap loop at `src/examples/packet_handler.c:100`, `mmt_close_handler()` at `src/examples/packet_handler.c:108` and `close_extraction()` at `src/examples/packet_handler.c:111`. The `docs_lifecycle` test suite compiles and runs this example against a throwaway install.
 [^plugins-dir]: `src/mmt_core/src/plugins_engine.c:50-53`.
 [^plugin-fail]: `src/mmt_core/src/plugins_engine.c:94-96`.

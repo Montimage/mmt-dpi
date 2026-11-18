@@ -44,19 +44,19 @@ CITING_DOCS=(docs/USER_GUIDE.md docs/THREADING.md docs/Global-Handler.md docs/MM
 # <path>:<start>[-<end>] <TAB> <regex the start line must match>
 #   [<TAB> <regex the end line must match>]
 CITATIONS="$(cat <<'TABLE'
-src/mmt_core/src/packet_registry.c:627	^bool init_extraction\(\)
-src/mmt_core/src/packet_registry.c:669-670	^ *if \(!init_plugins\(\)\) return 0;	if \(!init_handlers_map\(\)\)
+src/mmt_core/src/packet_registry.c:629	^bool init_extraction\(\)
+src/mmt_core/src/packet_registry.c:671-672	^ *if \(!init_plugins\(\)\) return 0;	if \(!init_handlers_map\(\)\)
 src/mmt_core/src/packet_registry_handler.c:414	mmt_configured_handlers_map = init_map_space
 src/mmt_core/src/packet_registry_handler.c:116	^mmt_handler_t \*mmt_init_handler\(
 src/mmt_core/src/packet_registry_handler.c:269	insert_key_value\(mmt_configured_handlers_map
 src/mmt_core/src/packet_pipeline.c:1592	^bool packet_process\(
 src/mmt_core/src/packet_registry_handler.c:302	^void mmt_close_handler\(mmt_handler_t
 src/mmt_core/src/packet_registry_handler.c:352	delete_key_value\(mmt_configured_handlers_map
-src/mmt_core/src/packet_registry.c:678	^void close_extraction\(\)
-src/mmt_core/src/packet_registry.c:678-690	^void close_extraction\(\)	^\}$
-src/mmt_core/src/packet_registry.c:681	^ *close_handlers_map\(\);
+src/mmt_core/src/packet_registry.c:680	^void close_extraction\(\)
+src/mmt_core/src/packet_registry.c:680-692	^void close_extraction\(\)	^\}$
+src/mmt_core/src/packet_registry.c:683	^ *close_handlers_map\(\);
 src/mmt_core/src/packet_registry_handler.c:420	iterate_through_mmt_handlers\(mmt_close_handler_internal
-src/mmt_core/src/packet_registry.c:689	^ *close_plugins\(\);
+src/mmt_core/src/packet_registry.c:691	^ *close_plugins\(\);
 src/examples/packet_handler.c:63	if *\(!init_extraction\(\)\)
 src/examples/packet_handler.c:69	mmt_handler = mmt_init_handler\(
 src/examples/packet_handler.c:100	if *\(!packet_process\(mmt_handler

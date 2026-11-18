@@ -1212,7 +1212,7 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
     if (retval.proto_id == PROTO_UNKNOWN || retval.proto_id == PROTO_GTP) {
         // LN: Check if the protocol id in the last index of protocol hierarchy is not PROTO_UDP -> do not try to classify more - external classification
         if(ipacket->proto_hierarchy->proto_path[ipacket->proto_hierarchy->len - 1]!=PROTO_TCP){
-            return new_retval;
+            return mmt_claimed_layer_verdict(ipacket, index); /* issue #115: 0 unless the claimed protocol opted in */
         }
         // Issue #87: the "different strategies" this fallback asked for are
         // the DPI profiles — each of the heuristic levers below (IP-range,
