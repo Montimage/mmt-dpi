@@ -217,6 +217,41 @@ plugin_case "a relative MMT_DPI_PLUGINS_DIR is refused" fail \
     MMT_DPI_PLUGINS_DIR=plugins
 plugin_case "a missing MMT_DPI_PLUGINS_DIR is refused" fail \
     MMT_DPI_PLUGINS_DIR="${WORK}/no-such-dir"
+
+# Issue #115: a child plugin whose file name sorts before its parent's
+# registers under it with the deferred API (fi_chain_plugin.c). Over
+# CHAIN_DIR the load succeeds and the child is attached; over ORPHAN_DIR,
+# where no plugin registers the parent, init_extraction() fails and names
+# both protocols (996, 998). One process runs the failed cycle, then two
+# successful ones (test_fi_plugin_order.c).
+CHAIN_DIR="${WORK}/plugins-chain"
+ORPHAN_DIR="${WORK}/plugins-orphan"
+mkdir -p "${CHAIN_DIR}" "${ORPHAN_DIR}"
+for so in "${PREFIX}"/plugins/*.so; do
+    ln -s "${so}" "${CHAIN_DIR}/"
+    ln -s "${so}" "${ORPHAN_DIR}/"
+done
+"${CC}" -Wall -Wextra -std=gnu11 -fPIC -shared -DFI_CHILD -I"${PREFIX}/dpi/include" \
+    -o "${CHAIN_DIR}/mmt_fi_child.so" "${SCRIPT_DIR}/fi_chain_plugin.c"
+"${CC}" -Wall -Wextra -std=gnu11 -fPIC -shared -DFI_PARENT -I"${PREFIX}/dpi/include" \
+    -o "${CHAIN_DIR}/mmt_fi_parent.so" "${SCRIPT_DIR}/fi_chain_plugin.c"
+"${CC}" -Wall -Wextra -std=gnu11 -fPIC -shared -DFI_CHILD -DFI_ORPHAN -I"${PREFIX}/dpi/include" \
+    -o "${ORPHAN_DIR}/mmt_fi_child.so" "${SCRIPT_DIR}/fi_chain_plugin.c"
+[ "$(printf '%s\n' mmt_fi_parent.so mmt_fi_child.so libmmt_tcpip.so | LC_ALL=C sort | tr '\n' ' ')" \
+    = "libmmt_tcpip.so mmt_fi_child.so mmt_fi_parent.so " ] || { echo "✗ stub plugin names do not sort as intended" >&2; exit 1; }
+BIN_ORDER="${SCRIPT_DIR}/test_fi_plugin_order"
+"${CC}" -Wall -Wextra -std=gnu11 -g -O1 -I"${PREFIX}/dpi/include" \
+    -o "${BIN_ORDER}" "${SCRIPT_DIR}/test_fi_plugin_order.c" \
+    -L"${PREFIX}/dpi/lib" -lmmt_core -ldl
+if order_out="$(cd "${WORK}" && LD_LIBRARY_PATH="${PREFIX}/dpi/lib" \
+        "${BIN_ORDER}" "${CHAIN_DIR}" "${ORPHAN_DIR}" 2>&1)" \
+        && grep -q "protocol 998 (fi_child) is registered under protocol 996 (unregistered)" <<<"${order_out}"; then
+    echo "    ✓ a child plugin loads before its parent; an orphan fails init_extraction() naming both"
+else
+    printf '%s\n' "${order_out}"
+    echo "    ✗ deferred parent registration across plugins"
+    plugin_failures=$((plugin_failures + 1))
+fi
 if [ "${plugin_failures}" -gt 0 ]; then
     echo "Fault-injection tests: FAILED (${plugin_failures} plugin case(s))"
     exit 1
