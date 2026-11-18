@@ -304,11 +304,25 @@ struct mmt_session_struct {
     uint8_t classification_method;
     uint8_t family;                          /**< identifier of the application family to which this session belongs. */
     uint8_t is_fragmenting;                  /** 1 - session is processing a fragmented packet, 0 - session is not processing any fragmented packet*/
+    /* Issue #116: one bit per path index whose layer was handed over by
+     * mmt_session_handover(). A pinned layer is owned for the rest of the
+     * session: its parent's classification round (checker walk and
+     * post-classification) is skipped, and set_classified_proto() refuses a
+     * write of another protocol there. It also sits in the padding before
+     * tcp_reasm. */
+    uint16_t handed_over;
     /* Issue #245: the TCP reassembly fields (segment lists, payload image
      * buffers, block chain) moved into the lazily-allocated mmt_tcp_reasm_t
      * extension above — a session that never reassembles TCP payload pays
      * only this one pointer. */
     mmt_tcp_reasm_t * tcp_reasm;
+    /* Issue #116: a handover queued by mmt_session_handover(), applied at the
+     * start of the session's next packet by mmt_session_apply_handover().
+     * handover_index 0 means none is pending; handover_from is the protocol
+     * found at that index when it was queued. */
+    uint16_t handover_proto;
+    uint16_t handover_from;
+    uint8_t handover_index;
 };
 
 /**
@@ -1211,6 +1225,79 @@ uint64_t mmt_tcp_reasm_bytes_moved(void);
 uint64_t mmt_tcp_reasm_bytes_dropped(void);
 uint64_t mmt_tcp_reasm_resident_bytes(void);
 uint64_t mmt_reassembly_packet_alloc_count(void);
+
+/* Issue #116: session handover (mmt_session_handover(), plugin_defs.h). */
+
+/* Nonzero when the layer at `index` of `session` was handed over: it is
+ * pinned to its protocol for the rest of the session. */
+static inline int mmt_session_layer_pinned(const mmt_session_t * session, unsigned index) {
+    return session != NULL && index < PROTO_PATH_SIZE
+            && ((session->handed_over >> index) & 1u) != 0;
+}
+
+/* Nonzero when set_classified_proto() must refuse to write `proto_id` at
+ * `index`: the layer is pinned and holds another protocol. A write of the
+ * protocol already there (an offset update) is allowed. */
+static inline int mmt_layer_write_refused(const ipacket_t * ipacket, unsigned index, uint32_t proto_id) {
+    return mmt_session_layer_pinned(ipacket->session, index)
+            && ipacket->proto_hierarchy != NULL
+            && (int) index < ipacket->proto_hierarchy->len
+            && (uint32_t) ipacket->proto_hierarchy->proto_path[index] != proto_id;
+}
+
+/* Called by the IP and IPv6 sessionizers right after they splice a session's
+ * path because the packet's IP layer moved from `old_ip_index` to
+ * `new_ip_index` (a VLAN tag or an MPLS label appeared or went). The splice
+ * moves proto_path, the offsets and the statuses; for a session that has a
+ * pinned layer or a pending handover this moves what belongs to the layers
+ * above IP with them: the session_data slots, the pinned bits and the pending
+ * handover's index, so a claim queued on the packet before the splice (the
+ * 101 travels one way, the next packet the other, tagged) still applies to
+ * the layer it was queued for. A pending handover whose moved index falls
+ * outside the path above IP is dropped; mmt_session_apply_handover() still
+ * checks that the layer holds handover_from. A session with neither returns
+ * at once, so its session_data stays where it was, as before. */
+static inline void mmt_session_handover_on_splice(mmt_session_t * s, int old_ip_index, int new_ip_index) {
+    void * moved[PROTO_PATH_SIZE];
+    uint16_t bits = 0;
+    int lo, i, k;
+    if (s == NULL || (s->handed_over == 0 && s->handover_index == 0)) return;
+    if (old_ip_index < 0 || new_ip_index < 0 || old_ip_index >= PROTO_PATH_SIZE
+            || new_ip_index >= PROTO_PATH_SIZE || old_ip_index == new_ip_index) {
+        s->handover_index = 0;
+        s->handover_proto = 0;
+        s->handover_from = 0;
+        return;
+    }
+    if (s->handover_index != 0) {
+        int moved_index = (int) s->handover_index + (new_ip_index - old_ip_index);
+        if (moved_index > new_ip_index && moved_index < PROTO_PATH_SIZE) {
+            s->handover_index = (uint8_t) moved_index;
+        } else {
+            s->handover_index = 0;
+            s->handover_proto = 0;
+            s->handover_from = 0;
+        }
+    }
+    lo = ((old_ip_index < new_ip_index) ? old_ip_index : new_ip_index) + 1;
+    memcpy(moved, s->session_data, sizeof(moved));
+    for (i = lo; i < PROTO_PATH_SIZE; i++) s->session_data[i] = NULL;
+    for (k = 1; old_ip_index + k < PROTO_PATH_SIZE && new_ip_index + k < PROTO_PATH_SIZE; k++) {
+        s->session_data[new_ip_index + k] = moved[old_ip_index + k];
+        if ((s->handed_over >> (old_ip_index + k)) & 1u) bits |= (uint16_t) (1u << (new_ip_index + k));
+    }
+    /* bits at or below the lower IP index never move (no layer there can be
+     * handed over: its parent or itself holds a session) */
+    s->handed_over = (uint16_t) ((s->handed_over & ((1u << lo) - 1u)) | bits);
+}
+
+/* Applies the handover queued on `session`, if any: called by
+ * proto_session_management() when a packet reaches the existing session,
+ * before the packet is pointed at the session's path (packet_pipeline.c). */
+void mmt_session_apply_handover(mmt_session_t * session);
+
+/* Frees the upgrade-classifier registry (packet_registry_classify.c). */
+void mmt_upgrade_registry_release(void);
 
 #ifdef __cplusplus
 }

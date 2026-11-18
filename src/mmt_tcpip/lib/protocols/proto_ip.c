@@ -910,6 +910,8 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
                  * layers re-walk the full chain (and re-record) instead of
                  * dispatching a stale engine. */
                 memset(session->proto_checkers, 0, sizeof(session->proto_checkers));
+                /* Issue #116: move the handed-over layers' data and pins too. */
+                mmt_session_handover_on_splice(session, ip_index, index);
             }
 
         }

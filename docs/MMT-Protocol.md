@@ -13,7 +13,7 @@ title: "MMT Protocol"
 
 ![Collaboration diagram for protocol_struct](images/mmt-protocol-struct.png)
 
-Full `protocol_struct` definition: `src/mmt_core/private_include/packet_processing.h:631`.
+Full `protocol_struct` definition: `src/mmt_core/private_include/packet_processing.h:645`.
 
 ## Definition ##
 **MMT Protocol** is a structure that represents overall context of a network protocol such as: Eth, IP, TCP, UDP, RTP, etc. It contains unique identifier for a protocol, session and attribute context and different utility function pointers.  Each network protocol needs to registered before being processed in `mmt-core`. 
@@ -146,7 +146,30 @@ MMTAPI int MMTCALL set_classified_proto(
     classified_proto_t classified_proto
 );
 ```
-Set classified protocol for a packet.
+Set classified protocol for a packet. It returns 0, leaving the path unchanged, for a layer that was handed over (`mmt_session_handover()`) and holds another protocol.
+
+```c
+MMTAPI bool MMTCALL mmt_session_handover(
+    ipacket_t *ipacket,
+    unsigned index,
+    mmt_proto_id_t new_proto_id
+);
+```
+Hands the layer at `index` of the packet's session to `new_proto_id`, or gives it back (issue #116). The call queues the handover; the session's next packet applies it: the old protocol's session-data cleanup runs for the layer and every deeper layer, and the layer is pinned to the new protocol for the rest of the session. See [MMT Sessions](./MMT-Session.md#handing-a-layer-to-another-protocol).
+
+```c
+MMTAPI bool MMTCALL register_upgrade_classification_function(
+    mmt_proto_id_t parent_proto_id,
+    generic_classification_function classification_fct,
+    int weight
+);
+
+MMTAPI bool MMTCALL mmt_session_offer_upgrade(
+    ipacket_t *ipacket,
+    unsigned index
+);
+```
+`register_upgrade_classification_function()` registers a classifier that `parent_proto_id` offers its upgraded sessions to; HTTP offers a session to the classifiers registered for `PROTO_HTTP` on the `101 Switching Protocols` that answers an Upgrade request. `mmt_session_offer_upgrade()` makes that offer: it calls the classifiers of the protocol at `index` in weight order (a lower weight first) and stops at the first one after which a handover is pending; a classifier claims the session by calling `mmt_session_handover()`. The registration is process-wide, cannot be undone, and is released by `close_extraction()`.
 ```c
 MMTAPI bool MMTCALL register_classification_function_with_parent_protocol(
     mmt_proto_id_t proto_id,
@@ -218,7 +241,7 @@ MMTAPI void MMTCALL register_session_data_cleanup_function(
     generic_session_data_cleanup_function session_data_cleanup_fct
 );
 ```
-This function registers the given session data cleanup function with the given protocol structure.
+This function registers the given session data cleanup function with the given protocol structure. The cleanup must tolerate an empty slot (`session_data[index] == NULL`): it runs at expiry for the protocol at each index of the session's path, and when another protocol takes the layer over (`mmt_session_handover()`), so a protocol whose data was never allocated, or was already released, can be cleaned up.
 
 ```c
 MMTAPI bool MMTCALL register_session_data_analysis_function_with_protocol(

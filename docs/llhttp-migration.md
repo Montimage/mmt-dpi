@@ -86,7 +86,7 @@ Every `http_parser` symbol this codebase uses, with its llhttp equivalent. Colum
 | `src/mmt_tcpip/lib/http_parser_integration.c:153` | `http_parser_settings` (type) | `llhttp_settings_t` | same callback field names, plus `*_complete` / `on_reset` additions |
 | `src/mmt_tcpip/lib/http_parser_integration.c:155-162` | `.on_message_begin`, `.on_header_field`, `.on_header_value`, `.on_url`, `.on_status`, `.on_body`, `.on_headers_complete`, `.on_message_complete` | identical field names on `llhttp_settings_t` | signatures change to `llhttp_cb` (`int (*)(llhttp_t*)`) / `llhttp_data_cb` (`int (*)(llhttp_t*, const char*, size_t)`) — same shapes, parameter type only |
 | `src/mmt_tcpip/lib/http_parser_integration.c:10-148` | `p->data` in every callback | `parser->data` | unchanged: `void *data` survives on `llhttp_t` |
-| `src/mmt_tcpip/lib/http_parser_integration.h:100-103` | `http_parser_init(&p->parser[i], HTTP_BOTH)` | `llhttp_init(&parser[i], HTTP_BOTH, get_settings())` | **llhttp_init takes the settings**; `HTTP_BOTH` keeps its name (`llhttp_type_t`). See §5.5 — `llhttp_init` does **not** preserve `data`; assign `parser->data` *after* init |
+| `src/mmt_tcpip/lib/http_parser_integration.h:103-106` | `http_parser_init(&p->parser[i], HTTP_BOTH)` | `llhttp_init(&parser[i], HTTP_BOTH, get_settings())` | **llhttp_init takes the settings**; `HTTP_BOTH` keeps its name (`llhttp_type_t`). See §5.5 — `llhttp_init` does **not** preserve `data`; assign `parser->data` *after* init |
 | `src/mmt_tcpip/lib/http_parser_integration.c:127` (commented) | `http_should_keep_alive(parser)` | `llhttp_should_keep_alive(parser)` | direct equivalent, should it ever be enabled |
 
 ### 4.2 Symbols used by `proto_http.c`
@@ -196,6 +196,13 @@ at `src/mmt_tcpip/lib/protocols/proto_http.c:368`: under llhttp, "this was an up
 `HPE_PAUSED_UPGRADE` return code (or `on_headers_complete` returning `2`) plus
 `llhttp_get_upgrade(parser)` — not only as a sticky flag after `execute`.
 
+Since issue #116 that branch is no longer empty: on the response parser that paused
+on a `101 Switching Protocols`, HTTP offers the session once to the upgrade
+classifiers registered for `PROTO_HTTP` (`mmt_http_offer_upgrade()`, see
+[HTTP protocol](./HTTP-protocol.md#upgrade-hand-off-issue-116)). MMT still never calls
+`llhttp_resume_after_upgrade()`: after an upgrade both parsers stay paused, as before,
+so a refused upgrade keeps today's output.
+
 ### 5.4 `execute` return contract
 
 `http_parser_execute` returns `size_t nparsed`; `nparsed != len` was MMT's error test
@@ -265,7 +272,7 @@ parser->parser[i].data = init_stream_processor();   /* after init, not before */
 enum llhttp_errno err =
     llhttp_execute(parser, (const char *) packet->payload, packet->payload_packet_len);
 if (err == HPE_PAUSED_UPGRADE || llhttp_get_upgrade(parser)) {
-    /* upgraded connection — unchanged TODO */
+    mmt_http_offer_upgrade(ipacket, index, parser, err); /* issue #116: offer a 101 */
 } else if (err != HPE_OK) {
     debug("... Error %s: %s\n", llhttp_errno_name(err), llhttp_get_error_reason(parser));
     llhttp_reset(parser);                           /* preserves data/settings */

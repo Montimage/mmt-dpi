@@ -534,6 +534,7 @@ void free_registered_protocols() {
         delete_map_space(configured_protocols_names_map);
         configured_protocols_names_map = NULL;
     }
+    mmt_upgrade_registry_release(); /* issue #116: the upgrade classifiers */
 }
 
 bool register_protocol(protocol_t *proto, uint32_t proto_id) {

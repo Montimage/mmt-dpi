@@ -156,7 +156,7 @@ The `installed_consumer` suite builds such a plugin against an installed SDK wit
 
 ## Loading a plugin of your own
 
-`init_extraction()` loads the plugins and returns 0 when one of them fails (`src/mmt_core/src/packet_registry.c:668`). It reads a single directory: `$(MMT_PLUGINS)` (`$(MMT_BASE)/plugins` for a `make install` prefix; packages set their own), or the absolute directory named by `MMT_DPI_PLUGINS_DIR`, which replaces it (`src/mmt_core/src/plugins_engine.c:50-53`) — so that directory must also hold `libmmt_tcpip.so` and every other plugin yours depends on.
+`init_extraction()` loads the plugins and returns 0 when one of them fails (`src/mmt_core/src/packet_registry.c:669`). It reads a single directory: `$(MMT_PLUGINS)` (`$(MMT_BASE)/plugins` for a `make install` prefix; packages set their own), or the absolute directory named by `MMT_DPI_PLUGINS_DIR`, which replaces it (`src/mmt_core/src/plugins_engine.c:50-53`) — so that directory must also hold `libmmt_tcpip.so` and every other plugin yours depends on.
 
 **Load order.** Every `*.so` of the directory is loaded in file-name order, `scandir(..., alphasort)` (`src/mmt_core/src/plugins_engine.c:71`), and its `init_proto()` runs as soon as it is opened (`src/mmt_core/src/plugins_engine.c:122-138`). `register_classification_function_with_parent_protocol(PROTO_TCP, ...)` only attaches to a protocol that is already registered; otherwise it returns 0 and attaches nothing (`src/mmt_core/src/packet_registry_classify.c:209-219`, `src/mmt_core/src/packet_registry.c:188-196`). TCP, UDP, Ethernet and the other TCP/IP protocols are registered by `libmmt_tcpip.so`, so **a plugin that hangs a classifier under one of them needs a file name that sorts after `libmmt_tcpip.so`**: `mmt_myproto.so` or `ndn_example.so`, not `libmmt_myproto.so` or `aaa_myproto.so`. The SDK's own plugins follow the rule — `libmmt_tmobile` and `libmmt_tdicom` take their `t` to sort after `libmmt_tcpip`, and `libmmt_business_app`, which sorts before it, attaches to no TCP/IP protocol (`rules/common.mk:217-223`, `src/mmt_business_app/proto_ips_data.c:251-270`). `alphasort()` compares with `strcoll()`, so in a host that calls `setlocale()` the order follows its `LC_COLLATE`: prefer a name that starts with a lower-case letter after `l` (upper case sorts before `l` in the C locale), and check it with `printf '%s\n' mmt_myproto.so libmmt_tcpip.so | LC_ALL=C sort`.
 
@@ -167,7 +167,7 @@ A plugin that loads too early still registers its protocol, and `init_extraction
 **Duplicate id, duplicate name.**
 
 - A taken protocol id is refused: `init_protocol_struct_for_registration()` returns NULL for an id another protocol registered (`src/mmt_core/src/packet_registry.c:381-388`, `src/mmt_core/src/packet_registry.c:449-458`). The plugin that loads second — yours, or `libmmt_tcpip.so` if yours took one of its ids and loaded first — fails `init_proto()`, and `init_extraction()` fails with it.
-- A duplicate name is not refused, and nothing reports it. The protocol registers under its own id, but the name index keeps the first protocol registered with that name, compared case-insensitively (`src/mmt_core/src/packet_registry.c:74-75`, `src/mmt_core/src/packet_registry.c:552-557`), so `get_protocol_id_by_name()` returns the other protocol's id.
+- A duplicate name is not refused, and nothing reports it. The protocol registers under its own id, but the name index keeps the first protocol registered with that name, compared case-insensitively (`src/mmt_core/src/packet_registry.c:74-75`, `src/mmt_core/src/packet_registry.c:553-558`), so `get_protocol_id_by_name()` returns the other protocol's id.
 
 **Picking a free id and name.** An id must be below `PROTO_MAX_IDENTIFIER`, 1000 (`src/mmt_core/public_include/mmt_core.h:40`); take yours from 950–999, the range [reserved for third-party plugins](#protocol-ids-for-a-plugin-of-your-own). The installed headers define only the SDK's own ids, and any other plugin in the directory takes ids too, so check at run time, with every plugin you deploy in the plugin directory except yours: after `init_extraction()`, a free id gives `is_registered_protocol(id) == 0` and a free name `get_protocol_id_by_name("myproto") == 0`. The installed `$(MMT_EXAMS)/proto_attributes_iterator.c` example (`$(MMT_BASE)/examples` for a `make install` prefix), built and run against that directory, prints the id and name of every registered protocol. Once yours is deployed, `get_protocol_id_by_name("myproto") == PROTO_MYPROTO` confirms both.
 
@@ -178,3 +178,25 @@ The full guidance for plugin authors is in the mmt-plugin-generator README: its 
 Protocol ids **950–999** are reserved for third-party plugins, the plugins of your own that the core loads out of tree. No built-in protocol is ever assigned an id in that range: the SDK's own ids stay below 950, and `scripts/validate-proto-id-range.sh`, run by the required `doc-validators` CI job, fails when a `#define PROTO_<NAME> <n>` under `src/` falls in it. The range ends at 999 because an id must be below `PROTO_MAX_IDENTIFIER`, 1000 (`src/mmt_core/public_include/mmt_core.h:40`); the same check fails if that bound ever drops below 1000.
 
 The range keeps your plugin clear of the SDK, not of other plugins: every third-party plugin draws from it and nothing assigns ids within it. So a plugin must still check at run time that its id and name are free, with every plugin deployed beside it, as [*Picking a free id and name*](#loading-a-plugin-of-your-own) describes. The mmt-plugin-generator README's [*Use plugin*](https://github.com/Montimage/mmt-plugin-generator#use-plugin) section gives the id and name rules for a generated plugin, and its [*NDN example and the built-in NDN dissector*](https://github.com/Montimage/mmt-plugin-generator#ndn-example-and-the-built-in-ndn-dissector) uses 980, an id from this range.
+
+## Taking over a session from another protocol
+
+A plugin protocol can take a classified session layer from its owner, or give it back, with `mmt_session_handover()` (issue #116, `src/mmt_core/public_include/plugin_defs.h:702`). The case it was made for is an HTTP connection upgraded to WebSocket or OCPP: register an upgrade classifier for `PROTO_HTTP` (`src/mmt_core/public_include/plugin_defs.h:722`), which HTTP calls on the `101 Switching Protocols` answer, and claim the session there:
+
+```c
+static int ws_upgrade(ipacket_t *ipacket, unsigned index) {
+    /* index is HTTP's layer; check the 101's headers if needed, then claim */
+    (void) mmt_session_handover(ipacket, index, PROTO_WEBSOCKET_EXAMPLE);
+    return MMT_CLASSIFY_SKIP; /* the return value is ignored */
+}
+
+/* in the plugin's init_proto(), once its protocol is registered */
+register_upgrade_classification_function(PROTO_HTTP, ws_upgrade, 10);
+```
+
+- The handover is applied on the session's next packet, so your `session_data_init` runs there with an empty slot: HTTP's parser has already been released. Your `session_data_analysis` and attribute handlers run at that index from then on.
+- Your session-data cleanup must tolerate an empty slot: it runs at expiry and when the layer is handed over again.
+- The layer is pinned: TCP's classification no longer rewrites it, so the session stays yours even though the flow's detected stack still says HTTP. To give the session back (the upgrade was refused, or you cannot parse what follows), call `mmt_session_handover(ipacket, index, PROTO_HTTP)` from your analysis; HTTP starts again on a fresh parser on the next packet.
+- `mmt_session_handover()` returns false when the session already has a handover pending (the first claim wins), for the transport layer and below, and on the parent of tunnelled sessions; the full list is in its documentation and in [MMT Sessions](./MMT-Session.md#handing-a-layer-to-another-protocol).
+- With the hand-off, you no longer need to register a classifier on TCP below HTTP's weight to claim the session on the Upgrade request itself: an Upgrade later in the connection is covered, and a refused upgrade simply stays HTTP.
+

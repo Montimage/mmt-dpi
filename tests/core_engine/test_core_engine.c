@@ -2882,6 +2882,444 @@ static void test_host_record(void) {
     mmt_host_ext_release(NULL);
 }
 
+/* ===== issue #116: session handover (mmt_session_handover) =============== */
+
+/* A stack of its own: S (sessionizer, like IP) at 1, T (no session, like
+ * TCP) at 2, X (an application layer) at 3 and D (a layer above X) at 4; Y
+ * is the protocol X's layer is handed to; C (a sessionizer) replaces D on
+ * the tunnel flow, making S's session a tunnel parent. X, D and Y keep a
+ * tagged session-data block, so a cleanup that frees another protocol's
+ * block (the type confusion the handover must prevent) is counted. */
+#define HO_STACK_ID     96
+#define HO_PROTO_S      630
+#define HO_PROTO_T      631
+#define HO_PROTO_X      632
+#define HO_PROTO_D      633
+#define HO_PROTO_Y      634
+#define HO_PROTO_C      635
+#define HO_PROTO_UNREG  639 /* valid id, never registered */
+#define HO_KEY_MAIN     0x70707070u
+#define HO_KEY_BACK     0x71717171u
+#define HO_KEY_TUNNEL   0x72727272u
+
+enum { HO_MODE_NONE, HO_MODE_VALIDATE, HO_MODE_QUEUE, HO_MODE_TUNNEL_PROBE,
+       HO_MODE_PROBE_OTHER, HO_MODE_PROBE_SAME, HO_MODE_GIVE_BACK };
+static int g_ho_mode;
+static int g_ho_x_alloc, g_ho_x_cleanup, g_ho_x_analyse;
+static int g_ho_d_alloc, g_ho_d_cleanup;
+static int g_ho_y_init, g_ho_y_cleanup, g_ho_y_analyse;
+static int g_ho_t_classify;
+static int g_ho_bad_data; /* a slot held another protocol's block */
+
+typedef struct { uint32_t proto; } ho_data_t;
+
+static void ho_alloc(ipacket_t *ipacket, unsigned index, uint32_t proto, int *count) {
+    ho_data_t *d;
+    if (ipacket->session->session_data[index] != NULL) return; /* init is idempotent */
+    d = (ho_data_t *) mmt_malloc(sizeof(*d));
+    if (d == NULL) return;
+    d->proto = proto;
+    ipacket->session->session_data[index] = d;
+    (*count)++;
+}
+static void ho_free(mmt_session_t *session, unsigned index, uint32_t proto, int *count) {
+    ho_data_t *d;
+    if (index < session->session_protocol_index) return; /* borrowed from the parent */
+    d = (ho_data_t *) session->session_data[index];
+    if (d == NULL) return; /* cleanup hooks tolerate an empty slot */
+    if (d->proto != proto) g_ho_bad_data++;
+    mmt_free(d);
+    session->session_data[index] = NULL;
+    (*count)++;
+}
+
+static classified_proto_t ho_stack_classify(ipacket_t *ipacket) {
+    classified_proto_t r;
+    (void) ipacket;
+    r.offset = 0;
+    r.proto_id = HO_PROTO_S;
+    r.status = Classified;
+    return r;
+}
+static int ho_set_next(ipacket_t *ipacket, unsigned index, uint32_t proto) {
+    classified_proto_t r;
+    r.offset = 4;
+    r.proto_id = proto;
+    r.status = Classified;
+    (void) set_classified_proto(ipacket, index + 1, r);
+    return MMT_CLASSIFY_MATCHED;
+}
+static int ho_classify_s(ipacket_t *ipacket, unsigned index) {
+    return ho_set_next(ipacket, index, HO_PROTO_T);
+}
+static int ho_classify_t(ipacket_t *ipacket, unsigned index) {
+    g_ho_t_classify++;
+    return ho_set_next(ipacket, index, HO_PROTO_X);
+}
+/* T's post-classification, as TCP's: the owner of X's layer is recorded */
+static int ho_post_classify_t(ipacket_t *ipacket, unsigned index) {
+    (void) ipacket; (void) index;
+    return 1;
+}
+static int ho_classify_x(ipacket_t *ipacket, unsigned index) {
+    uint32_t k;
+    memcpy(&k, ipacket->data, sizeof(k));
+    return ho_set_next(ipacket, index, (k == HO_KEY_TUNNEL) ? HO_PROTO_C : HO_PROTO_D);
+}
+static void ho_init_x(ipacket_t *ipacket, unsigned index) { ho_alloc(ipacket, index, HO_PROTO_X, &g_ho_x_alloc); }
+static void ho_init_d(ipacket_t *ipacket, unsigned index) { ho_alloc(ipacket, index, HO_PROTO_D, &g_ho_d_alloc); }
+static void ho_init_y(ipacket_t *ipacket, unsigned index) {
+    int allocated = 0;
+    g_ho_y_init++;
+    ho_alloc(ipacket, index, HO_PROTO_Y, &allocated);
+}
+static void ho_cleanup_x(mmt_session_t *s, unsigned index) { ho_free(s, index, HO_PROTO_X, &g_ho_x_cleanup); }
+static void ho_cleanup_d(mmt_session_t *s, unsigned index) { ho_free(s, index, HO_PROTO_D, &g_ho_d_cleanup); }
+static void ho_cleanup_y(mmt_session_t *s, unsigned index) { ho_free(s, index, HO_PROTO_Y, &g_ho_y_cleanup); }
+
+/* Every refusal of mmt_session_handover(), from X's analysis at index 3 of
+ * the S.T.X.D path, then the queueing itself. */
+static void ho_validate(ipacket_t *ipacket, unsigned index) {
+    mmt_session_t *s = ipacket->session;
+    CHECK(index == 3 && s->proto_path.len == 5, "X analysed at index 3 of a 5-layer path");
+    CHECK(mmt_session_handover(NULL, index, HO_PROTO_Y) == 0, "NULL packet refused");
+    {
+        mmt_session_t *keep = ipacket->session;
+        ipacket->session = NULL;
+        CHECK(mmt_session_handover(ipacket, index, HO_PROTO_Y) == 0, "sessionless packet refused");
+        ipacket->session = keep;
+    }
+    CHECK(mmt_session_handover(ipacket, 0, HO_PROTO_Y) == 0, "index 0 refused");
+    CHECK(mmt_session_handover(ipacket, 1, HO_PROTO_Y) == 0, "index 1 refused");
+    CHECK(mmt_session_handover(ipacket, 2, HO_PROTO_Y) == 0,
+          "the transport layer refused: its parent maintains sessions");
+    CHECK(mmt_session_handover(ipacket, 5, HO_PROTO_Y) == 0, "index past the path refused");
+    CHECK(mmt_session_handover(ipacket, PROTO_PATH_SIZE, HO_PROTO_Y) == 0, "index past PROTO_PATH_SIZE refused");
+    s->session_protocol_index = 3;
+    CHECK(mmt_session_handover(ipacket, index, HO_PROTO_Y) == 0,
+          "an index not above the session's own protocol refused");
+    s->session_protocol_index = 1;
+    /* a sessionizer at the index itself (an IP layer a path splice moved
+     * above a stale session_protocol_index) */
+    s->proto_path.proto_path[index] = HO_PROTO_C;
+    CHECK(mmt_session_handover(ipacket, index, HO_PROTO_Y) == 0,
+          "a layer that maintains sessions refused, whatever session_protocol_index says");
+    s->proto_path.proto_path[index] = HO_PROTO_X;
+    CHECK(mmt_session_handover(ipacket, index, PROTO_MAX_IDENTIFIER) == 0, "invalid id refused");
+    CHECK(mmt_session_handover(ipacket, index, HO_PROTO_UNREG) == 0, "unregistered id refused");
+    CHECK(mmt_session_handover(ipacket, index, HO_PROTO_X) == 0, "the current protocol refused");
+    CHECK(s->handover_index == 0 && s->handed_over == 0, "no refusal queued anything");
+    CHECK(mmt_session_handover(ipacket, index, HO_PROTO_Y) == 1, "the handover is queued");
+    CHECK(mmt_session_handover(ipacket, index, HO_PROTO_D) == 0, "a second claim refused: one is pending");
+    CHECK(mmt_session_handover(ipacket, 4, HO_PROTO_Y) == 0, "a pending handover blocks any index");
+    CHECK(s->handover_index == 3 && s->handover_proto == HO_PROTO_Y && s->handover_from == HO_PROTO_X,
+          "the first claim is the pending one");
+}
+
+static int ho_analyse_x(ipacket_t *ipacket, unsigned index) {
+    g_ho_x_analyse++;
+    switch (g_ho_mode) {
+    case HO_MODE_VALIDATE:
+        g_ho_mode = HO_MODE_NONE;
+        ho_validate(ipacket, index);
+        break;
+    case HO_MODE_QUEUE:
+        g_ho_mode = HO_MODE_NONE;
+        CHECK(mmt_session_handover(ipacket, index, HO_PROTO_Y) == 1, "handover to Y queued");
+        break;
+    case HO_MODE_TUNNEL_PROBE:
+        g_ho_mode = HO_MODE_NONE;
+        CHECK(ipacket->session->live_children > 0, "S's session is a tunnel parent");
+        CHECK(mmt_session_handover(ipacket, index, HO_PROTO_Y) == 0, "a tunnel parent's layer refused");
+        CHECK(mmt_session_handover(ipacket, index + 1, HO_PROTO_Y) == 0,
+              "a layer that maintains sessions refused");
+        break;
+    default:
+        break;
+    }
+    return MMT_CONTINUE;
+}
+static int ho_analyse_y(ipacket_t *ipacket, unsigned index) {
+    const ho_data_t *d = (const ho_data_t *) ipacket->session->session_data[index];
+    classified_proto_t c;
+    g_ho_y_analyse++;
+    if (d == NULL || d->proto != HO_PROTO_Y) g_ho_bad_data++;
+    c.offset = 4;
+    c.status = Classified;
+    switch (g_ho_mode) {
+    case HO_MODE_PROBE_OTHER:
+        g_ho_mode = HO_MODE_NONE;
+        c.proto_id = HO_PROTO_X;
+        CHECK(set_classified_proto(ipacket, index, c) == 0, "a pinned layer refuses another protocol");
+        CHECK(ipacket->proto_hierarchy->proto_path[index] == HO_PROTO_Y, "the pinned layer kept its protocol");
+        break;
+    case HO_MODE_PROBE_SAME:
+        g_ho_mode = HO_MODE_NONE;
+        c.proto_id = HO_PROTO_Y;
+        CHECK(set_classified_proto(ipacket, index, c) == PROTO_CLASSIFICATION_UPDATE,
+              "a pinned layer accepts an update of its own protocol");
+        break;
+    case HO_MODE_GIVE_BACK:
+        g_ho_mode = HO_MODE_NONE;
+        CHECK(mmt_session_handover(ipacket, index, HO_PROTO_X) == 1, "give-back to X queued");
+        break;
+    default:
+        break;
+    }
+    return MMT_CONTINUE;
+}
+
+static protocol_t *ho_register(uint32_t id, const char *name, int sessionizer,
+                               generic_classification_function classify,
+                               generic_session_data_initialization_function init,
+                               generic_session_data_cleanup_function cleanup,
+                               generic_session_data_analysis_function analyse) {
+    protocol_t *p = init_protocol_struct_for_registration(id, name);
+    if (p == NULL) return NULL;
+    if (sessionizer) {
+        register_sessionizer_function(p, test_sessionize, test_session_ctx_cleanup, test_key_comp);
+        register_session_hash_function(p, test_key_hash);
+    }
+    if (classify != NULL) register_classification_function(p, classify);
+    if (init != NULL) register_session_data_initialization_function(p, init);
+    if (cleanup != NULL) register_session_data_cleanup_function(p, cleanup);
+    if (analyse != NULL) register_session_data_analysis_function(p, analyse);
+    return (register_protocol(p, id) == PROTO_REGISTERED) ? p : NULL;
+}
+
+static mmt_session_t *ho_session(mmt_handler_t *h, uint32_t key) {
+    return (mmt_session_t *) get_session_from_protocol_context_by_session_key(
+        &h->configured_protocols[HO_PROTO_S], &key);
+}
+
+static void ho_send(mmt_handler_t *h, uint32_t key, int mode) {
+    static uint32_t usec = 0;
+    u_char pkt[64];
+    pkthdr_t hdr;
+    g_ho_mode = mode;
+    make_packet(&hdr, pkt, sizeof(pkt), key, 8000, ++usec);
+    CHECK(packet_process(h, &hdr, pkt) == 1, "handover-stack packet processed");
+    CHECK(g_ho_mode == HO_MODE_NONE, "the packet reached the callback of its mode");
+    g_ho_mode = HO_MODE_NONE;
+}
+
+/* The splice helper and the apply step on synthetic sessions. */
+static void test_session_handover_units(void) {
+    mmt_session_t s;
+    int canary;
+    fprintf(stderr, "  test: handover apply and IP-splice helper on synthetic sessions (#116)\n");
+
+    /* splice, delta +1 then -1: an IP layer at 2 moves to 3 (VLAN tag) and back */
+    memset(&s, 0, sizeof(s));
+    s.session_data[4] = &canary;
+    s.handed_over = (uint16_t) (1u << 4);
+    s.handover_index = 4;
+    s.handover_proto = HO_PROTO_Y;
+    s.handover_from = HO_PROTO_X;
+    mmt_session_handover_on_splice(&s, 2, 3);
+    CHECK(s.handover_index == 5 && s.handover_proto == HO_PROTO_Y && s.handover_from == HO_PROTO_X,
+          "a splice moves the pending handover up with its layer");
+    CHECK(s.handed_over == (1u << 5), "the pin moved up with its layer");
+    CHECK(s.session_data[5] == &canary && s.session_data[4] == NULL && s.session_data[3] == NULL,
+          "the slot moved up with its layer");
+    mmt_session_handover_on_splice(&s, 3, 2);
+    CHECK(s.handover_index == 4 && s.handover_proto == HO_PROTO_Y && s.handover_from == HO_PROTO_X,
+          "the pending handover moved back down");
+    CHECK(s.handed_over == (1u << 4), "the pin moved back down");
+    CHECK(s.session_data[4] == &canary && s.session_data[5] == NULL, "the slot moved back down");
+    /* a pending handover alone also makes the helper act */
+    memset(&s, 0, sizeof(s));
+    s.handover_index = 3;
+    s.handover_proto = HO_PROTO_Y;
+    s.handover_from = HO_PROTO_X;
+    s.session_data[3] = &canary;
+    mmt_session_handover_on_splice(&s, 2, 3);
+    CHECK(s.handover_index == 4 && s.handover_proto == HO_PROTO_Y && s.handover_from == HO_PROTO_X
+          && s.session_data[4] == &canary && s.session_data[3] == NULL,
+          "a pending-only session moves its slots and its handover");
+    /* a pending handover moved past the path is dropped */
+    memset(&s, 0, sizeof(s));
+    s.handover_index = PROTO_PATH_SIZE - 1;
+    s.handover_proto = HO_PROTO_Y;
+    s.handover_from = HO_PROTO_X;
+    mmt_session_handover_on_splice(&s, 2, 3);
+    CHECK(s.handover_index == 0 && s.handover_proto == 0 && s.handover_from == 0,
+          "a handover moved past the path is dropped");
+    /* a pending handover not above the IP layer is dropped, never shifted */
+    memset(&s, 0, sizeof(s));
+    s.handover_index = 3;
+    s.handover_proto = HO_PROTO_Y;
+    s.handover_from = HO_PROTO_X;
+    mmt_session_handover_on_splice(&s, 3, 2);
+    CHECK(s.handover_index == 0 && s.handover_proto == 0 && s.handover_from == 0,
+          "a handover at or below the IP layer is dropped");
+    /* an ordinary session: nothing moves, as before #116 */
+    memset(&s, 0, sizeof(s));
+    s.session_data[4] = &canary;
+    mmt_session_handover_on_splice(&s, 2, 3);
+    CHECK(s.session_data[4] == &canary && s.session_data[5] == NULL, "an ordinary session's slots stay");
+    mmt_session_handover_on_splice(NULL, 2, 3); /* no-op */
+
+    /* apply on a S.T.X.D path: cleanups, rewrite, truncation, checkers, pin */
+    {
+        static const int path[] = { PROTO_META, HO_PROTO_S, HO_PROTO_T, HO_PROTO_X, HO_PROTO_D };
+        int xc = g_ho_x_cleanup, dc = g_ho_d_cleanup;
+        ho_data_t *xd = (ho_data_t *) mmt_malloc(sizeof(*xd)), *dd = (ho_data_t *) mmt_malloc(sizeof(*dd));
+        CHECK(xd != NULL && dd != NULL, "synthetic session data allocated");
+        if (xd == NULL || dd == NULL) { mmt_free(xd); mmt_free(dd); return; }
+        xd->proto = HO_PROTO_X;
+        dd->proto = HO_PROTO_D;
+        memset(&s, 0, sizeof(s));
+        s.session_protocol_index = 1;
+        for (int i = 0; i < 5; i++) {
+            s.proto_path.proto_path[i] = path[i];
+            s.proto_headers_offset.proto_path[i] = 4;
+            s.proto_classif_status.proto_path[i] = PROTO_CLASSIFICATION_DONE;
+        }
+        s.proto_path.len = s.proto_headers_offset.len = s.proto_classif_status.len = 5;
+        for (int i = 0; i < PROTO_PATH_SIZE; i++) s.proto_checkers[i] = 7;
+        s.session_data[3] = xd;
+        s.session_data[4] = dd;
+        s.handed_over = (uint16_t) (1u << 6); /* a stale pin above the layer */
+        s.handover_index = 3;
+        s.handover_proto = HO_PROTO_Y;
+        s.handover_from = HO_PROTO_X;
+        mmt_session_apply_handover(&s);
+        CHECK(g_ho_x_cleanup == xc + 1 && g_ho_d_cleanup == dc + 1,
+              "apply ran the old protocol's and the deeper layer's cleanup once each");
+        CHECK(s.session_data[3] == NULL && s.session_data[4] == NULL, "apply cleared the slots");
+        CHECK(s.proto_path.proto_path[3] == HO_PROTO_Y
+              && s.proto_classif_status.proto_path[3] == PROTO_RECLASSIFICATION,
+              "apply wrote the new protocol as a reclassification");
+        CHECK(s.proto_path.len == 4 && s.proto_headers_offset.len == 4 && s.proto_classif_status.len == 4,
+              "apply truncated the path, the offsets and the statuses");
+        CHECK(s.proto_checkers[2] == 7 && s.proto_checkers[3] == 0 && s.proto_checkers[PROTO_PATH_SIZE - 1] == 0,
+              "apply cleared the recorded checkers from the index on");
+        CHECK(s.handed_over == (1u << 3), "apply pinned the layer and dropped the pins above it");
+        CHECK(s.handover_index == 0 && s.handover_proto == 0 && s.handover_from == 0, "apply cleared the pending");
+        mmt_session_apply_handover(&s); /* nothing pending: no-op */
+        CHECK(s.proto_path.proto_path[3] == HO_PROTO_Y && g_ho_x_cleanup == xc + 1, "nothing pending, nothing done");
+
+        /* dropped: the layer changed since the call */
+        s.handover_index = 3;
+        s.handover_proto = HO_PROTO_X;
+        s.handover_from = HO_PROTO_D;
+        mmt_session_apply_handover(&s);
+        CHECK(s.proto_path.proto_path[3] == HO_PROTO_Y && s.handover_index == 0,
+              "a handover queued for another protocol is dropped");
+        /* dropped: the index left the path */
+        s.handover_index = 4;
+        s.handover_proto = HO_PROTO_X;
+        s.handover_from = HO_PROTO_D;
+        mmt_session_apply_handover(&s);
+        CHECK(s.proto_path.len == 4 && s.handover_index == 0, "a handover past the path is dropped");
+        /* dropped: the session became a tunnel parent */
+        s.live_children = 1;
+        s.handover_index = 3;
+        s.handover_proto = HO_PROTO_X;
+        s.handover_from = HO_PROTO_Y;
+        mmt_session_apply_handover(&s);
+        CHECK(s.proto_path.proto_path[3] == HO_PROTO_Y && s.handover_index == 0,
+              "a handover on a tunnel parent is dropped");
+        mmt_session_apply_handover(NULL); /* no-op */
+    }
+}
+
+static void test_session_handover(void) {
+    char errbuf[256];
+    fprintf(stderr, "  test: session handover through the dispatcher (#116)\n");
+    CHECK(register_protocol_stack(HO_STACK_ID, (char *) "ce_ho_stack", ho_stack_classify) == 1,
+          "register the handover stack");
+    CHECK(ho_register(HO_PROTO_S, "ce_ho_s", 1, ho_classify_s, NULL, NULL, NULL) != NULL, "register S");
+    CHECK(ho_register(HO_PROTO_T, "ce_ho_t", 0, ho_classify_t, NULL, NULL, NULL) != NULL, "register T");
+    register_pre_post_classification_functions(get_protocol_struct_by_id(HO_PROTO_T), NULL, ho_post_classify_t);
+    CHECK(ho_register(HO_PROTO_X, "ce_ho_x", 0, ho_classify_x, ho_init_x, ho_cleanup_x, ho_analyse_x) != NULL,
+          "register X");
+    CHECK(ho_register(HO_PROTO_D, "ce_ho_d", 0, NULL, ho_init_d, ho_cleanup_d, NULL) != NULL, "register D");
+    CHECK(ho_register(HO_PROTO_Y, "ce_ho_y", 0, NULL, ho_init_y, ho_cleanup_y, ho_analyse_y) != NULL,
+          "register Y");
+    CHECK(ho_register(HO_PROTO_C, "ce_ho_c", 1, NULL, NULL, NULL, NULL) != NULL, "register C");
+
+    test_session_handover_units();
+
+    mmt_handler_t *h = mmt_init_handler(HO_STACK_ID, 0, errbuf);
+    CHECK(h != NULL, "handler on the handover stack");
+    if (h == NULL) return;
+
+    /* handover X -> Y, then expiry (the counters are read as deltas: the
+     * synthetic apply above ran X's and D's cleanup once) */
+    int x_cleanup0 = g_ho_x_cleanup, d_cleanup0 = g_ho_d_cleanup;
+    ho_send(h, HO_KEY_MAIN, HO_MODE_NONE);
+    mmt_session_t *s = ho_session(h, HO_KEY_MAIN);
+    CHECK(s != NULL, "the main flow has a session");
+    if (s == NULL) { mmt_close_handler(h); return; }
+    CHECK(s->proto_path.len == 5 && s->proto_path.proto_path[1] == HO_PROTO_S
+          && s->proto_path.proto_path[2] == HO_PROTO_T && s->proto_path.proto_path[3] == HO_PROTO_X
+          && s->proto_path.proto_path[4] == HO_PROTO_D, "the flow is S.T.X.D");
+    CHECK(g_ho_x_alloc == 1 && g_ho_d_alloc == 1, "X and D hold session data");
+    CHECK(s->proto_checkers[3] != 0, "T's classifier owns X's layer (direct dispatch)");
+
+    ho_send(h, HO_KEY_MAIN, HO_MODE_VALIDATE);
+    CHECK(s->proto_path.proto_path[3] == HO_PROTO_X && s->proto_path.len == 5 && s->handed_over == 0,
+          "the call only queues: the packet stayed X");
+    CHECK(g_ho_x_cleanup == x_cleanup0 && g_ho_y_init == 0 && s->session_data[3] != NULL,
+          "the call only queues: no cleanup, no init");
+
+    int t_calls = g_ho_t_classify, x_analysed = g_ho_x_analyse;
+    ho_send(h, HO_KEY_MAIN, HO_MODE_NONE);
+    CHECK(g_ho_x_cleanup == x_cleanup0 + 1 && g_ho_d_cleanup == d_cleanup0 + 1, "the next packet ran X's and D's cleanup once each");
+    CHECK(s->proto_path.len == 4 && s->proto_path.proto_path[3] == HO_PROTO_Y,
+          "the next packet's path is S.T.Y");
+    CHECK(s->proto_headers_offset.len == 4 && s->proto_classif_status.len == 4,
+          "offsets and statuses truncated with the path");
+    CHECK((s->handed_over & (1u << 3)) != 0 && s->handover_index == 0, "Y's layer is pinned");
+    for (int i = 3; i < PROTO_PATH_SIZE; i++) {
+        CHECK(s->proto_checkers[i] == 0, "no checker recorded from the handed-over layer on");
+    }
+    CHECK(g_ho_y_init == 1 && g_ho_y_analyse == 1, "Y's init and analysis ran on that packet");
+    CHECK(g_ho_t_classify == t_calls, "the pinned layer's parent chain was not walked");
+    CHECK(g_ho_x_analyse == x_analysed, "X no longer analyses the layer");
+    CHECK(s->session_data[3] != NULL && ((ho_data_t *) s->session_data[3])->proto == HO_PROTO_Y,
+          "the slot holds Y's data");
+
+    ho_send(h, HO_KEY_MAIN, HO_MODE_PROBE_OTHER);
+    ho_send(h, HO_KEY_MAIN, HO_MODE_NONE);
+    CHECK(g_ho_y_init == 1 && g_ho_y_analyse == 3, "Y initialised once and analyses every packet");
+    CHECK(s->proto_path.len == 4 && s->proto_path.proto_path[3] == HO_PROTO_Y, "the layer stays Y");
+    ho_send(h, HO_KEY_MAIN, HO_MODE_PROBE_SAME);
+
+    /* give-back on another flow: X -> Y -> X */
+    ho_send(h, HO_KEY_BACK, HO_MODE_NONE);
+    mmt_session_t *b = ho_session(h, HO_KEY_BACK);
+    CHECK(b != NULL, "the give-back flow has a session");
+    ho_send(h, HO_KEY_BACK, HO_MODE_QUEUE);
+    ho_send(h, HO_KEY_BACK, HO_MODE_GIVE_BACK);
+    int x_alloc = g_ho_x_alloc, y_cleanup = g_ho_y_cleanup, d_alloc = g_ho_d_alloc;
+    ho_send(h, HO_KEY_BACK, HO_MODE_NONE);
+    CHECK(g_ho_y_cleanup == y_cleanup + 1, "giving back ran Y's cleanup once");
+    CHECK(g_ho_x_alloc == x_alloc + 1, "X starts again on fresh session data");
+    if (b != NULL) {
+        CHECK(b->proto_path.proto_path[3] == HO_PROTO_X && (b->handed_over & (1u << 3)) != 0,
+              "the layer is X again, still pinned");
+        CHECK(b->session_data[3] != NULL && ((ho_data_t *) b->session_data[3])->proto == HO_PROTO_X,
+              "the slot holds X's fresh data");
+        CHECK(b->proto_path.len == 5 && b->proto_path.proto_path[4] == HO_PROTO_D
+              && g_ho_d_alloc == d_alloc + 1, "X's own chain classifies the layer above it again");
+    }
+
+    /* tunnel parent and session-bearing layer refused */
+    ho_send(h, HO_KEY_TUNNEL, HO_MODE_NONE);
+    ho_send(h, HO_KEY_TUNNEL, HO_MODE_TUNNEL_PROBE);
+
+    int x_cleanup = g_ho_x_cleanup;
+    y_cleanup = g_ho_y_cleanup;
+    mmt_close_handler(h); /* expires every session */
+    CHECK(g_ho_y_cleanup == y_cleanup + 1, "expiry ran Y's cleanup on the handed-over flow");
+    CHECK(g_ho_x_cleanup == x_cleanup + 2,
+          "expiry ran X's cleanup only where X still holds the layer (give-back and tunnel flows)");
+    CHECK(g_ho_bad_data == 0, "no protocol ever saw another protocol's session data");
+}
+
 int main(void) {
     fprintf(stderr, "Core-engine test suite (session lifecycle + arena allocator)\n");
     g_null_fp = fopen("/dev/null", "w"); /* sink for the fprintf/format helpers */
@@ -2918,6 +3356,7 @@ int main(void) {
     test_offset_memoization();
     test_stats_child_cache();
     test_reasm_stats();
+    test_session_handover(); /* issue #116: last, its protocols stay registered */
 
     /* Full teardown, then a second init/close cycle — F-BUG-005 regression:
      * the global maps must be NULLed, not left dangling. */

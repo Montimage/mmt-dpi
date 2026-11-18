@@ -91,10 +91,34 @@ struct mmt_session_struct {
 #error "BYTE_ORDER must be defined"
 #endif
     uint8_t family;                          /**< identifier of the application family to which this session belongs. */
+    uint16_t handed_over;                    /**< issue #116: one bit per path index whose layer was handed over (pinned) */
+    uint16_t handover_proto;                 /**< issue #116: pending handover: the new protocol */
+    uint16_t handover_from;                  /**< issue #116: pending handover: the protocol at the index when queued */
+    uint8_t handover_index;                  /**< issue #116: pending handover: its index, 0 when none */
     struct mmt_session_struct * next;        /**< pointer to the next session in the expiry list --- for internal use must not be changed */
     struct mmt_session_struct * previous;    /**< pointer to the previous session in the expiry list --- for internal use must not be changed */
 };
 ```
+### Handing a layer to another protocol ###
+
+Once a layer of a session is classified, only its owner is called on later packets, and TCP/UDP post-classification rewrites the layer from the flow's detected stack. A protocol that takes over a session from another — a WebSocket plugin after HTTP's `101 Switching Protocols` — or gives it back calls `mmt_session_handover()` (issue #116, `src/mmt_core/src/packet_pipeline.c:1697`):
+
+```c
+MMTAPI bool MMTCALL mmt_session_handover(
+    ipacket_t *ipacket,
+    unsigned index,
+    mmt_proto_id_t new_proto_id
+);
+```
+
+- The call only queues the handover and returns true; the packet that asks for it is processed entirely as the old protocol.
+- The session's next packet applies it before it reads the session's path (`src/mmt_core/src/packet_pipeline.c:1718`): the session-data cleanup of the protocol at `index` and of every deeper layer runs, their slots are cleared, `new_proto_id` is written at `index`, the deeper layers and the recorded checkers from `index` on are dropped, and the layer is pinned. From that packet on, the new protocol's session-data initialization runs once and its analysis, attribute handlers and per-packet statistics run at `index`; the old protocol's stop for that layer. Timeout statistics credit the path at expiry.
+- A pinned layer stays with its protocol for the rest of the session: its parent's classification no longer runs for it and `set_classified_proto()` refuses another protocol there. Giving the session back is the same call with the previous protocol; HTTP then starts on a fresh parser.
+- The call returns false for a NULL packet or session, an index below 2 or outside the session's path, a layer whose parent or itself maintains sessions (the transport layer), an index not above the session's own protocol, an invalid, unregistered or unchanged protocol id, a handover already pending (the first claim wins), and the parent of tunnelled sessions.
+- When the session's IP layer moves (a VLAN tag appearing or going), the IP sessionizer's path splice moves the slots and pins of a handed-over session, and the index of a pending handover, with their layers, so a handover queued on the 101 still applies when the next packet travels the other way with another encapsulation; one whose moved index falls outside the path above IP is dropped.
+
+The semantics are recorded in [DECISIONS.md](./DECISIONS.md) (issue #116 entries); `docs/HTTP-protocol.md` describes the HTTP upgrade hand-off built on it.
+
 ** IP session key - An example of `mmt_session_key` structure **
 
 Session key is very flexible.

@@ -2781,6 +2781,97 @@ static void e_set_classified_proto(void) {
     CHECK(set_classified_proto(p, 1, bad) == 0 && p->proto_hierarchy->len == 1, "invalid protocol id -> 0, path unchanged");
     CHECK(set_classified_proto(p, PROTO_PATH_SIZE, ok) == 0 && p->proto_hierarchy->len == 1,
           "index past PROTO_PATH_SIZE -> 0, path unchanged");
+    /* issue #116: a handed-over (pinned) layer refuses another protocol */
+    CHECK(set_classified_proto(p, 1, ok) == PROTO_CLASSIFICATION_DETECTION, "layer 1 appended");
+    p->session = fake_session();
+    g_fs.handed_over = (uint16_t) (1u << 1);
+    classified_proto_t other = { 0, Classified, AC_PROTO_C };
+    CHECK(set_classified_proto(p, 1, other) == 0 && p->proto_hierarchy->proto_path[1] == AC_PROTO_A,
+          "pinned layer, other protocol -> 0, path unchanged");
+    g_fs.handed_over = 0;
+}
+
+/* Issue #116: the session handover and the upgrade classifiers. The fixture
+ * session's path is META.A.C.C: layer 3 (C) and its parent (C) hold no
+ * session, A (layer 1) is the session's own protocol. */
+static const uint32_t k_path_mac[] = { PROTO_META, AC_PROTO_A, AC_PROTO_C, AC_PROTO_C };
+static const int k_off_mac[] = { 0, 10, 4, 4 };
+
+static ipacket_t *handover_packet(fake_packet_t *f) {
+    ipacket_t *p = fake_packet(f, 4, k_path_mac, k_off_mac);
+    mmt_session_t *s = fake_session();
+    s->session_protocol_index = 1;
+    s->proto_path = *p->proto_hierarchy;
+    p->session = s;
+    return p;
+}
+
+static void b_mmt_session_handover(void) {
+    fake_packet_t f;
+    ipacket_t *p = handover_packet(&f);
+    CHECK(mmt_session_handover(p, 3, PROTO_UNKNOWN) == 1, "handover queued");
+    CHECK(g_fs.handover_index == 3 && g_fs.handover_proto == PROTO_UNKNOWN && g_fs.handover_from == AC_PROTO_C,
+          "pending handover recorded on the session");
+    CHECK(g_fs.proto_path.proto_path[3] == AC_PROTO_C && g_fs.handed_over == 0,
+          "only queued: the path is unchanged until the next packet");
+}
+static void e_mmt_session_handover(void) {
+    fake_packet_t f;
+    ipacket_t *p = handover_packet(&f);
+    CHECK(mmt_session_handover(NULL, 3, PROTO_UNKNOWN) == 0, "NULL packet -> 0");
+    CHECK(mmt_session_handover(p, 2, PROTO_UNKNOWN) == 0, "parent maintains sessions (transport layer) -> 0");
+    CHECK(mmt_session_handover(p, 3, AC_UNREG_ID) == 0, "unregistered protocol -> 0");
+    CHECK(mmt_session_handover(p, 3, AC_PROTO_C) == 0, "protocol already at the index -> 0");
+    CHECK(g_fs.handover_index == 0, "nothing queued");
+}
+
+static int g_upgrade_counted, g_upgrade_claimed;
+static int upgrade_count(ipacket_t *p, unsigned i) { (void) p; (void) i; g_upgrade_counted++; return 0; }
+static int upgrade_claim(ipacket_t *p, unsigned i) {
+    g_upgrade_claimed++;
+    (void) mmt_session_handover(p, i, PROTO_UNKNOWN);
+    return MMT_CLASSIFY_MATCHED;
+}
+
+static void b_register_upgrade_classification_function(void) {
+    fake_packet_t f;
+    ipacket_t *p = handover_packet(&f);
+    int before = g_upgrade_counted;
+    CHECK(register_upgrade_classification_function(AC_PROTO_C, upgrade_count, 5) == 1, "registered");
+    (void) mmt_session_offer_upgrade(p, 3);
+    CHECK(g_upgrade_counted == before + 1, "the classifier is offered the parent's sessions");
+}
+static void e_register_upgrade_classification_function(void) {
+    CHECK(register_upgrade_classification_function(AC_PROTO_C, NULL, 5) == 0, "NULL callback -> 0");
+    CHECK(register_upgrade_classification_function(PROTO_MAX_IDENTIFIER, upgrade_count, 5) == 0,
+          "invalid parent id -> 0");
+}
+
+static void b_mmt_session_offer_upgrade(void) {
+    static int registered;
+    fake_packet_t f;
+    ipacket_t *p = handover_packet(&f);
+    if (!registered) {
+        registered = register_upgrade_classification_function(AC_PROTO_C, upgrade_claim, 90);
+        CHECK(registered == 1, "claiming classifier registered");
+    }
+    int claimed = g_upgrade_claimed;
+    CHECK(mmt_session_offer_upgrade(p, 3) == 1, "a classifier claimed the session -> 1");
+    CHECK(g_upgrade_claimed == claimed + 1 && g_fs.handover_index == 3, "the claim queued a handover");
+    g_fs.handover_index = 0;
+    CHECK(mmt_session_offer_upgrade(p, 1) == 0 && g_fs.handover_index == 0,
+          "no classifier for the protocol at the index -> 0");
+}
+static void e_mmt_session_offer_upgrade(void) {
+    fake_packet_t f;
+    ipacket_t *p = handover_packet(&f);
+    int claimed = g_upgrade_claimed, counted = g_upgrade_counted;
+    CHECK(mmt_session_offer_upgrade(NULL, 3) == 0, "NULL packet -> 0");
+    CHECK(mmt_session_offer_upgrade(p, PROTO_PATH_SIZE) == 0, "index past PROTO_PATH_SIZE -> 0");
+    g_fs.handover_index = 3;
+    CHECK(mmt_session_offer_upgrade(p, 3) == 0, "a handover already pending -> 0");
+    CHECK(g_upgrade_claimed == claimed && g_upgrade_counted == counted, "no classifier was called");
+    g_fs.handover_index = 0;
 }
 
 static void b_register_classification_function_with_parent_protocol(void) {
@@ -3477,6 +3568,10 @@ static const api_contract_t k_contracts[] = {
     /* ---------------------------- plugin_defs.h -------------------------- */
     CONTRACT(mmt_packet_scratch_adopt, b_mmt_packet_scratch_adopt, e_mmt_packet_scratch_adopt),
     CONTRACT(set_classified_proto, b_set_classified_proto, e_set_classified_proto),
+    CONTRACT(mmt_session_handover, b_mmt_session_handover, e_mmt_session_handover),
+    CONTRACT(register_upgrade_classification_function, b_register_upgrade_classification_function,
+             e_register_upgrade_classification_function),
+    CONTRACT(mmt_session_offer_upgrade, b_mmt_session_offer_upgrade, e_mmt_session_offer_upgrade),
     CONTRACT(register_classification_function_with_parent_protocol,
              b_register_classification_function_with_parent_protocol,
              e_register_classification_function_with_parent_protocol),
