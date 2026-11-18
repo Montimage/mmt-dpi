@@ -52,3 +52,15 @@ regexTarget = "match"
 regexes = [
     '''s1apUES1APIDs_p->choice''',
 ]
+
+[[allowlists]]
+description = "RFC 6455 sample Sec-WebSocket-Key in the HTTP upgrade test frames"
+# tests/http_header_case/test_http_header_case.c builds WebSocket upgrade
+# requests with the handshake example of RFC 6455 §1.3: the key is base64 for
+# "the sample nonce", not a credential, but generic-api-key reads it as one
+# (issue #116). Matched against the whole finding and pinned to that exact
+# header line, so any other Sec-WebSocket-Key value is still scanned.
+regexTarget = "match"
+regexes = [
+    '''Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==''',
+]
