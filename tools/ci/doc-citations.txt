@@ -140,7 +140,7 @@ cite	docs/Memory-Management.md	src/mmt_core/src/packet_pipeline.c:1665	void mmt_
 cite	docs/Memory-Management.md	src/mmt_core/src/packet_registry_attr.c:151	mmt_packet_scratch_destroy(mmt_handler); // issue #506: adopted attribute values	-
 cite	docs/Memory-Management.md	src/mmt_core/src/memory.c:40-45	if( unlikely( x == NULL )) {	}
 cite	docs/Memory-Management.md	src/mmt_core/src/memory.c:73-79	if( unlikely( x1 == NULL )) {	}
-cite	docs/Memory-Management.md	src/mmt_tcpip/lib/http_parser_integration.h:90-107	inline static stream_parser_t * init_http_parser() {	}
+cite	docs/Memory-Management.md	src/mmt_tcpip/lib/http_parser_integration.h:93-110	inline static stream_parser_t * init_http_parser() {	}
 cite	docs/Memory-Management.md	src/mmt_core/public_include/plugin_defs.h:58	MMTAPI bool MMTCALL mmt_packet_scratch_adopt(	-
 cite	docs/Memory-Management.md	src/mmt_core/public_include/mmt_core.h:1292-1293	/** Carve `size` aligned bytes from the arena (NULL on OOM). */	MMTAPI void*        MMTCALL mmt_arena_alloc  ( mmt_arena_t *arena, size_t size );
 cite	docs/Protocol-Modeling.md	src/mmt_core/private_include/packet_processing.h:645	struct protocol_struct {	-
@@ -184,7 +184,7 @@ cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/http_parser_integration.h:24	llh
 cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/http_parser_integration.c:153	static llhttp_settings_t settings =	-
 cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/http_parser_integration.c:155-162	.on_header_field = header_field_cb	,.on_message_complete = message_complete_cb
 cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/http_parser_integration.c:10-148	int message_begin_cb (llhttp_t *p)	}
-cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/http_parser_integration.h:100-103	llhttp_init(& parser->parser[0], HTTP_BOTH, get_settings());	parser->parser[1].data = init_stream_processor();
+cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/http_parser_integration.h:103-106	llhttp_init(& parser->parser[0], HTTP_BOTH, get_settings());	parser->parser[1].data = init_stream_processor();
 cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/http_parser_integration.c:127	//llhttp_should_keep_alive(parser);	-
 cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/protocols/proto_http.c:367	err = llhttp_execute(parser, (const char *) packet->payload, packet->payload_packet_len);	-
 cite	docs/llhttp-migration.md	src/mmt_tcpip/lib/protocols/proto_http.c:368	if (err == HPE_PAUSED_UPGRADE || llhttp_get_upgrade(parser)) {	-

@@ -366,7 +366,7 @@ int http_internal_session_data_analysis(ipacket_t * ipacket, unsigned index) {
       // consumed; any other return value marks an error or a pause.
       err = llhttp_execute(parser, (const char *) packet->payload, packet->payload_packet_len);
       if (err == HPE_PAUSED_UPGRADE || llhttp_get_upgrade(parser)) {
-        // handle new protocol
+        mmt_http_offer_upgrade(ipacket, index, parser, err); // issue #116: hand the session over
       } else if (err != HPE_OK) {
         // Handle error. Usually just close the connection.
         debug("[PROTO_HTTP-]> Error while parsing this HTTP message -Error %s: %s\n", llhttp_errno_name(err), llhttp_get_error_reason(parser));

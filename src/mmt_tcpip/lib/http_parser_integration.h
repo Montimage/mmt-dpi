@@ -46,6 +46,8 @@ typedef struct
                     F-BUG-056) **/
   int index; /**> index of the current protocol in the protocol path **/
   ipacket_t * ipacket; /**> pointer to the ipacket under processing **/ 
+  int upgrade_offered; /**> 1 once this direction's 101 Switching Protocols was
+                       offered to the upgrade classifiers (issue #116) **/
 } stream_processor_t;
 
 /**
@@ -65,6 +67,7 @@ inline static void * init_stream_processor()
     sp->hvalue = NULL;
     sp->hfield = NULL;
     sp->hfield_valid = 0;
+    sp->upgrade_offered = 0;
   }
   return (void *) sp;
 }
@@ -117,3 +120,21 @@ inline static void * close_http_parser(stream_parser_t * sp) {
   return NULL;
 }
 
+
+/**
+ * Issue #116: called where llhttp reports an upgrade
+ * (http_internal_session_data_analysis()). On the response that answers an
+ * Upgrade request with 101 Switching Protocols, HTTP offers the session once
+ * to the upgrade classifiers registered for PROTO_HTTP; one that claims it
+ * calls mmt_session_handover(). llhttp is not resumed: after an upgrade both
+ * parsers stay paused as before, so a refused upgrade (another status, or
+ * no classifier claiming it) leaves HTTP's output unchanged. The paused
+ * parser keeps returning HPE_PAUSED_UPGRADE, hence the once-only flag.
+ **/
+inline static void mmt_http_offer_upgrade(ipacket_t * ipacket, unsigned index, llhttp_t * parser, llhttp_errno_t err) {
+  stream_processor_t * sp = (stream_processor_t *) parser->data;
+  if (err != HPE_PAUSED_UPGRADE || sp == NULL || sp->upgrade_offered) return;
+  if (llhttp_get_type(parser) != HTTP_RESPONSE || llhttp_get_status_code(parser) != 101) return;
+  sp->upgrade_offered = 1;
+  (void) mmt_session_offer_upgrade(ipacket, index);
+}

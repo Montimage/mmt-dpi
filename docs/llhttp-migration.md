@@ -86,7 +86,7 @@ Every `http_parser` symbol this codebase uses, with its llhttp equivalent. Colum
 | `src/mmt_tcpip/lib/http_parser_integration.c:153` | `http_parser_settings` (type) | `llhttp_settings_t` | same callback field names, plus `*_complete` / `on_reset` additions |
 | `src/mmt_tcpip/lib/http_parser_integration.c:155-162` | `.on_message_begin`, `.on_header_field`, `.on_header_value`, `.on_url`, `.on_status`, `.on_body`, `.on_headers_complete`, `.on_message_complete` | identical field names on `llhttp_settings_t` | signatures change to `llhttp_cb` (`int (*)(llhttp_t*)`) / `llhttp_data_cb` (`int (*)(llhttp_t*, const char*, size_t)`) — same shapes, parameter type only |
 | `src/mmt_tcpip/lib/http_parser_integration.c:10-148` | `p->data` in every callback | `parser->data` | unchanged: `void *data` survives on `llhttp_t` |
-| `src/mmt_tcpip/lib/http_parser_integration.h:100-103` | `http_parser_init(&p->parser[i], HTTP_BOTH)` | `llhttp_init(&parser[i], HTTP_BOTH, get_settings())` | **llhttp_init takes the settings**; `HTTP_BOTH` keeps its name (`llhttp_type_t`). See §5.5 — `llhttp_init` does **not** preserve `data`; assign `parser->data` *after* init |
+| `src/mmt_tcpip/lib/http_parser_integration.h:103-106` | `http_parser_init(&p->parser[i], HTTP_BOTH)` | `llhttp_init(&parser[i], HTTP_BOTH, get_settings())` | **llhttp_init takes the settings**; `HTTP_BOTH` keeps its name (`llhttp_type_t`). See §5.5 — `llhttp_init` does **not** preserve `data`; assign `parser->data` *after* init |
 | `src/mmt_tcpip/lib/http_parser_integration.c:127` (commented) | `http_should_keep_alive(parser)` | `llhttp_should_keep_alive(parser)` | direct equivalent, should it ever be enabled |
 
 ### 4.2 Symbols used by `proto_http.c`

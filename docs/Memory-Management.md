@@ -57,7 +57,7 @@ The library runs inside the host process. An allocation that a packet can trigge
 When an allocation fails, the caller must:
 
 1. Check the result. Never write through it or pass it on unchecked.
-2. Release whatever the function already allocated, so a partial failure leaks nothing. `init_http_parser()` shows the pattern: it frees the parser when a stream processor cannot be allocated (`src/mmt_tcpip/lib/http_parser_integration.h:90-107`).
+2. Release whatever the function already allocated, so a partial failure leaks nothing. `init_http_parser()` shows the pattern: it frees the parser when a stream processor cannot be allocated (`src/mmt_tcpip/lib/http_parser_integration.h:93-110`).
 3. Report the failure upward: return `NULL`, `0` or an error code, or drop the packet or the session attribute that needed the memory. Keep processing the next packet.
 
 The `fault_injection` suite tests this contract. It fails the Nth allocation of the allocator, the hashmap and the HTTP-parser constructor, then checks that the result is `NULL` or that the entry was dropped, that nothing leaked and that nothing was freed twice (`tests/fault_injection/run_tests.sh`).
