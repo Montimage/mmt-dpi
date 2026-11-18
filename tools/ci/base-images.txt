@@ -38,7 +38,7 @@ digest-source: docker buildx imagetools inspect <image>:<tag>
 ubuntu:22.04@sha256:74b12b11ffa550fba1929ad4d8d16533c34f6612728469671afba1b03b66881c  # retire-by: 2027-04-30 (#516)
 ubuntu:24.04@sha256:2198e4c65076e9cb0b3d695219df667c0e3b0072da64ca3c2648aca17dcecaf5
 debian:12@sha256:268fb24c39bca92d326dd83ea3abebe4a3f7751c804ffef23bb6d857dd343ff8
-rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6
+rockylinux:9@sha256:03303863808e9cd79f0c58c833db3e5f9cde9f2abe16804a267b05dc54af86e4
 quay.io/centos/centos:stream9@sha256:280add9b43d478ff06de6ccc6285afa7f1d81d8a0ea0d63e292a2f87f1d5aedf  # retire-by: 2027-04-30 (#516)
 buildpack-deps:trixie@sha256:188a9dfa5e813c917be00c3f474bc75488b62914305e13fa21dff1cfef2eb354
 # Current-generation release legs (issue #515). Rocky Linux 10 is published
@@ -46,7 +46,7 @@ buildpack-deps:trixie@sha256:188a9dfa5e813c917be00c3f474bc75488b62914305e13fa21d
 # stops at 9.
 ubuntu:26.04@sha256:065aa8626841f16057b78b027b464cd59c4fac36c204c72dcbf48d66f5fa8a96
 debian:13@sha256:9c6e381421d0f48d1b8133e573f33c185ee16cbf505eda9c4a8a4791b25ea8a6
-rockylinux/rockylinux:10@sha256:827d37bc128288ccf160ee318bb3cb92d591164cb217e92f8bc61e3982ae1834
+rockylinux/rockylinux:10@sha256:d24beedc58f79b9e0e9289fedaa4fcbcbe692b1438883a86f177fd7c51053ca8
 quay.io/centos/centos:stream10@sha256:5eaff839eea6ca355f8122044dcfaefbac5ac991940f223b668dcf80478e3166
 # Install smoke matrix only (issue #493): the advertised distributions outside
 # the release matrix. registry.opensuse.org where upstream publishes there, to
