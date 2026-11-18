@@ -102,8 +102,8 @@ jobs:
           # Every image is digest-pinned and recorded in
           # tools/ci/base-images.txt (check-image-digests.sh, refreshed daily
           # by base-image-refresh.yml).
-          - { name: ubuntu-22.04, tier: supported, image: "ubuntu:22.04@sha256:74b12b11ffa550fba1929ad4d8d16533c34f6612728469671afba1b03b66881c" }
-          - { name: ubuntu-24.04, tier: supported, image: "ubuntu:24.04@sha256:2198e4c65076e9cb0b3d695219df667c0e3b0072da64ca3c2648aca17dcecaf5" }
+          - { name: ubuntu-22.04, tier: supported, image: "ubuntu:22.04@sha256:9abcaffc92a5279fff3a6a41635c0800ea33e528425fb389658806476e7defde" }
+          - { name: ubuntu-24.04, tier: supported, image: "ubuntu:24.04@sha256:73b999393d07f2bf65a40373778a44dc9a6d54ad7718d29247d8ff9413c4d6a8" }
           - { name: debian-12, tier: supported, image: "debian:12@sha256:268fb24c39bca92d326dd83ea3abebe4a3f7751c804ffef23bb6d857dd343ff8" }
           - { name: rocky-9, tier: supported, image: "rockylinux:9@sha256:03303863808e9cd79f0c58c833db3e5f9cde9f2abe16804a267b05dc54af86e4" }
           - { name: centos-stream9, tier: supported, image: "quay.io/centos/centos:stream9@sha256:280add9b43d478ff06de6ccc6285afa7f1d81d8a0ea0d63e292a2f87f1d5aedf" }
@@ -217,9 +217,9 @@ jobs:
         # The Debian/Ubuntu releases the repository serves. Digest-pinned
         # and recorded in tools/ci/base-images.txt; arm64 runs natively.
         distro:
-          - { name: ubuntu-22.04, image: "ubuntu:22.04@sha256:74b12b11ffa550fba1929ad4d8d16533c34f6612728469671afba1b03b66881c" }
-          - { name: ubuntu-24.04, image: "ubuntu:24.04@sha256:2198e4c65076e9cb0b3d695219df667c0e3b0072da64ca3c2648aca17dcecaf5" }
-          - { name: ubuntu-26.04, image: "ubuntu:26.04@sha256:065aa8626841f16057b78b027b464cd59c4fac36c204c72dcbf48d66f5fa8a96" }
+          - { name: ubuntu-22.04, image: "ubuntu:22.04@sha256:9abcaffc92a5279fff3a6a41635c0800ea33e528425fb389658806476e7defde" }
+          - { name: ubuntu-24.04, image: "ubuntu:24.04@sha256:73b999393d07f2bf65a40373778a44dc9a6d54ad7718d29247d8ff9413c4d6a8" }
+          - { name: ubuntu-26.04, image: "ubuntu:26.04@sha256:d66b366dac61b575bee2aef07e9c26e8070096fbe84a3d4d3eb0da069b5d76db" }
           - { name: debian-12, image: "debian:12@sha256:268fb24c39bca92d326dd83ea3abebe4a3f7751c804ffef23bb6d857dd343ff8" }
           - { name: debian-13, image: "debian:13@sha256:9c6e381421d0f48d1b8133e573f33c185ee16cbf505eda9c4a8a4791b25ea8a6" }
         platform:
@@ -275,7 +275,7 @@ jobs:
 
       - name: One byte of a local InRelease changed; apt-get update must fail
         env:
-          IMAGE: "ubuntu:24.04@sha256:2198e4c65076e9cb0b3d695219df667c0e3b0072da64ca3c2648aca17dcecaf5"
+          IMAGE: "ubuntu:24.04@sha256:73b999393d07f2bf65a40373778a44dc9a6d54ad7718d29247d8ff9413c4d6a8"
         run: |
           docker run --rm -v "$PWD":/work:ro -w /work "$IMAGE" \
             bash tools/ci/smoke-apt.sh --expect-reject
