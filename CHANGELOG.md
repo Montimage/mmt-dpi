@@ -1,7 +1,7 @@
 RELEASE NOTES
 ---
 
-Version 1.11.0 (unreleased)
+Version 1.11.0 (20 November 2026)
 ---
 
 ### Plugin API
