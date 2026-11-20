@@ -39,7 +39,7 @@ ubuntu:22.04@sha256:9abcaffc92a5279fff3a6a41635c0800ea33e528425fb389658806476e7d
 ubuntu:24.04@sha256:73b999393d07f2bf65a40373778a44dc9a6d54ad7718d29247d8ff9413c4d6a8
 debian:12@sha256:268fb24c39bca92d326dd83ea3abebe4a3f7751c804ffef23bb6d857dd343ff8
 rockylinux:9@sha256:03303863808e9cd79f0c58c833db3e5f9cde9f2abe16804a267b05dc54af86e4
-quay.io/centos/centos:stream9@sha256:280add9b43d478ff06de6ccc6285afa7f1d81d8a0ea0d63e292a2f87f1d5aedf  # retire-by: 2027-04-30 (#516)
+quay.io/centos/centos:stream9@sha256:875f628a88425be59d5edf2aa81e9836dd803de564ce3f728f23c63660d65662  # retire-by: 2027-04-30 (#516)
 buildpack-deps:trixie@sha256:188a9dfa5e813c917be00c3f474bc75488b62914305e13fa21dff1cfef2eb354
 # Current-generation release legs (issue #515). Rocky Linux 10 is published
 # as rockylinux/rockylinux only: the Docker Hub official `rockylinux` image
@@ -47,7 +47,7 @@ buildpack-deps:trixie@sha256:188a9dfa5e813c917be00c3f474bc75488b62914305e13fa21d
 ubuntu:26.04@sha256:d66b366dac61b575bee2aef07e9c26e8070096fbe84a3d4d3eb0da069b5d76db
 debian:13@sha256:9c6e381421d0f48d1b8133e573f33c185ee16cbf505eda9c4a8a4791b25ea8a6
 rockylinux/rockylinux:10@sha256:d24beedc58f79b9e0e9289fedaa4fcbcbe692b1438883a86f177fd7c51053ca8
-quay.io/centos/centos:stream10@sha256:5eaff839eea6ca355f8122044dcfaefbac5ac991940f223b668dcf80478e3166
+quay.io/centos/centos:stream10@sha256:a266f7ae08c4b3f5d0eaaa8a500201d40d260ecdfa81e49991fe8d27699d69e9
 # Install smoke matrix only (issue #493): the advertised distributions outside
 # the release matrix. registry.opensuse.org where upstream publishes there, to
 # stay clear of Docker Hub pull limits. Fedora comes from the Docker Hub official

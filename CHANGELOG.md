@@ -1,6 +1,36 @@
 RELEASE NOTES
 ---
 
+Version 1.11.0 (unreleased)
+---
+
+### Plugin API
+- hand a classified session to another protocol and back (#116). `mmt_session_handover(ipacket, index, new_proto_id)` queues a handover that is applied at the start of the session's next packet: the cleanups of the protocols from `index` up run, the new protocol's `session_data_init` runs once, and the layer is pinned, so TCP/UDP post-classification no longer rewrites it from the flow's detected stack. The same call with the previous protocol gives the session back. It is refused for the transport layer, tunnel parents, unregistered or identical ids and a second pending handover; the first claim wins.
+- let a plugin take over an HTTP session after `Upgrade` / `101 Switching Protocols` (WebSocket, OCPP) (#116). `register_upgrade_classification_function(parent, fn, weight)` registers an upgrade classifier, and HTTP calls `mmt_session_offer_upgrade()` once, on a response that paused on status 101; a classifier claims the session with `mmt_session_handover()`. A refused upgrade produces exactly the previous HTTP output.
+- reach a plugin's child classifiers from the packet on which its classifier claims the session (#115). A protocol that calls `mmt_protocol_set_process_claimed_layer()` lets TCP/UDP post-classification continue into the layer it claimed, instead of waiting for the 40-packet give-up.
+- register a classifier under a parent protocol that another plugin provides, whatever the plugin load order (#115). `register_classification_function_with_parent_protocol_deferred()` keeps the registration until `register_protocol()` registers the parent; if no plugin ever does, the load fails with a message naming both protocols.
+- All four additions are opt-in and ABI-compatible (new exports only, `SOVERSION` unchanged). No in-tree protocol uses them, and the golden classification and precision fingerprints are unchanged.
+
+### Core and protocols
+- skip the HTTP/2 connection preface when reading `http2.type` and the other `header_*` attributes (it was read as a frame of type 32), and add `http2.frame_count` and `http2.rst_stream_count`, which count every frame of a TCP segment, so a rule can see the RST_STREAM frames of an HTTP/2 Rapid Reset (CVE-2023-44487) (montimage-projects/mmt-dpi#770).
+- classify VNC, TPKT and NDN over TCP after a TCP handshake, unframed STUN over TCP (RFC 8489 §6.2.2, magic cookie required), RFC 4571-framed RTP after an ICE-TCP check (`stun.rtp`), and Icecast and SHOUTcast listener streams (`http.mpeg.icecast`, `http.ogg.icecast`, `http.mpeg.shoutcast`) (#92). The three TCP checkers no longer exclude themselves on the payload-less SYN. `mmt_check_stun_tcp` hands a STUN flow's framed media to `mmt_check_rtp_tcp`, and `mmt_int_rtp_add_connection()` no longer dereferences a NULL UDP header for RTP over TCP. The accuracy generator emits IPv6 flows, and the corpus covers DHCPv6 and Spotify. TDS stays shadowed by MSSQL by decision (`docs/DECISIONS.md`).
+- create the RTP session data once per session (#101). `rtp_session_data_init()` allocated a fresh block on every packet that updated the RTP layer, which reset the order, loss and jitter analysis (those attributes stayed 0) and leaked the previous block.
+
+### Installation
+- `make install`/`make uninstall` and `install.sh` refuse a manifest path that is a symlink or not a regular file before changing anything, and an `install.sh` upgrade merges the earlier install manifest, so `install.sh --uninstall` removes every file it installed (#94).
+- `install.sh`: a non-root upgrade through `sudo` into a prefix the user cannot enter (mode 0700) keeps the earlier install's manifest entries, and `--uninstall` of such a prefix now removes the install instead of leaving it behind (#100).
+
+### Build, CI and packaging
+- sign the source tarball and commit the release public key (#77). Each Release carries `mmt-dpi-<version>.tar.gz.asc`, signed by the Montimage release signing key (primary `2163 0C36 2624 FB20 5C3D 0B18 4F95 AECC FEF4 8443`), whose public half is `debian/upstream/signing-key.asc`; `debian/watch` checks the signature.
+- add APT repository legs to the install smoke workflow (#78): it installs `mmt-dpi` and `mmt-dpi-security` from https://montimage.github.io/packages on every suite and architecture, and checks that apt refuses a tampered `InRelease`.
+- harden the protocol id range guard (#75): `scripts/validate-proto-id-range.sh` reports an id written as an expression (arithmetic, a cast, another macro) instead of passing it silently, and exits 2 on an invalid literal.
+- repin the drifted Ubuntu 22.04, 24.04 and 26.04 base images (#105) and the rebuilt Rocky 9/10 images (#102), and record CVE-2026-84243 (glibc, unfixed in the distributions) in `tools/ci/advisory-dispositions.txt` until 2026-12-31 (#95); the Rocky glibc/libxml2 dispositions recorded in #103 were dropped once the rebuilt images carried the fixes (#102).
+
+### Documentation
+- list the signed APT repository as the first install route (#79): the quick start installs the keyring after checking its fingerprint and adds a deb822 source; `docs/DEB_PACKAGE_CHECKLIST.md` describes the repository as Montimage/packages builds it, with its key handling, and the release guide gains a post-publication APT check.
+- document how to write a plugin under another plugin and how to hand a session over (#115, #116): `docs/Add-New-Protocol.md`, `docs/MMT-Protocol.md`, `docs/MMT-Session.md`, `docs/HTTP-protocol.md`, `docs/THREADING.md` and `docs/Exported-Symbols.md`.
+- describe what `htoi`, `mmt_strcmp`, `mmt_strncmp`, `mmt_strcasecmp` and `mmt_strncasecmp` really do (#93): `data_defs.h` said `htoi` returns a negative value on failure (it returns an unsigned byte count, bounded by `len` and the capacity, and 0 on bad input), called `mmt_strcmp`/`mmt_strncmp` case-insensitive (they are case-sensitive) and claimed non-ASCII folding for `mmt_str[n]casecmp` (only `a`-`z` are folded, to upper case); all four comparators return exactly -1, 0 or +1, and `tests/core_engine/test_api_contracts.c` now pins these edge cases. No behaviour change.
+
 Version 1.10.3 (15 November 2026)
 ---
 
