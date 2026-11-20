@@ -91,7 +91,7 @@ bash tests/run_all_tests.sh hexdump mmt_utils mmt_inet_ntop avltree memory
 %{_docdir}/%{name}-devel/
 
 %changelog
-* Thu Nov 19 2026 Montimage <developer@montimage.eu> - 1.11.0-1
+* Fri Nov 20 2026 Montimage <developer@montimage.eu> - 1.11.0-1
 - MMT-DPI 1.11.0: see CHANGELOG.md
 
 * Sun Nov 15 2026 Montimage <developer@montimage.eu> - 1.10.3-1
